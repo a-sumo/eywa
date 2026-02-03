@@ -1,0 +1,20 @@
+{
+  "name": "eywa-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.23.0",
+    "agents": "^0.2.24",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250124.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.0.0"
+  }
+}

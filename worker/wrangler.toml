@@ -1,0 +1,11 @@
+name = "eywa-mcp"
+main = "src/index.ts"
+compatibility_date = "2025-01-13"
+compatibility_flags = ["nodejs_compat"]
+
+[alias]
+ai = "./src/shims/ai.ts"
+
+[vars]
+SUPABASE_URL = "https://beknjtxysmznenkotjvv.snapcloud.dev"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjEzNjM1NiwiZXhwIjoyMDgxNzEyMzU2fQ.Pp6DrVfZs2_XvbobCm0hLSCxpfxoK-SvVzgduFIcp_Q"
