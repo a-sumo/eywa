@@ -9,7 +9,9 @@ import { RemixView3D } from "./components/RemixView3D";
 import { AgentDetail } from "./components/AgentDetail";
 import { Chat } from "./components/Chat";
 import { MiniRemix } from "./components/MiniRemix";
+import { MiniRemixEink } from "./components/MiniRemixEink";
 import { LayoutAgentDemo } from "./components/LayoutAgentDemo";
+import { LayoutAgentXR } from "./components/LayoutAgentXR";
 import { CLIAuth } from "./components/CLIAuth";
 import "./App.css";
 
@@ -19,6 +21,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/cli-auth" element={<CLIAuth />} />
+        <Route path="/r/:slug/eink" element={<RoomProvider><MiniRemixEink /></RoomProvider>} />
         <Route path="/r/:slug/*" element={<RoomRoutes />} />
       </Routes>
     </BrowserRouter>
@@ -38,6 +41,7 @@ function RoomRoutes() {
           <Route path="chat" element={<Chat />} />
           <Route path="mini" element={<MiniRemix />} />
           <Route path="layout-agent" element={<LayoutAgentDemo />} />
+          <Route path="layout-xr" element={<LayoutAgentXR />} />
         </Routes>
       </RoomLayout>
     </RoomProvider>

@@ -3410,3 +3410,299 @@
   color: var(--color-text-muted);
   font-size: 0.85rem;
 }
+
+/* ============================================
+   E-Ink Dashboard — 600×448 7-Color Display
+   ============================================
+   Target: Waveshare 5.65" ACeP (600×448)
+   Colors: black/white/red/green/blue/yellow/orange ONLY
+   No transparency, gradients, shadows, animations
+   ============================================ */
+
+:root {
+  --eink-black: #000000;
+  --eink-white: #FFFFFF;
+  --eink-red: #FF0000;
+  --eink-green: #00FF00;
+  --eink-blue: #0000FF;
+  --eink-yellow: #FFFF00;
+  --eink-orange: #FF8000;
+}
+
+.eink-container {
+  width: 600px;
+  height: 448px;
+  background: var(--eink-white);
+  color: var(--eink-black);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  line-height: 1.2;
+  overflow: hidden;
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  position: relative;
+  border: 2px solid var(--eink-black);
+  box-sizing: border-box;
+}
+
+.eink-container *,
+.eink-container *::before,
+.eink-container *::after {
+  transition: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  text-shadow: none !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+}
+
+/* ── Header ── */
+
+.eink-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 6px;
+  background: var(--eink-black);
+  color: var(--eink-white);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.eink-header-room {
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.eink-header-stats {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.eink-header-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.eink-legend-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--eink-white);
+  margin-right: 1px;
+}
+
+.eink-header-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  margin-left: 6px;
+}
+
+/* ── Body layout ── */
+
+.eink-body {
+  display: flex;
+  height: calc(448px - 28px - 4px); /* container - header - border */
+}
+
+.eink-left {
+  width: 280px;
+  flex-shrink: 0;
+  border-right: 2px solid var(--eink-black);
+  overflow: hidden;
+  padding: 2px 4px;
+}
+
+.eink-gutter {
+  display: none;
+}
+
+.eink-right {
+  flex: 1;
+  overflow: hidden;
+  padding: 2px 4px;
+}
+
+/* ── Section titles ── */
+
+.eink-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--eink-black);
+  border-bottom: 2px solid var(--eink-black);
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+  height: 16px;
+  line-height: 14px;
+}
+
+/* ── Agent cards ── */
+
+.eink-agent-card {
+  border-bottom: 1px solid var(--eink-black);
+  padding: 2px 0;
+}
+
+.eink-agent-card:last-child {
+  border-bottom: none;
+}
+
+.eink-agent-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+}
+
+.eink-agent-name {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--eink-black);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eink-agent-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 3px;
+  border: 2px solid var(--eink-black);
+  color: var(--eink-black);
+  background: var(--eink-white);
+}
+
+.eink-agent-badge.active {
+  background: var(--eink-green);
+  color: var(--eink-black);
+}
+
+.eink-agent-badge.idle {
+  background: var(--eink-white);
+  color: var(--eink-black);
+}
+
+.eink-agent-stats {
+  font-size: 10px;
+  color: var(--eink-black);
+  padding: 1px 0;
+}
+
+/* ── Activity bar ── */
+
+.eink-bar {
+  display: flex;
+  height: 8px;
+  border: 2px solid var(--eink-black);
+  background: var(--eink-white);
+  overflow: hidden;
+}
+
+.eink-bar-empty {
+  height: 8px;
+  border: 2px solid var(--eink-black);
+  background: var(--eink-white);
+}
+
+.eink-bar-seg {
+  height: 100%;
+  min-width: 2px;
+}
+
+/* ── Feed rows ── */
+
+.eink-feed-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--eink-black);
+  font-size: 11px;
+}
+
+.eink-feed-row:last-child {
+  border-bottom: none;
+}
+
+.eink-feed-time {
+  flex-shrink: 0;
+  width: 28px;
+  font-size: 10px;
+  color: var(--eink-black);
+  text-align: right;
+}
+
+.eink-feed-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--eink-black);
+}
+
+.eink-feed-initial {
+  flex-shrink: 0;
+  width: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--eink-black);
+}
+
+.eink-feed-type {
+  flex-shrink: 0;
+  width: 28px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.eink-feed-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--eink-black);
+  font-size: 11px;
+}
+
+/* ── Empty state ── */
+
+.eink-empty {
+  font-size: 11px;
+  color: var(--eink-black);
+  padding: 8px 0;
+  text-align: center;
+}
+
+/* ── Pixel creatures ── */
+
+.eink-pixel-creature {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+/* ── Kill all interactive states ── */
+
+.eink-container *:hover,
+.eink-container *:active,
+.eink-container *:focus {
+  outline: none !important;
+  cursor: default !important;
+}
