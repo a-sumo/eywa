@@ -11,6 +11,7 @@ import {
   type ThreadSummary,
   type DivergenceLevel,
 } from "../lib/threadSimilarity";
+import { ConnectAgent } from "./ConnectAgent";
 
 interface ThreadInfo {
   agent: string;
@@ -302,13 +303,7 @@ export function ThreadTree() {
     return (
       <div className="thread-tree">
         <h2 className="section-title">Threads</h2>
-        <div className="empty-state">
-          <div className="empty-state-icon">&#128464;</div>
-          <h3 className="empty-state-title">No threads yet</h3>
-          <p className="empty-state-desc">
-            Connect an AI agent to start seeing threads
-          </p>
-        </div>
+        <ConnectAgent slug={slug || ""} />
       </div>
     );
   }

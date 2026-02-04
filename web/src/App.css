@@ -1787,6 +1787,166 @@
 }
 
 /* ============================================
+   Connect Agent Onboarding
+   ============================================ */
+
+.connect-agent {
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  padding: 2rem;
+  background: var(--color-card);
+}
+
+.connect-agent-inline {
+  padding: 1rem 1.25rem;
+  border-style: solid;
+  background: var(--color-fill);
+}
+
+.connect-agent-header {
+  margin-bottom: 1.5rem;
+}
+
+.connect-agent-header h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+  color: var(--color-text);
+}
+
+.connect-agent-header p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.connect-agent-fields {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.connect-agent-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.connect-agent-input {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-fill);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-family: 'Roboto Mono', monospace;
+  outline: none;
+  width: 120px;
+  transition: border-color 0.15s;
+}
+
+.connect-agent-input:focus {
+  border-color: var(--color-accent);
+}
+
+.connect-agent-clients {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.connect-client-btn {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-text-muted);
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.connect-client-btn:not(:last-child) {
+  border-right: 1px solid var(--color-border);
+}
+
+.connect-client-btn:hover {
+  background: var(--color-card);
+  color: var(--color-text-secondary);
+}
+
+.connect-client-active {
+  background: var(--color-accent);
+  color: white;
+}
+
+.connect-client-active:hover {
+  background: var(--color-accent-secondary);
+  color: white;
+}
+
+.connect-agent-config {
+  position: relative;
+}
+
+.connect-agent-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.connect-agent-code {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(40, 39, 40, 0.04);
+  border: 1px solid var(--color-border);
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+.connect-agent-copy {
+  position: absolute;
+  top: 1.6rem;
+  right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-fill);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.connect-agent-copy:hover {
+  background: var(--color-card);
+}
+
+.connect-agent-dropdown {
+  padding: 0.75rem 2rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-fill);
+}
+
+/* ============================================
    Utility Classes
    ============================================ */
 
