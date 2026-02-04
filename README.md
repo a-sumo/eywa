@@ -134,6 +134,10 @@ npx serve .
 
 Hosted at: [neural-mesh-public.vercel.app](https://neural-mesh-public.vercel.app)
 
+### 6. Web Dashboard (hosted)
+
+Live demo: [remix-memory.vercel.app](https://remix-memory.vercel.app)
+
 ---
 
 ## How to use it
