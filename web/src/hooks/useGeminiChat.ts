@@ -1,8 +1,11 @@
 import { useState, useCallback, useRef } from "react";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
-const GEMINI_MODEL = "gemini-2.0-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+
+function geminiUrl(model: string): string {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+}
 
 export interface ChatMessage {
   role: "user" | "model";
@@ -60,37 +63,55 @@ export function useGeminiChat(systemContext: string) {
       try {
         abortRef.current = new AbortController();
 
-        const response = await fetch(GEMINI_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: abortRef.current.signal,
-          body: JSON.stringify({
-            systemInstruction,
-            contents,
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 2048,
-            },
-          }),
+        const body = JSON.stringify({
+          systemInstruction,
+          contents,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+          },
         });
 
-        if (!response.ok) {
-          const errBody = await response.text();
-          throw new Error(`Gemini API error ${response.status}: ${errBody}`);
+        let lastError = "";
+        for (const model of MODELS) {
+          const response = await fetch(geminiUrl(model), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: abortRef.current.signal,
+            body,
+          });
+
+          if (response.status === 429) {
+            lastError = `Rate limited on ${model}, trying next model...`;
+            continue;
+          }
+
+          if (!response.ok) {
+            const errBody = await response.text();
+            throw new Error(
+              `Gemini API error ${response.status}: ${errBody}`
+            );
+          }
+
+          const data = await response.json();
+          const text =
+            data.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "No response from Gemini.";
+
+          const assistantMsg: ChatMessage = {
+            role: "model",
+            content: text,
+            ts: Date.now(),
+          };
+
+          setMessages((prev) => [...prev, assistantMsg]);
+          return;
         }
 
-        const data = await response.json();
-        const text =
-          data.candidates?.[0]?.content?.parts?.[0]?.text ||
-          "No response from Gemini.";
-
-        const assistantMsg: ChatMessage = {
-          role: "model",
-          content: text,
-          ts: Date.now(),
-        };
-
-        setMessages((prev) => [...prev, assistantMsg]);
+        throw new Error(
+          lastError ||
+            "All Gemini models rate limited. Please try again in a minute."
+        );
       } catch (err: unknown) {
         if (err instanceof Error && err.name === "AbortError") return;
         setError(
