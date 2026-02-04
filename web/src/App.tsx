@@ -5,6 +5,7 @@ import { RoomLayout } from "./components/RoomLayout";
 import { ThreadTree } from "./components/ThreadTree";
 import { ThreadView } from "./components/ThreadView";
 import { RemixView } from "./components/RemixView";
+import { RemixView3D } from "./components/RemixView3D";
 import { AgentDetail } from "./components/AgentDetail";
 import { Chat } from "./components/Chat";
 import "./App.css";
@@ -28,6 +29,7 @@ function RoomRoutes() {
           <Route index element={<ThreadTree />} />
           <Route path="thread/:agent/:sessionId" element={<ThreadView />} />
           <Route path="remix/new" element={<RemixView />} />
+          <Route path="remix3d" element={<RemixView3D />} />
           <Route path="agent/:name" element={<AgentDetail />} />
           <Route path="chat" element={<Chat />} />
         </Routes>

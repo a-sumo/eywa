@@ -1907,3 +1907,336 @@
     padding: 1rem;
   }
 }
+
+/* ============================================
+   Remix 3D View — CSS 3D (perspective panels)
+   ============================================ */
+
+.remix3d-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+}
+
+.remix3d-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+.remix3d-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-accent-secondary);
+}
+
+/* 3D Scene — perspective container */
+.remix3d-scene {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
+  min-height: 0;
+}
+
+/* Glass panel — frosted container for each column */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.glass-panel.drop-active,
+.glass-panel:has(.drop-active) {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(140, 169, 255, 0.25), var(--shadow-lg);
+}
+
+.r3f-source-wrap,
+.r3f-context-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.r3f-chat-wrap {
+  width: 340px;
+  flex-shrink: 0;
+}
+
+.r3f-source-panel,
+.r3f-context-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.r3f-source-panel h3,
+.r3f-context-panel h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.r3f-chat-panel {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.r3f-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.remix3d-search {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-fill);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  outline: none;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.remix3d-search:focus {
+  border-color: var(--color-accent);
+}
+
+.glass-panel .remix3d-chat-panel {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.remix3d-chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-fill);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.remix3d-chat-panel.collapsed {
+  flex: 0 0 auto;
+}
+
+.glass-panel .memory-card:hover {
+  transform: scale(1.03);
+  box-shadow: var(--shadow-md);
+}
+
+.remix3d-mobile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.remix3d-mobile .glass-panel {
+  flex-shrink: 0;
+}
+
+.remix3d-mobile .glass-panel:last-child {
+  flex: 1;
+  min-height: 250px;
+}
+
+.remix3d-mobile .r3f-source-panel,
+.remix3d-mobile .r3f-context-panel {
+  height: auto;
+  max-height: 35vh;
+  padding: 1rem;
+}
+
+.remix3d-mobile .r3f-chat-panel {
+  height: auto;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .remix3d-scene {
+    flex-direction: column;
+    perspective: none;
+  }
+
+  .r3f-source-wrap,
+  .r3f-context-wrap {
+    transform: none !important;
+    max-height: 35vh;
+  }
+
+  .r3f-chat-wrap {
+    transform: none !important;
+    width: 100%;
+    max-height: 300px;
+  }
+}
+
+.remix3d-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.remix3d-chat-count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.remix3d-collapse-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  padding: 0;
+}
+
+.remix3d-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  min-height: 100px;
+}
+
+.remix3d-chat-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 1.5rem 0.5rem;
+}
+
+.remix3d-chat-input-row {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.remix3d-chat-input {
+  flex: 1;
+  background: var(--color-fill);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.remix3d-chat-input:focus {
+  border-color: var(--color-accent);
+}
+
+.remix3d-send-btn {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.remix3d-send-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(140, 169, 255, 0.3);
+}
+
+.remix3d-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.remix3d-voice-btn {
+  background: var(--color-fill);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.remix3d-voice-btn:hover {
+  background: var(--color-card);
+}
+
+.remix3d-voice-btn.listening {
+  background: rgba(180, 80, 80, 0.1);
+  border-color: rgba(180, 80, 80, 0.4);
+  color: var(--error);
+  animation: voice-pulse 1.5s infinite;
+}
+
+.remix3d-clear-btn {
+  display: block;
+  width: 100%;
+  padding: 0.4rem;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background 0.15s;
+}
+
+.remix3d-clear-btn:hover {
+  background: var(--color-card);
+}

@@ -53,6 +53,7 @@ export function RoomLayout({ children }: RoomLayoutProps) {
       <nav className="mobile-tabs">
         <Link to={`/r/${slug}`}>Threads</Link>
         <Link to={`/r/${slug}/remix/new`}>Remix</Link>
+        <Link to={`/r/${slug}/remix3d`}>3D</Link>
         <Link to={`/r/${slug}/chat`}>Chat</Link>
       </nav>
     </div>

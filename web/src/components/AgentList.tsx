@@ -40,10 +40,16 @@ export function AgentList() {
         Threads
       </button>
       <button
-        className={`agent-chip ${location.pathname.includes("/remix") ? "active" : ""}`}
+        className={`agent-chip ${location.pathname === `${basePath}/remix/new` ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/remix/new`)}
       >
         + Remix
+      </button>
+      <button
+        className={`agent-chip ${location.pathname === `${basePath}/remix3d` ? "active" : ""}`}
+        onClick={() => navigate(`${basePath}/remix3d`)}
+      >
+        Remix 3D
       </button>
       <button
         className={`agent-chip ${location.pathname === `${basePath}/chat` ? "active" : ""}`}
