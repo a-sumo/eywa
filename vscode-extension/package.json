@@ -1,0 +1,108 @@
+{
+  "name": "remix-agents",
+  "displayName": "Remix — Agent Memory",
+  "description": "Monitor and steer AI agents sharing context through Remix",
+  "version": "0.1.0",
+  "publisher": "armandsumo",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "remix",
+          "title": "Remix",
+          "icon": "$(symbol-misc)"
+        }
+      ]
+    },
+    "views": {
+      "remix": [
+        {
+          "id": "remixAgents",
+          "name": "Agents"
+        },
+        {
+          "id": "remixKnowledge",
+          "name": "Knowledge"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "remix.connectAgent",
+        "title": "Remix: Connect Agent"
+      },
+      {
+        "command": "remix.openDashboard",
+        "title": "Remix: Open Dashboard"
+      },
+      {
+        "command": "remix.refreshAgents",
+        "title": "Remix: Refresh Agents",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "remix.injectContext",
+        "title": "Remix: Inject Context to Agent"
+      },
+      {
+        "command": "remix.showStatus",
+        "title": "Remix: Show Full Status"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "remix.refreshAgents",
+          "when": "view == remixAgents",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Remix",
+      "properties": {
+        "remix.supabaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Supabase project URL"
+        },
+        "remix.supabaseKey": {
+          "type": "string",
+          "default": "",
+          "description": "Supabase anon key"
+        },
+        "remix.room": {
+          "type": "string",
+          "default": "",
+          "description": "Room slug to monitor"
+        },
+        "remix.pollInterval": {
+          "type": "number",
+          "default": 10,
+          "description": "Poll interval in seconds for agent updates"
+        },
+        "remix.notifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show VS Code notifications for agent events"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback, type DragEvent } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import type { Memory } from "../lib/supabase";
+import { ANIMAL_SPRITES } from "./animalSprites";
 
-/* ── helpers ── */
+/* ── Palette ── */
 
 const AGENT_PALETTE = [
   "#E64980", "#CC5DE8", "#845EF7", "#5C7CFA",
@@ -19,10 +20,6 @@ function agentColor(name: string): string {
   return AGENT_PALETTE[Math.abs(hash) % AGENT_PALETTE.length];
 }
 
-/**
- * 3 categories only: user (blue), assistant (green), tool (yellow).
- * Everything else (resource, unknown) → gray.
- */
 const TYPE_COLORS: Record<string, string> = {
   user: "#4C6EF5",
   assistant: "#40C057",
@@ -32,7 +29,12 @@ const TYPE_COLORS: Record<string, string> = {
 
 type TypeCategory = "user" | "assistant" | "tool";
 
-/** Map a message_type string to one of the 3 filter categories */
+const CATEGORY_COLORS: Record<TypeCategory, string> = {
+  user: "#4C6EF5",
+  assistant: "#40C057",
+  tool: "#FAB005",
+};
+
 function typeToCategory(t: string): TypeCategory | null {
   if (t === "user") return "user";
   if (t === "assistant") return "assistant";
@@ -40,33 +42,14 @@ function typeToCategory(t: string): TypeCategory | null {
   return null;
 }
 
-function sessionDominantCategory(session: { memories: Memory[] }): TypeCategory | null {
-  const counts: Record<string, number> = {};
-  for (const m of session.memories) {
-    const cat = typeToCategory(m.message_type);
-    if (cat) counts[cat] = (counts[cat] || 0) + 1;
-  }
-  let max = 0;
-  let dominant: TypeCategory | null = null;
-  for (const [cat, count] of Object.entries(counts)) {
-    if (count > max) {
-      max = count;
-      dominant = cat as TypeCategory;
-    }
-  }
-  return dominant;
+function typeLabel(t: string): string {
+  if (t === "tool_call") return "call";
+  if (t === "tool_result") return "res";
+  if (t === "assistant") return "asst";
+  return t.slice(0, 4);
 }
 
-const CATEGORY_COLORS: Record<TypeCategory, string> = {
-  user: "#4C6EF5",
-  assistant: "#40C057",
-  tool: "#FAB005",
-};
-
-function sessionTypeColor(session: { memories: Memory[] }): string {
-  const cat = sessionDominantCategory(session);
-  return cat ? CATEGORY_COLORS[cat] : "#CED4DA";
-}
+/* ── Helpers ── */
 
 function timeAgo(ts: string): string {
   const diff = Date.now() - new Date(ts).getTime();
@@ -127,96 +110,31 @@ function buildSessions(memories: Memory[]): Map<string, SessionInfo[]> {
   return result;
 }
 
-const MIME = "application/remix-thread";
-
-/* ── Animal Head Sprites ── */
-// 9×7 grids: 0=empty, 1=body, 2=eye, 3=nose/accent
-
-const ANIMAL_SPRITES: { label: string; rows: string[] }[] = [
-  { label: "cat", rows: [
-    ".1...1.", "11...11", ".11111.", "1111111",
-    "1.2.2.1", "1111111", ".11311.", "..111..", ".......",
-  ]},
-  { label: "dog", rows: [
-    "..111..", ".11111.", "1111111", "1.2.2.1",
-    "1111111", ".11311.", ".11111.", "11...11", "1.....1",
-  ]},
-  { label: "bear", rows: [
-    ".1...1.", "111.111", ".11111.", "1111111",
-    "1.2.2.1", "1111111", ".11311.", "..111..", ".......",
-  ]},
-  { label: "rabbit", rows: [
-    ".1...1.", ".1...1.", ".1...1.", ".11111.",
-    "1.2.2.1", "1111111", ".11311.", "..111..", ".......",
-  ]},
-  { label: "fox", rows: [
-    "1.....1", "11...11", ".11111.", "1111111",
-    "1.2.2.1", ".11111.", "..131..", "...1...", ".......",
-  ]},
-  { label: "owl", rows: [
-    ".1...1.", "1111111", "1221221", "1111111",
-    ".11311.", ".11111.", "..111..", "..1.1..", ".......",
-  ]},
-  { label: "frog", rows: [
-    ".......", ".2...2.", "111.111", "1111111",
-    "1.....1", "1111111", ".11111.", ".......", ".......",
-  ]},
-  { label: "penguin", rows: [
-    "..111..", ".11111.", "1111111", "1.2.2.1",
-    "1111111", ".11311.", ".11111.", "..111..", ".......",
-  ]},
-  { label: "mouse", rows: [
-    "11...11", "111.111", ".11111.", ".11111.",
-    ".12.21.", ".11311.", "..111..", ".......", ".......",
-  ]},
-  { label: "pig", rows: [
-    ".......", "1.111.1", "1111111", "1.2.2.1",
-    "1111111", ".13.31.", ".11111.", "..111..", ".......",
-  ]},
-  { label: "koala", rows: [
-    "11...11", "111.111", "1111111", ".11111.",
-    ".12.21.", ".11311.", "..111..", ".......", ".......",
-  ]},
-  { label: "lion", rows: [
-    ".11111.", "1111111", "1.111.1", "1.2.2.1",
-    "1.111.1", "1.131.1", "1111111", ".1.1.1.", ".......",
-  ]},
-  { label: "monkey", rows: [
-    "..111..", ".11111.", "1.111.1", "1.2.2.1",
-    ".11111.", ".11311.", "..111..", ".......", ".......",
-  ]},
-  { label: "hamster", rows: [
-    ".1...1.", ".11111.", "1111111", "1.2.2.1",
-    "1111111", "1113111", ".11111.", "..111..", ".......",
-  ]},
-  { label: "duck", rows: [
-    "..111..", ".11111.", ".12.21.", ".11111.",
-    "1133311", ".11111.", "..111..", ".......", ".......",
-  ]},
-  { label: "wolf", rows: [
-    "1.....1", "11...11", "1111111", "1.2.2.1",
-    "1111111", ".11111.", "..131..", "..1.1..", ".......",
-  ]},
-];
+/* ── Pixel Animal (Twemoji-derived) ── */
 
 function getAnimalSprite(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = ((hash << 7) - hash + name.charCodeAt(i)) | 0;
   }
-  const idx = Math.abs(hash) % ANIMAL_SPRITES.length;
-  const animal = ANIMAL_SPRITES[idx];
-  const grid = animal.rows.map((r) =>
-    [...r].map((c) => (c === "." ? 0 : Number(c)))
-  );
-  return { label: animal.label, grid };
+  return ANIMAL_SPRITES[Math.abs(hash) % ANIMAL_SPRITES.length];
 }
 
-function PixelCreature({ name, size = 24 }: { name: string; size?: number }) {
-  const { grid } = useMemo(() => getAnimalSprite(name), [name]);
+function PixelCreature({ name, size = 20 }: { name: string; size?: number }) {
+  const sprite = useMemo(() => getAnimalSprite(name), [name]);
   const color = agentColor(name);
-  const ROWS = grid.length;
-  const COLS = grid[0].length;
+  const ROWS = sprite.grid.length;
+  const COLS = sprite.grid[0].length;
+
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+
+  const dark = `rgb(${Math.round(r * 0.25)},${Math.round(g * 0.25)},${Math.round(b * 0.25)})`;
+  const mid = color;
+  const light = `rgb(${Math.min(255, Math.round(r * 1.3 + 40))},${Math.min(255, Math.round(g * 1.3 + 40))},${Math.min(255, Math.round(b * 1.3 + 40))})`;
+
+  const fills = ["", dark, mid, light];
 
   return (
     <svg
@@ -226,14 +144,18 @@ function PixelCreature({ name, size = 24 }: { name: string; size?: number }) {
       preserveAspectRatio="xMidYMid meet"
       className="mini-pixel-creature"
     >
-      {grid.flatMap((row, r) =>
-        row.map((cell, c) => {
+      {sprite.grid.flatMap((row, ry) =>
+        row.map((cell, cx) => {
           if (cell === 0) return null;
-          let fill = color;
-          if (cell === 2) fill = "#1A1A2E";
-          else if (cell === 3) fill = "#5F6368";
           return (
-            <rect key={`${r}-${c}`} x={c} y={r} width={1} height={1} fill={fill} />
+            <rect
+              key={`${ry}-${cx}`}
+              x={cx}
+              y={ry}
+              width={1}
+              height={1}
+              fill={fills[cell]}
+            />
           );
         })
       )}
@@ -241,174 +163,131 @@ function PixelCreature({ name, size = 24 }: { name: string; size?: number }) {
   );
 }
 
-/* ── Sub-components ── */
+/* ── Activity Bar ── */
 
-/** Clickable legend filters in the title bar */
-function MiniLegend({
-  filters,
-  onToggle,
-}: {
-  filters: Set<TypeCategory>;
-  onToggle: (cat: TypeCategory) => void;
-}) {
-  const items: { cat: TypeCategory; label: string; color: string }[] = [
-    { cat: "user", label: "user", color: CATEGORY_COLORS.user },
-    { cat: "assistant", label: "asst", color: CATEGORY_COLORS.assistant },
-    { cat: "tool", label: "tool", color: CATEGORY_COLORS.tool },
-  ];
-  const anyActive = filters.size > 0;
+interface TypeCounts {
+  user: number;
+  assistant: number;
+  tool: number;
+  other: number;
+}
+
+function MiniActivityBar({ counts }: { counts: TypeCounts }) {
+  const total = counts.user + counts.assistant + counts.tool + counts.other;
+  if (total === 0) return <div className="mini-bar mini-bar-empty" />;
+
+  const segments = [
+    { key: "user", color: CATEGORY_COLORS.user, n: counts.user },
+    { key: "assistant", color: CATEGORY_COLORS.assistant, n: counts.assistant },
+    { key: "tool", color: CATEGORY_COLORS.tool, n: counts.tool },
+    { key: "other", color: "#CED4DA", n: counts.other },
+  ].filter((s) => s.n > 0);
+
   return (
-    <div className="mini-legend">
-      {items.map(({ cat, label, color }) => {
-        const active = filters.has(cat);
-        return (
-          <button
-            key={cat}
-            className={`mini-legend-btn ${active ? "active" : ""} ${anyActive && !active ? "dimmed" : ""}`}
-            onClick={() => onToggle(cat)}
-          >
-            <span className="mini-legend-dot" style={{ background: color }} />
-            <span>{label}</span>
-          </button>
-        );
-      })}
+    <div className="mini-bar">
+      {segments.map((s) => (
+        <div
+          key={s.key}
+          className="mini-bar-seg"
+          style={{ width: `${(s.n / total) * 100}%`, background: s.color }}
+        />
+      ))}
     </div>
   );
 }
 
-/** Session block: 14x14 type-colored square */
-function MiniSessionBlock({
-  session,
-  selected,
-  inContext,
-  dimmed,
-  onSelect,
-}: {
-  session: SessionInfo;
-  selected: boolean;
-  inContext: boolean;
-  dimmed: boolean;
-  onSelect: (s: SessionInfo) => void;
-}) {
-  const typeColor = sessionTypeColor(session);
+/* ── Legend (static, non-interactive) ── */
 
-  function handleDragStart(e: DragEvent<HTMLDivElement>) {
-    e.dataTransfer.setData(
-      MIME,
-      JSON.stringify({ agent: session.agent, sessionId: session.sessionId })
-    );
-    e.dataTransfer.effectAllowed = "copy";
-    (e.currentTarget as HTMLElement).classList.add("dragging");
-  }
-
-  function handleDragEnd(e: DragEvent<HTMLDivElement>) {
-    (e.currentTarget as HTMLElement).classList.remove("dragging");
-  }
-
-  const baseOpacity = session.isActive ? 1 : 0.45;
-  const finalOpacity = dimmed ? baseOpacity * 0.2 : baseOpacity;
-
+function MiniLegend() {
   return (
-    <div
-      className={`mini-sblock ${selected ? "selected" : ""} ${inContext ? "in-ctx" : ""}`}
-      style={{ background: typeColor, opacity: finalOpacity }}
-      draggable={!dimmed}
-      onDragStart={dimmed ? undefined : handleDragStart}
-      onDragEnd={dimmed ? undefined : handleDragEnd}
-      onClick={dimmed ? undefined : () => onSelect(session)}
-      title={`${session.sessionId.slice(0, 6)} · ${session.memories.length} mem · ${timeAgo(session.lastTs)}`}
-    />
+    <div className="mini-legend">
+      <span className="mini-legend-dot" style={{ background: CATEGORY_COLORS.user }} />
+      <span>usr</span>
+      <span className="mini-legend-dot" style={{ background: CATEGORY_COLORS.assistant }} />
+      <span>ast</span>
+      <span className="mini-legend-dot" style={{ background: CATEGORY_COLORS.tool }} />
+      <span>tol</span>
+    </div>
   );
 }
 
-/** Agent row: creature + name + time, then wrapping grid of blocks */
-function MiniAgentRow({
+/* ── Detail Panel ── */
+
+function MiniDetailPanel({
   agent,
   sessions,
-  selectedSession,
-  contextIds,
-  filters,
-  onSelectSession,
 }: {
   agent: string;
   sessions: SessionInfo[];
-  selectedSession: SessionInfo | null;
-  contextIds: Set<string>;
-  filters: Set<TypeCategory>;
-  onSelectSession: (s: SessionInfo) => void;
 }) {
-  const newest = sessions[0]?.lastTs;
-  const oldest = sessions[sessions.length - 1]?.lastTs;
-  const timeLabel =
-    newest && oldest && newest !== oldest
-      ? `${timeAgo(newest)}\u2009\u2192\u2009${timeAgo(oldest)}`
-      : newest
-        ? timeAgo(newest)
-        : "";
+  const [idx, setIdx] = useState(0);
+  const session = sessions[idx] ?? sessions[0];
+  if (!session) return null;
 
   return (
-    <div className="mini-agent-row">
-      <div className="mini-agent-label">
-        <PixelCreature name={agent} size={24} />
-        <div className="mini-agent-label-text">
-          <span className="mini-agent-name" style={{ color: agentColor(agent) }}>
-            {agent}
-          </span>
-          <span className="mini-agent-time">{timeLabel}</span>
-        </div>
-      </div>
-      <div className="mini-agent-grid">
-        {sessions.map((s) => {
-          const cat = sessionDominantCategory(s);
-          const dimmed = filters.size > 0 && (cat === null || !filters.has(cat));
-          return (
-            <MiniSessionBlock
-              key={s.sessionId}
-              session={s}
-              selected={selectedSession?.sessionId === s.sessionId}
-              inContext={contextIds.has(s.sessionId)}
-              dimmed={dimmed}
-              onSelect={onSelectSession}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/** Detail view: session memory list */
-function MiniDetailView({ session }: { session: SessionInfo }) {
-  return (
-    <div className="mini-detail-view">
+    <div className="mini-detail">
       <div className="mini-detail-header">
-        <PixelCreature name={session.agent} size={16} />
-        <span style={{ color: agentColor(session.agent) }}>
-          {session.agent}
+        <PixelCreature name={agent} size={14} />
+        <span className="mini-detail-agent" style={{ color: agentColor(agent) }}>
+          {agent}
         </span>
-        <span className="mini-detail-sid">
-          {session.sessionId.slice(0, 8)}
-        </span>
-        <span className="mini-detail-count">
-          {session.memories.length} mem · {timeAgo(session.lastTs)}
+        <span className="mini-detail-sid">{session.sessionId.slice(0, 8)}</span>
+        <span className="mini-detail-meta">
+          {session.memories.length}m · {timeAgo(session.lastTs)}
         </span>
       </div>
+
+      {sessions.length > 1 && (
+        <div className="mini-detail-tabs">
+          {sessions.map((s, i) => (
+            <button
+              key={s.sessionId}
+              className={`mini-detail-tab ${i === idx ? "active" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIdx(i);
+              }}
+            >
+              <span
+                className="mini-detail-tab-dot"
+                style={{
+                  background: i === idx
+                    ? (() => {
+                        const cat = typeToCategory(
+                          s.memories[0]?.message_type ?? ""
+                        );
+                        return cat ? CATEGORY_COLORS[cat] : "#CED4DA";
+                      })()
+                    : "transparent",
+                  borderColor: (() => {
+                    const cat = typeToCategory(
+                      s.memories[0]?.message_type ?? ""
+                    );
+                    return cat ? CATEGORY_COLORS[cat] : "#CED4DA";
+                  })(),
+                }}
+              />
+              {s.sessionId.slice(0, 4)}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="mini-detail-list">
         {session.memories.map((m) => (
           <div className="mini-detail-row" key={m.id}>
             <span
               className="mini-detail-badge"
               style={{
-                background: (TYPE_COLORS[m.message_type] ?? "#9aa0a6") + "20",
-                color: TYPE_COLORS[m.message_type] ?? "#9aa0a6",
+                background: (TYPE_COLORS[m.message_type] ?? "#CED4DA") + "22",
+                color: TYPE_COLORS[m.message_type] ?? "#999",
               }}
             >
-              {m.message_type}
+              {typeLabel(m.message_type)}
             </span>
             <span className="mini-detail-content">
-              {m.content.slice(0, 100)}
+              {m.content.slice(0, 80)}
             </span>
-            <span className="mini-detail-time">{timeAgo(m.ts)}</span>
           </div>
         ))}
       </div>
@@ -416,76 +295,53 @@ function MiniDetailView({ session }: { session: SessionInfo }) {
   );
 }
 
-/** Bottom bar: context chips (drop target) + clear */
-function MiniContextBar({
-  dropped,
-  justDroppedId,
-  activeSessionId,
-  onTapChip,
-  onDrop,
-  onClear,
-}: {
-  dropped: SessionInfo[];
-  justDroppedId: string | null;
-  activeSessionId: string | null;
-  onTapChip: (s: SessionInfo) => void;
-  onDrop: (agent: string, sessionId: string) => void;
-  onClear: () => void;
-}) {
-  const [dragOver, setDragOver] = useState(false);
+/* ── Activity Feed ── */
 
-  function handleDragOver(e: DragEvent<HTMLDivElement>) {
-    if (e.dataTransfer.types.includes(MIME)) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "copy";
-      setDragOver(true);
-    }
-  }
-  function handleDragLeave() {
-    setDragOver(false);
-  }
-  function handleDrop(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setDragOver(false);
-    const raw = e.dataTransfer.getData(MIME);
-    if (!raw) return;
-    try {
-      const { agent, sessionId } = JSON.parse(raw);
-      onDrop(agent, sessionId);
-    } catch {
-      /* ignore */
-    }
-  }
+function MiniActivityFeed({
+  memories,
+  filterAgent,
+}: {
+  memories: Memory[];
+  filterAgent: string | null;
+}) {
+  const sorted = useMemo(() => {
+    const list = filterAgent
+      ? memories.filter((m) => m.agent === filterAgent)
+      : memories;
+    return [...list].sort(
+      (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
+    );
+  }, [memories, filterAgent]);
+
+  const items = sorted.slice(0, 40);
 
   return (
-    <div
-      className={`mini-ctxbar ${dragOver ? "dragover" : ""}`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <span className="mini-ctxbar-label">ctx</span>
-      {dropped.length === 0 && (
-        <span className="mini-ctxbar-hint">drag sessions here</span>
-      )}
-      {dropped.map((s) => {
-        const tc = sessionTypeColor(s);
-        return (
-          <div
-            key={s.sessionId}
-            className={`mini-ctxbar-chip ${justDroppedId === s.sessionId ? "pop-in" : ""} ${activeSessionId === s.sessionId ? "active" : ""}`}
-            style={{ background: tc }}
-            onClick={() => onTapChip(s)}
-            title={`${s.agent}/${s.sessionId.slice(0, 6)} · ${s.memories.length} mem`}
-          />
-        );
-      })}
-      <span className="mini-ctxbar-spacer" />
-      {dropped.length > 0 && (
-        <button className="mini-ctxbar-clear" onClick={onClear}>
-          clear
-        </button>
-      )}
+    <div className="mini-feed">
+      <div className="mini-feed-header">
+        {filterAgent ? `${filterAgent}` : "feed"}
+        <span className="mini-feed-count">{sorted.length}</span>
+      </div>
+      <div className="mini-feed-list">
+        {items.map((m) => (
+          <div className="mini-feed-row" key={m.id}>
+            <span className="mini-feed-time">{timeAgo(m.ts)}</span>
+            <span
+              className="mini-feed-dot"
+              style={{ background: agentColor(m.agent) }}
+            />
+            <span
+              className="mini-feed-type"
+              style={{ color: TYPE_COLORS[m.message_type] ?? "#999" }}
+            >
+              {typeLabel(m.message_type)}
+            </span>
+            <span className="mini-feed-content">{m.content.slice(0, 60)}</span>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="mini-empty">no activity</div>
+        )}
+      </div>
     </div>
   );
 }
@@ -495,116 +351,105 @@ function MiniContextBar({
 export function MiniRemix() {
   const { room } = useRoomContext();
   const { memories } = useRealtimeMemories(room?.id ?? null, 200);
-
-  const [droppedIds, setDroppedIds] = useState<Set<string>>(new Set());
-  const [selectedSession, setSelectedSession] = useState<SessionInfo | null>(null);
-  const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
-  const [filters, setFilters] = useState<Set<TypeCategory>>(new Set());
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
   const agentSessions = useMemo(() => buildSessions(memories), [memories]);
+  const agents = Array.from(agentSessions.entries());
 
-  const allSessions = useMemo(() => {
-    const all: SessionInfo[] = [];
-    for (const sessions of agentSessions.values()) all.push(...sessions);
-    return all;
+  const agentTypeCounts = useMemo(() => {
+    const result = new Map<string, TypeCounts>();
+    for (const [agent, sessions] of agentSessions) {
+      const c: TypeCounts = { user: 0, assistant: 0, tool: 0, other: 0 };
+      for (const s of sessions) {
+        for (const m of s.memories) {
+          const cat = typeToCategory(m.message_type);
+          if (cat) c[cat]++;
+          else c.other++;
+        }
+      }
+      result.set(agent, c);
+    }
+    return result;
   }, [agentSessions]);
 
-  const droppedSessions = useMemo(
-    () => allSessions.filter((s) => droppedIds.has(s.sessionId)),
-    [allSessions, droppedIds]
-  );
-
-  const agentCount = agentSessions.size;
-
-  const addSession = useCallback((_agent: string, sessionId: string) => {
-    setDroppedIds((prev) => {
-      if (prev.has(sessionId)) return prev;
-      const next = new Set(prev);
-      next.add(sessionId);
-      return next;
-    });
-    setJustDroppedId(sessionId);
-    setTimeout(() => setJustDroppedId(null), 500);
+  const handleTapAgent = useCallback((agent: string) => {
+    setSelectedAgent((prev) => (prev === agent ? null : agent));
   }, []);
 
-  const handleSelectSession = useCallback((s: SessionInfo) => {
-    setSelectedSession((prev) =>
-      prev?.sessionId === s.sessionId ? null : s
-    );
-  }, []);
-
-  const handleTapChip = useCallback((s: SessionInfo) => {
-    setSelectedSession(s);
-  }, []);
-
-  const handleClear = useCallback(() => {
-    setDroppedIds(new Set());
-    setSelectedSession(null);
-  }, []);
-
-  const toggleFilter = useCallback((cat: TypeCategory) => {
-    setFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
-      return next;
-    });
-  }, []);
-
-  const agents = Array.from(agentSessions.entries());
+  const selectedSessions = selectedAgent
+    ? agentSessions.get(selectedAgent) ?? []
+    : [];
 
   return (
     <div className="mini-container">
+      {/* Title bar */}
       <div className="mini-titlebar">
         <span className="mini-led" />
         <span className="mini-titlebar-name">
           {room?.name ?? room?.slug ?? "\u2014"}
         </span>
-        <MiniLegend filters={filters} onToggle={toggleFilter} />
+        <MiniLegend />
         <span className="mini-titlebar-stats">
-          {agentCount} agt · {memories.length} mem
+          {agentSessions.size}a · {memories.length}m
         </span>
       </div>
 
-      <div className="mini-body">
-        <div className="mini-left-panel">
+      {/* Content */}
+      <div className={`mini-content ${selectedAgent ? "has-detail" : ""}`}>
+        {/* Agent list */}
+        <div className="mini-agents">
           {agents.length === 0 && (
-            <div className="mini-empty">No agents yet</div>
+            <div className="mini-empty">no agents yet</div>
           )}
-          {agents.map(([agent, sessions]) => (
-            <MiniAgentRow
-              key={agent}
-              agent={agent}
-              sessions={sessions}
-              selectedSession={selectedSession}
-              contextIds={droppedIds}
-              filters={filters}
-              onSelectSession={handleSelectSession}
-            />
-          ))}
+          {agents.map(([agent, sessions]) => {
+            const counts = agentTypeCounts.get(agent)!;
+            const total =
+              counts.user + counts.assistant + counts.tool + counts.other;
+            const isActive = sessions.some((s) => s.isActive);
+            const lastTs = sessions[0]?.lastTs;
+
+            return (
+              <div
+                key={agent}
+                className={`mini-agent-row ${selectedAgent === agent ? "selected" : ""}`}
+                onClick={() => handleTapAgent(agent)}
+              >
+                <div className="mini-agent-info">
+                  <PixelCreature name={agent} size={20} />
+                  <span
+                    className="mini-agent-name"
+                    style={{ color: agentColor(agent) }}
+                  >
+                    {agent}
+                  </span>
+                  <span className="mini-agent-spacer" />
+                  <span
+                    className={`mini-status-dot ${isActive ? "active" : ""}`}
+                  />
+                  <span className="mini-agent-meta">
+                    {sessions.length}s · {total}m ·{" "}
+                    {lastTs ? timeAgo(lastTs) : "\u2014"}
+                  </span>
+                </div>
+                <MiniActivityBar counts={counts} />
+              </div>
+            );
+          })}
         </div>
 
-        <div className="mini-divider" />
+        {/* Detail panel (when agent tapped) */}
+        {selectedAgent && selectedSessions.length > 0 && (
+          <MiniDetailPanel
+            agent={selectedAgent}
+            sessions={selectedSessions}
+          />
+        )}
 
-        <div className="mini-right-panel">
-          {selectedSession ? (
-            <MiniDetailView session={selectedSession} />
-          ) : (
-            <div className="mini-empty-detail">
-              click a session to preview
-            </div>
-          )}
-        </div>
+        {/* Activity feed (when no agent selected) */}
+        {!selectedAgent && (
+          <MiniActivityFeed memories={memories} filterAgent={null} />
+        )}
       </div>
-
-      <MiniContextBar
-        dropped={droppedSessions}
-        justDroppedId={justDroppedId}
-        activeSessionId={selectedSession?.sessionId ?? null}
-        onTapChip={handleTapChip}
-        onDrop={addSession}
-        onClear={handleClear}
-      />
     </div>
   );
 }

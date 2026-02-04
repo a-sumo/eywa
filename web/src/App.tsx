@@ -10,6 +10,7 @@ import { AgentDetail } from "./components/AgentDetail";
 import { Chat } from "./components/Chat";
 import { MiniRemix } from "./components/MiniRemix";
 import { LayoutAgentDemo } from "./components/LayoutAgentDemo";
+import { CLIAuth } from "./components/CLIAuth";
 import "./App.css";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/cli-auth" element={<CLIAuth />} />
         <Route path="/r/:slug/*" element={<RoomRoutes />} />
       </Routes>
     </BrowserRouter>

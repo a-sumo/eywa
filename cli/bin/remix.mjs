@@ -1,26 +1,51 @@
 #!/usr/bin/env node
 
 import { createClient } from "@supabase/supabase-js";
+import { createServer } from "node:http";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { exec } from "node:child_process";
 
-// ── Early help check (no env vars needed) ───────────────
+// ── Config file (~/.remix/config.json) ──────────────────
 
-const earlyCmd = process.argv[2];
-if (!earlyCmd || earlyCmd === "help" || earlyCmd === "--help" || earlyCmd === "-h") {
-  // Will be handled below after usage() is defined — just set a flag
-  globalThis.__showHelp = true;
+const CONFIG_DIR = join(homedir(), ".remix");
+const CONFIG_FILE = join(CONFIG_DIR, "config.json");
+
+function loadConfig() {
+  try {
+    if (existsSync(CONFIG_FILE)) {
+      return JSON.parse(readFileSync(CONFIG_FILE, "utf-8"));
+    }
+  } catch { /* ignore */ }
+  return {};
 }
 
-// ── Config ──────────────────────────────────────────────
+function saveConfig(cfg) {
+  mkdirSync(CONFIG_DIR, { recursive: true });
+  writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2) + "\n");
+}
 
-const SUPABASE_URL = process.env.REMIX_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.REMIX_SUPABASE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+// ── Early help/login check (no env vars needed) ─────────
+
+const earlyCmd = process.argv[2];
+if (!earlyCmd || earlyCmd === "help" || earlyCmd === "--help" || earlyCmd === "-h" || earlyCmd === "login") {
+  globalThis.__skipInit = true;
+}
+
+// ── Config resolution: config file → env vars ───────────
+
+const savedConfig = loadConfig();
+const SUPABASE_URL = process.env.REMIX_SUPABASE_URL || process.env.VITE_SUPABASE_URL || savedConfig.supabaseUrl;
+const SUPABASE_KEY = process.env.REMIX_SUPABASE_KEY || process.env.VITE_SUPABASE_ANON_KEY || savedConfig.supabaseKey;
+const DEFAULT_ROOM = savedConfig.room || null;
 
 let supabase;
-if (!globalThis.__showHelp) {
+if (!globalThis.__skipInit) {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.error(
-      "Missing env vars. Set REMIX_SUPABASE_URL and REMIX_SUPABASE_KEY\n" +
-      "(or VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY)."
+      "Not logged in. Run " + bold("remix login") + " first.\n" +
+      "Or set REMIX_SUPABASE_URL and REMIX_SUPABASE_KEY."
     );
     process.exit(1);
   }
@@ -46,7 +71,13 @@ function yellow(s) { return `\x1b[33m${s}\x1b[0m`; }
 function red(s) { return `\x1b[31m${s}\x1b[0m`; }
 function cyan(s) { return `\x1b[36m${s}\x1b[0m`; }
 
-async function resolveRoom(slug) {
+async function resolveRoom(slugArg) {
+  const slug = slugArg || DEFAULT_ROOM;
+  if (!slug) {
+    console.error("No room specified. Run " + bold("remix login") + " or pass a room slug.");
+    process.exit(1);
+  }
+
   const { data, error } = await supabase
     .from("rooms")
     .select("id,name,slug")
@@ -244,6 +275,132 @@ async function cmdLearn(roomSlug, fromAgent, content, title, tags) {
   console.log(green(`✓ Knowledge stored${title ? `: "${title}"` : ""}`));
 }
 
+async function cmdLogin() {
+  const PORT = 19876;
+
+  console.log(bold("\n  Remix Login\n"));
+  console.log(dim("  Opening browser...\n"));
+
+  return new Promise((resolve, reject) => {
+    const server = createServer((req, res) => {
+      // CORS headers for the web app
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+      if (req.method === "OPTIONS") {
+        res.writeHead(200);
+        res.end();
+        return;
+      }
+
+      if (req.method === "POST" && req.url === "/callback") {
+        let body = "";
+        req.on("data", (chunk) => { body += chunk; });
+        req.on("end", () => {
+          try {
+            const data = JSON.parse(body);
+            const { supabaseUrl, supabaseKey, room } = data;
+
+            if (!supabaseUrl || !supabaseKey || !room) {
+              res.writeHead(400);
+              res.end(JSON.stringify({ error: "Missing fields" }));
+              return;
+            }
+
+            // Save config
+            saveConfig({ supabaseUrl, supabaseKey, room });
+
+            res.writeHead(200);
+            res.end(JSON.stringify({ ok: true }));
+
+            console.log(green("  ✓ Logged in!"));
+            console.log(`  Room: ${bold("/" + room)}`);
+            console.log(`  Config saved to ${dim(CONFIG_FILE)}`);
+            console.log(`\n  Try: ${cyan("remix status")}\n`);
+
+            server.close();
+            resolve();
+          } catch (err) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "Invalid JSON" }));
+          }
+        });
+        return;
+      }
+
+      res.writeHead(404);
+      res.end("Not found");
+    });
+
+    server.listen(PORT, () => {
+      const authUrl = `https://remix-memory.vercel.app/cli-auth?port=${PORT}`;
+
+      // Open browser (cross-platform)
+      const cmd = process.platform === "darwin" ? "open" :
+                  process.platform === "win32" ? "start" : "xdg-open";
+      exec(`${cmd} "${authUrl}"`);
+
+      console.log(`  If browser didn't open, visit:`);
+      console.log(`  ${cyan(authUrl)}\n`);
+      console.log(dim("  Waiting for authorization...\n"));
+    });
+
+    // Timeout after 2 minutes
+    setTimeout(() => {
+      console.error(red("\n  Timed out waiting for authorization."));
+      server.close();
+      reject(new Error("Timeout"));
+    }, 120_000);
+  });
+}
+
+async function cmdInit(slugArg, nameArg) {
+  const adjectives = ["cosmic", "lunar", "solar", "stellar", "quantum", "neural", "cyber", "astral"];
+  const nouns = ["fox", "owl", "wolf", "hawk", "bear", "lynx", "raven", "phoenix"];
+
+  function randomSlug() {
+    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const code = Math.random().toString(36).substring(2, 6);
+    return `${adj}-${noun}-${code}`;
+  }
+
+  const slug = slugArg || randomSlug();
+  const name = nameArg || slug.split("-").slice(0, 2).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
+  // Check if room already exists
+  const { data: existing } = await supabase
+    .from("rooms")
+    .select("id,slug,name")
+    .eq("slug", slug)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    console.log(yellow(`Room /${slug} already exists: "${existing.name}"`));
+    console.log(`\n  Dashboard: ${dim("https://remix-memory.vercel.app/r/" + slug)}`);
+    console.log(`  Connect:   ${dim(`claude mcp add --transport http remix "https://remix-mcp.armandsumo.workers.dev/mcp?room=${slug}&agent=YOUR_NAME"`)}`);
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("rooms")
+    .insert({ slug, name, is_demo: false })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(red("Failed to create room:"), error.message);
+    process.exit(1);
+  }
+
+  console.log(green(`✓ Room created: ${bold(name)} /${slug}`));
+  console.log(`\n  Dashboard: ${cyan("https://remix-memory.vercel.app/r/" + slug)}`);
+  console.log(`  Connect:   ${dim(`claude mcp add --transport http remix "https://remix-mcp.armandsumo.workers.dev/mcp?room=${slug}&agent=YOUR_NAME"`)}`);
+  console.log();
+}
+
 // ── CLI Router ──────────────────────────────────────────
 
 const args = process.argv.slice(2);
@@ -254,60 +411,99 @@ function usage() {
 ${bold("remix")} — CLI for Remix shared agent memory
 
 ${bold("Usage:")}
-  remix status <room>                          Show agent status
-  remix pull <room> <agent> [limit]            Pull agent context
-  remix log <room> [limit]                     Recent activity feed
-  remix inject <room> <from> <target> <msg>    Inject context to agent
-  remix knowledge <room> [search]              Browse knowledge base
-  remix learn <room> <agent> <content> [--title T] [--tags t1,t2]
+  remix login                                  Log in via browser (saves config)
+  remix init [slug] [name]                     Create a new room
+  remix status [room]                          Show agent status
+  remix pull [room] <agent> [limit]            Pull agent context
+  remix log [room] [limit]                     Recent activity feed
+  remix inject [room] <from> <target> <msg>    Inject context to agent
+  remix knowledge [room] [search]              Browse knowledge base
+  remix learn [room] <agent> <content> [--title T] [--tags t1,t2]
 
-${bold("Environment:")}
-  REMIX_SUPABASE_URL   Supabase project URL
-  REMIX_SUPABASE_KEY   Supabase anon/service key
+  Room argument is optional after ${bold("remix login")} (uses saved room).
 
 ${bold("Examples:")}
-  remix status my-project
-  remix pull my-project agent-alpha 10
-  remix inject my-project user agent-beta "Focus on the auth module"
-  remix knowledge my-project "api pattern"
-  remix learn my-project user "We use camelCase" --title "Naming" --tags convention
+  remix login                                  Open browser, pick room, done
+  remix status                                 Status for your logged-in room
+  remix status my-project                      Status for a specific room
+  remix pull agent-alpha 10                    Pull context (room from config)
+  remix inject user agent-beta "Focus on auth"
+  remix knowledge "api pattern"
+  remix learn user "We use camelCase" --title "Naming" --tags convention
 `);
 }
 
 (async () => {
   try {
     switch (command) {
+      case "login":
+        await cmdLogin();
+        break;
+
+      case "init":
+        // init needs supabase too
+        if (!supabase) {
+          if (SUPABASE_URL && SUPABASE_KEY) {
+            supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+          } else {
+            console.error("Run " + bold("remix login") + " first.");
+            process.exit(1);
+          }
+        }
+        await cmdInit(args[1], args[2]);
+        break;
+
       case "status":
-        if (!args[1]) { console.error("Usage: remix status <room>"); process.exit(1); }
         await cmdStatus(args[1]);
         break;
 
-      case "pull":
-        if (!args[1] || !args[2]) { console.error("Usage: remix pull <room> <agent> [limit]"); process.exit(1); }
-        await cmdPull(args[1], args[2], parseInt(args[3]) || 20);
+      case "pull": {
+        if (!args[1]) { console.error("Usage: remix pull [room] <agent> [limit]"); process.exit(1); }
+        let pullRoom, pullAgent, pullLimit = 20;
+        if (args.length >= 4) {
+          pullRoom = args[1]; pullAgent = args[2]; pullLimit = parseInt(args[3]) || 20;
+        } else if (args.length === 3) {
+          if (/^\d+$/.test(args[2])) {
+            pullAgent = args[1]; pullLimit = parseInt(args[2]) || 20;
+          } else {
+            pullRoom = args[1]; pullAgent = args[2];
+          }
+        } else {
+          pullAgent = args[1];
+        }
+        if (!pullAgent) { console.error("Usage: remix pull [room] <agent> [limit]"); process.exit(1); }
+        await cmdPull(pullRoom, pullAgent, pullLimit);
         break;
+      }
 
       case "log":
-        if (!args[1]) { console.error("Usage: remix log <room>"); process.exit(1); }
         await cmdLog(args[1], parseInt(args[2]) || 30);
         break;
 
       case "inject":
-        if (!args[1] || !args[2] || !args[3] || !args[4]) {
+        if (!args[1] || !args[2] || !args[3]) {
+          console.error("Usage: remix inject [room] <from> <target> <message>");
+          process.exit(1);
+        }
+        // If 4+ args: room from target message...
+        // If 3 args and we have a default room: from target message
+        if (args[4]) {
+          await cmdInject(args[1], args[2], args[3], args.slice(4).join(" "));
+        } else if (DEFAULT_ROOM) {
+          await cmdInject(DEFAULT_ROOM, args[1], args[2], args.slice(3).join(" "));
+        } else {
           console.error("Usage: remix inject <room> <from> <target> <message>");
           process.exit(1);
         }
-        await cmdInject(args[1], args[2], args[3], args.slice(4).join(" "));
         break;
 
       case "knowledge":
-        if (!args[1]) { console.error("Usage: remix knowledge <room> [search]"); process.exit(1); }
         await cmdKnowledge(args[1], args[2]);
         break;
 
       case "learn": {
-        if (!args[1] || !args[2] || !args[3]) {
-          console.error("Usage: remix learn <room> <agent> <content> [--title T] [--tags t1,t2]");
+        if (!args[1] || !args[2]) {
+          console.error("Usage: remix learn [room] <agent> <content> [--title T] [--tags t1,t2]");
           process.exit(1);
         }
         // Parse --title and --tags flags
