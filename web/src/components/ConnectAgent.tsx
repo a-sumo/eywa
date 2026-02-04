@@ -13,7 +13,7 @@ function getConfig(client: Client, slug: string, agent: string): string {
 
   switch (client) {
     case "claude":
-      return `claude mcp add neuralmesh --url "${url}"`;
+      return `claude mcp add --transport http neuralmesh "${url}"`;
     case "cursor":
       return JSON.stringify(
         {
