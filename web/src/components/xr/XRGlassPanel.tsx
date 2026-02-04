@@ -14,7 +14,7 @@ interface XRGlassPanelProps {
   facingAngle: number;
 }
 
-const FONT_URL = "/fonts/JetBrainsMono-Regular.woff2";
+const FONT_URL = "/fonts/JetBrainsMono-Regular.ttf";
 
 export function XRGlassPanel({
   position,
@@ -47,21 +47,35 @@ export function XRGlassPanel({
 
   return (
     <group position={scaledPos} rotation={[rotation[0], rotation[1], rotation[2]]}>
-      {/* Glass body */}
+      {/* Glass body — solid colored panel, visible on any background */}
       <RoundedBox
         args={[scaledW, scaledH, depth]}
         radius={0.01}
         smoothness={4}
       >
-        <meshPhysicalMaterial
-          transmission={facingAway ? 0.3 : 0.92}
-          roughness={0.05}
-          thickness={0.5}
-          color={facingAway ? "#333" : color}
-          opacity={facingAway ? 0.08 : isFocus ? 0.22 : 0.12}
+        <meshStandardMaterial
+          color={facingAway ? "#1a1a2e" : color}
           transparent
+          opacity={facingAway ? 0.15 : isFocus ? 0.35 : 0.2}
           side={THREE.DoubleSide}
-          envMapIntensity={0.5}
+          roughness={0.3}
+          metalness={0.1}
+        />
+      </RoundedBox>
+
+      {/* Specular gloss overlay */}
+      <RoundedBox
+        args={[scaledW - 0.002, scaledH - 0.002, depth + 0.001]}
+        radius={0.01}
+        smoothness={4}
+      >
+        <meshStandardMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.04}
+          side={THREE.FrontSide}
+          roughness={0.0}
+          metalness={0.8}
         />
       </RoundedBox>
 
@@ -71,7 +85,7 @@ export function XRGlassPanel({
         <meshBasicMaterial
           color={facingAway ? "#444" : color}
           transparent
-          opacity={isFocus ? 0.6 : 0.3}
+          opacity={isFocus ? 0.7 : 0.4}
           wireframe
         />
       </mesh>
@@ -83,7 +97,7 @@ export function XRGlassPanel({
           <meshBasicMaterial
             color="#44ffaa"
             transparent
-            opacity={0.35}
+            opacity={0.4}
             wireframe
           />
         </mesh>
@@ -96,7 +110,7 @@ export function XRGlassPanel({
           <meshBasicMaterial
             color="#44ff88"
             transparent
-            opacity={0.5}
+            opacity={0.55}
             wireframe
           />
         </mesh>
@@ -115,7 +129,6 @@ export function XRGlassPanel({
             anchorY="top"
             maxWidth={scaledW * 0.9}
             fillOpacity={0.95 * readAlpha}
-            fontWeight="bold"
           >
             {title}
           </Text>
@@ -170,7 +183,6 @@ export function XRGlassPanel({
           anchorX="right"
           anchorY="bottom"
           fillOpacity={0.8 * readAlpha}
-          fontWeight="bold"
         >
           {`${facingAngle.toFixed(0)}°`}
         </Text>

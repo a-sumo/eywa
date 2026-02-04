@@ -13,7 +13,7 @@ interface XRHUDProps {
   aiResult?: GestureAgentResult | null;
 }
 
-const FONT_URL = "/fonts/JetBrainsMono-Regular.woff2";
+const FONT_URL = "/fonts/JetBrainsMono-Regular.ttf";
 
 /**
  * Head-locked HUD for step info, mode indicator, and AI status.

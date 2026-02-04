@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { createXRStore, XR, XROrigin } from "@react-three/xr";
-import { Environment } from "@react-three/drei";
+import { OrbitControls, Grid } from "@react-three/drei";
 
 import {
   computeFocusLayout,
@@ -14,6 +14,7 @@ import {
   PANEL_LABELS,
   PANEL_COLORS,
   PANEL_TEXT,
+  PANEL_HEIGHT,
   VIEWPORT,
   TIMELINE,
   AR_SCALE,
@@ -28,10 +29,10 @@ import { XRHandModel } from "./xr/XRHandModel";
 import { XRGestureArrows } from "./xr/XRGestureArrows";
 import { XRHUD } from "./xr/XRHUD";
 
-// ---- XR store ----
+// ---- XR store (no emulation on production) ----
 
 const xrStore = createXRStore({
-  emulate: "metaQuest3",
+  emulate: false,
   foveation: 1,
   frameRate: "high",
 });
@@ -78,8 +79,13 @@ function Scene({
   aiResult,
   onGestureDetected,
 }: SceneProps) {
-  // Camera position for facing computation (in demo units, pre-scale)
-  const camPos: Vec3 = [0, 0, 8 / AR_SCALE]; // approx viewer distance in demo units
+  const { camera } = useThree();
+
+  // Camera position for facing computation — use actual camera pos, convert back from AR scale
+  const camPos: Vec3 = useMemo(() => {
+    const p = camera.position;
+    return [p.x / AR_SCALE, p.y / AR_SCALE, p.z / AR_SCALE];
+  }, [camera.position]);
 
   // XR gesture tracking for AI mode
   const panelPositions = useMemo(
@@ -98,9 +104,22 @@ function Scene({
   return (
     <>
       {/* Lighting */}
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[2, 3, 5]} intensity={0.6} />
-      <Environment preset="city" />
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[2, 4, 5]} intensity={0.8} />
+      <directionalLight position={[-3, 2, -2]} intensity={0.3} color="#4488ff" />
+
+      {/* Grid floor */}
+      <Grid
+        position={[0, -PANEL_HEIGHT * AR_SCALE * 0.55, 0]}
+        args={[10, 10]}
+        cellSize={0.2}
+        cellColor="#1a1a30"
+        sectionSize={1}
+        sectionColor="#2a2a4a"
+        fadeDistance={5}
+        fadeStrength={1}
+        infiniteGrid
+      />
 
       {/* Sweet spot ring */}
       <XRSweetSpot />
@@ -140,6 +159,15 @@ function Scene({
         aiLoading={aiLoading}
         aiResult={aiResult}
       />
+
+      {/* Orbit controls for non-XR desktop viewing */}
+      <OrbitControls
+        target={[0, 0, -0.5]}
+        enableDamping
+        dampingFactor={0.1}
+        minDistance={0.5}
+        maxDistance={5}
+      />
     </>
   );
 }
@@ -152,8 +180,19 @@ export function LayoutAgentXR() {
   const [playing, setPlaying] = useState(false);
   const prevLayoutRef = useRef<PanelLayout[] | null>(null);
   const animRef = useRef(0);
+  const [xrSupported, setXrSupported] = useState(false);
+  const [xrError, setXrError] = useState<string | null>(null);
 
   const [aiFocus, setAiFocus] = useState(1);
+
+  // Check WebXR support
+  useEffect(() => {
+    if (navigator.xr) {
+      navigator.xr.isSessionSupported("immersive-ar").then(supported => {
+        setXrSupported(supported);
+      }).catch(() => setXrSupported(false));
+    }
+  }, []);
 
   const step = TIMELINE[stepIdx];
   const effectiveFocus = mode === "ai" ? aiFocus : step.focus;
@@ -238,7 +277,6 @@ export function LayoutAgentXR() {
           if (targetPanel !== null) setAiFocus(targetPanel);
           break;
         case "grab":
-          // Predict drop target: next panel in workflow
           if (targetPanel !== null) {
             const dropTarget = (targetPanel + 1) % 3;
             setAiFocus(dropTarget);
@@ -248,31 +286,49 @@ export function LayoutAgentXR() {
           if (targetPanel !== null) setAiFocus(targetPanel);
           break;
         case "push":
-          setAiFocus(1); // return to Context
+          setAiFocus(1);
           break;
       }
     },
     [mode],
   );
 
+  const handleEnterAR = useCallback(async () => {
+    setXrError(null);
+    try {
+      await xrStore.enterAR();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to enter AR";
+      setXrError(msg);
+      console.warn("[XR]", msg);
+    }
+  }, []);
+
   return (
     <div style={styles.container}>
-      {/* Overlay UI (visible in non-XR mode) */}
+      {/* Overlay UI */}
       <div style={styles.overlay}>
         <div style={styles.header}>
           <h2 style={styles.title}>Layout Agent XR</h2>
           <p style={styles.subtitle}>
-            Immersive AR demo — use hand tracking to control panel layout
+            Immersive AR demo — use hand tracking to control panel layout.
+            {!xrSupported && " Orbit with mouse on desktop."}
           </p>
         </div>
 
         <div style={styles.controls}>
-          <button
-            onClick={() => xrStore.enterAR()}
-            style={{ ...styles.btn, ...styles.btnAR }}
-          >
-            Enter AR
-          </button>
+          {xrSupported && (
+            <button
+              onClick={handleEnterAR}
+              style={{ ...styles.btn, ...styles.btnAR }}
+            >
+              Enter AR
+            </button>
+          )}
+
+          {xrError && (
+            <span style={{ color: "#ff6666", fontSize: "0.75rem" }}>{xrError}</span>
+          )}
 
           <div style={styles.modeToggle}>
             <button
@@ -332,9 +388,10 @@ export function LayoutAgentXR() {
       {/* 3D Canvas */}
       <Canvas
         style={styles.canvas}
-        camera={{ position: [0, 0.3, 2], fov: 60 }}
-        gl={{ antialias: true, alpha: true }}
+        camera={{ position: [0, 0.3, 2], fov: 60, near: 0.01, far: 100 }}
       >
+        <color attach="background" args={["#0a0a18"]} />
+        <fog attach="fog" args={["#0a0a18", 3, 8]} />
         <XR store={xrStore}>
           <XROrigin>
             <Scene

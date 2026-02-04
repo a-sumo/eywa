@@ -9,7 +9,7 @@ interface XRGestureArrowsProps {
   panels: PanelLayout[];
 }
 
-const FONT_URL = "/fonts/JetBrainsMono-Regular.woff2";
+const FONT_URL = "/fonts/JetBrainsMono-Regular.ttf";
 
 /**
  * 3D arrows showing pull/push gesture direction + grab indicator.

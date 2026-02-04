@@ -1,6 +1,6 @@
 import { Text } from "@react-three/drei";
 
-const FONT_URL = "/fonts/JetBrainsMono-Regular.woff2";
+const FONT_URL = "/fonts/JetBrainsMono-Regular.ttf";
 
 /**
  * 3D torus ring marking the optimal reading zone in AR space.
