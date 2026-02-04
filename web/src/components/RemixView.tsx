@@ -15,6 +15,38 @@ function agentColor(name: string): string {
   return `hsl(${hue}, 55%, 45%)`;
 }
 
+function timeAgo(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+function shortSessionId(sessionId: string): string {
+  // Strip "session_" prefix if present, show first 13 chars (date portion)
+  const stripped = sessionId.replace(/^session_/, "");
+  return stripped.length > 13 ? stripped.slice(0, 13) : stripped;
+}
+
+function shortTimestamp(ts: string): string {
+  const d = new Date(ts);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  if (sameDay) {
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+type GroupMode = "agent" | "session" | "timeline";
+
 interface ThreadGroup {
   agent: string;
   sessionId: string;
@@ -36,6 +68,9 @@ export function RemixView() {
 
   // Search filter for source panel
   const [search, setSearch] = useState("");
+
+  // Group mode for browse panel
+  const [groupMode, setGroupMode] = useState<GroupMode>("session");
 
   // Expanded threads in source panel
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(
@@ -91,18 +126,60 @@ export function RemixView() {
       });
     }
 
+    // Filter out connection-only threads (all memories are agent_connected)
+    const filtered = groups.filter(
+      (g) =>
+        !g.memories.every(
+          (m) => (m.metadata as Record<string, unknown>)?.event === "agent_connected"
+        )
+    );
+
     // Filter by search
     if (search.trim()) {
       const q = search.toLowerCase();
-      return groups.filter(
+      return filtered.filter(
         (g) =>
           g.agent.toLowerCase().includes(q) ||
           g.memories.some((m) => m.content?.toLowerCase().includes(q))
       );
     }
 
-    return groups;
+    return filtered;
   }, [memories, search]);
+
+  // Grouped data based on groupMode
+  const displayGroups = useMemo(() => {
+    if (groupMode === "agent") {
+      // Merge all sessions from same agent into one group
+      const agentMap = new Map<string, ThreadGroup>();
+      for (const g of threadGroups) {
+        const existing = agentMap.get(g.agent);
+        if (existing) {
+          existing.memories = [...existing.memories, ...g.memories].sort(
+            (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime()
+          );
+        } else {
+          agentMap.set(g.agent, {
+            agent: g.agent,
+            sessionId: g.sessionId,
+            memories: [...g.memories],
+          });
+        }
+      }
+      return Array.from(agentMap.values());
+    }
+    // "session" mode = current default
+    return threadGroups;
+  }, [threadGroups, groupMode]);
+
+  // Flat timeline: all memories sorted chronologically
+  const timelineMemories = useMemo(() => {
+    if (groupMode !== "timeline") return [];
+    const all = threadGroups.flatMap((g) => g.memories);
+    return all.sort(
+      (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime()
+    );
+  }, [threadGroups, groupMode]);
 
   const contextMemories = memories.filter((m) => contextIds.includes(m.id));
 
@@ -277,6 +354,17 @@ export function RemixView() {
         {/* Source Panel - browse all memories */}
         <div className="remix-source-panel">
           <h3>Browse Memories</h3>
+          <div className="browse-group-toggle">
+            {(["agent", "session", "timeline"] as const).map((mode) => (
+              <button
+                key={mode}
+                className={`browse-group-btn ${groupMode === mode ? "browse-group-active" : ""}`}
+                onClick={() => setGroupMode(mode)}
+              >
+                {mode.charAt(0).toUpperCase() + mode.slice(1)}
+              </button>
+            ))}
+          </div>
           <input
             className="remix-search"
             placeholder="Search memories..."
@@ -284,65 +372,119 @@ export function RemixView() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="remix-source-list">
-            {threadGroups.map((group) => {
-              const key = `${group.agent}::${group.sessionId}`;
-              const isExpanded = expandedThreads.has(key);
-              return (
-                <div key={key} className="remix-source-thread">
+            {groupMode === "timeline" ? (
+              <>
+                {timelineMemories.map((m) => (
                   <div
-                    className="remix-source-thread-label"
-                    onClick={() => toggleThread(key)}
-                    style={{ color: agentColor(group.agent) }}
+                    key={m.id}
+                    className="timeline-row"
+                    onClick={() => addMemory(m.id)}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(
+                        "application/remix-memory",
+                        JSON.stringify({ id: m.id })
+                      );
+                      e.dataTransfer.effectAllowed = "copy";
+                    }}
                   >
-                    <span
-                      className={`remix-source-thread-toggle ${isExpanded ? "expanded" : ""}`}
-                    >
-                      &#9654;
+                    <span className="timeline-time">
+                      {shortTimestamp(m.ts)}
                     </span>
-                    <span>{group.agent}</span>
-                    <span className="remix-source-thread-count">
-                      {group.memories.length} mem
+                    <span
+                      className="timeline-dot"
+                      style={{ background: agentColor(m.agent) }}
+                    />
+                    <span className="timeline-agent">{m.agent}</span>
+                    <span className="timeline-content">
+                      {(m.content || "").slice(0, 80)}
                     </span>
                   </div>
-
-                  {isExpanded && (
-                    <div className="remix-source-memories">
-                      <button
-                        className="btn-remix-new"
-                        style={{
-                          marginBottom: "0.35rem",
-                          fontSize: "0.75rem",
-                          padding: "0.3rem 0.6rem",
-                        }}
-                        onClick={() =>
-                          addThread(group.agent, group.sessionId)
-                        }
+                ))}
+                {timelineMemories.length === 0 && (
+                  <p className="empty">No memories found.</p>
+                )}
+              </>
+            ) : (
+              <>
+                {displayGroups.map((group) => {
+                  const key =
+                    groupMode === "agent"
+                      ? group.agent
+                      : `${group.agent}::${group.sessionId}`;
+                  const isExpanded = expandedThreads.has(key);
+                  const latestTs =
+                    group.memories[group.memories.length - 1]?.ts;
+                  return (
+                    <div key={key} className="remix-source-thread">
+                      <div
+                        className="remix-source-thread-label"
+                        onClick={() => toggleThread(key)}
                       >
-                        + Add entire thread
-                      </button>
-                      {group.memories.map((m) => (
-                        <MemoryCard
-                          key={m.id}
-                          memory={m}
-                          compact
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData(
-                              "application/remix-memory",
-                              JSON.stringify({ id: m.id })
-                            );
-                            e.dataTransfer.effectAllowed = "copy";
-                          }}
-                          onPull={() => addMemory(m.id)}
-                        />
-                      ))}
+                        <span
+                          className={`remix-source-thread-toggle ${isExpanded ? "expanded" : ""}`}
+                        >
+                          &#9654;
+                        </span>
+                        <span style={{ color: agentColor(group.agent) }}>
+                          {group.agent}
+                        </span>
+                        {groupMode === "session" && (
+                          <span className="remix-source-thread-session">
+                            / {shortSessionId(group.sessionId)}
+                          </span>
+                        )}
+                        <span className="remix-source-thread-count">
+                          {group.memories.length} mem
+                        </span>
+                        {latestTs && (
+                          <span className="remix-source-thread-time">
+                            {timeAgo(latestTs)}
+                          </span>
+                        )}
+                      </div>
+
+                      {isExpanded && (
+                        <div className="remix-source-memories">
+                          <button
+                            className="btn-remix-new"
+                            style={{
+                              marginBottom: "0.35rem",
+                              fontSize: "0.75rem",
+                              padding: "0.3rem 0.6rem",
+                            }}
+                            onClick={() =>
+                              addThread(group.agent, group.sessionId)
+                            }
+                          >
+                            + Add entire thread
+                          </button>
+                          {group.memories.map((m) => (
+                            <MemoryCard
+                              key={m.id}
+                              memory={m}
+                              compact
+                              hideAgent
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData(
+                                  "application/remix-memory",
+                                  JSON.stringify({ id: m.id })
+                                );
+                                e.dataTransfer.effectAllowed = "copy";
+                              }}
+                              onPull={() => addMemory(m.id)}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-            {threadGroups.length === 0 && (
-              <p className="empty">No memories found.</p>
+                  );
+                })}
+                {displayGroups.length === 0 && (
+                  <p className="empty">No memories found.</p>
+                )}
+              </>
             )}
           </div>
         </div>

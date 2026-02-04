@@ -78,16 +78,28 @@ async function handleMcp(
     sessionId,
   };
 
-  // Log agent connection
-  await db.insert("memories", {
-    room_id: ctx.roomId,
-    agent: ctx.agent,
-    session_id: ctx.sessionId,
-    message_type: "resource",
-    content: `Agent ${ctx.agent} connected to room ${ctx.roomName}`,
-    token_count: 0,
-    metadata: { event: "agent_connected", room_slug: ctx.roomSlug },
+  // Log agent connection — deduplicate within 5 minutes
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const recentConnections = await db.select("memories", {
+    select: "id",
+    room_id: `eq.${ctx.roomId}`,
+    agent: `eq.${ctx.agent}`,
+    "metadata->>event": "eq.agent_connected",
+    ts: `gte.${fiveMinAgo}`,
+    limit: "1",
   });
+
+  if (recentConnections.length === 0) {
+    await db.insert("memories", {
+      room_id: ctx.roomId,
+      agent: ctx.agent,
+      session_id: ctx.sessionId,
+      message_type: "resource",
+      content: `Agent ${ctx.agent} connected to room ${ctx.roomName}`,
+      token_count: 0,
+      metadata: { event: "agent_connected", room_slug: ctx.roomSlug },
+    });
+  }
 
   // Create MCP server and register all tools
   const server = new McpServer({ name: "remix", version: "1.0.0" });

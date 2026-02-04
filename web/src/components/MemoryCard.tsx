@@ -14,6 +14,19 @@ function formatTime(ts: string): string {
   return new Date(ts).toLocaleString();
 }
 
+function shortTime(ts: string): string {
+  const d = new Date(ts);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  if (sameDay) {
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 function badgeClass(type: string): string {
   switch (type) {
     case "user":
@@ -34,6 +47,7 @@ interface MemoryCardProps {
   memory: Memory;
   onPull?: (memory: Memory) => void;
   compact?: boolean;
+  hideAgent?: boolean;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
 }
@@ -42,12 +56,13 @@ export function MemoryCard({
   memory,
   onPull,
   compact,
+  hideAgent,
   draggable: isDraggable,
   onDragStart,
 }: MemoryCardProps) {
   const [expanded, setExpanded] = useState(false);
   const content = memory.content || "";
-  const truncateLen = compact ? 120 : 300;
+  const truncateLen = compact ? 80 : 300;
   const isLong = content.length > truncateLen;
 
   return (
@@ -73,19 +88,25 @@ export function MemoryCard({
         }
       }}
     >
-      {isDraggable && <span className="drag-handle">&#8801;</span>}
+      {isDraggable && !compact && (
+        <span className="drag-handle">&#8801;</span>
+      )}
       <div className="memory-card-body">
         <div className="memory-header">
-          <span
-            className="agent-tag"
-            style={{ color: agentColor(memory.agent) }}
-          >
-            {memory.agent}
-          </span>
+          {!hideAgent && (
+            <span
+              className="agent-tag"
+              style={{ color: agentColor(memory.agent) }}
+            >
+              {memory.agent}
+            </span>
+          )}
           <span className={`badge ${badgeClass(memory.message_type)}`}>
             {memory.message_type}
           </span>
-          {!compact && (
+          {compact ? (
+            <span className="memory-time">{shortTime(memory.ts)}</span>
+          ) : (
             <span className="memory-time">{formatTime(memory.ts)}</span>
           )}
           {compact && onPull && (
