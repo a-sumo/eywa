@@ -111,6 +111,63 @@ export function registerMemoryTools(
   );
 
   server.tool(
+    "eywa_import",
+    "Bulk-import a conversation transcript into Remix. Use this to upload an existing session's history.",
+    {
+      messages: z
+        .array(
+          z.object({
+            role: z.string().describe("Role: user, assistant, tool_call, tool_result"),
+            content: z.string().describe("Message content"),
+          }),
+        )
+        .describe("Array of messages from the conversation"),
+      task_description: z
+        .string()
+        .optional()
+        .describe("Brief description of what this session was about"),
+    },
+    async ({ messages, task_description }) => {
+      // Log session start
+      if (task_description) {
+        await db.insert("memories", {
+          room_id: ctx.roomId,
+          agent: ctx.agent,
+          session_id: ctx.sessionId,
+          message_type: "resource",
+          content: `SESSION START: ${task_description}`,
+          token_count: estimateTokens(task_description),
+          metadata: { event: "session_start", task: task_description, imported: true },
+        });
+      }
+
+      // Insert each message
+      let count = 0;
+      for (const msg of messages) {
+        await db.insert("memories", {
+          room_id: ctx.roomId,
+          agent: ctx.agent,
+          session_id: ctx.sessionId,
+          message_type: msg.role,
+          content: msg.content,
+          token_count: estimateTokens(msg.content),
+          metadata: { imported: true },
+        });
+        count++;
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Imported ${count} messages into Remix [${ctx.agent}:${ctx.sessionId}]${task_description ? `\nTask: ${task_description}` : ""}`,
+          },
+        ],
+      };
+    },
+  );
+
+  server.tool(
     "eywa_search",
     "Search Eywa for messages containing a query string.",
     {

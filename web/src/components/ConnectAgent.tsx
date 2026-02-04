@@ -59,6 +59,8 @@ function getHint(client: Client): string {
   }
 }
 
+const QUICK_START_PROMPT = `Start logging to Remix. Call eywa_start with a description of what we're working on, then use eywa_import to upload a summary of our conversation so far. After that, periodically call eywa_log for important exchanges.`;
+
 interface ConnectAgentProps {
   slug: string;
   inline?: boolean;
@@ -68,6 +70,8 @@ export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
   const [agent, setAgent] = useState("alpha");
   const [client, setClient] = useState<Client>("claude");
   const [copied, setCopied] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
 
   const config = getConfig(client, slug, agent);
 
@@ -77,49 +81,108 @@ export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function handleCopyPrompt() {
+    navigator.clipboard.writeText(QUICK_START_PROMPT);
+    setCopiedPrompt(true);
+    setTimeout(() => setCopiedPrompt(false), 2000);
+  }
+
   return (
     <div className={`connect-agent ${inline ? "connect-agent-inline" : ""}`}>
       {!inline && (
         <div className="connect-agent-header">
           <h3>Connect an AI Agent</h3>
           <p>
-            Paste the config below into your AI tool to start logging to this
-            room.
+            Two steps to start logging your AI session to this room.
           </p>
         </div>
       )}
 
-      <div className="connect-agent-fields">
-        <label className="connect-agent-label">
-          <span>Agent name</span>
-          <input
-            className="connect-agent-input"
-            value={agent}
-            onChange={(e) => setAgent(e.target.value.replace(/\s/g, "-"))}
-            placeholder="alpha"
-          />
-        </label>
-
-        <div className="connect-agent-clients">
-          {(["claude", "cursor", "gemini"] as Client[]).map((c) => (
-            <button
-              key={c}
-              className={`connect-client-btn ${client === c ? "connect-client-active" : ""}`}
-              onClick={() => setClient(c)}
-            >
-              {getLabel(c)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="connect-agent-config">
-        <span className="connect-agent-hint">{getHint(client)}</span>
-        <pre className="connect-agent-code">{config}</pre>
-        <button className="connect-agent-copy" onClick={handleCopy}>
-          {copied ? "Copied!" : "Copy"}
+      <div className="connect-agent-steps">
+        <button
+          className={`connect-step-btn ${step === 1 ? "connect-step-active" : ""}`}
+          onClick={() => setStep(1)}
+        >
+          1. Connect
+        </button>
+        <button
+          className={`connect-step-btn ${step === 2 ? "connect-step-active" : ""}`}
+          onClick={() => setStep(2)}
+        >
+          2. Start logging
         </button>
       </div>
+
+      {step === 1 && (
+        <>
+          <div className="connect-agent-fields">
+            <label className="connect-agent-label">
+              <span>Agent name</span>
+              <input
+                className="connect-agent-input"
+                value={agent}
+                onChange={(e) => setAgent(e.target.value.replace(/\s/g, "-"))}
+                placeholder="alpha"
+              />
+            </label>
+
+            <div className="connect-agent-clients">
+              {(["claude", "cursor", "gemini"] as Client[]).map((c) => (
+                <button
+                  key={c}
+                  className={`connect-client-btn ${client === c ? "connect-client-active" : ""}`}
+                  onClick={() => setClient(c)}
+                >
+                  {getLabel(c)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="connect-agent-config">
+            <span className="connect-agent-hint">{getHint(client)}</span>
+            <pre className="connect-agent-code">{config}</pre>
+            <button className="connect-agent-copy" onClick={handleCopy}>
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+
+          <button className="connect-next-btn" onClick={() => setStep(2)}>
+            Next: Start logging &rarr;
+          </button>
+        </>
+      )}
+
+      {step === 2 && (
+        <div className="connect-agent-quickstart">
+          <span className="connect-agent-hint">
+            Paste this into your {getLabel(client)} session:
+          </span>
+          <pre className="connect-agent-code connect-agent-prompt">
+            {QUICK_START_PROMPT}
+          </pre>
+          <button className="connect-agent-copy" onClick={handleCopyPrompt}>
+            {copiedPrompt ? "Copied!" : "Copy prompt"}
+          </button>
+          <div className="connect-agent-tools-info">
+            <span className="connect-agent-hint">Available tools once connected:</span>
+            <div className="connect-tools-grid">
+              <span className="connect-tool-tag">eywa_start</span>
+              <span className="connect-tool-desc">Begin logging a session</span>
+              <span className="connect-tool-tag">eywa_log</span>
+              <span className="connect-tool-desc">Log important exchanges</span>
+              <span className="connect-tool-tag">eywa_import</span>
+              <span className="connect-tool-desc">Bulk-upload conversation history</span>
+              <span className="connect-tool-tag">eywa_file</span>
+              <span className="connect-tool-desc">Store code files</span>
+              <span className="connect-tool-tag">neuralmesh_sync</span>
+              <span className="connect-tool-desc">Pull another agent's context</span>
+              <span className="connect-tool-tag">neuralmesh_msg</span>
+              <span className="connect-tool-desc">Message teammates</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

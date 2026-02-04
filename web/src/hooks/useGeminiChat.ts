@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
-const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
+const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
 
 function geminiUrl(model: string): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
