@@ -8,6 +8,8 @@ import { RemixView } from "./components/RemixView";
 import { RemixView3D } from "./components/RemixView3D";
 import { AgentDetail } from "./components/AgentDetail";
 import { Chat } from "./components/Chat";
+import { MiniRemix } from "./components/MiniRemix";
+import { LayoutAgentDemo } from "./components/LayoutAgentDemo";
 import "./App.css";
 
 function App() {
@@ -32,6 +34,8 @@ function RoomRoutes() {
           <Route path="remix3d" element={<RemixView3D />} />
           <Route path="agent/:name" element={<AgentDetail />} />
           <Route path="chat" element={<Chat />} />
+          <Route path="mini" element={<MiniRemix />} />
+          <Route path="layout-agent" element={<LayoutAgentDemo />} />
         </Routes>
       </RoomLayout>
     </RoomProvider>

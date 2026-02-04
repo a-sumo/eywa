@@ -56,8 +56,12 @@ Key views:
 | **Thread Tree** | `/r/:slug` | All agent sessions as expandable threads with divergence indicators |
 | **Thread View** | `/r/:slug/thread/:agent/:session` | Single thread timeline with memory cards |
 | **Remix Studio** | `/r/:slug/remix/new` | 3-panel workspace: browse → context → Gemini chat |
+| **Remix 3D** | `/r/:slug/remix3d` | Spatial workspace using React Three Fiber with glass panels |
+| **Mini Remix** | `/r/:slug/mini` | Compact 320x480 view with pixel creatures, session blocks, drag-to-context |
 | **Team Chat** | `/r/:slug/chat` | Real-time messaging between humans and agents |
+| **Layout Agent** | `/r/:slug/layout-agent` | Interactive demo with Gemini-powered layout + gesture recognition |
 | **Agent List** | `/r/:slug` (sidebar) | Active/idle agents with last-seen timestamps |
+| **Notifications** | (header bell) | Real-time alerts for session completions, injections, connections, knowledge |
 
 ### Legacy: Local MCP Server (Python)
 **`remix_mcp.py`** - The original stdio-based server. Still works for local/offline use, but the Cloudflare Worker is the primary way to connect now.
@@ -149,10 +153,16 @@ Live demo: [remix-memory.vercel.app](https://remix-memory.vercel.app)
 remix_start("Implementing user authentication with JWT")
 ```
 
-**End of session** - summarize:
+**End of session** - structured completion with status, artifacts, tags, and next steps:
 ```
-remix_stop("Added JWT middleware, login/register endpoints, token refresh")
+remix_done("Added JWT middleware, login/register endpoints, token refresh",
+           status="completed",
+           artifacts=["src/middleware/auth.ts", "src/routes/login.ts"],
+           tags=["feature", "auth"],
+           next_steps="Add token refresh endpoint and rate limiting")
 ```
+
+Or simple stop: `remix_stop("summary")`.
 
 Between those, optionally log key moments with `remix_log()`.
 
@@ -165,7 +175,7 @@ remix_status()
 === Remix Agent Status ===
   alpha [active] - Implementing user authentication with JWT
     Last seen: 2025-01-15T14:32:00Z
-  beta [active] - Setting up database migrations
+  beta [completed] - Setting up database migrations
     Last seen: 2025-01-15T14:30:00Z
 ```
 
@@ -181,10 +191,56 @@ remix_sync("alpha")
 ```
 Returns the full timeline of their current session.
 
+### Push context to another agent
+
+```
+remix_inject(target="beta", content="The auth schema changed — use UUID for user_id, not integer", priority="high", label="schema change")
+```
+
+The target agent sees it when they check:
+```
+remix_inbox()
+```
+```
+Inbox (1 injection):
+From alpha [HIGH] (schema change):
+  The auth schema changed — use UUID for user_id, not integer
+```
+
+### Store project knowledge (persists across sessions)
+
+```
+remix_learn("API routes use /api/v1 prefix. Auth middleware is applied via app.use(), not per-route.",
+            title="API conventions",
+            tags=["architecture", "api"])
+```
+
+Any agent in any session can query:
+```
+remix_knowledge(tag="api")
+```
+```
+Knowledge base (1 entry):
+**API conventions**
+API routes use /api/v1 prefix. Auth middleware is applied via app.use()... {architecture, api}
+  — alpha, 2025-01-15T14:32:00Z
+```
+
 ### Team chat
 
 ```
 remix_msg("Auth system is done, beta can start on protected routes now")
+```
+
+### CLI (terminal access)
+
+```bash
+remix status my-project          # see all agent status
+remix pull my-project alpha 10   # pull agent context
+remix log my-project             # activity feed
+remix inject my-project user beta "Focus on the auth module"
+remix knowledge my-project       # browse knowledge base
+remix learn my-project user "We use camelCase" --title "Naming" --tags convention
 ```
 
 ---
@@ -241,22 +297,24 @@ Real-time messaging powered by Supabase Realtime subscriptions. Messages from ag
 
 ## Tool Reference
 
-### Session
+### Session Lifecycle
 | Tool | What it does |
 |------|-------------|
 | `remix_whoami()` | Check your agent name, session, and room |
-| `remix_start(task)` | Start a session - others see your current task |
-| `remix_stop(summary)` | End session with what you accomplished |
+| `remix_start(task)` | Start a session — others see your current task |
+| `remix_stop(summary)` | End session with a summary |
+| `remix_done(summary, status, artifacts?, tags?, next_steps?)` | **Structured completion** — status: completed/blocked/failed/partial, with artifacts, tags, and follow-up suggestions |
 
-### Logging
+### Memory & Logging
 | Tool | What it does |
 |------|-------------|
 | `remix_log(role, content)` | Log a key moment (role: user/assistant/resource/tool_call/tool_result) |
-| `remix_file(path, content, desc)` | Store a file snapshot - returns a reference ID |
+| `remix_file(path, content, desc)` | Store a file snapshot — returns a reference ID |
 | `remix_get_file(file_id)` | Retrieve a stored file |
+| `remix_import(messages, task?)` | Bulk-import a conversation transcript |
 | `remix_search(query, limit)` | Search all messages by content |
 
-### Context
+### Context & Collaboration
 | Tool | What it does |
 |------|-------------|
 | `remix_status()` | All agents, what they're working on, active/idle |
@@ -266,10 +324,42 @@ Real-time messaging powered by Supabase Realtime subscriptions. Messages from ag
 | `remix_recall(agent, limit)` | Messages from a specific agent |
 | `remix_agents()` | List all agents and when last active |
 
+### Context Injection (Push-back)
+| Tool | What it does |
+|------|-------------|
+| `remix_inject(target, content, priority?, label?)` | Push context/instructions to another agent (target: name or "all", priority: normal/high/urgent) |
+| `remix_inbox(limit?)` | Check for injections sent to you — call periodically to stay in sync |
+
+### Project Knowledge (Persistent)
+| Tool | What it does |
+|------|-------------|
+| `remix_learn(content, tags?, title?)` | Store persistent knowledge that survives across sessions |
+| `remix_knowledge(tag?, search?, limit?)` | Query the knowledge base — filter by tag, search by content |
+| `remix_forget(knowledge_id)` | Remove an outdated knowledge entry |
+
 ### Messaging
 | Tool | What it does |
 |------|-------------|
 | `remix_msg(content, channel)` | Send a message to team chat |
+
+## CLI Reference
+
+```
+remix status <room>                              Show agent status
+remix pull <room> <agent> [limit]                Pull agent context
+remix log <room> [limit]                         Recent activity feed
+remix inject <room> <from> <target> <message>    Inject context to another agent
+remix knowledge <room> [search]                  Browse knowledge base
+remix learn <room> <agent> <content> [--title T] [--tags t1,t2]
+```
+
+**Setup:**
+```bash
+cd cli && npm install
+export REMIX_SUPABASE_URL="https://your-project.supabase.co"
+export REMIX_SUPABASE_KEY="your-key"
+node bin/remix.mjs status my-room
+```
 
 ---
 
@@ -288,7 +378,7 @@ id           uuid PRIMARY KEY
 room_id      uuid → rooms(id)
 agent        text              -- agent name ("alpha", "cursor-1")
 session_id   text              -- groups memories into sessions
-message_type text              -- session_start, session_end, user, assistant, tool_call, tool_result, resource, file
+message_type text              -- user, assistant, tool_call, tool_result, resource, injection, knowledge
 content      text              -- the actual content
 metadata     jsonb             -- flexible: file paths, descriptions, IDs
 ts           timestamptz       -- when it happened
@@ -312,55 +402,66 @@ ts         timestamptz
 remix/
 ├── README.md
 ├── schema.sql                  # Supabase schema (rooms, memories, messages)
-├── remix_mcp.py                 # Legacy local MCP server (stdio)
 │
-├── worker/                     # Cloudflare Worker - hosted MCP server
+├── worker/                     # Cloudflare Worker — hosted MCP server
 │   ├── wrangler.toml
 │   ├── package.json
 │   └── src/
 │       ├── index.ts            # Entry: routing, room lookup, MCP handler
 │       ├── lib/
-│       │   ├── supabase.ts     # PostgREST fetch wrapper
+│       │   ├── supabase.ts     # PostgREST fetch wrapper (select, insert, delete)
 │       │   └── types.ts        # TypeScript interfaces
 │       └── tools/
-│           ├── session.ts      # whoami, start, stop
-│           ├── memory.ts       # log, file, get_file, search
+│           ├── session.ts      # whoami, start, stop, done
+│           ├── memory.ts       # log, file, get_file, import, search
 │           ├── context.ts      # context, agents, recall
-│           └── remix.ts   # status, pull, sync, msg
+│           ├── collaboration.ts # status, pull, sync, msg
+│           ├── inject.ts       # inject, inbox
+│           └── knowledge.ts    # learn, knowledge, forget
 │
 ├── web/                        # React dashboard
 │   ├── .env                    # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GEMINI_API_KEY
 │   ├── package.json
-│   ├── vite.config.ts
+│   ├── vercel.json
 │   └── src/
 │       ├── main.tsx            # Entry point
 │       ├── App.tsx             # Router setup
 │       ├── App.css             # All component styles (light theme)
-│       ├── index.css           # Base styles, CSS variables, Mulish font
+│       ├── index.css           # Base styles, CSS variables
 │       ├── components/
-│       │   ├── RoomLayout.tsx  # Layout shell with nav tabs
-│       │   ├── ThreadTree.tsx  # Thread list with divergence indicators
-│       │   ├── ThreadView.tsx  # Single thread timeline
-│       │   ├── RemixView.tsx   # 3-panel remix studio with Gemini chat
-│       │   ├── MemoryCard.tsx  # Individual memory display (compact/expanded)
-│       │   ├── AgentList.tsx   # Sidebar agent roster
-│       │   └── ChatPanel.tsx   # Team chat interface
+│       │   ├── RoomLayout.tsx      # Layout shell with sidebar
+│       │   ├── RoomHeader.tsx      # Room name, connect agent, notifications
+│       │   ├── NotificationBell.tsx # Bell icon with real-time dropdown
+│       │   ├── ThreadTree.tsx      # Thread list with divergence indicators
+│       │   ├── ThreadView.tsx      # Single thread timeline
+│       │   ├── RemixView.tsx       # 3-panel remix studio with Gemini chat
+│       │   ├── RemixView3D.tsx     # Spatial 3D workspace (React Three Fiber)
+│       │   ├── SpatialScene.tsx    # R3F scene with glass panels on arc
+│       │   ├── GlassPanel3D.tsx    # Glass-material 3D panel (drei)
+│       │   ├── MiniRemix.tsx       # 320x480 compact view with pixel creatures
+│       │   ├── MemoryCard.tsx      # Individual memory display
+│       │   ├── AgentList.tsx       # Sidebar agent roster + nav
+│       │   ├── AgentDetail.tsx     # Agent history deep dive
+│       │   ├── Chat.tsx            # Team chat interface
+│       │   ├── ConnectAgent.tsx    # MCP connection onboarding
+│       │   ├── LayoutAgentDemo.tsx # Gemini layout + gesture demo
+│       │   └── Landing.tsx         # Home page
 │       ├── hooks/
-│       │   ├── useRealtimeMemories.ts  # Supabase realtime subscription for memories
-│       │   ├── useRealtimeMessages.ts  # Supabase realtime subscription for messages
-│       │   └── useGeminiChat.ts        # Gemini 2.0 Flash REST API chat hook
+│       │   ├── useRealtimeMemories.ts  # Realtime subscription for memories
+│       │   ├── useNotifications.ts     # Realtime notification events
+│       │   ├── useLayoutAgent.ts       # Gemini layout validation
+│       │   └── useGestureAgent.ts      # Gemini gesture recognition
 │       ├── context/
-│       │   └── RoomContext.tsx          # Room state provider
+│       │   └── RoomContext.tsx
 │       └── lib/
-│           ├── supabase.ts             # Supabase client + types
-│           └── threadSimilarity.ts     # Jaccard-based divergence detection
+│           └── supabase.ts             # Supabase client + types
 │
-├── presentation/               # Reveal.js slides
-│   ├── index.html              # Slide deck shell
-│   ├── data.js                 # Slide content (JS objects with HTML diagrams)
-│   └── render.js               # Data → reveal.js section renderer
+├── cli/                        # Terminal CLI
+│   ├── package.json
+│   └── bin/
+│       └── remix.mjs           # status, pull, log, inject, knowledge, learn
 │
-└── Spectacles Observer/        # AR visualization (Snap Spectacles, optional)
+└── presentation/               # Reveal.js slides (optional)
 ```
 
 ## Data Flow
@@ -370,9 +471,12 @@ remix/
 2. Worker resolves     Room slug "demo" → room_id via Supabase lookup
 3. Tool calls          remix_start("task") → Worker inserts into memories table
 4. Dashboard reads     Web app subscribes to Supabase Realtime → shows activity live
-5. Cross-agent sync    remix_pull("alpha") → Worker queries memories → returns context
-6. Remix analysis      User drags memories into context → Gemini analyzes combined threads
-7. Divergence check    Dashboard computes Jaccard similarity → shows colored indicators
+5. Notifications       session_done/injection/connection events → bell icon updates
+6. Cross-agent sync    remix_pull("alpha") → Worker queries memories → returns context
+7. Context injection   remix_inject("beta", "use UUID") → beta sees it via remix_inbox()
+8. Knowledge           remix_learn("pattern") → persists across sessions → remix_knowledge()
+9. Remix analysis      User drags memories into context → Gemini analyzes combined threads
+10. CLI access         remix status demo → Supabase query → terminal output
 ```
 
 Every query is scoped to the room, so different teams/projects stay isolated.

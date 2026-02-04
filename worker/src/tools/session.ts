@@ -70,4 +70,40 @@ export function registerSessionTools(
       };
     },
   );
+
+  server.tool(
+    "remix_done",
+    "Mark session as complete with structured summary, status, artifacts, and next steps. Use this instead of remix_stop when you want to record what was accomplished.",
+    {
+      summary: z.string().describe("What was accomplished this session"),
+      status: z.enum(["completed", "blocked", "failed", "partial"]).describe("Session outcome"),
+      artifacts: z.array(z.string()).optional().describe("Key files or outputs produced"),
+      tags: z.array(z.string()).optional().describe("Tags for categorization (e.g. 'bugfix', 'feature', 'refactor')"),
+      next_steps: z.string().optional().describe("Suggested follow-up work for the next session"),
+    },
+    async ({ summary, status, artifacts, tags, next_steps }) => {
+      await db.insert("memories", {
+        room_id: ctx.roomId,
+        agent: ctx.agent,
+        session_id: ctx.sessionId,
+        message_type: "resource",
+        content: `SESSION DONE [${status.toUpperCase()}]: ${summary}${next_steps ? `\nNext steps: ${next_steps}` : ""}${artifacts?.length ? `\nArtifacts: ${artifacts.join(", ")}` : ""}`,
+        token_count: estimateTokens(summary),
+        metadata: {
+          event: "session_done",
+          status,
+          summary,
+          artifacts: artifacts ?? [],
+          tags: tags ?? [],
+          next_steps: next_steps ?? null,
+        },
+      });
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Session marked as ${status}. Summary logged.${artifacts?.length ? `\nArtifacts: ${artifacts.join(", ")}` : ""}${tags?.length ? `\nTags: ${tags.join(", ")}` : ""}${next_steps ? `\nNext: ${next_steps}` : ""}`,
+        }],
+      };
+    },
+  );
 }

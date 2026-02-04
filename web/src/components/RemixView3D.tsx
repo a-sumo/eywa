@@ -1,10 +1,11 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { Canvas } from "@react-three/fiber";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import { MemoryCard } from "./MemoryCard";
 import { GeminiPanel3D } from "./GeminiPanel3D";
-import { GlassPanel } from "./GlassPanel";
+import { SpatialScene } from "./SpatialScene";
 import type { Memory } from "../lib/supabase";
 
 function useIsMobile(breakpoint = 768) {
@@ -47,6 +48,9 @@ export function RemixView3D() {
   const navigate = useNavigate();
   const location = useLocation();
   const { memories } = useRealtimeMemories(room?.id ?? null, 500);
+
+  const sceneContainerRef = useRef<HTMLDivElement>(null!);
+  const htmlPortalRef = useRef<HTMLDivElement>(null!);
 
   const [search, setSearch] = useState("");
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(
@@ -423,36 +427,29 @@ export function RemixView3D() {
       {isMobile ? (
         /* Mobile: flat column fallback */
         <div className="remix3d-mobile">
-          <div className="glass-panel">{sourceContent}</div>
-          <div className="glass-panel">{contextContent}</div>
-          <div className="glass-panel">{chatContent}</div>
+          <div className="glass-panel-flat">{sourceContent}</div>
+          <div className="glass-panel-flat">{contextContent}</div>
+          <div className="glass-panel-flat">{chatContent}</div>
         </div>
       ) : (
-        /* Desktop: CSS perspective + glass panels */
-        <div className="remix3d-scene">
-          <GlassPanel
-            rotateY={3}
-            transformOrigin="right center"
-            className="r3f-source-wrap"
+        /* Desktop: React Three Fiber spatial workspace */
+        <div ref={sceneContainerRef} className="remix3d-scene-r3f">
+          <Canvas
+            camera={{ position: [0, 0.8, 11], fov: 50 }}
+            gl={{ antialias: true, alpha: true }}
+            dpr={[1, 2]}
+            frameloop="demand"
+            eventSource={sceneContainerRef}
+            eventPrefix="client"
           >
-            {sourceContent}
-          </GlassPanel>
-
-          <GlassPanel
-            rotateY={-3}
-            transformOrigin="left center"
-            className="r3f-context-wrap"
-          >
-            {contextContent}
-          </GlassPanel>
-
-          <GlassPanel
-            rotateY={-2}
-            transformOrigin="left center"
-            className="r3f-chat-wrap"
-          >
-            {chatContent}
-          </GlassPanel>
+            <SpatialScene
+              source={sourceContent}
+              context={contextContent}
+              chat={chatContent}
+              portal={htmlPortalRef}
+            />
+          </Canvas>
+          <div ref={htmlPortalRef} className="r3f-html-portal" />
         </div>
       )}
     </div>

@@ -1,15 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Memory } from "../lib/supabase";
 import {
   summarizeThread,
-  threadDivergence,
-  divergenceLevel,
   findDivergentThreads,
   type ThreadSummary,
-  type DivergenceLevel,
 } from "../lib/threadSimilarity";
 import { ConnectAgent } from "./ConnectAgent";
 
@@ -25,6 +22,20 @@ interface ThreadInfo {
   filePaths: string[];
   fileCount: number;
   isCodeThread: boolean;
+}
+
+interface ThreadTag {
+  label: string;
+  color: string;
+  key: string;
+}
+
+interface Notification {
+  id: string;
+  type: "divergence" | "connection" | "session";
+  message: string;
+  timestamp: string;
+  icon: string;
 }
 
 function extractFilePaths(memories: Memory[]): string[] {
@@ -138,55 +149,119 @@ function buildThreads(memories: Memory[]): ThreadInfo[] {
     });
   }
 
-  // No sort here — sorting is handled externally by sortMode
   return threads;
 }
 
-function DivergenceBadge({
-  div,
-  level,
-  otherAgent,
-}: {
-  div: number;
-  level: DivergenceLevel;
-  otherAgent: string;
-}) {
-  const pct = Math.round(div * 100);
-  return (
-    <span
-      className={`divergence-indicator divergence-${level}`}
-      title={`${pct}% diverged from ${otherAgent}'s thread`}
-    >
-      <span className="divergence-bar">
-        <span
-          className="divergence-bar-fill"
-          style={{ width: `${pct}%` }}
-        />
-      </span>
-      {pct}%
-    </span>
-  );
+function deriveThreadTags(thread: ThreadInfo): ThreadTag[] {
+  const tags: ThreadTag[] = [];
+
+  // Status tag
+  if (thread.status === "active") {
+    tags.push({ label: "active", color: "#489664", key: "status:active" });
+  } else if (thread.status === "finished") {
+    tags.push({ label: "finished", color: "#B45050", key: "status:finished" });
+  } else {
+    tags.push({ label: "idle", color: "#B48C50", key: "status:idle" });
+  }
+
+  // Has files
+  if (thread.isCodeThread) {
+    tags.push({ label: "has-files", color: "#5570cc", key: "type:has-files" });
+  }
+
+  // Message type distribution
+  let toolCount = 0;
+  let assistantCount = 0;
+  const total = thread.memories.length;
+
+  for (const m of thread.memories) {
+    if (m.message_type === "tool_call" || m.message_type === "tool_result") toolCount++;
+    else if (m.message_type === "assistant") assistantCount++;
+  }
+
+  if (total > 0) {
+    if (toolCount / total > 0.6) {
+      tags.push({ label: "heavy-tool", color: "#B48C50", key: "type:heavy-tool" });
+    } else if (assistantCount / total > 0.6) {
+      tags.push({ label: "mostly-assistant", color: "#489664", key: "type:mostly-assistant" });
+    } else {
+      tags.push({ label: "mixed", color: "#888", key: "type:mixed" });
+    }
+  }
+
+  return tags;
 }
 
 type SortMode = "time" | "files";
 
 function sortThreads(threads: ThreadInfo[], mode: SortMode): ThreadInfo[] {
   return [...threads].sort((a, b) => {
-    // Active threads always pinned to top
     if (a.status === "active" && b.status !== "active") return -1;
     if (b.status === "active" && a.status !== "active") return 1;
 
     if (mode === "files") {
-      // Code threads first
       if (a.isCodeThread && !b.isCodeThread) return -1;
       if (!a.isCodeThread && b.isCodeThread) return 1;
-      // Then by file count desc
       if (a.fileCount !== b.fileCount) return b.fileCount - a.fileCount;
     }
 
-    // Fall back to time (most recent first)
     return new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime();
   });
+}
+
+function buildNotifications(memories: Memory[], divergentPairs: ReturnType<typeof findDivergentThreads>): Notification[] {
+  const notifications: Notification[] = [];
+
+  // Divergence alerts
+  for (const pair of divergentPairs) {
+    const pct = Math.round(pair.divergence * 100);
+    notifications.push({
+      id: `div::${pair.threadA.agent}::${pair.threadA.sessionId}||${pair.threadB.agent}::${pair.threadB.sessionId}`,
+      type: "divergence",
+      message: `${pair.threadA.agent} and ${pair.threadB.agent} threads diverged ${pct}%`,
+      timestamp: new Date().toISOString(),
+      icon: "\u26A0",
+    });
+  }
+
+  // Agent connections (last 10)
+  const connections = memories
+    .filter((m) => (m.metadata as Record<string, unknown>)?.event === "agent_connected")
+    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
+    .slice(0, 10);
+
+  for (const m of connections) {
+    notifications.push({
+      id: `conn::${m.id}`,
+      type: "connection",
+      message: `${m.agent} connected`,
+      timestamp: m.ts,
+      icon: "\u2192",
+    });
+  }
+
+  // Session events (last 10)
+  const sessionEvents = memories
+    .filter((m) => {
+      const event = (m.metadata as Record<string, unknown>)?.event;
+      return event === "session_start" || event === "session_end";
+    })
+    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
+    .slice(0, 10);
+
+  for (const m of sessionEvents) {
+    const event = (m.metadata as Record<string, unknown>)?.event;
+    const label = event === "session_start" ? "started a session" : "ended a session";
+    notifications.push({
+      id: `sess::${m.id}`,
+      type: "session",
+      message: `${m.agent} ${label}`,
+      timestamp: m.ts,
+      icon: event === "session_start" ? "\u25B6" : "\u25A0",
+    });
+  }
+
+  return notifications;
 }
 
 export function ThreadTree() {
@@ -202,77 +277,103 @@ export function ThreadTree() {
   const [dismissedNotifications, setDismissedNotifications] = useState<
     Set<string>
   >(new Set());
+  const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
+  const [agentFilter, setAgentFilter] = useState<Set<string>>(new Set());
+  const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
+
+  // Close notification dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setBellOpen(false);
+      }
+    }
+    if (bellOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [bellOpen]);
 
   const rawThreads = buildThreads(memories);
 
-  // Auto-detect sort mode: "files" if any thread has files, else "time"
+  // Phase 1: Filter out connection-event-only threads
+  const filteredThreads = rawThreads.filter(
+    (t) =>
+      !t.memories.every(
+        (m) =>
+          (m.metadata as Record<string, unknown>)?.event === "agent_connected"
+      )
+  );
+
+  // Auto-detect sort mode
   const effectiveSortMode: SortMode =
-    sortMode ?? (rawThreads.some((t) => t.isCodeThread) ? "files" : "time");
+    sortMode ?? (filteredThreads.some((t) => t.isCodeThread) ? "files" : "time");
 
-  // Compute cross-agent divergence for each thread
-  const divergenceMap = useMemo(() => {
-    const map = new Map<
-      string,
-      { div: number; level: DivergenceLevel; otherAgent: string }
-    >();
-
-    for (let i = 0; i < rawThreads.length; i++) {
-      for (let j = i + 1; j < rawThreads.length; j++) {
-        if (rawThreads[i].agent === rawThreads[j].agent) continue;
-
-        const div = threadDivergence(
-          rawThreads[i].summary,
-          rawThreads[j].summary
-        );
-        const level = divergenceLevel(div);
-
-        if (div < 0.3) continue;
-
-        const keyI = `${rawThreads[i].agent}::${rawThreads[i].sessionId}`;
-        const keyJ = `${rawThreads[j].agent}::${rawThreads[j].sessionId}`;
-
-        const existingI = map.get(keyI);
-        if (!existingI || existingI.div < div) {
-          map.set(keyI, { div, level, otherAgent: rawThreads[j].agent });
-        }
-
-        const existingJ = map.get(keyJ);
-        if (!existingJ || existingJ.div < div) {
-          map.set(keyJ, { div, level, otherAgent: rawThreads[i].agent });
-        }
-      }
-    }
-
-    return map;
-  }, [rawThreads]);
-
-  // Divergence notification toasts (high divergence only, >= 0.7)
+  // Divergence notifications (high divergence only, >= 0.7)
   const divergentPairs = useMemo(
     () => findDivergentThreads(memories, 0.7),
     [memories]
   );
 
-  const activeNotifications = divergentPairs.filter((pair) => {
-    const key = `${pair.threadA.agent}::${pair.threadA.sessionId}||${pair.threadB.agent}::${pair.threadB.sessionId}`;
-    return !dismissedNotifications.has(key);
-  });
+  // Build notification feed
+  const allNotifications = useMemo(
+    () => buildNotifications(memories, divergentPairs),
+    [memories, divergentPairs]
+  );
 
-  function dismissNotification(
-    threadA: { agent: string; sessionId: string },
-    threadB: { agent: string; sessionId: string }
-  ) {
-    const key = `${threadA.agent}::${threadA.sessionId}||${threadB.agent}::${threadB.sessionId}`;
-    setDismissedNotifications((prev) => new Set(prev).add(key));
+  const activeNotifications = allNotifications.filter(
+    (n) => !dismissedNotifications.has(n.id)
+  );
+
+  function dismissNotification(id: string) {
+    setDismissedNotifications((prev) => new Set(prev).add(id));
   }
+
+  // Derive tags per thread (memoized)
+  const threadTagsMap = useMemo(() => {
+    const map = new Map<string, ThreadTag[]>();
+    for (const t of filteredThreads) {
+      const key = `${t.agent}::${t.sessionId}`;
+      map.set(key, deriveThreadTags(t));
+    }
+    return map;
+  }, [filteredThreads]);
+
+  // Collect all unique agents for filter bar
+  const allAgents = useMemo(
+    () => Array.from(new Set(filteredThreads.map((t) => t.agent))),
+    [filteredThreads]
+  );
+
+  // Phase 3: Filter bar logic
+  const displayThreads = useMemo(() => {
+    return filteredThreads.filter((t) => {
+      if (statusFilter.size && !statusFilter.has(t.status)) return false;
+      if (agentFilter.size && !agentFilter.has(t.agent)) return false;
+      if (typeFilter.size) {
+        const tags = threadTagsMap.get(`${t.agent}::${t.sessionId}`) || [];
+        const tagKeys = new Set(tags.map((tg) => tg.key));
+        let match = false;
+        for (const f of typeFilter) {
+          if (tagKeys.has(f)) { match = true; break; }
+        }
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [filteredThreads, statusFilter, agentFilter, typeFilter, threadTagsMap]);
 
   // Group threads by agent, then sort within each group
   const agentThreads = new Map<string, ThreadInfo[]>();
-  for (const t of rawThreads) {
+  for (const t of displayThreads) {
     const list = agentThreads.get(t.agent) || [];
     list.push(t);
     agentThreads.set(t.agent, list);
   }
-  // Sort within each agent group
   for (const [agent, ts] of agentThreads) {
     agentThreads.set(agent, sortThreads(ts, effectiveSortMode));
   }
@@ -289,6 +390,36 @@ export function ThreadTree() {
     });
   }
 
+  function toggleFilter(
+    setter: React.Dispatch<React.SetStateAction<Set<string>>>,
+    value: string
+  ) {
+    setter((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
+      return next;
+    });
+  }
+
+  function handleTagClick(e: React.MouseEvent, tag: ThreadTag) {
+    e.stopPropagation();
+    if (tag.key.startsWith("status:")) {
+      toggleFilter(setStatusFilter, tag.key.split(":")[1]);
+    } else if (tag.key.startsWith("type:")) {
+      toggleFilter(setTypeFilter, tag.key);
+    }
+  }
+
+  function clearAllFilters() {
+    setStatusFilter(new Set());
+    setAgentFilter(new Set());
+    setTypeFilter(new Set());
+  }
+
   function compactLabel(thread: ThreadInfo): string {
     if (thread.filePaths.length > 0) {
       const names = thread.filePaths
@@ -299,7 +430,9 @@ export function ThreadTree() {
     return thread.task.slice(0, 60) + (thread.task.length > 60 ? "..." : "");
   }
 
-  if (!rawThreads.length) {
+  const hasActiveFilters = statusFilter.size > 0 || agentFilter.size > 0 || typeFilter.size > 0;
+
+  if (!filteredThreads.length) {
     return (
       <div className="thread-tree">
         <h2 className="section-title">Threads</h2>
@@ -326,6 +459,59 @@ export function ThreadTree() {
             Files
           </button>
         </div>
+
+        {/* Notification bell */}
+        <div className="notification-bell-wrapper" ref={bellRef}>
+          <button
+            className="notification-bell"
+            onClick={() => setBellOpen((prev) => !prev)}
+            title="Notifications"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {activeNotifications.length > 0 && (
+              <span className="notification-badge">
+                {activeNotifications.length}
+              </span>
+            )}
+          </button>
+
+          {bellOpen && (
+            <div className="notification-dropdown">
+              <div className="notification-dropdown-header">
+                Notifications
+                <span className="notification-dropdown-count">
+                  {activeNotifications.length}
+                </span>
+              </div>
+              {activeNotifications.length === 0 ? (
+                <div className="notification-empty">All clear</div>
+              ) : (
+                <div className="notification-list">
+                  {activeNotifications.map((n) => (
+                    <div key={n.id} className={`notification-item notification-${n.type}`}>
+                      <span className="notification-icon">{n.icon}</span>
+                      <div className="notification-content">
+                        <span className="notification-message">{n.message}</span>
+                        <span className="notification-time">{timeAgo(n.timestamp)}</span>
+                      </div>
+                      <button
+                        className="notification-dismiss"
+                        onClick={() => dismissNotification(n.id)}
+                        title="Dismiss"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         <button
           className="btn-remix-new"
           onClick={() => navigate(`/r/${slug}/remix/new`)}
@@ -334,31 +520,72 @@ export function ThreadTree() {
         </button>
       </div>
 
-      {activeNotifications.length > 0 && (
-        <div className="divergence-toasts">
-          {activeNotifications.map((pair) => {
-            const pct = Math.round(pair.divergence * 100);
-            return (
-              <div
-                key={`${pair.threadA.agent}::${pair.threadA.sessionId}||${pair.threadB.agent}::${pair.threadB.sessionId}`}
-                className={`divergence-toast ${pair.level === "high" ? "divergence-toast-high" : ""}`}
-              >
-                <span className="divergence-toast-text">
-                  <strong>{pair.threadA.agent}</strong> and{" "}
-                  <strong>{pair.threadB.agent}</strong> threads have diverged{" "}
-                  {pct}%
-                </span>
-                <button
-                  className="divergence-toast-dismiss"
-                  onClick={() =>
-                    dismissNotification(pair.threadA, pair.threadB)
-                  }
-                >
-                  Dismiss
-                </button>
-              </div>
-            );
-          })}
+      {/* Filter bar */}
+      <div className="thread-filter-bar">
+        <div className="filter-group">
+          <span className="filter-group-label">Status</span>
+          {(["active", "finished", "idle"] as const).map((s) => (
+            <button
+              key={s}
+              className={`filter-chip ${statusFilter.has(s) ? "filter-chip-active" : ""}`}
+              onClick={() => toggleFilter(setStatusFilter, s)}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <div className="filter-group">
+          <span className="filter-group-label">Agent</span>
+          {allAgents.map((a) => (
+            <button
+              key={a}
+              className={`filter-chip ${agentFilter.has(a) ? "filter-chip-active" : ""}`}
+              onClick={() => toggleFilter(setAgentFilter, a)}
+              style={agentFilter.has(a) ? { borderColor: agentColor(a), color: agentColor(a) } : undefined}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+        <div className="filter-group">
+          <span className="filter-group-label">Type</span>
+          {[
+            { key: "type:has-files", label: "Has Files" },
+            { key: "type:heavy-tool", label: "Heavy Tool" },
+            { key: "type:mixed", label: "Mixed" },
+          ].map((ft) => (
+            <button
+              key={ft.key}
+              className={`filter-chip ${typeFilter.has(ft.key) ? "filter-chip-active" : ""}`}
+              onClick={() => toggleFilter(setTypeFilter, ft.key)}
+            >
+              {ft.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Active filters row */}
+      {hasActiveFilters && (
+        <div className="filter-active-row">
+          {Array.from(statusFilter).map((s) => (
+            <span key={`s-${s}`} className="filter-active-chip" onClick={() => toggleFilter(setStatusFilter, s)}>
+              {s} &times;
+            </span>
+          ))}
+          {Array.from(agentFilter).map((a) => (
+            <span key={`a-${a}`} className="filter-active-chip" onClick={() => toggleFilter(setAgentFilter, a)}>
+              {a} &times;
+            </span>
+          ))}
+          {Array.from(typeFilter).map((t) => (
+            <span key={`t-${t}`} className="filter-active-chip" onClick={() => toggleFilter(setTypeFilter, t)}>
+              {t.replace("type:", "")} &times;
+            </span>
+          ))}
+          <button className="filter-clear-all" onClick={clearAllFilters}>
+            Clear all
+          </button>
         </div>
       )}
 
@@ -383,11 +610,10 @@ export function ThreadTree() {
             <div className="thread-branches">
               {agentTs.map((thread) => {
                 const key = `${thread.agent}::${thread.sessionId}`;
-                const divInfo = divergenceMap.get(key);
+                const tags = threadTagsMap.get(key) || [];
                 const isExpanded = expandedThreads.has(key);
 
                 if (!isExpanded) {
-                  // Collapsed compact card
                   return (
                     <div
                       key={thread.sessionId}
@@ -412,6 +638,19 @@ export function ThreadTree() {
                         <span className="thread-compact-label">
                           {compactLabel(thread)}
                         </span>
+                        <div className="thread-tags">
+                          {tags.map((tag) => (
+                            <span
+                              key={tag.key}
+                              className="thread-tag"
+                              style={{ background: `${tag.color}18`, color: tag.color, borderColor: `${tag.color}40` }}
+                              onClick={(e) => handleTagClick(e, tag)}
+                              title={`Filter by ${tag.label}`}
+                            >
+                              {tag.label}
+                            </span>
+                          ))}
+                        </div>
                         <span className="thread-compact-time">
                           {timeAgo(thread.lastSeen)}
                         </span>
@@ -420,7 +659,6 @@ export function ThreadTree() {
                   );
                 }
 
-                // Expanded full card
                 return (
                   <div
                     key={thread.sessionId}
@@ -445,13 +683,19 @@ export function ThreadTree() {
                       <span className="thread-session-id">
                         {thread.sessionId.slice(0, 20)}...
                       </span>
-                      {divInfo && (
-                        <DivergenceBadge
-                          div={divInfo.div}
-                          level={divInfo.level}
-                          otherAgent={divInfo.otherAgent}
-                        />
-                      )}
+                      <div className="thread-tags">
+                        {tags.map((tag) => (
+                          <span
+                            key={tag.key}
+                            className="thread-tag"
+                            style={{ background: `${tag.color}18`, color: tag.color, borderColor: `${tag.color}40` }}
+                            onClick={(e) => handleTagClick(e, tag)}
+                            title={`Filter by ${tag.label}`}
+                          >
+                            {tag.label}
+                          </span>
+                        ))}
+                      </div>
                       <span className="thread-duration">
                         {thread.duration}
                       </span>

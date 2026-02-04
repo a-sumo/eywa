@@ -57,6 +57,18 @@ export function AgentList() {
       >
         Team Chat
       </button>
+      <button
+        className={`agent-chip ${location.pathname === `${basePath}/mini` ? "active" : ""}`}
+        onClick={() => navigate(`${basePath}/mini`)}
+      >
+        Mini
+      </button>
+      <button
+        className={`agent-chip ${location.pathname === `${basePath}/layout-agent` ? "active" : ""}`}
+        onClick={() => navigate(`${basePath}/layout-agent`)}
+      >
+        Layout Agent
+      </button>
       <div className="agent-list-divider" />
       {agents.map((a) => (
         <button

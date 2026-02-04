@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { useRoomContext } from "../context/RoomContext";
 import { AgentList } from "./AgentList";
 import { RoomHeader } from "./RoomHeader";
-import { DemoBanner } from "./DemoBanner";
 
 interface RoomLayoutProps {
   children: ReactNode;
@@ -35,7 +34,6 @@ export function RoomLayout({ children }: RoomLayoutProps) {
 
   return (
     <div className="app">
-      <DemoBanner />
       <header className="app-header">
         <Link to="/" className="logo-link">
           <h1>Remix</h1>

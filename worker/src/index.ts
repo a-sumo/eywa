@@ -6,6 +6,8 @@ import { registerSessionTools } from "./tools/session.js";
 import { registerMemoryTools } from "./tools/memory.js";
 import { registerContextTools } from "./tools/context.js";
 import { registerCollaborationTools } from "./tools/collaboration.js";
+import { registerInjectTools } from "./tools/inject.js";
+import { registerKnowledgeTools } from "./tools/knowledge.js";
 
 export default {
   async fetch(request: Request, env: Env, execCtx: ExecutionContext): Promise<Response> {
@@ -108,6 +110,8 @@ async function handleMcp(
   registerMemoryTools(server, db, ctx);
   registerContextTools(server, db, ctx);
   registerCollaborationTools(server, db, ctx);
+  registerInjectTools(server, db, ctx);
+  registerKnowledgeTools(server, db, ctx);
 
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);

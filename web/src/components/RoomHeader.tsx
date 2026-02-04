@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRoomContext } from "../context/RoomContext";
 import { useRoom } from "../hooks/useRoom";
 import { ConnectAgent } from "./ConnectAgent";
+import { NotificationBell } from "./NotificationBell";
 
 export function RoomHeader() {
   const { room, isDemo } = useRoomContext();
@@ -26,6 +27,7 @@ export function RoomHeader() {
           <span className="room-slug">/{room.slug}</span>
         </div>
         <div className="room-header-actions">
+          <NotificationBell />
           {isDemo && <span className="demo-badge">Demo</span>}
           <button
             className="share-btn"
