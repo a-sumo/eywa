@@ -69,6 +69,12 @@ export function AgentList() {
       >
         Layout Agent
       </button>
+      <button
+        className={`agent-chip ${location.pathname === `${basePath}/layout-xr` ? "active" : ""}`}
+        onClick={() => navigate(`${basePath}/layout-xr`)}
+      >
+        Layout XR
+      </button>
       <div className="agent-list-divider" />
       {agents.map((a) => (
         <button
