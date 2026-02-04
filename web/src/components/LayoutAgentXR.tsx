@@ -180,18 +180,20 @@ export function LayoutAgentXR() {
   const [playing, setPlaying] = useState(false);
   const prevLayoutRef = useRef<PanelLayout[] | null>(null);
   const animRef = useRef(0);
-  const [xrSupported, setXrSupported] = useState(false);
+  const [xrMode, setXrMode] = useState<"immersive-ar" | "immersive-vr" | null>(null);
   const [xrError, setXrError] = useState<string | null>(null);
 
   const [aiFocus, setAiFocus] = useState(1);
 
-  // Check WebXR support
+  // Check WebXR support — try AR first, fall back to VR
   useEffect(() => {
-    if (navigator.xr) {
-      navigator.xr.isSessionSupported("immersive-ar").then(supported => {
-        setXrSupported(supported);
-      }).catch(() => setXrSupported(false));
-    }
+    if (!navigator.xr) return;
+    navigator.xr.isSessionSupported("immersive-ar").then(arOk => {
+      if (arOk) { setXrMode("immersive-ar"); return; }
+      return navigator.xr!.isSessionSupported("immersive-vr").then(vrOk => {
+        if (vrOk) setXrMode("immersive-vr");
+      });
+    }).catch(() => {});
   }, []);
 
   const step = TIMELINE[stepIdx];
@@ -293,16 +295,20 @@ export function LayoutAgentXR() {
     [mode],
   );
 
-  const handleEnterAR = useCallback(async () => {
+  const handleEnterXR = useCallback(async () => {
     setXrError(null);
     try {
-      await xrStore.enterAR();
+      if (xrMode === "immersive-ar") {
+        await xrStore.enterAR();
+      } else {
+        await xrStore.enterVR();
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to enter AR";
+      const msg = err instanceof Error ? err.message : "Failed to enter XR";
       setXrError(msg);
       console.warn("[XR]", msg);
     }
-  }, []);
+  }, [xrMode]);
 
   return (
     <div style={styles.container}>
@@ -312,19 +318,17 @@ export function LayoutAgentXR() {
           <h2 style={styles.title}>Layout Agent XR</h2>
           <p style={styles.subtitle}>
             Immersive AR demo — use hand tracking to control panel layout.
-            {!xrSupported && " Orbit with mouse on desktop."}
+            {!xrMode && " Orbit with mouse on desktop."}
           </p>
         </div>
 
         <div style={styles.controls}>
-          {xrSupported && (
-            <button
-              onClick={handleEnterAR}
-              style={{ ...styles.btn, ...styles.btnAR }}
-            >
-              Enter AR
-            </button>
-          )}
+          <button
+            onClick={handleEnterXR}
+            style={{ ...styles.btn, ...styles.btnAR }}
+          >
+            {xrMode === "immersive-ar" ? "Enter AR" : xrMode === "immersive-vr" ? "Enter VR" : "Enter XR"}
+          </button>
 
           {xrError && (
             <span style={{ color: "#ff6666", fontSize: "0.75rem" }}>{xrError}</span>
