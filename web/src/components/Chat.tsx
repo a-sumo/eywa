@@ -12,7 +12,7 @@ export function Chat() {
   const { messages, loading, send } = useChat(room?.id ?? null, "general");
   const [input, setInput] = useState("");
   const [sender, setSender] = useState(
-    () => localStorage.getItem("neuralmesh_user") || ""
+    () => localStorage.getItem("remix_user") || ""
   );
   const [showNamePrompt, setShowNamePrompt] = useState(!sender);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -39,7 +39,7 @@ export function Chat() {
           onChange={(e) => setSender(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && sender.trim()) {
-              localStorage.setItem("neuralmesh_user", sender.trim());
+              localStorage.setItem("remix_user", sender.trim());
               setShowNamePrompt(false);
             }
           }}
@@ -47,7 +47,7 @@ export function Chat() {
         <button
           onClick={() => {
             if (sender.trim()) {
-              localStorage.setItem("neuralmesh_user", sender.trim());
+              localStorage.setItem("remix_user", sender.trim());
               setShowNamePrompt(false);
             }
           }}

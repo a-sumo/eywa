@@ -6,7 +6,7 @@ Multi-agent shared memory. When multiple coding agents (Claude Code, Cursor, Gem
                          ┌─────────────────────────┐
   [Claude Code] ──MCP──▶ │                         │
   [Cursor]      ──MCP──▶ │   Cloudflare Worker     │──REST──▶ [Supabase]
-  [Gemini CLI]  ──MCP──▶ │   eywa-mcp.workers.dev  │              ▲
+  [Gemini CLI]  ──MCP──▶ │   remix-mcp.workers.dev  │              ▲
                          └─────────────────────────┘              │
                                                         ┌────────┴────────┐
                                                         │  Web Dashboard  │
@@ -60,7 +60,7 @@ Key views:
 | **Agent List** | `/r/:slug` (sidebar) | Active/idle agents with last-seen timestamps |
 
 ### Legacy: Local MCP Server (Python)
-**`eywa_mcp.py`** - The original stdio-based server. Still works for local/offline use, but the Cloudflare Worker is the primary way to connect now.
+**`remix_mcp.py`** - The original stdio-based server. Still works for local/offline use, but the Cloudflare Worker is the primary way to connect now.
 
 ---
 
@@ -77,22 +77,22 @@ Key views:
 
 **Claude Code** (one command):
 ```bash
-claude mcp add neuralmesh --url "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha"
+claude mcp add remix --url "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha"
 ```
 
 **Cursor / Windsurf** (add to MCP config):
 ```json
-{ "mcpServers": { "neuralmesh": { "url": "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha" } } }
+{ "mcpServers": { "remix": { "url": "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha" } } }
 ```
 
 **Gemini CLI** (uses `httpUrl`):
 ```json
-{ "mcpServers": { "neuralmesh": { "httpUrl": "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha" } } }
+{ "mcpServers": { "remix": { "httpUrl": "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha" } } }
 ```
 
 **Older stdio-only clients** (mcp-remote bridge):
 ```json
-{ "mcpServers": { "neuralmesh": { "command": "npx", "args": ["mcp-remote", "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha"] } } }
+{ "mcpServers": { "remix": { "command": "npx", "args": ["mcp-remote", "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha"] } } }
 ```
 
 Change `?room=` and `?agent=` to match your workspace and agent name.
@@ -146,20 +146,20 @@ Live demo: [remix-memory.vercel.app](https://remix-memory.vercel.app)
 
 **Start of session** - tell the system what you're working on:
 ```
-eywa_start("Implementing user authentication with JWT")
+remix_start("Implementing user authentication with JWT")
 ```
 
 **End of session** - summarize:
 ```
-eywa_stop("Added JWT middleware, login/register endpoints, token refresh")
+remix_stop("Added JWT middleware, login/register endpoints, token refresh")
 ```
 
-Between those, optionally log key moments with `eywa_log()`.
+Between those, optionally log key moments with `remix_log()`.
 
 ### See what other agents are doing (the main feature)
 
 ```
-neuralmesh_status()
+remix_status()
 ```
 ```
 === Remix Agent Status ===
@@ -172,19 +172,19 @@ neuralmesh_status()
 ### Pull another agent's context into your session
 
 ```
-neuralmesh_pull("alpha")
+remix_pull("alpha")
 ```
 Returns their recent activity so you can see what they did and continue from there.
 
 ```
-neuralmesh_sync("alpha")
+remix_sync("alpha")
 ```
 Returns the full timeline of their current session.
 
 ### Team chat
 
 ```
-neuralmesh_msg("Auth system is done, beta can start on protected routes now")
+remix_msg("Auth system is done, beta can start on protected routes now")
 ```
 
 ---
@@ -235,7 +235,7 @@ A 3-panel workspace for curating and analyzing memories across threads:
 - **Right panel**: Gemini 2.0 Flash chat terminal. The assembled context is injected as a system prompt. Ask questions, compare threads, get summaries - Gemini sees everything in the context panel.
 
 ### Team Chat
-Real-time messaging powered by Supabase Realtime subscriptions. Messages from agents (via `neuralmesh_msg`) and humans appear in the same stream.
+Real-time messaging powered by Supabase Realtime subscriptions. Messages from agents (via `remix_msg`) and humans appear in the same stream.
 
 ---
 
@@ -244,32 +244,32 @@ Real-time messaging powered by Supabase Realtime subscriptions. Messages from ag
 ### Session
 | Tool | What it does |
 |------|-------------|
-| `eywa_whoami()` | Check your agent name, session, and room |
-| `eywa_start(task)` | Start a session - others see your current task |
-| `eywa_stop(summary)` | End session with what you accomplished |
+| `remix_whoami()` | Check your agent name, session, and room |
+| `remix_start(task)` | Start a session - others see your current task |
+| `remix_stop(summary)` | End session with what you accomplished |
 
 ### Logging
 | Tool | What it does |
 |------|-------------|
-| `eywa_log(role, content)` | Log a key moment (role: user/assistant/resource/tool_call/tool_result) |
-| `eywa_file(path, content, desc)` | Store a file snapshot - returns a reference ID |
-| `eywa_get_file(file_id)` | Retrieve a stored file |
-| `eywa_search(query, limit)` | Search all messages by content |
+| `remix_log(role, content)` | Log a key moment (role: user/assistant/resource/tool_call/tool_result) |
+| `remix_file(path, content, desc)` | Store a file snapshot - returns a reference ID |
+| `remix_get_file(file_id)` | Retrieve a stored file |
+| `remix_search(query, limit)` | Search all messages by content |
 
 ### Context
 | Tool | What it does |
 |------|-------------|
-| `neuralmesh_status()` | All agents, what they're working on, active/idle |
-| `neuralmesh_pull(agent, limit)` | Another agent's recent memories |
-| `neuralmesh_sync(agent)` | Full timeline of another agent's current session |
-| `eywa_context(limit)` | Raw feed of all recent activity |
-| `eywa_recall(agent, limit)` | Messages from a specific agent |
-| `eywa_agents()` | List all agents and when last active |
+| `remix_status()` | All agents, what they're working on, active/idle |
+| `remix_pull(agent, limit)` | Another agent's recent memories |
+| `remix_sync(agent)` | Full timeline of another agent's current session |
+| `remix_context(limit)` | Raw feed of all recent activity |
+| `remix_recall(agent, limit)` | Messages from a specific agent |
+| `remix_agents()` | List all agents and when last active |
 
 ### Messaging
 | Tool | What it does |
 |------|-------------|
-| `neuralmesh_msg(content, channel)` | Send a message to team chat |
+| `remix_msg(content, channel)` | Send a message to team chat |
 
 ---
 
@@ -309,10 +309,10 @@ ts         timestamptz
 ## File Structure
 
 ```
-eywa/
+remix/
 ├── README.md
 ├── schema.sql                  # Supabase schema (rooms, memories, messages)
-├── eywa_mcp.py                 # Legacy local MCP server (stdio)
+├── remix_mcp.py                 # Legacy local MCP server (stdio)
 │
 ├── worker/                     # Cloudflare Worker - hosted MCP server
 │   ├── wrangler.toml
@@ -326,7 +326,7 @@ eywa/
 │           ├── session.ts      # whoami, start, stop
 │           ├── memory.ts       # log, file, get_file, search
 │           ├── context.ts      # context, agents, recall
-│           └── neuralmesh.ts   # status, pull, sync, msg
+│           └── remix.ts   # status, pull, sync, msg
 │
 ├── web/                        # React dashboard
 │   ├── .env                    # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GEMINI_API_KEY
@@ -368,9 +368,9 @@ eywa/
 ```
 1. Agent connects      MCP Client → POST /mcp?room=demo&agent=alpha → Worker
 2. Worker resolves     Room slug "demo" → room_id via Supabase lookup
-3. Tool calls          eywa_start("task") → Worker inserts into memories table
+3. Tool calls          remix_start("task") → Worker inserts into memories table
 4. Dashboard reads     Web app subscribes to Supabase Realtime → shows activity live
-5. Cross-agent sync    neuralmesh_pull("alpha") → Worker queries memories → returns context
+5. Cross-agent sync    remix_pull("alpha") → Worker queries memories → returns context
 6. Remix analysis      User drags memories into context → Gemini analyzes combined threads
 7. Divergence check    Dashboard computes Jaccard similarity → shows colored indicators
 ```

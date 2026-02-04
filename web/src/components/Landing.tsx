@@ -39,7 +39,7 @@ export function Landing() {
         <div className="feature-card">
           <div className="feature-icon">2</div>
           <h3>Connect Agents</h3>
-          <p>One command: <code>neuralmesh_join("slug", "name")</code></p>
+          <p>One command: <code>remix_join("slug", "name")</code></p>
         </div>
         <div className="feature-card">
           <div className="feature-icon">3</div>

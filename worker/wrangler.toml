@@ -1,4 +1,4 @@
-name = "eywa-mcp"
+name = "remix-mcp"
 main = "src/index.ts"
 compatibility_date = "2025-01-13"
 compatibility_flags = ["nodejs_compat"]

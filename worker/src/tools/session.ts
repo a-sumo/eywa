@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { EywaContext } from "../lib/types.js";
+import type { RemixContext } from "../lib/types.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
@@ -10,10 +10,10 @@ function estimateTokens(text: string): number {
 export function registerSessionTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: EywaContext,
+  ctx: RemixContext,
 ) {
   server.tool(
-    "eywa_whoami",
+    "remix_whoami",
     "Check your agent identity, session, and room.",
     {},
     async () => ({
@@ -27,7 +27,7 @@ export function registerSessionTools(
   );
 
   server.tool(
-    "eywa_start",
+    "remix_start",
     "Start logging this session. Call this when beginning work on a task.",
     { task_description: z.string().describe("Brief description of what you're working on") },
     async ({ task_description }) => {
@@ -44,7 +44,7 @@ export function registerSessionTools(
         content: [
           {
             type: "text" as const,
-            text: `Logging started for: ${task_description}\nSession: ${ctx.sessionId} in room /${ctx.roomSlug}\nRemember to call eywa_log for important exchanges.`,
+            text: `Logging started for: ${task_description}\nSession: ${ctx.sessionId} in room /${ctx.roomSlug}\nRemember to call remix_log for important exchanges.`,
           },
         ],
       };
@@ -52,7 +52,7 @@ export function registerSessionTools(
   );
 
   server.tool(
-    "eywa_stop",
+    "remix_stop",
     "Stop logging and save a session summary.",
     { summary: z.string().describe("Summary of what was accomplished") },
     async ({ summary }) => {

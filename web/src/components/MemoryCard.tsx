@@ -66,7 +66,7 @@ export function MemoryCard({
           onDragStart(e);
         } else if (isDraggable) {
           e.dataTransfer.setData(
-            "application/neuralmesh-memory",
+            "application/remix-memory",
             JSON.stringify({ id: memory.id })
           );
           e.dataTransfer.effectAllowed = "copy";

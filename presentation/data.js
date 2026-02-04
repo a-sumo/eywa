@@ -331,7 +331,7 @@ const presentation = {
             <div style="display: flex; align-items: center; gap: 12px;">
               <div style="width: 24px; height: 24px; background: #667eea; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: 700; flex-shrink: 0;">2</div>
               <div style="flex: 1; background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 10px 14px;">
-                <strong>Agent calls tools</strong> - <code style="background: rgba(140,169,255,0.15); padding: 2px 6px; border-radius: 3px;">eywa_log</code>, <code style="background: rgba(140,169,255,0.15); padding: 2px 6px; border-radius: 3px;">eywa_file</code>, etc.
+                <strong>Agent calls tools</strong> - <code style="background: rgba(140,169,255,0.15); padding: 2px 6px; border-radius: 3px;">remix_log</code>, <code style="background: rgba(140,169,255,0.15); padding: 2px 6px; border-radius: 3px;">remix_file</code>, etc.
                 <div style="color: #888; font-size: 0.85em;">Each call inserts a row into the memories table via PostgREST</div>
               </div>
             </div>
@@ -379,19 +379,19 @@ const presentation = {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div style="background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 12px;">
               <div style="font-weight: 600; color: #667eea; font-size: 0.85em; margin-bottom: 6px;">Session Tools</div>
-              <div style="font-size: 0.85em; color: #555;">eywa_whoami<br>eywa_start<br>eywa_stop</div>
+              <div style="font-size: 0.85em; color: #555;">remix_whoami<br>remix_start<br>remix_stop</div>
             </div>
             <div style="background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 12px;">
               <div style="font-weight: 600; color: #667eea; font-size: 0.85em; margin-bottom: 6px;">Memory Tools</div>
-              <div style="font-size: 0.85em; color: #555;">eywa_log<br>eywa_file<br>eywa_get_file<br>eywa_search</div>
+              <div style="font-size: 0.85em; color: #555;">remix_log<br>remix_file<br>remix_get_file<br>remix_search</div>
             </div>
             <div style="background: #f0fff4; border: 1px solid rgba(72,150,100,0.3); border-radius: 8px; padding: 12px;">
               <div style="font-weight: 600; color: #489664; font-size: 0.85em; margin-bottom: 6px;">Context Tools</div>
-              <div style="font-size: 0.85em; color: #555;">eywa_context<br>eywa_agents<br>eywa_recall</div>
+              <div style="font-size: 0.85em; color: #555;">remix_context<br>remix_agents<br>remix_recall</div>
             </div>
             <div style="background: #fff8de; border: 1px solid rgba(180,140,80,0.3); border-radius: 8px; padding: 12px;">
               <div style="font-weight: 600; color: #B48C50; font-size: 0.85em; margin-bottom: 6px;">Mesh Tools</div>
-              <div style="font-size: 0.85em; color: #555;">neuralmesh_status<br>neuralmesh_pull<br>neuralmesh_sync<br>neuralmesh_msg</div>
+              <div style="font-size: 0.85em; color: #555;">remix_status<br>remix_pull<br>remix_sync<br>remix_msg</div>
             </div>
           </div>
         </div>
@@ -413,17 +413,17 @@ const presentation = {
               </tr>
             </thead>
             <tbody>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_start</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Begin a work session</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">task</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_stop</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">End session with summary</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">summary</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_log</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Log a message to shared memory</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">role, content</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_file</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Store a file artifact</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">path, content, description</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_search</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Search memories by keyword</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">query, limit</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Get recent room context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">limit</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_recall</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Pull specific agent's memories</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent, limit</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">neuralmesh_status</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Room overview + active agents</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">-</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">neuralmesh_pull</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Pull another agent's context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent, limit</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">neuralmesh_sync</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Sync decisions from agent</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent</td></tr>
-              <tr><td style="padding: 6px 12px; font-weight: 600;">neuralmesh_msg</td><td style="padding: 6px 12px;">Send team chat message</td><td style="padding: 6px 12px; color: #888;">content, channel</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_start</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Begin a work session</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">task</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_stop</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">End session with summary</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">summary</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_log</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Log a message to shared memory</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">role, content</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_file</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Store a file artifact</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">path, content, description</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_search</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Search memories by keyword</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">query, limit</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Get recent room context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">limit</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_recall</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Pull specific agent's memories</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent, limit</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_status</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Room overview + active agents</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">-</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_pull</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Pull another agent's context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent, limit</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_sync</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Sync decisions from agent</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent</td></tr>
+              <tr><td style="padding: 6px 12px; font-weight: 600;">remix_msg</td><td style="padding: 6px 12px;">Send team chat message</td><td style="padding: 6px 12px; color: #888;">content, channel</td></tr>
             </tbody>
           </table>
         </div>

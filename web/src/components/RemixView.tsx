@@ -195,7 +195,7 @@ export function RemixView() {
       setDragOver(false);
 
       const memoryData = e.dataTransfer.getData(
-        "application/neuralmesh-memory"
+        "application/remix-memory"
       );
       if (memoryData) {
         try {
@@ -208,7 +208,7 @@ export function RemixView() {
       }
 
       const threadData = e.dataTransfer.getData(
-        "application/neuralmesh-thread"
+        "application/remix-thread"
       );
       if (threadData) {
         try {
@@ -328,7 +328,7 @@ export function RemixView() {
                           draggable
                           onDragStart={(e) => {
                             e.dataTransfer.setData(
-                              "application/neuralmesh-memory",
+                              "application/remix-memory",
                               JSON.stringify({ id: m.id })
                             );
                             e.dataTransfer.effectAllowed = "copy";

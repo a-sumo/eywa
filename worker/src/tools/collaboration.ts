@@ -1,15 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { EywaContext, MemoryRow } from "../lib/types.js";
+import type { RemixContext, MemoryRow } from "../lib/types.js";
 
-export function registerNeuralmeshTools(
+export function registerCollaborationTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: EywaContext,
+  ctx: RemixContext,
 ) {
   server.tool(
-    "neuralmesh_status",
+    "remix_status",
     "See what all agents are currently working on in this room.",
     {},
     async () => {
@@ -66,7 +66,7 @@ export function registerNeuralmeshTools(
   );
 
   server.tool(
-    "neuralmesh_pull",
+    "remix_pull",
     "Pull recent context from another agent's session.",
     {
       agent: z.string().describe("Agent name to pull context from"),
@@ -105,7 +105,7 @@ export function registerNeuralmeshTools(
   );
 
   server.tool(
-    "neuralmesh_sync",
+    "remix_sync",
     "Sync another agent's current session history into your context.",
     {
       agent: z.string().describe("Agent name to sync from"),
@@ -168,7 +168,7 @@ export function registerNeuralmeshTools(
   );
 
   server.tool(
-    "neuralmesh_msg",
+    "remix_msg",
     "Send a message to teammates via Remix.",
     {
       content: z.string().describe("Message text"),

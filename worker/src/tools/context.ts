@@ -1,15 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { EywaContext, MemoryRow } from "../lib/types.js";
+import type { RemixContext, MemoryRow } from "../lib/types.js";
 
 export function registerContextTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: EywaContext,
+  ctx: RemixContext,
 ) {
   server.tool(
-    "eywa_context",
+    "remix_context",
     "Get shared context from all agents. See what others are working on.",
     {
       limit: z.number().optional().default(20).describe("Maximum messages to retrieve"),
@@ -24,7 +24,7 @@ export function registerContextTools(
 
       if (!rows.length) {
         return {
-          content: [{ type: "text" as const, text: "No activity in Eywa yet." }],
+          content: [{ type: "text" as const, text: "No activity in Remix yet." }],
         };
       }
 
@@ -41,8 +41,8 @@ export function registerContextTools(
   );
 
   server.tool(
-    "eywa_agents",
-    "List all agents that have logged to Eywa in this room.",
+    "remix_agents",
+    "List all agents that have logged to Remix in this room.",
     {},
     async () => {
       const rows = await db.select<MemoryRow>("memories", {
@@ -64,7 +64,7 @@ export function registerContextTools(
         };
       }
 
-      const lines = ["Agents in Eywa:"];
+      const lines = ["Agents in Remix:"];
       for (const [name, ts] of agents) {
         lines.push(`  ${name} (last: ${ts})`);
       }
@@ -76,7 +76,7 @@ export function registerContextTools(
   );
 
   server.tool(
-    "eywa_recall",
+    "remix_recall",
     "Recall messages from a specific agent.",
     {
       agent: z.string().describe("Agent name to query"),

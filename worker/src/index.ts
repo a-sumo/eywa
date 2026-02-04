@@ -1,11 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createMcpHandler } from "agents/mcp";
 import { SupabaseClient } from "./lib/supabase.js";
-import type { Env, EywaContext, RoomRow } from "./lib/types.js";
+import type { Env, RemixContext, RoomRow } from "./lib/types.js";
 import { registerSessionTools } from "./tools/session.js";
 import { registerMemoryTools } from "./tools/memory.js";
 import { registerContextTools } from "./tools/context.js";
-import { registerNeuralmeshTools } from "./tools/neuralmesh.js";
+import { registerCollaborationTools } from "./tools/collaboration.js";
 
 export default {
   async fetch(request: Request, env: Env, execCtx: ExecutionContext): Promise<Response> {
@@ -14,7 +14,7 @@ export default {
     // Health check / info endpoint
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({
-        name: "eywa-mcp",
+        name: "remix-mcp",
         version: "1.0.0",
         status: "ok",
         docs: "Connect via MCP at /mcp?room=<slug>&agent=<name>",
@@ -62,7 +62,7 @@ async function handleMcp(
 
   if (!rooms.length) {
     return Response.json(
-      { error: `Room not found: ${roomSlug}. Create one at neuralmesh.app first.` },
+      { error: `Room not found: ${roomSlug}. Create one at remix-memory.vercel.app first.` },
       { status: 404 },
     );
   }
@@ -70,7 +70,7 @@ async function handleMcp(
   const room = rooms[0];
   const sessionId = `session_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}_${crypto.randomUUID().slice(0, 8)}`;
 
-  const ctx: EywaContext = {
+  const ctx: RemixContext = {
     roomId: room.id,
     roomSlug: room.slug,
     roomName: room.name,
@@ -90,12 +90,12 @@ async function handleMcp(
   });
 
   // Create MCP server and register all tools
-  const server = new McpServer({ name: "eywa", version: "1.0.0" });
+  const server = new McpServer({ name: "remix", version: "1.0.0" });
 
   registerSessionTools(server, db, ctx);
   registerMemoryTools(server, db, ctx);
   registerContextTools(server, db, ctx);
-  registerNeuralmeshTools(server, db, ctx);
+  registerCollaborationTools(server, db, ctx);
 
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);

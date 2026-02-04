@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { EywaContext, MemoryRow } from "../lib/types.js";
+import type { RemixContext, MemoryRow } from "../lib/types.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
@@ -10,11 +10,11 @@ function estimateTokens(text: string): number {
 export function registerMemoryTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: EywaContext,
+  ctx: RemixContext,
 ) {
   server.tool(
-    "eywa_log",
-    "Log a message to Eywa shared memory.",
+    "remix_log",
+    "Log a message to Remix shared memory.",
     {
       role: z
         .string()
@@ -33,14 +33,14 @@ export function registerMemoryTools(
       });
       return {
         content: [
-          { type: "text" as const, text: `Logged to Eywa [${ctx.agent}:${role}]` },
+          { type: "text" as const, text: `Logged to Remix [${ctx.agent}:${role}]` },
         ],
       };
     },
   );
 
   server.tool(
-    "eywa_file",
+    "remix_file",
     "Store a file or large code block. Returns a reference ID.",
     {
       path: z.string().describe('File path or identifier (e.g., "src/auth.py")'),
@@ -78,12 +78,12 @@ export function registerMemoryTools(
   );
 
   server.tool(
-    "eywa_get_file",
+    "remix_get_file",
     "Retrieve a stored file by its ID.",
     {
       file_id: z
         .string()
-        .describe('The file ID returned from eywa_file (e.g., "file_abc123")'),
+        .describe('The file ID returned from remix_file (e.g., "file_abc123")'),
     },
     async ({ file_id }) => {
       const rows = await db.select<MemoryRow>("memories", {
@@ -111,7 +111,7 @@ export function registerMemoryTools(
   );
 
   server.tool(
-    "eywa_import",
+    "remix_import",
     "Bulk-import a conversation transcript into Remix. Use this to upload an existing session's history.",
     {
       messages: z
@@ -168,8 +168,8 @@ export function registerMemoryTools(
   );
 
   server.tool(
-    "eywa_search",
-    "Search Eywa for messages containing a query string.",
+    "remix_search",
+    "Search Remix for messages containing a query string.",
     {
       query: z.string().describe("Text to search for"),
       limit: z.number().optional().default(10).describe("Maximum results"),

@@ -86,7 +86,7 @@ export function ThreadView() {
             draggable
             onDragStart={(e) => {
               e.dataTransfer.setData(
-                "application/neuralmesh-memory",
+                "application/remix-memory",
                 JSON.stringify({ id: m.id })
               );
               e.dataTransfer.effectAllowed = "copy";

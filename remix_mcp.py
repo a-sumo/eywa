@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Eywa - MCP Server for multi-agent shared memory.
+Remix - MCP Server for multi-agent shared memory.
 
 This is the production entry point. Any MCP client (Claude Code, Cursor, etc.)
 connects to this server to share context across agents.
 
 Setup:
   pip install mcp supabase
-  claude mcp add eywa -- python /path/to/eywa_mcp.py
+  claude mcp add remix -- python /path/to/remix_mcp.py
 
 Architecture:
-  [Claude Code] --MCP--> [Eywa Server] ---> [Supabase]
-  [Cursor]      --MCP--> [Eywa Server] ---> [Supabase]
-  [Any Agent]   --MCP--> [Eywa Server] ---> [Supabase]
+  [Claude Code] --MCP--> [Remix Server] ---> [Supabase]
+  [Cursor]      --MCP--> [Remix Server] ---> [Supabase]
+  [Any Agent]   --MCP--> [Remix Server] ---> [Supabase]
 """
 
 import os
@@ -37,16 +37,16 @@ supabase = create_client(
     os.environ["SUPABASE_KEY"]
 )
 
-# Auto-generate unique agent ID (can be renamed via eywa_identify)
+# Auto-generate unique agent ID (can be renamed via remix_identify)
 _agent_id = f"agent_{uuid.uuid4().hex[:8]}"
-_agent_name = os.environ.get("EYWA_AGENT", _agent_id)
+_agent_name = os.environ.get("REMIX_AGENT", _agent_id)
 _session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 _logging_enabled = False
 _room_id: str | None = None
 _room_slug: str | None = None
 
 # MCP Server
-mcp = FastMCP("eywa")
+mcp = FastMCP("remix")
 
 
 def _estimate_tokens(text: str) -> int:
@@ -58,7 +58,7 @@ def _estimate_tokens(text: str) -> int:
 # ============================================================
 
 @mcp.tool()
-def eywa_identify(name: str) -> str:
+def remix_identify(name: str) -> str:
     """
     Set your agent name. Call this first to identify yourself.
 
@@ -71,10 +71,10 @@ def eywa_identify(name: str) -> str:
 
 
 @mcp.tool()
-def eywa_start(task_description: str) -> str:
+def remix_start(task_description: str) -> str:
     """
     Start logging this session. Call this when beginning work on a task.
-    After calling this, you should log significant exchanges with eywa_log.
+    After calling this, you should log significant exchanges with remix_log.
 
     Args:
         task_description: Brief description of what you're working on
@@ -93,11 +93,11 @@ def eywa_start(task_description: str) -> str:
     }).execute()
 
     room_info = f" in room /{_room_slug}" if _room_slug else ""
-    return f"Logging started for: {task_description}\nSession: {_session_id}{room_info}\nRemember to call eywa_log for important exchanges."
+    return f"Logging started for: {task_description}\nSession: {_session_id}{room_info}\nRemember to call remix_log for important exchanges."
 
 
 @mcp.tool()
-def eywa_stop(summary: str) -> str:
+def remix_stop(summary: str) -> str:
     """
     Stop logging and save a session summary.
 
@@ -121,7 +121,7 @@ def eywa_stop(summary: str) -> str:
 
 
 @mcp.tool()
-def eywa_file(path: str, content: str, description: str = "") -> str:
+def remix_file(path: str, content: str, description: str = "") -> str:
     """
     Store a file or large code block separately. Returns a reference ID.
     Use this for code files, configs, or any large content.
@@ -152,9 +152,9 @@ def eywa_file(path: str, content: str, description: str = "") -> str:
 
 
 @mcp.tool()
-def eywa_log(role: str, content: str) -> str:
+def remix_log(role: str, content: str) -> str:
     """
-    Log a message to Eywa shared memory.
+    Log a message to Remix shared memory.
 
     Args:
         role: Message type - one of: user, assistant, tool_call, tool_result, resource
@@ -170,18 +170,18 @@ def eywa_log(role: str, content: str) -> str:
         "metadata": {}
     }).execute()
 
-    return f"Logged to Eywa [{_agent_name}:{role}]"
+    return f"Logged to Remix [{_agent_name}:{role}]"
 
 
 @mcp.tool()
-def eywa_whoami() -> str:
+def remix_whoami() -> str:
     """Check your agent identity, session, and room."""
     room_info = f"\nRoom: /{_room_slug}" if _room_slug else "\nRoom: (not joined)"
     return f"Agent: {_agent_name}\nID: {_agent_id}\nSession: {_session_id}{room_info}"
 
 
 @mcp.tool()
-def eywa_context(limit: int = 20) -> str:
+def remix_context(limit: int = 20) -> str:
     """
     Get shared context from all agents. Use this to see what others are working on.
 
@@ -195,7 +195,7 @@ def eywa_context(limit: int = 20) -> str:
         .execute().data
 
     if not data:
-        return "No activity in Eywa yet."
+        return "No activity in Remix yet."
 
     lines = []
     for m in data:
@@ -208,8 +208,8 @@ def eywa_context(limit: int = 20) -> str:
 
 
 @mcp.tool()
-def eywa_agents() -> str:
-    """List all agents that have logged to Eywa."""
+def remix_agents() -> str:
+    """List all agents that have logged to Remix."""
     data = supabase.table("memories") \
         .select("agent, ts") \
         .order("ts", desc=True) \
@@ -223,7 +223,7 @@ def eywa_agents() -> str:
     if not agents:
         return "No agents found."
 
-    lines = ["Agents in Eywa:"]
+    lines = ["Agents in Remix:"]
     for name, ts in agents.items():
         lines.append(f"  {name} (last: {ts})")
 
@@ -231,7 +231,7 @@ def eywa_agents() -> str:
 
 
 @mcp.tool()
-def eywa_recall(agent: str, limit: int = 20) -> str:
+def remix_recall(agent: str, limit: int = 20) -> str:
     """
     Recall messages from a specific agent.
 
@@ -259,12 +259,12 @@ def eywa_recall(agent: str, limit: int = 20) -> str:
 
 
 @mcp.tool()
-def eywa_get_file(file_id: str) -> str:
+def remix_get_file(file_id: str) -> str:
     """
     Retrieve a stored file by its ID.
 
     Args:
-        file_id: The file ID returned from eywa_file (e.g., "file_abc123")
+        file_id: The file ID returned from remix_file (e.g., "file_abc123")
     """
     data = supabase.table("memories") \
         .select("content, metadata") \
@@ -283,9 +283,9 @@ def eywa_get_file(file_id: str) -> str:
 
 
 @mcp.tool()
-def eywa_search(query: str, limit: int = 10) -> str:
+def remix_search(query: str, limit: int = 10) -> str:
     """
-    Search Eywa for messages containing a query string.
+    Search Remix for messages containing a query string.
 
     Args:
         query: Text to search for
@@ -316,7 +316,7 @@ def eywa_search(query: str, limit: int = 10) -> str:
 # ============================================================
 
 @mcp.tool()
-def neuralmesh_join(room_slug: str, agent_name: str) -> str:
+def remix_join(room_slug: str, agent_name: str) -> str:
     """
     Join a Remix room. This is the one-command setup for multi-agent collaboration.
     Call this first to connect to a room and identify yourself.
@@ -331,7 +331,7 @@ def neuralmesh_join(room_slug: str, agent_name: str) -> str:
     result = supabase.table("rooms").select("id, name, slug").eq("slug", room_slug).execute()
 
     if not result.data:
-        return f"Room not found: {room_slug}\nCreate a room at neuralmesh.app first."
+        return f"Room not found: {room_slug}\nCreate a room at remix-memory.vercel.app first."
 
     room = result.data[0]
     _room_id = room["id"]
@@ -353,7 +353,7 @@ def neuralmesh_join(room_slug: str, agent_name: str) -> str:
 
 
 @mcp.tool()
-def neuralmesh_pull(agent: str, limit: int = 20) -> str:
+def remix_pull(agent: str, limit: int = 20) -> str:
     """
     Pull recent context from another agent's session into yours.
     Returns their recent memories formatted as context you can work with.
@@ -388,7 +388,7 @@ def neuralmesh_pull(agent: str, limit: int = 20) -> str:
 
 
 @mcp.tool()
-def neuralmesh_sync(agent: str) -> str:
+def remix_sync(agent: str) -> str:
     """
     Sync another agent's current session history into your context.
     Merges their session timeline with yours.
@@ -432,7 +432,7 @@ def neuralmesh_sync(agent: str) -> str:
 
 
 @mcp.tool()
-def neuralmesh_status() -> str:
+def remix_status() -> str:
     """See what all agents are currently working on - task descriptions and activity."""
     data = supabase.table("memories") \
         .select("agent, content, ts, metadata") \
@@ -478,7 +478,7 @@ def neuralmesh_status() -> str:
 
 
 @mcp.tool()
-def neuralmesh_msg(content: str, channel: str = "general") -> str:
+def remix_msg(content: str, channel: str = "general") -> str:
     """
     Send a message to teammates via Remix.
 
@@ -487,7 +487,7 @@ def neuralmesh_msg(content: str, channel: str = "general") -> str:
         channel: Channel to send to (default: "general")
     """
     if not _room_id:
-        return "Not connected to a room. Call neuralmesh_join first."
+        return "Not connected to a room. Call remix_join first."
 
     supabase.table("messages").insert({
         "room_id": _room_id,
@@ -503,16 +503,16 @@ def neuralmesh_msg(content: str, channel: str = "general") -> str:
 # MCP RESOURCES - Expose data as readable resources
 # ============================================================
 
-@mcp.resource("eywa://context")
+@mcp.resource("remix://context")
 def resource_context() -> str:
     """Current shared context from all agents."""
-    return eywa_context(limit=50)
+    return remix_context(limit=50)
 
 
-@mcp.resource("eywa://agents")
+@mcp.resource("remix://agents")
 def resource_agents() -> str:
     """List of all agents."""
-    return eywa_agents()
+    return remix_agents()
 
 
 if __name__ == "__main__":

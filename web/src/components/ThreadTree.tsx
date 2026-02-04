@@ -396,7 +396,7 @@ export function ThreadTree() {
                       draggable
                       onDragStart={(e) => {
                         e.dataTransfer.setData(
-                          "application/neuralmesh-thread",
+                          "application/remix-thread",
                           JSON.stringify({
                             agent: thread.agent,
                             sessionId: thread.sessionId,
@@ -429,7 +429,7 @@ export function ThreadTree() {
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData(
-                        "application/neuralmesh-thread",
+                        "application/remix-thread",
                         JSON.stringify({
                           agent: thread.agent,
                           sessionId: thread.sessionId,

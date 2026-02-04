@@ -11,7 +11,7 @@ export function EmptyState({ type }: EmptyStateProps) {
     agents: {
       title: "No agents connected",
       description: "Connect an agent using the MCP tool",
-      code: room ? `neuralmesh_join("${room.slug}", "my-agent")` : 'neuralmesh_join("slug", "name")',
+      code: room ? `remix_join("${room.slug}", "my-agent")` : 'remix_join("slug", "name")',
     },
     memories: {
       title: "No memories yet",

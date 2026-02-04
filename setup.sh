@@ -1,9 +1,9 @@
 #!/bin/bash
-# Eywa Setup Script
+# Remix Setup Script
 
 set -e
 
-echo "=== Eywa Setup ==="
+echo "=== Remix Setup ==="
 echo
 
 # Check Python
@@ -38,5 +38,5 @@ echo
 echo "Next steps:"
 echo "1. Run schema.sql in your Supabase SQL Editor"
 echo "2. Add to Claude Code:"
-echo "   claude mcp add eywa -- python $(pwd)/eywa_mcp.py"
+echo "   claude mcp add remix -- python $(pwd)/remix_mcp.py"
 echo

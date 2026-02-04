@@ -14,7 +14,7 @@ export function AgentDetail() {
 
   const handlePull = (memory: Memory) => {
     navigator.clipboard.writeText(
-      `Use eywa: neuralmesh_pull("${memory.agent}") to pull this context`
+      `Use remix_pull("${memory.agent}") to pull this context`
     );
     alert("Copied pull command to clipboard!");
   };
