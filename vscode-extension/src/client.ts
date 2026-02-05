@@ -210,7 +210,7 @@ export class RemixClient {
         },
       );
 
-      const ACTIVE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+      const ACTIVE_THRESHOLD = 30 * 60 * 1000; // 30 minutes
       const isRecent = now - new Date(last.ts).getTime() < ACTIVE_THRESHOLD;
 
       let status: "active" | "finished" | "idle" = "idle";

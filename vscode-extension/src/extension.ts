@@ -26,13 +26,6 @@ export function activate(context: vscode.ExtensionContext) {
   const activityProvider = new ActivityTreeProvider();
   const codeLensProvider = new KnowledgeCodeLensProvider(() => client);
 
-  context.subscriptions.push(
-    vscode.window.registerTreeDataProvider("remixAgents", agentProvider),
-    vscode.window.registerTreeDataProvider("remixKnowledge", knowledgeProvider),
-    vscode.window.registerTreeDataProvider("remixActivity", activityProvider),
-    vscode.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider),
-  );
-
   // Debounced refresh
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   function debouncedRefresh() {
@@ -119,8 +112,15 @@ export function activate(context: vscode.ExtensionContext) {
     debouncedRefresh();
   }
 
-  // Initialize client from config
+  // Initialize client BEFORE registering tree providers so first getChildren sees the client
   initClient(agentProvider, codeLensProvider, handleRealtimeEvent, context);
+
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider("remixAgents", agentProvider),
+    vscode.window.registerTreeDataProvider("remixKnowledge", knowledgeProvider),
+    vscode.window.registerTreeDataProvider("remixActivity", activityProvider),
+    vscode.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider),
+  );
 
   // Commands
   context.subscriptions.push(

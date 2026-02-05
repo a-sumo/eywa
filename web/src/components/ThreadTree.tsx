@@ -103,7 +103,7 @@ function buildThreads(memories: Memory[]): ThreadInfo[] {
         (m.metadata as Record<string, unknown>)?.event === "session_end"
     );
 
-    const ACTIVE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+    const ACTIVE_THRESHOLD = 30 * 60 * 1000; // 30 minutes
     const isRecent = Date.now() - new Date(last.ts).getTime() < ACTIVE_THRESHOLD;
 
     let status: "active" | "finished" | "idle" = "idle";

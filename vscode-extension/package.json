@@ -2,7 +2,7 @@
   "name": "remix-agents",
   "displayName": "Remix — Agent Memory",
   "description": "Monitor and steer AI agents sharing context through Remix",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "armandsumo",
   "engines": {
     "vscode": "^1.85.0"
