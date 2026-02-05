@@ -5,7 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { Memory } from "../lib/supabase";
 import {
   summarizeThread,
-  findDivergentThreads,
   type ThreadSummary,
 } from "../lib/threadSimilarity";
 import { ConnectAgent } from "./ConnectAgent";
@@ -33,7 +32,7 @@ interface ThreadTag {
 
 interface Notification {
   id: string;
-  type: "divergence" | "connection" | "session";
+  type: "connection" | "session";
   message: string;
   timestamp: string;
   icon: string;
@@ -215,20 +214,10 @@ function sortThreads(threads: ThreadInfo[], mode: SortMode): ThreadInfo[] {
   });
 }
 
-function buildNotifications(memories: Memory[], divergentPairs: ReturnType<typeof findDivergentThreads>): Notification[] {
+function buildNotifications(memories: Memory[]): Notification[] {
   const notifications: Notification[] = [];
 
-  // Divergence alerts
-  for (const pair of divergentPairs) {
-    const pct = Math.round(pair.divergence * 100);
-    notifications.push({
-      id: `div::${pair.threadA.agent}::${pair.threadA.sessionId}||${pair.threadB.agent}::${pair.threadB.sessionId}`,
-      type: "divergence",
-      message: `${pair.threadA.agent} and ${pair.threadB.agent} threads diverged ${pct}%`,
-      timestamp: new Date().toISOString(),
-      icon: "\u26A0",
-    });
-  }
+  // Session events only — divergence alerts removed (too noisy)
 
   // Agent connections (last 10)
   const connections = memories
@@ -319,16 +308,10 @@ export function ThreadTree() {
   const effectiveSortMode: SortMode =
     sortMode ?? (filteredThreads.some((t) => t.isCodeThread) ? "files" : "time");
 
-  // Divergence notifications (high divergence only, >= 0.7)
-  const divergentPairs = useMemo(
-    () => findDivergentThreads(memories, 0.7),
-    [memories]
-  );
-
   // Build notification feed
   const allNotifications = useMemo(
-    () => buildNotifications(memories, divergentPairs),
-    [memories, divergentPairs]
+    () => buildNotifications(memories),
+    [memories]
   );
 
   const activeNotifications = allNotifications.filter(
