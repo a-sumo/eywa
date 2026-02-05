@@ -69,7 +69,7 @@ export function useRealtimeAgents(roomId: string | null) {
     const map = new Map<string, { lastSeen: string; sessions: Set<string>; agents: Set<string> }>();
     for (const row of data) {
       const meta = (row.metadata ?? {}) as Record<string, unknown>;
-      const user = (meta.user as string) ?? row.agent.replace(/-[a-f0-9]{4}$/, "");
+      const user = (meta.user as string) ?? row.agent.split("/")[0];
       const existing = map.get(user);
       if (!existing) {
         map.set(user, {

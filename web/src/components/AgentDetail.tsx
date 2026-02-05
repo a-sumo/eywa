@@ -15,8 +15,8 @@ export function AgentDetail() {
     if (m.agent === name) return true;
     const meta = (m.metadata ?? {}) as Record<string, unknown>;
     if (meta.user === name) return true;
-    // Fallback: strip -xxxx suffix and compare
-    return m.agent.replace(/-[a-f0-9]{4}$/, "") === name;
+    // Fallback: extract user from "user/session-name" format
+    return m.agent.split("/")[0] === name;
   });
 
   const handlePull = (memory: Memory) => {

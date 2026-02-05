@@ -37,6 +37,25 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
+const ADJECTIVES = [
+  "swift","quiet","bold","warm","cool","bright","dark","wild","calm","sharp",
+  "keen","still","fair","deep","raw","soft","dry","pale","cold","red",
+  "blue","gold","gray","jade","iron","amber","coral","misty","dusty","frosty",
+  "mossy","rusty","sunny","windy","rainy","snowy","hazy","smoky","rosy","ashy",
+];
+const NOUNS = [
+  "oak","elm","fox","owl","wolf","bear","hawk","crow","dove","wren",
+  "pine","sage","fern","moss","reed","lake","brook","ridge","cliff","stone",
+  "dusk","dawn","rain","snow","mist","gale","tide","star","moon","spark",
+  "thorn","bloom","frost","ember","shore","grove","vale","marsh","peak","drift",
+];
+
+function generateName(): string {
+  const arr = new Uint32Array(2);
+  crypto.getRandomValues(arr);
+  return `${ADJECTIVES[arr[0] % ADJECTIVES.length]}-${NOUNS[arr[1] % NOUNS.length]}`;
+}
+
 async function handleMcp(
   request: Request,
   url: URL,
@@ -53,10 +72,9 @@ async function handleMcp(
     );
   }
 
-  // Each connection gets a unique agent identity: "armand-a3f2"
+  // Each connection gets a unique agent identity: "armand/quiet-oak"
   // The base name groups sessions by user for the UI.
-  const suffix = crypto.randomUUID().slice(0, 4);
-  const agent = `${baseAgent}-${suffix}`;
+  const agent = `${baseAgent}/${generateName()}`;
 
   const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 

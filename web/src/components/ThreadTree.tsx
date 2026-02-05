@@ -137,7 +137,7 @@ function buildThreads(memories: Memory[]): ThreadInfo[] {
 
     // Extract user from metadata, falling back to stripping -xxxx suffix
     const firstMeta = (first.metadata ?? {}) as Record<string, unknown>;
-    const user = (firstMeta.user as string) ?? first.agent.replace(/-[a-f0-9]{4}$/, "");
+    const user = (firstMeta.user as string) ?? first.agent.split("/")[0];
 
     threads.push({
       agent: first.agent,
