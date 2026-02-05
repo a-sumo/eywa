@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRealtimeAgents } from "../hooks/useRealtimeMemories";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useRoomContext } from "../context/RoomContext";
@@ -27,60 +28,43 @@ export function AgentList() {
   const agents = useRealtimeAgents(room?.id ?? null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [showLabs, setShowLabs] = useState(false);
 
   const basePath = `/r/${slug}`;
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <div className="agent-list">
-      <h2>Agents</h2>
+      {/* Primary action — Remix */}
       <button
-        className={`agent-chip ${location.pathname === basePath ? "active" : ""}`}
-        onClick={() => navigate(basePath)}
-      >
-        Threads
-      </button>
-      <button
-        className={`agent-chip ${location.pathname === `${basePath}/remix/new` ? "active" : ""}`}
+        className={`agent-chip remix-primary ${isActive(`${basePath}/remix/new`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/remix/new`)}
       >
-        + Remix
+        + New Remix
       </button>
+
+      {/* Core nav */}
+      <div className="nav-section-label">workspace</div>
       <button
-        className={`agent-chip ${location.pathname === `${basePath}/remix3d` ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/remix3d`)}
-      >
-        Remix 3D
-      </button>
-      <button
-        className={`agent-chip ${location.pathname === `${basePath}/chat` ? "active" : ""}`}
+        className={`agent-chip ${isActive(`${basePath}/chat`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/chat`)}
       >
         Team Chat
       </button>
       <button
-        className={`agent-chip ${location.pathname === `${basePath}/mini` ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/mini`)}
+        className={`agent-chip ${isActive(basePath) ? "active" : ""}`}
+        onClick={() => navigate(basePath)}
       >
-        Mini
+        Threads
       </button>
-      <button
-        className={`agent-chip ${location.pathname === `${basePath}/layout-agent` ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/layout-agent`)}
-      >
-        Layout Agent
-      </button>
-      <button
-        className={`agent-chip ${location.pathname === `${basePath}/layout-xr` ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/layout-xr`)}
-      >
-        Layout XR
-      </button>
-      <div className="agent-list-divider" />
+
+      {/* Agents */}
+      <div className="nav-section-label">agents</div>
       {agents.map((a) => (
         <button
           key={a.name}
           className={`agent-chip ${
-            location.pathname === `${basePath}/agent/${a.name}` ? "active" : ""
+            isActive(`${basePath}/agent/${a.name}`) ? "active" : ""
           }`}
           onClick={() => navigate(`${basePath}/agent/${encodeURIComponent(a.name)}`)}
         >
@@ -99,6 +83,49 @@ export function AgentList() {
       ))}
       {agents.length === 0 && (
         <p className="empty">No agents yet.</p>
+      )}
+
+      {/* Labs — collapsible experiments */}
+      <div className="agent-list-divider" />
+      <button
+        className="nav-labs-toggle"
+        onClick={() => setShowLabs(!showLabs)}
+      >
+        <span>{showLabs ? "▾" : "▸"} Labs</span>
+      </button>
+      {showLabs && (
+        <div className="nav-labs">
+          <button
+            className={`agent-chip nav-lab-item ${isActive(`${basePath}/mini`) ? "active" : ""}`}
+            onClick={() => navigate(`${basePath}/mini`)}
+          >
+            Mini Dashboard
+          </button>
+          <button
+            className={`agent-chip nav-lab-item ${isActive(`${basePath}/remix3d`) ? "active" : ""}`}
+            onClick={() => navigate(`${basePath}/remix3d`)}
+          >
+            Remix 3D
+          </button>
+          <button
+            className={`agent-chip nav-lab-item ${isActive(`${basePath}/layout-agent`) ? "active" : ""}`}
+            onClick={() => navigate(`${basePath}/layout-agent`)}
+          >
+            Layout Agent
+          </button>
+          <button
+            className={`agent-chip nav-lab-item ${isActive(`${basePath}/layout-xr`) ? "active" : ""}`}
+            onClick={() => navigate(`${basePath}/layout-xr`)}
+          >
+            Layout XR
+          </button>
+          <button
+            className={`agent-chip nav-lab-item ${isActive(`${basePath}/xr-test`) ? "active" : ""}`}
+            onClick={() => navigate(`${basePath}/xr-test`)}
+          >
+            XR Test
+          </button>
+        </div>
       )}
     </div>
   );
