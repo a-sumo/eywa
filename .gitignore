@@ -226,3 +226,4 @@ worker/.dev.vars
 
 # Vercel
 .vercel/
+.vercel

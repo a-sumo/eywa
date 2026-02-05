@@ -1,8 +1,8 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import { useNavigate, useParams } from "react-router-dom";
-import type { Memory } from "../lib/supabase";
+import { supabase, type Memory } from "../lib/supabase";
 import {
   summarizeThread,
   type ThreadSummary,
@@ -30,13 +30,6 @@ interface ThreadTag {
   key: string;
 }
 
-interface Notification {
-  id: string;
-  type: "connection" | "session";
-  message: string;
-  timestamp: string;
-  icon: string;
-}
 
 function extractFilePaths(memories: Memory[]): string[] {
   const paths = new Set<string>();
@@ -110,26 +103,30 @@ function buildThreads(memories: Memory[]): ThreadInfo[] {
         (m.metadata as Record<string, unknown>)?.event === "session_end"
     );
 
+    const ACTIVE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+    const isRecent = Date.now() - new Date(last.ts).getTime() < ACTIVE_THRESHOLD;
+
     let status: "active" | "finished" | "idle" = "idle";
     let task = "";
 
-    if (startEvent && !endEvent) {
-      status = "active";
-      task = String(
-        (startEvent.metadata as Record<string, unknown>)?.task || ""
-      );
-    } else if (endEvent) {
+    if (endEvent) {
       status = "finished";
       task = String(
         (endEvent.metadata as Record<string, unknown>)?.summary || ""
       );
+    } else if (startEvent) {
+      // Only "active" if there's recent activity — otherwise stale unclosed session
+      status = isRecent ? "active" : "idle";
+      task = String(
+        (startEvent.metadata as Record<string, unknown>)?.task || ""
+      );
+    } else if (isRecent) {
+      status = "active";
     }
 
-    if (
-      status === "idle" &&
-      Date.now() - new Date(last.ts).getTime() < 5 * 60 * 1000
-    ) {
-      status = "active";
+    // Skip ghost sessions: 1 memory, not recent, not active
+    if (sorted.length <= 1 && !isRecent && status !== "active") {
+      continue;
     }
 
     const filePaths = extractFilePaths(sorted);
@@ -214,50 +211,6 @@ function sortThreads(threads: ThreadInfo[], mode: SortMode): ThreadInfo[] {
   });
 }
 
-function buildNotifications(memories: Memory[]): Notification[] {
-  const notifications: Notification[] = [];
-
-  // Session events only — divergence alerts removed (too noisy)
-
-  // Agent connections (last 10)
-  const connections = memories
-    .filter((m) => (m.metadata as Record<string, unknown>)?.event === "agent_connected")
-    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
-    .slice(0, 10);
-
-  for (const m of connections) {
-    notifications.push({
-      id: `conn::${m.id}`,
-      type: "connection",
-      message: `${m.agent} connected`,
-      timestamp: m.ts,
-      icon: "\u2192",
-    });
-  }
-
-  // Session events (last 10)
-  const sessionEvents = memories
-    .filter((m) => {
-      const event = (m.metadata as Record<string, unknown>)?.event;
-      return event === "session_start" || event === "session_end";
-    })
-    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
-    .slice(0, 10);
-
-  for (const m of sessionEvents) {
-    const event = (m.metadata as Record<string, unknown>)?.event;
-    const label = event === "session_start" ? "started a session" : "ended a session";
-    notifications.push({
-      id: `sess::${m.id}`,
-      type: "session",
-      message: `${m.agent} ${label}`,
-      timestamp: m.ts,
-      icon: event === "session_start" ? "\u25B6" : "\u25A0",
-    });
-  }
-
-  return notifications;
-}
 
 export function ThreadTree() {
   const { room } = useRoomContext();
@@ -269,29 +222,62 @@ export function ThreadTree() {
     new Set()
   );
   const [sortMode, setSortMode] = useState<SortMode | null>(null);
-  const [dismissedNotifications, setDismissedNotifications] = useState<
-    Set<string>
-  >(new Set());
-  const [bellOpen, setBellOpen] = useState(false);
-  const bellRef = useRef<HTMLDivElement>(null);
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [agentFilter, setAgentFilter] = useState<Set<string>>(new Set());
   const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
 
-  // Close notification dropdown on click outside
+  // Inject state
+  const [injectOpen, setInjectOpen] = useState(false);
+  const [injectTarget, setInjectTarget] = useState("all");
+  const [injectContent, setInjectContent] = useState("");
+  const [injectPriority, setInjectPriority] = useState<"normal" | "high" | "urgent">("normal");
+  const [injectSending, setInjectSending] = useState(false);
+  const injectRef = useRef<HTMLDivElement>(null);
+
+  // Close inject panel on outside click
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
-        setBellOpen(false);
+    if (!injectOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (injectRef.current && !injectRef.current.contains(e.target as Node)) {
+        setInjectOpen(false);
       }
     }
-    if (bellOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [injectOpen]);
+
+  const handleInject = useCallback(async () => {
+    if (!injectContent.trim() || !room) return;
+    setInjectSending(true);
+    try {
+      await supabase.from("memories").insert({
+        room_id: room.id,
+        agent: "web-user",
+        session_id: `web_${Date.now()}`,
+        message_type: "injection",
+        content: `[INJECT → ${injectTarget}]: ${injectContent}`,
+        token_count: Math.floor(injectContent.length / 4),
+        metadata: {
+          event: "context_injection",
+          from_agent: "web-user",
+          target_agent: injectTarget,
+          priority: injectPriority,
+          label: null,
+        },
+      });
+      setInjectContent("");
+      setInjectOpen(false);
+    } finally {
+      setInjectSending(false);
     }
-  }, [bellOpen]);
+  }, [injectContent, injectTarget, injectPriority, room]);
+
+  function openInjectFor(agent: string) {
+    setInjectTarget(agent);
+    setInjectOpen(true);
+  }
 
   const rawThreads = buildThreads(memories);
 
@@ -307,20 +293,6 @@ export function ThreadTree() {
   // Auto-detect sort mode
   const effectiveSortMode: SortMode =
     sortMode ?? (filteredThreads.some((t) => t.isCodeThread) ? "files" : "time");
-
-  // Build notification feed
-  const allNotifications = useMemo(
-    () => buildNotifications(memories),
-    [memories]
-  );
-
-  const activeNotifications = allNotifications.filter(
-    (n) => !dismissedNotifications.has(n.id)
-  );
-
-  function dismissNotification(id: string) {
-    setDismissedNotifications((prev) => new Set(prev).add(id));
-  }
 
   // Derive tags per thread (memoized)
   const threadTagsMap = useMemo(() => {
@@ -449,57 +421,13 @@ export function ThreadTree() {
           </button>
         </div>
 
-        {/* Notification bell */}
-        <div className="notification-bell-wrapper" ref={bellRef}>
-          <button
-            className="notification-bell"
-            onClick={() => setBellOpen((prev) => !prev)}
-            title="Notifications"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            {activeNotifications.length > 0 && (
-              <span className="notification-badge">
-                {activeNotifications.length}
-              </span>
-            )}
-          </button>
-
-          {bellOpen && (
-            <div className="notification-dropdown">
-              <div className="notification-dropdown-header">
-                Notifications
-                <span className="notification-dropdown-count">
-                  {activeNotifications.length}
-                </span>
-              </div>
-              {activeNotifications.length === 0 ? (
-                <div className="notification-empty">All clear</div>
-              ) : (
-                <div className="notification-list">
-                  {activeNotifications.map((n) => (
-                    <div key={n.id} className={`notification-item notification-${n.type}`}>
-                      <span className="notification-icon">{n.icon}</span>
-                      <div className="notification-content">
-                        <span className="notification-message">{n.message}</span>
-                        <span className="notification-time">{timeAgo(n.timestamp)}</span>
-                      </div>
-                      <button
-                        className="notification-dismiss"
-                        onClick={() => dismissNotification(n.id)}
-                        title="Dismiss"
-                      >
-                        &times;
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <button
+          className="btn-inject"
+          onClick={() => { setInjectTarget("all"); setInjectOpen((prev) => !prev); }}
+          title="Inject context to agents"
+        >
+          Inject
+        </button>
 
         <button
           className="btn-remix-new"
@@ -508,6 +436,61 @@ export function ThreadTree() {
           + New Remix
         </button>
       </div>
+
+      {/* Inject panel */}
+      {injectOpen && (
+        <div className="inject-panel" ref={injectRef}>
+          <div className="inject-panel-header">
+            <span>Inject context</span>
+            <button className="inject-close" onClick={() => setInjectOpen(false)}>&times;</button>
+          </div>
+          <div className="inject-row">
+            <label className="inject-label">To</label>
+            <select
+              className="inject-select"
+              value={injectTarget}
+              onChange={(e) => setInjectTarget(e.target.value)}
+            >
+              <option value="all">All agents</option>
+              {allAgents.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+            <div className="inject-priority-group">
+              {(["normal", "high", "urgent"] as const).map((p) => (
+                <button
+                  key={p}
+                  className={`inject-priority-btn ${injectPriority === p ? `inject-priority-${p}` : ""}`}
+                  onClick={() => setInjectPriority(p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="inject-input-row">
+            <textarea
+              className="inject-textarea"
+              placeholder="Context, instructions, or feedback..."
+              value={injectContent}
+              onChange={(e) => setInjectContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  handleInject();
+                }
+              }}
+              rows={3}
+            />
+            <button
+              className="inject-send"
+              onClick={handleInject}
+              disabled={injectSending || !injectContent.trim()}
+            >
+              {injectSending ? "..." : "Send"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter bar */}
       <div className="thread-filter-bar">
@@ -591,6 +574,13 @@ export function ThreadTree() {
                 }}
               />
               <span style={{ color: agentColor(agent) }}>{agent}</span>
+              <button
+                className="inject-agent-btn"
+                onClick={(e) => { e.stopPropagation(); openInjectFor(agent); }}
+                title={`Inject context to ${agent}`}
+              >
+                &#x21E8;
+              </button>
               <span className="thread-count">
                 {agentTs.length} thread{agentTs.length !== 1 ? "s" : ""}
               </span>

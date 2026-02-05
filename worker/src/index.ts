@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createMcpHandler } from "agents/mcp";
 import { SupabaseClient } from "./lib/supabase.js";
+import { InboxTracker } from "./lib/inbox.js";
 import type { Env, RemixContext, RoomRow } from "./lib/types.js";
 import { registerSessionTools } from "./tools/session.js";
 import { registerMemoryTools } from "./tools/memory.js";
@@ -129,6 +130,35 @@ async function handleMcp(
 
   // Create MCP server and register all tools
   const server = new McpServer({ name: "remix", version: "1.0.0" });
+
+  // Wrap server.tool to piggyback pending injections on every tool response.
+  // This ensures agents see injections without explicitly calling remix_inbox.
+  const inbox = new InboxTracker();
+  const SKIP_INBOX = new Set(["remix_inject", "remix_inbox"]);
+  const origTool = server.tool.bind(server) as Function;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (server as any).tool = function (...args: any[]) {
+    const toolName = typeof args[0] === "string" ? args[0] : "";
+    const handlerIdx = args.length - 1;
+    const originalHandler = args[handlerIdx];
+
+    if (typeof originalHandler === "function" && !SKIP_INBOX.has(toolName)) {
+      args[handlerIdx] = async function (...handlerArgs: any[]) {
+        const result = await originalHandler(...handlerArgs);
+        try {
+          const pending = await inbox.check(db, ctx);
+          if (pending && result.content && Array.isArray(result.content)) {
+            result.content.push({ type: "text" as const, text: pending });
+          }
+        } catch {
+          // Never break tool responses due to inbox check failure
+        }
+        return result;
+      };
+    }
+
+    return origTool.apply(server, args);
+  };
 
   registerSessionTools(server, db, ctx);
   registerMemoryTools(server, db, ctx);

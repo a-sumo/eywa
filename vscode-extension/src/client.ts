@@ -27,6 +27,16 @@ export interface MemoryEvent {
   message_type: string;
 }
 
+export interface SessionInfo {
+  agent: string;
+  user: string;
+  sessionId: string;
+  status: "active" | "finished" | "idle";
+  task: string;
+  memoryCount: number;
+  lastSeen: string;
+}
+
 export class RemixClient {
   private supabase: SupabaseClient;
   private roomSlug: string;
@@ -35,6 +45,14 @@ export class RemixClient {
   constructor(url: string, key: string, room: string) {
     this.supabase = createClient(url, key);
     this.roomSlug = room;
+  }
+
+  getSupabase(): SupabaseClient {
+    return this.supabase;
+  }
+
+  async resolveRoomId(): Promise<string> {
+    return this.resolveRoom();
   }
 
   private async resolveRoom(): Promise<string> {
@@ -149,6 +167,102 @@ export class RemixClient {
       ts: r.ts,
       message_type: r.message_type ?? "",
     }));
+  }
+
+  async getSessions(): Promise<Map<string, SessionInfo[]>> {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return new Map();
+
+    const { data: rows } = await this.supabase
+      .from("memories")
+      .select("agent,content,ts,session_id,metadata")
+      .eq("room_id", roomId)
+      .order("ts", { ascending: false });
+
+    if (!rows?.length) return new Map();
+
+    // Group by agent::session_id
+    const sessionMap = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const key = `${row.agent}::${row.session_id}`;
+      const list = sessionMap.get(key) || [];
+      list.push(row);
+      sessionMap.set(key, list);
+    }
+
+    const now = Date.now();
+    const userSessions = new Map<string, SessionInfo[]>();
+
+    for (const [, mems] of sessionMap) {
+      const sorted = [...mems].sort(
+        (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime(),
+      );
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+
+      const startEvent = sorted.find(
+        (m) => (m.metadata as Record<string, unknown>)?.event === "session_start",
+      );
+      const endEvent = sorted.find(
+        (m) => {
+          const ev = (m.metadata as Record<string, unknown>)?.event;
+          return ev === "session_done" || ev === "session_end";
+        },
+      );
+
+      const ACTIVE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+      const isRecent = now - new Date(last.ts).getTime() < ACTIVE_THRESHOLD;
+
+      let status: "active" | "finished" | "idle" = "idle";
+      let task = "";
+
+      if (endEvent) {
+        status = "finished";
+        task = String((endEvent.metadata as Record<string, unknown>)?.summary || "");
+      } else if (startEvent) {
+        // Only "active" if there's recent activity — otherwise it's a stale unclosed session
+        status = isRecent ? "active" : "idle";
+        task = String((startEvent.metadata as Record<string, unknown>)?.task || "");
+      } else if (isRecent) {
+        status = "active";
+      }
+
+      // Skip ghost sessions: 1 memory, not recent, not active
+      if (sorted.length <= 1 && !isRecent && status !== "active") {
+        continue;
+      }
+
+      const firstMeta = (first.metadata ?? {}) as Record<string, unknown>;
+      const user = (firstMeta.user as string) ?? first.agent.split("/")[0];
+
+      const info: SessionInfo = {
+        agent: first.agent,
+        user,
+        sessionId: first.session_id,
+        status,
+        task: task || (last.content ?? "").slice(0, 100),
+        memoryCount: sorted.length,
+        lastSeen: last.ts,
+      };
+
+      const list = userSessions.get(user) || [];
+      list.push(info);
+      userSessions.set(user, list);
+    }
+
+    // Sort sessions within each user: active first, then by lastSeen
+    for (const [user, sessions] of userSessions) {
+      sessions.sort((a, b) => {
+        const order = { active: 0, idle: 1, finished: 2 };
+        const diff = order[a.status] - order[b.status];
+        if (diff !== 0) return diff;
+        return new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime();
+      });
+      // Cap at 20 visible sessions per user — show active + most recent
+      userSessions.set(user, sessions.slice(0, 20));
+    }
+
+    return userSessions;
   }
 
   async inject(

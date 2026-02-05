@@ -1,0 +1,47 @@
+import * as vscode from "vscode";
+import type { RemixClient } from "./client";
+
+export async function injectSelection(getClient: () => RemixClient | undefined): Promise<void> {
+  const client = getClient();
+  if (!client) {
+    vscode.window.showWarningMessage("Configure remix.room, remix.supabaseUrl, and remix.supabaseKey first.");
+    return;
+  }
+
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    vscode.window.showWarningMessage("No active editor with selection.");
+    return;
+  }
+
+  const selection = editor.selection;
+  if (selection.isEmpty) {
+    vscode.window.showWarningMessage("Select some text first.");
+    return;
+  }
+
+  const text = editor.document.getText(selection);
+  const filePath = vscode.workspace.asRelativePath(editor.document.uri);
+  const startLine = selection.start.line + 1;
+  const endLine = selection.end.line + 1;
+
+  // Pick target agent
+  const agents = await client.getAgents();
+  const items = [...agents.map((a) => ({
+    label: a.name,
+    description: a.isActive ? "active" : "idle",
+  })), {
+    label: "all",
+    description: "Broadcast to all agents",
+  }];
+
+  const pick = await vscode.window.showQuickPick(items, {
+    placeHolder: "Inject to which agent?",
+  });
+  if (!pick) return;
+
+  const content = `[${filePath}:${startLine}-${endLine}]\n\`\`\`\n${text}\n\`\`\``;
+
+  await client.inject("vscode-user", pick.label, content, "normal");
+  vscode.window.showInformationMessage(`Injected ${filePath}:${startLine}-${endLine} → ${pick.label}`);
+}

@@ -2182,6 +2182,204 @@ html {
 }
 
 /* ============================================
+   Inject Panel
+   ============================================ */
+
+.btn-inject {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  background: rgba(102, 126, 234, 0.08);
+  color: var(--color-accent-secondary);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btn-inject:hover {
+  background: rgba(102, 126, 234, 0.15);
+  transform: translateY(-1px);
+}
+
+.inject-panel {
+  background: var(--color-fill);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-md);
+}
+
+.inject-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.inject-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0 0.25rem;
+  line-height: 1;
+}
+
+.inject-close:hover {
+  color: var(--color-text);
+}
+
+.inject-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.inject-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.inject-select {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-fill);
+  color: var(--color-text);
+  outline: none;
+  max-width: 180px;
+}
+
+.inject-select:focus {
+  border-color: var(--color-accent);
+}
+
+.inject-priority-group {
+  display: flex;
+  gap: 0;
+  margin-left: auto;
+}
+
+.inject-priority-btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  background: var(--color-fill);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.inject-priority-btn:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.inject-priority-btn:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.inject-priority-btn:not(:last-child) {
+  border-right: none;
+}
+
+.inject-priority-normal {
+  background: rgba(72, 150, 100, 0.1);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.inject-priority-high {
+  background: rgba(180, 140, 80, 0.1);
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.inject-priority-urgent {
+  background: rgba(180, 80, 80, 0.1);
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.inject-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.inject-textarea {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-fill);
+  color: var(--color-text);
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.15s;
+}
+
+.inject-textarea:focus {
+  border-color: var(--color-accent);
+}
+
+.inject-textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.inject-send {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  background: var(--gradient-primary);
+  color: white;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  align-self: flex-end;
+}
+
+.inject-send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(140, 169, 255, 0.3);
+}
+
+.inject-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inject-agent-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  padding: 0 0.25rem;
+  transition: color 0.15s;
+  line-height: 1;
+}
+
+.inject-agent-btn:hover {
+  color: var(--color-accent-secondary);
+}
+
+/* ============================================
    Thread Navigation & File Tags
    ============================================ */
 

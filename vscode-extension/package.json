@@ -2,11 +2,17 @@
   "name": "remix-agents",
   "displayName": "Remix — Agent Memory",
   "description": "Monitor and steer AI agents sharing context through Remix",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "armandsumo",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other"],
-  "activationEvents": ["onStartupFinished"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -14,7 +20,7 @@
         {
           "id": "remix",
           "title": "Remix",
-          "icon": "$(symbol-misc)"
+          "icon": "icon.svg"
         }
       ]
     },
@@ -23,6 +29,10 @@
         {
           "id": "remixAgents",
           "name": "Agents"
+        },
+        {
+          "id": "remixActivity",
+          "name": "Activity"
         },
         {
           "id": "remixKnowledge",
@@ -49,8 +59,32 @@
         "title": "Remix: Inject Context to Agent"
       },
       {
+        "command": "remix.injectSelection",
+        "title": "Remix: Inject Selection to Agent",
+        "icon": "$(arrow-right)"
+      },
+      {
         "command": "remix.showStatus",
-        "title": "Remix: Show Full Status"
+        "title": "Remix: Show Status"
+      },
+      {
+        "command": "remix.injectToSession",
+        "title": "Inject Context",
+        "icon": "$(arrow-right)"
+      },
+      {
+        "command": "remix.copySessionSummary",
+        "title": "Copy Summary",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "remix.openSessionInDashboard",
+        "title": "Open in Dashboard",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "remix.showKnowledgeForFile",
+        "title": "Remix: Show Knowledge for File"
       }
     ],
     "menus": {
@@ -60,8 +94,47 @@
           "when": "view == remixAgents",
           "group": "navigation"
         }
+      ],
+      "view/item/context": [
+        {
+          "command": "remix.injectToSession",
+          "when": "viewItem == remixSession",
+          "group": "inline"
+        },
+        {
+          "command": "remix.copySessionSummary",
+          "when": "viewItem == remixSession",
+          "group": "1_actions"
+        },
+        {
+          "command": "remix.openSessionInDashboard",
+          "when": "viewItem == remixSession",
+          "group": "1_actions"
+        },
+        {
+          "command": "remix.injectContext",
+          "when": "viewItem == remixUser",
+          "group": "1_actions"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "remix.injectSelection",
+          "when": "editorHasSelection",
+          "group": "remix"
+        }
       ]
     },
+    "keybindings": [
+      {
+        "command": "remix.injectSelection",
+        "key": "cmd+shift+i",
+        "mac": "cmd+shift+i",
+        "win": "ctrl+shift+i",
+        "linux": "ctrl+shift+i",
+        "when": "editorHasSelection"
+      }
+    ],
     "configuration": {
       "title": "Remix",
       "properties": {
@@ -79,30 +152,21 @@
           "type": "string",
           "default": "",
           "description": "Room slug to monitor"
-        },
-        "remix.pollInterval": {
-          "type": "number",
-          "default": 10,
-          "description": "Poll interval in seconds for agent updates"
-        },
-        "remix.notifications": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show VS Code notifications for agent events"
         }
       }
     }
   },
   "scripts": {
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "package": "vsce package"
+    "compile": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "watch": "npm run compile -- --watch",
+    "package": "npm run compile -- --minify && vsce package --allow-missing-repository"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
+    "esbuild": "^0.27.2",
     "typescript": "^5.7.0"
   }
 }

@@ -53,12 +53,22 @@ export function registerInjectTools(
       limit: z.number().optional().default(10).describe("Maximum injections to retrieve"),
     },
     async ({ limit }) => {
-      // Get injections targeted at this agent
+      // Get injections targeted at this agent (full agent id)
       const targeted = await db.select<MemoryRow>("memories", {
         select: "id,agent,content,metadata,ts",
         room_id: `eq.${ctx.roomId}`,
         message_type: "eq.injection",
         "metadata->>target_agent": `eq.${ctx.agent}`,
+        order: "ts.desc",
+        limit: String(limit),
+      });
+
+      // Get injections targeted at the user name (e.g. "armand" matches "armand/quiet-oak")
+      const userTargeted = await db.select<MemoryRow>("memories", {
+        select: "id,agent,content,metadata,ts",
+        room_id: `eq.${ctx.roomId}`,
+        message_type: "eq.injection",
+        "metadata->>target_agent": `eq.${ctx.user}`,
         order: "ts.desc",
         limit: String(limit),
       });
@@ -76,7 +86,7 @@ export function registerInjectTools(
       // Merge, deduplicate, sort by time
       const seen = new Set<string>();
       const all: MemoryRow[] = [];
-      for (const row of [...targeted, ...broadcast]) {
+      for (const row of [...targeted, ...userTargeted, ...broadcast]) {
         if (!seen.has(row.id)) {
           seen.add(row.id);
           all.push(row);
