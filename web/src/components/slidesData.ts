@@ -49,8 +49,9 @@ export const slidesData: SlidesData = {
     "2. The Market",
     "3. The Insight",
     "4. The Product",
-    "5. Architecture",
-    "6. Live Demo",
+    "5. VS Code Extension",
+    "6. Architecture",
+    "7. Live Demo",
     "Appendix: Labs",
   ],
 
@@ -71,6 +72,12 @@ export const slidesData: SlidesData = {
       "Remix Workspace",
       "Gemini Terminal",
       "Divergence detection",
+      "Context Injection",
+      "Web Inject UI",
+    ],
+    "VS Code Extension": [
+      "VS Code Extension",
+      "VS Code Extension screenshot",
     ],
     Architecture: [
       "System overview",
@@ -216,6 +223,43 @@ export const slidesData: SlidesData = {
       title: "Divergence detection",
       subtitle: "Get alerted when teammates' threads go in different directions",
       diagramKey: "divergence",
+    },
+    {
+      type: "diagram",
+      title: "Context Injection",
+      subtitle: "Push context to any agent — they see it on their next tool call",
+      diagramKey: "injection-pipeline",
+    },
+    {
+      type: "bullets",
+      title: "Web Inject UI",
+      subtitle: "Inline inject panel in the thread tree — no separate page",
+      items: [
+        "Target any agent or broadcast to all.",
+        "Priority levels: normal, high, <strong>urgent</strong> (triggers native VS Code popup).",
+        "Per-agent inject button (<strong>\u21e8</strong>) for quick targeted sends.",
+        "Content flows through Supabase → piggybacks on the agent's next MCP tool response.",
+      ],
+    },
+
+    // ── VS CODE EXTENSION ──────────────────────────────────
+    {
+      type: "bullets",
+      title: "VS Code Extension",
+      subtitle: "Full team awareness without leaving your editor",
+      items: [
+        "Realtime sidebar: hierarchical <strong>User \u2192 Session</strong> tree with live status indicators.",
+        "Activity feed: session starts, completions, injections, knowledge stored — all in real-time.",
+        "<strong>Cmd+Shift+I</strong>: select code, pick agent, inject — 3 steps.",
+        "Knowledge <strong>CodeLens</strong>: see relevant team knowledge inline in your editor.",
+        "No context switching. No web dashboard needed.",
+      ],
+    },
+    {
+      type: "image",
+      title: "VS Code Extension screenshot",
+      subtitle: "Hierarchical sessions, live activity feed, one-key injection",
+      src: "/slides/vscode-extension.png",
     },
 
     // ── ARCHITECTURE ──────────────────────────────────

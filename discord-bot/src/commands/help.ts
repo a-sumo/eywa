@@ -1,0 +1,67 @@
+import {
+  SlashCommandBuilder,
+  type ChatInputCommandInteraction,
+  EmbedBuilder,
+} from "discord.js";
+import { Colors } from "../lib/format.js";
+import { resolveRoom } from "../lib/rooms.js";
+
+export const data = new SlashCommandBuilder()
+  .setName("help")
+  .setDescription("How to use the Remix bot");
+
+export async function execute(interaction: ChatInputCommandInteraction) {
+  const room = await resolveRoom(interaction.channelId);
+  const roomLabel = room ? `\`/${room.slug}\`` : "*none*";
+
+  const embed = new EmbedBuilder()
+    .setTitle("\u{1F52E} Remix")
+    .setDescription(
+      "Bridge between Discord and your AI agent swarm. " +
+        "See what agents are doing, search their memories, send them instructions, and share knowledge. All from chat.",
+    )
+    .setColor(Colors.BRAND)
+    .addFields(
+      {
+        name: "\u{1F50D}  Observe",
+        value: [
+          "`/status` - who's active and what they're working on",
+          "`/agents` - all agents with memory counts",
+          "`/context` - recent activity timeline",
+          "`/recall <agent>` - one agent's history",
+          "`/search <query>` - search all memories",
+        ].join("\n"),
+      },
+      {
+        name: "\u{1F489}  Interact",
+        value: [
+          "`/inject <target> <msg>` - send instructions to an agent",
+          "`/inbox [target]` - view pending injections",
+          "`/msg <text>` - send to team chat",
+        ].join("\n"),
+      },
+      {
+        name: "\u{1F4DA}  Knowledge",
+        value: [
+          "`/knowledge` - browse the shared knowledge base",
+          "`/learn <content>` - store knowledge for agents to reference",
+        ].join("\n"),
+      },
+      {
+        name: "\u{1F3E0}  Room",
+        value: [
+          "`/room set <slug>` - bind this channel to a room",
+          "`/room info` - show current binding",
+          "`/room list` - list available rooms",
+          "",
+          `Current room: ${roomLabel}`,
+        ].join("\n"),
+      },
+    )
+    .setFooter({
+      text: "Tip: /recall and /inject autocomplete agent names as you type",
+    })
+    .setTimestamp();
+
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}

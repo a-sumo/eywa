@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import type { Memory } from "../lib/supabase";
@@ -352,6 +353,7 @@ export function MiniRemix() {
   const { room } = useRoomContext();
   const { memories } = useRealtimeMemories(room?.id ?? null, 200);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [showQr, setShowQr] = useState(false);
 
   const agentSessions = useMemo(() => buildSessions(memories), [memories]);
   const agents = Array.from(agentSessions.entries());
@@ -380,6 +382,10 @@ export function MiniRemix() {
     ? agentSessions.get(selectedAgent) ?? []
     : [];
 
+  const roomUrl = room
+    ? `${window.location.origin}/r/${room.slug}`
+    : "";
+
   return (
     <div className="mini-container">
       {/* Title bar */}
@@ -392,7 +398,31 @@ export function MiniRemix() {
         <span className="mini-titlebar-stats">
           {agentSessions.size}a · {memories.length}m
         </span>
+        <button
+          className="mini-qr-btn"
+          onClick={() => setShowQr((p) => !p)}
+          title="Show QR code"
+        >
+          {showQr ? "\u2715" : "QR"}
+        </button>
       </div>
+
+      {/* QR overlay */}
+      {showQr && roomUrl && (
+        <div className="mini-qr-overlay" onClick={() => setShowQr(false)}>
+          <div className="mini-qr-card" onClick={(e) => e.stopPropagation()}>
+            <QRCodeSVG
+              value={roomUrl}
+              size={200}
+              bgColor="#0d1117"
+              fgColor="#e6edf3"
+              level="L"
+            />
+            <span className="mini-qr-label">Scan to join</span>
+            <code className="mini-qr-url">{roomUrl}</code>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className={`mini-content ${selectedAgent ? "has-detail" : ""}`}>

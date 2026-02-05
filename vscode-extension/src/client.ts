@@ -1,3 +1,7 @@
+/**
+ * Supabase client for the Remix VS Code extension.
+ * Provides typed access to rooms, agents, sessions, knowledge, and injections.
+ */
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 export interface AgentInfo {
@@ -27,6 +31,11 @@ export interface MemoryEvent {
   message_type: string;
 }
 
+/**
+ * Session info grouped by user for the agent tree.
+ * Status is derived from session lifecycle events and a 30-minute active threshold.
+ * Ghost sessions (1 memory, stale, not active) are filtered out.
+ */
 export interface SessionInfo {
   agent: string;
   user: string;
@@ -169,6 +178,11 @@ export class RemixClient {
     }));
   }
 
+  /**
+   * Fetch all sessions grouped by user. Determines status from lifecycle events
+   * (session_start/session_done) and a 30-min active threshold. Filters ghost
+   * sessions and caps at 20 per user.
+   */
   async getSessions(): Promise<Map<string, SessionInfo[]>> {
     const roomId = await this.resolveRoom();
     if (!roomId) return new Map();

@@ -1,3 +1,9 @@
+/**
+ * Remix VS Code Extension — entry point.
+ * Wires up tree providers (agents, knowledge, activity), realtime subscriptions,
+ * CodeLens, status bar, and all commands (inject, connect, dashboard, etc.).
+ * Configuration is read from `remix.*` settings; changes trigger re-init.
+ */
 import * as vscode from "vscode";
 import { AgentTreeProvider, SessionItem } from "./agentTree";
 import { KnowledgeTreeProvider } from "./knowledgeTree";
@@ -26,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
   const activityProvider = new ActivityTreeProvider();
   const codeLensProvider = new KnowledgeCodeLensProvider(() => client);
 
-  // Debounced refresh
+  // Debounced refresh — coalesces rapid realtime events into a single tree update
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   function debouncedRefresh() {
     if (refreshTimer) clearTimeout(refreshTimer);
@@ -313,6 +319,10 @@ function updateStatusBar(agentProvider: AgentTreeProvider) {
   }
 }
 
+/**
+ * (Re-)initialize the RemixClient and Realtime subscription from current settings.
+ * Tears down any existing connection before creating a new one.
+ */
 function initClient(
   agentProvider: AgentTreeProvider,
   codeLensProvider: KnowledgeCodeLensProvider,

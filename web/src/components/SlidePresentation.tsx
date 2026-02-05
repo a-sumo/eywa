@@ -228,6 +228,12 @@ function ArchitectureDiagram() {
             Thread Tree {"\u00b7"} Thread View {"\u00b7"} Remix + Gemini {"\u00b7"} 3D / XR
           </div>
         </div>
+        <div className="dia-arch-dashboard" style={{ marginTop: 8 }}>
+          <div className="dia-arch-box-title">VS Code Extension</div>
+          <div className="dia-arch-box-detail">
+            Agent Tree {"\u00b7"} Activity Feed {"\u00b7"} Code Inject {"\u00b7"} Knowledge Lens
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -276,6 +282,14 @@ function DataFlowDiagram() {
       border: "rgba(180,80,80,0.2)",
       title: "Divergence computed client-side",
       detail: "Jaccard similarity on thread tokens \u2192 alerts when threads from different agents diverge >30%",
+    },
+    {
+      num: 6,
+      color: "var(--color-accent)",
+      bg: "var(--color-card)",
+      border: "var(--color-border)",
+      title: "Injections piggyback on tool responses",
+      detail: "InboxTracker appends pending injections to every MCP tool result \u2014 no polling needed",
     },
   ];
 
@@ -415,6 +429,71 @@ function ToolReferenceDiagram() {
   );
 }
 
+function InjectionPipelineDiagram() {
+  const stages = [
+    {
+      label: "VS Code / Web",
+      detail: "Select code or type context",
+      color: "var(--color-accent-secondary)",
+      bg: "#f0f4ff",
+      border: "var(--color-border)",
+    },
+    {
+      label: "remix_inject",
+      detail: "Insert into memories table",
+      color: "var(--color-accent-secondary)",
+      bg: "#f0f4ff",
+      border: "var(--color-border)",
+    },
+    {
+      label: "Supabase",
+      detail: "memories (type: injection)",
+      color: "var(--success)",
+      bg: "#f0fff4",
+      border: "rgba(72,150,100,0.3)",
+    },
+    {
+      label: "Worker piggyback",
+      detail: "InboxTracker.check()",
+      color: "var(--warning)",
+      bg: "var(--color-card)",
+      border: "rgba(180,140,80,0.3)",
+    },
+    {
+      label: "Agent tool response",
+      detail: "Auto-appended to every reply",
+      color: "var(--error)",
+      bg: "rgba(180,80,80,0.05)",
+      border: "rgba(180,80,80,0.2)",
+    },
+  ];
+
+  return (
+    <div className="dia-arch">
+      <div className="dia-arch-row">
+        {stages.map((s, i) => (
+          <div key={s.label} style={{ display: "flex", alignItems: "center" }}>
+            <div className="dia-arch-col">
+              <div className="dia-arch-label" style={{ color: s.color }}>{s.label}</div>
+              <div className="dia-arch-box" style={{ background: s.bg, borderColor: s.border, minWidth: 120 }}>
+                <div className="dia-arch-box-detail">{s.detail}</div>
+              </div>
+            </div>
+            {i < stages.length - 1 && (
+              <div className="dia-arch-arrow">{"\u2192"}</div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="dia-arch-footer" style={{ marginTop: 16 }}>
+        <span style={{ color: "var(--warning)", fontWeight: 600 }}>
+          Key: agents don't poll — injections piggyback on every MCP tool response
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const diagrams: Record<string, () => ReactNode> = {
   "three-views": ThreeViewsDiagram,
   "the-remix": TheRemixDiagram,
@@ -423,6 +502,7 @@ const diagrams: Record<string, () => ReactNode> = {
   "data-flow": DataFlowDiagram,
   "mcp-bridge": MCPBridgeDiagram,
   "tool-reference": ToolReferenceDiagram,
+  "injection-pipeline": InjectionPipelineDiagram,
 };
 
 // ── Slide renderer ───────────────────────────────────────

@@ -1,5 +1,11 @@
+/**
+ * Live activity feed for the Remix sidebar.
+ * Displays session starts/completions, injections, knowledge events, and
+ * general messages in reverse-chronological order. Capped at {@link MAX_EVENTS}.
+ */
 import * as vscode from "vscode";
 
+/** Represents a single activity event displayed in the tree view. */
 export interface ActivityEvent {
   id: string;
   agent: string;
@@ -20,8 +26,13 @@ function timeAgo(ts: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
+/** Maximum events retained in memory. Oldest events are evicted when exceeded. */
 const MAX_EVENTS = 50;
 
+/**
+ * TreeDataProvider for the "Remix Activity" panel.
+ * Events are deduped by ID and capped at MAX_EVENTS.
+ */
 export class ActivityTreeProvider implements vscode.TreeDataProvider<ActivityItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<ActivityItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -32,6 +43,7 @@ export class ActivityTreeProvider implements vscode.TreeDataProvider<ActivityIte
     this._onDidChangeTreeData.fire();
   }
 
+  /** Add an event to the feed. Dedupes by ID and evicts the oldest when over cap. */
   addEvent(event: ActivityEvent): void {
     if (this.seenIds.has(event.id)) return;
     this.seenIds.add(event.id);

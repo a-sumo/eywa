@@ -1,3 +1,10 @@
+/**
+ * Injection piggyback module for the Remix MCP worker.
+ * {@link InboxTracker} is instantiated per-session and checked on every tool
+ * response. New injections (targeted, broadcast, or user-level) are automatically
+ * appended to the tool result so agents see them without polling.
+ * Deduplication via surfacedIds (bounded to 200) prevents double-surfacing.
+ */
 import type { SupabaseClient } from "./supabase.js";
 import type { RemixContext, MemoryRow } from "./types.js";
 

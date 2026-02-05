@@ -1,6 +1,15 @@
+/**
+ * CodeLens provider that surfaces relevant Remix knowledge entries inline.
+ * Matches knowledge to files by checking whether the entry content or tags
+ * reference the current file's relative path or filename.
+ */
 import * as vscode from "vscode";
 import type { RemixClient, KnowledgeEntry } from "./client";
 
+/**
+ * Shows a CodeLens at line 0 when knowledge entries match the open file.
+ * Clicking the lens opens an output channel with the full knowledge content.
+ */
 export class KnowledgeCodeLensProvider implements vscode.CodeLensProvider {
   private _onDidChangeCodeLenses = new vscode.EventEmitter<void>();
   readonly onDidChangeCodeLenses = this._onDidChangeCodeLenses.event;
@@ -49,6 +58,7 @@ export class KnowledgeCodeLensProvider implements vscode.CodeLensProvider {
   }
 }
 
+/** Register the `remix.showKnowledgeForFile` command that displays matched entries in an output channel. */
 export function registerKnowledgeForFileCommand(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand("remix.showKnowledgeForFile", (entries: KnowledgeEntry[]) => {
