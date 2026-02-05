@@ -46,3 +46,17 @@ export interface MessageRow {
   metadata: Record<string, unknown>;
   ts: string;
 }
+
+export interface LinkRow {
+  id: string;
+  room_id: string | null;
+  source_memory_id: string;
+  target_agent: string;
+  target_session_id: string;
+  target_position: string;
+  link_type: string;
+  created_by: string;
+  label: string | null;
+  metadata: Record<string, unknown>;
+  ts: string;
+}

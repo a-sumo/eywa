@@ -46,6 +46,26 @@ CREATE INDEX IF NOT EXISTS idx_messages_channel ON messages(channel);
 CREATE INDEX IF NOT EXISTS idx_messages_ts ON messages(ts DESC);
 CREATE INDEX IF NOT EXISTS idx_messages_room ON messages(room_id);
 
+-- Links table for connecting memories across sessions
+CREATE TABLE IF NOT EXISTS links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id UUID REFERENCES rooms(id),
+  source_memory_id UUID REFERENCES memories(id) ON DELETE CASCADE,
+  target_agent TEXT NOT NULL,
+  target_session_id TEXT NOT NULL,
+  target_position TEXT NOT NULL DEFAULT 'head',
+  link_type TEXT NOT NULL DEFAULT 'reference',
+  created_by TEXT NOT NULL,
+  label TEXT,
+  metadata JSONB DEFAULT '{}',
+  ts TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_links_room ON links(room_id);
+CREATE INDEX IF NOT EXISTS idx_links_source ON links(source_memory_id);
+CREATE INDEX IF NOT EXISTS idx_links_target_session ON links(target_session_id);
+CREATE INDEX IF NOT EXISTS idx_links_ts ON links(ts DESC);
+
 -- Optional: Row Level Security (if you want user isolation)
 -- ALTER TABLE memories ENABLE ROW LEVEL SECURITY;
 -- CREATE POLICY "Users can read all" ON memories FOR SELECT USING (true);

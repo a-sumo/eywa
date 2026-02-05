@@ -1,5 +1,11 @@
+/**
+ * Supabase Realtime channel wrapper for the Remix VS Code extension.
+ * Subscribes to postgres_changes on the memories table and fans out
+ * INSERT events to registered listeners (activity feed, agent tree, etc.).
+ */
 import type { SupabaseClient, RealtimeChannel } from "@supabase/supabase-js";
 
+/** Row shape pushed by Supabase Realtime on memories INSERT. */
 export type MemoryPayload = {
   id: string;
   agent: string;
@@ -13,10 +19,16 @@ export type MemoryPayload = {
 
 export type RealtimeListener = (memory: MemoryPayload) => void;
 
+/**
+ * Manages a single Supabase Realtime channel scoped to a room.
+ * Call {@link subscribe} to connect, {@link on} to register listeners,
+ * and {@link unsubscribe} to tear down.
+ */
 export class RealtimeManager {
   private channel: RealtimeChannel | null = null;
   private listeners: RealtimeListener[] = [];
 
+  /** Subscribe to memory INSERTs for the given room. Cleans up any prior subscription. */
   subscribe(
     supabase: SupabaseClient,
     roomId: string,
@@ -43,6 +55,7 @@ export class RealtimeManager {
       .subscribe();
   }
 
+  /** Remove the active channel. Safe to call when already unsubscribed. */
   unsubscribe(supabase: SupabaseClient): void {
     if (this.channel) {
       supabase.removeChannel(this.channel);
@@ -50,6 +63,7 @@ export class RealtimeManager {
     }
   }
 
+  /** Register a listener. Returns an unsubscribe function. */
   on(fn: RealtimeListener): () => void {
     this.listeners.push(fn);
     return () => {

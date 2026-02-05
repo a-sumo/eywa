@@ -15,6 +15,7 @@ import { LayoutAgentXR } from "./components/LayoutAgentXR";
 import { XRTest } from "./components/XRTest";
 import { CLIAuth } from "./components/CLIAuth";
 import { SlidePresentation } from "./components/SlidePresentation";
+import { SessionGraph } from "./components/SessionGraph";
 import "./App.css";
 
 function App() {
@@ -46,6 +47,7 @@ function RoomRoutes() {
           <Route path="layout-agent" element={<LayoutAgentDemo />} />
           <Route path="layout-xr" element={<LayoutAgentXR />} />
           <Route path="xr-test" element={<XRTest />} />
+          <Route path="graph" element={<SessionGraph />} />
         </Routes>
       </RoomLayout>
     </RoomProvider>

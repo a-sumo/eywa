@@ -1,6 +1,15 @@
+/**
+ * Editor selection injection command (Cmd+Shift+I).
+ * Grabs the active editor selection, wraps it with file path + line range,
+ * shows a QuickPick to choose a target agent, and sends via remix_inject.
+ */
 import * as vscode from "vscode";
 import type { RemixClient } from "./client";
 
+/**
+ * Inject the current editor selection to a chosen agent.
+ * Content is formatted as `[file:startLine-endLine]\n```\ncode\n````.
+ */
 export async function injectSelection(getClient: () => RemixClient | undefined): Promise<void> {
   const client = getClient();
   if (!client) {

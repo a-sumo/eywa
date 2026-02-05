@@ -1,3 +1,8 @@
+/**
+ * Hierarchical User → Session tree for the Remix sidebar.
+ * Top-level nodes are users (derived from agent name prefix, e.g. "armand/quiet-oak").
+ * Each user expands to show their sessions with status, task preview, and memory count.
+ */
 import * as vscode from "vscode";
 import type { RemixClient, SessionInfo } from "./client";
 
@@ -24,6 +29,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     this._onDidChangeTreeData.fire();
   }
 
+  /** Count users with at least one active session. Used for the status bar indicator. */
   getActiveCount(): number {
     let count = 0;
     for (const sessions of this.cachedSessions.values()) {
@@ -68,6 +74,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
   }
 }
 
+/** Top-level tree node representing a user (e.g. "armand"). Expands to show sessions. */
 class UserItem extends vscode.TreeItem {
   contextValue = "remixUser";
 
@@ -102,6 +109,7 @@ class UserItem extends vscode.TreeItem {
   }
 }
 
+/** Leaf tree node representing an individual agent session with status icon and task preview. */
 export class SessionItem extends vscode.TreeItem {
   contextValue = "remixSession";
   public readonly session: SessionInfo;

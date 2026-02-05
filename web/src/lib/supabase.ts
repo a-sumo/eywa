@@ -41,3 +41,17 @@ export interface Room {
   is_demo: boolean;
   created_at: string;
 }
+
+export interface Link {
+  id: string;
+  room_id: string | null;
+  source_memory_id: string;
+  target_agent: string;
+  target_session_id: string;
+  target_position: string;
+  link_type: string;
+  created_by: string;
+  label: string | null;
+  metadata: Record<string, unknown>;
+  ts: string;
+}

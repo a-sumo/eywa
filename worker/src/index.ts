@@ -9,6 +9,7 @@ import { registerContextTools } from "./tools/context.js";
 import { registerCollaborationTools } from "./tools/collaboration.js";
 import { registerInjectTools } from "./tools/inject.js";
 import { registerKnowledgeTools } from "./tools/knowledge.js";
+import { registerLinkTools } from "./tools/link.js";
 
 export default {
   async fetch(request: Request, env: Env, execCtx: ExecutionContext): Promise<Response> {
@@ -166,6 +167,7 @@ async function handleMcp(
   registerCollaborationTools(server, db, ctx);
   registerInjectTools(server, db, ctx);
   registerKnowledgeTools(server, db, ctx);
+  registerLinkTools(server, db, ctx);
 
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);
