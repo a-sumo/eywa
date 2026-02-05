@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
-import { createXRStore, XR, XROrigin } from "@react-three/xr";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { createXRStore, XR, XROrigin, useXR } from "@react-three/xr";
 import { OrbitControls, Grid } from "@react-three/drei";
+import * as THREE from "three";
 
 import {
   computeFocusLayout,
@@ -36,6 +37,47 @@ const xrStore = createXRStore({
   foveation: 1,
   frameRate: "high",
 });
+
+// ---- Head-height anchor for XR ----
+// In XR with local-floor, y=0 is the floor. This component waits 1s for
+// tracking to stabilize, then positions children at the user's head height.
+
+function XRAnchor({ children }: { children: React.ReactNode }) {
+  const groupRef = useRef<THREE.Group>(null!);
+  const positioned = useRef(false);
+  const sessionStart = useRef(0);
+  const { camera } = useThree();
+  const xr = useXR();
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+
+    const inXR = !!xr.session;
+
+    if (inXR && !positioned.current) {
+      if (sessionStart.current === 0) {
+        sessionStart.current = Date.now();
+        return;
+      }
+      if (Date.now() - sessionStart.current < 1000) return;
+
+      const headY = camera.position.y;
+      const headZ = camera.position.z;
+      groupRef.current.position.set(0, headY - 0.2, headZ - 1.0);
+      groupRef.current.visible = true;
+      positioned.current = true;
+    }
+
+    if (!inXR) {
+      positioned.current = false;
+      sessionStart.current = 0;
+      groupRef.current.position.set(0, 0, 0);
+      groupRef.current.visible = true;
+    }
+  });
+
+  return <group ref={groupRef}>{children}</group>;
+}
 
 // ---- types ----
 
@@ -162,7 +204,7 @@ function Scene({
 
       {/* Orbit controls for non-XR desktop viewing */}
       <OrbitControls
-        target={[0, 0, -0.5]}
+        target={[0, 0, 0]}
         enableDamping
         dampingFactor={0.1}
         minDistance={0.5}
@@ -392,21 +434,23 @@ export function LayoutAgentXR() {
       {/* 3D Canvas */}
       <Canvas
         style={styles.canvas}
-        camera={{ position: [0, 0.3, 2], fov: 60, near: 0.01, far: 100 }}
+        camera={{ position: [0, 1.6, 3], fov: 60, near: 0.01, far: 100 }}
       >
         <color attach="background" args={["#0a0a18"]} />
         <fog attach="fog" args={["#0a0a18", 3, 8]} />
         <XR store={xrStore}>
           <XROrigin>
-            <Scene
-              mode={mode}
-              stepIdx={stepIdx}
-              displayLayout={displayLayout}
-              step={step}
-              aiLoading={gestureAgent.loading}
-              aiResult={gestureAgent.result}
-              onGestureDetected={handleGestureDetected}
-            />
+            <XRAnchor>
+              <Scene
+                mode={mode}
+                stepIdx={stepIdx}
+                displayLayout={displayLayout}
+                step={step}
+                aiLoading={gestureAgent.loading}
+                aiResult={gestureAgent.result}
+                onGestureDetected={handleGestureDetected}
+              />
+            </XRAnchor>
           </XROrigin>
         </XR>
       </Canvas>

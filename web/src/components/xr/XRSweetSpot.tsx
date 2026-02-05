@@ -8,10 +8,10 @@ const FONT_URL = "/fonts/JetBrainsMono-Regular.ttf";
  */
 export function XRSweetSpot() {
   return (
-    <group position={[0, 0, -0.8]}>
-      {/* Torus ring */}
+    <group position={[0, 0, 0]}>
+      {/* Torus ring — centered on focus panel zone */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.4, 0.005, 8, 48]} />
+        <torusGeometry args={[0.35, 0.004, 8, 48]} />
         <meshBasicMaterial
           color="#50ffa0"
           transparent
@@ -22,7 +22,7 @@ export function XRSweetSpot() {
 
       {/* Label */}
       <Text
-        position={[0, 0.44, 0]}
+        position={[0, 0.39, 0]}
         fontSize={0.025}
         font={FONT_URL}
         color="#50ffa0"
