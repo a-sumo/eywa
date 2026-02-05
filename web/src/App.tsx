@@ -12,6 +12,7 @@ import { MiniRemix } from "./components/MiniRemix";
 import { MiniRemixEink } from "./components/MiniRemixEink";
 import { LayoutAgentDemo } from "./components/LayoutAgentDemo";
 import { LayoutAgentXR } from "./components/LayoutAgentXR";
+import { XRTest } from "./components/XRTest";
 import { CLIAuth } from "./components/CLIAuth";
 import "./App.css";
 
@@ -42,6 +43,7 @@ function RoomRoutes() {
           <Route path="mini" element={<MiniRemix />} />
           <Route path="layout-agent" element={<LayoutAgentDemo />} />
           <Route path="layout-xr" element={<LayoutAgentXR />} />
+          <Route path="xr-test" element={<XRTest />} />
         </Routes>
       </RoomLayout>
     </RoomProvider>
