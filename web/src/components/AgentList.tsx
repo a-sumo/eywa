@@ -35,16 +35,13 @@ export function AgentList() {
 
   return (
     <div className="agent-list">
-      {/* Primary action — Remix */}
+      {/* Main nav */}
       <button
         className={`agent-chip remix-primary ${isActive(`${basePath}/remix/new`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/remix/new`)}
       >
         + New Remix
       </button>
-
-      {/* Core nav */}
-      <div className="nav-section-label">workspace</div>
       <button
         className={`agent-chip ${isActive(`${basePath}/chat`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/chat`)}
@@ -58,74 +55,62 @@ export function AgentList() {
         Threads
       </button>
 
-      {/* Agents */}
-      <div className="nav-section-label">agents</div>
-      {agents.map((a) => (
-        <button
-          key={a.name}
-          className={`agent-chip ${
-            isActive(`${basePath}/agent/${a.name}`) ? "active" : ""
-          }`}
-          onClick={() => navigate(`${basePath}/agent/${encodeURIComponent(a.name)}`)}
-        >
-          <span
-            className="agent-dot"
-            style={{
-              background: a.isActive ? "#10b981" : agentColor(a.name),
-              boxShadow: a.isActive ? "0 0 6px #10b981" : "none",
-            }}
-          />
-          <span className="agent-name">{a.name}</span>
-          <span className="agent-meta">
-            {a.sessionCount}s &middot; {timeAgo(a.lastSeen)}
-          </span>
-        </button>
-      ))}
-      {agents.length === 0 && (
-        <p className="empty">No agents yet.</p>
-      )}
+      {/* Spacer pushes labs + agents to bottom */}
+      <div style={{ flex: 1 }} />
 
-      {/* Labs — collapsible experiments */}
-      <div className="agent-list-divider" />
+      {/* Labs */}
       <button
         className="nav-labs-toggle"
         onClick={() => setShowLabs(!showLabs)}
       >
-        <span>{showLabs ? "▾" : "▸"} Labs</span>
+        {showLabs ? "▾" : "▸"} Labs
       </button>
       {showLabs && (
         <div className="nav-labs">
-          <button
-            className={`agent-chip nav-lab-item ${isActive(`${basePath}/mini`) ? "active" : ""}`}
-            onClick={() => navigate(`${basePath}/mini`)}
-          >
-            Mini Dashboard
-          </button>
-          <button
-            className={`agent-chip nav-lab-item ${isActive(`${basePath}/remix3d`) ? "active" : ""}`}
-            onClick={() => navigate(`${basePath}/remix3d`)}
-          >
-            Remix 3D
-          </button>
-          <button
-            className={`agent-chip nav-lab-item ${isActive(`${basePath}/layout-agent`) ? "active" : ""}`}
-            onClick={() => navigate(`${basePath}/layout-agent`)}
-          >
-            Layout Agent
-          </button>
-          <button
-            className={`agent-chip nav-lab-item ${isActive(`${basePath}/layout-xr`) ? "active" : ""}`}
-            onClick={() => navigate(`${basePath}/layout-xr`)}
-          >
-            Layout XR
-          </button>
-          <button
-            className={`agent-chip nav-lab-item ${isActive(`${basePath}/xr-test`) ? "active" : ""}`}
-            onClick={() => navigate(`${basePath}/xr-test`)}
-          >
-            XR Test
-          </button>
+          {[
+            { path: "mini", label: "Mini Dashboard" },
+            { path: "remix3d", label: "Remix 3D" },
+            { path: "layout-agent", label: "Layout Agent" },
+            { path: "layout-xr", label: "Layout XR" },
+            { path: "xr-test", label: "XR Test" },
+          ].map(({ path, label }) => (
+            <button
+              key={path}
+              className={`nav-lab-item ${isActive(`${basePath}/${path}`) ? "active" : ""}`}
+              onClick={() => navigate(`${basePath}/${path}`)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+      )}
+
+      {/* Agents — compact, at the very bottom */}
+      {agents.length > 0 && (
+        <>
+          <div className="agent-list-divider" />
+          <div className="nav-agents-footer">
+            {agents.map((a) => (
+              <button
+                key={a.name}
+                className={`nav-agent-pill ${
+                  isActive(`${basePath}/agent/${a.name}`) ? "active" : ""
+                }`}
+                onClick={() => navigate(`${basePath}/agent/${encodeURIComponent(a.name)}`)}
+                title={`${a.sessionCount} sessions · ${timeAgo(a.lastSeen)}`}
+              >
+                <span
+                  className="agent-dot"
+                  style={{
+                    background: a.isActive ? "#10b981" : agentColor(a.name),
+                    boxShadow: a.isActive ? "0 0 6px #10b981" : "none",
+                  }}
+                />
+                {a.name}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

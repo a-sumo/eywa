@@ -66,6 +66,8 @@
 }
 
 .sidebar {
+  display: flex;
+  flex-direction: column;
   width: 260px;
   padding: 1rem;
   border-right: 1px solid var(--color-border);
@@ -401,6 +403,12 @@
    Agent List (Sidebar)
    ============================================ */
 
+.agent-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .agent-list h2 {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -450,7 +458,7 @@
   color: #6bb4ff;
   font-weight: 700;
   font-size: 0.9rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 .agent-chip.remix-primary:hover {
   background: linear-gradient(135deg, rgba(68, 136, 255, 0.25), rgba(68, 255, 136, 0.15));
@@ -461,21 +469,33 @@
   border-color: #4488ff;
 }
 
-/* Section labels */
-.nav-section-label {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--color-text-muted);
-  padding: 0.4rem 0.75rem 0.2rem;
-  font-weight: 600;
-  opacity: 0.6;
-}
-
 /* Labs toggle */
 .nav-labs-toggle {
   display: flex;
   align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-labs-toggle:hover {
+  color: var(--color-text);
+  background: var(--color-card);
+}
+
+/* Labs items */
+.nav-labs {
+  padding: 0.15rem 0 0.25rem 0.5rem;
+}
+.nav-lab-item {
+  display: block;
   width: 100%;
   padding: 0.4rem 0.75rem;
   border: none;
@@ -483,32 +503,49 @@
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.8rem;
   text-align: left;
-  opacity: 0.5;
-  transition: opacity 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
-.nav-labs-toggle:hover {
-  opacity: 0.8;
+.nav-lab-item:hover {
+  color: var(--color-text);
+  background: var(--color-card);
+}
+.nav-lab-item.active {
+  color: var(--color-text);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
 }
 
-/* Labs items — smaller, muted */
-.nav-labs {
-  padding-left: 0.25rem;
+/* Agent pills at bottom */
+.nav-agents-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.25rem 0;
 }
-.agent-chip.nav-lab-item {
-  font-size: 0.78rem;
-  padding: 0.4rem 0.75rem;
+.nav-agent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: transparent;
   color: var(--color-text-muted);
-  opacity: 0.7;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
-.agent-chip.nav-lab-item:hover {
-  opacity: 1;
-}
-.agent-chip.nav-lab-item.active {
-  opacity: 1;
+.nav-agent-pill:hover {
   color: var(--color-text);
+  background: var(--color-card);
+}
+.nav-agent-pill.active {
+  color: var(--color-text);
+  background: var(--color-card);
+  border-color: var(--color-text-muted);
 }
 
 .agent-dot {
