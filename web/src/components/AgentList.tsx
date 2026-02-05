@@ -13,14 +13,7 @@ function timeAgo(ts: string): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function agentColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 55%, 45%)`;
-}
+import { agentColor } from "../lib/agentColor";
 
 export function AgentList() {
   const { room } = useRoomContext();
@@ -102,8 +95,8 @@ export function AgentList() {
                 <span
                   className="agent-dot"
                   style={{
-                    background: a.isActive ? "#10b981" : agentColor(a.name),
-                    boxShadow: a.isActive ? "0 0 6px #10b981" : "none",
+                    background: agentColor(a.name),
+                    boxShadow: a.isActive ? `0 0 6px ${agentColor(a.name)}` : "none",
                   }}
                 />
                 {a.name}
