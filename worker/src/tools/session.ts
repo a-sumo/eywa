@@ -20,7 +20,7 @@ export function registerSessionTools(
       content: [
         {
           type: "text" as const,
-          text: `Agent: ${ctx.agent}\nSession: ${ctx.sessionId}\nRoom: /${ctx.roomSlug} (${ctx.roomName})`,
+          text: `Agent: ${ctx.agent}\nUser: ${ctx.user}\nSession: ${ctx.sessionId}\nRoom: /${ctx.roomSlug} (${ctx.roomName})`,
         },
       ],
     }),
@@ -38,7 +38,7 @@ export function registerSessionTools(
         message_type: "resource",
         content: `SESSION START: ${task_description}`,
         token_count: estimateTokens(task_description),
-        metadata: { event: "session_start", task: task_description },
+        metadata: { event: "session_start", task: task_description, user: ctx.user },
       });
       return {
         content: [
@@ -63,7 +63,7 @@ export function registerSessionTools(
         message_type: "resource",
         content: `SESSION END: ${summary}`,
         token_count: estimateTokens(summary),
-        metadata: { event: "session_end", summary },
+        metadata: { event: "session_end", summary, user: ctx.user },
       });
       return {
         content: [{ type: "text" as const, text: "Session ended. Summary logged." }],
@@ -96,6 +96,7 @@ export function registerSessionTools(
           artifacts: artifacts ?? [],
           tags: tags ?? [],
           next_steps: next_steps ?? null,
+          user: ctx.user,
         },
       });
       return {

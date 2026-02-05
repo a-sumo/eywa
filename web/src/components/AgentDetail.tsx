@@ -10,7 +10,14 @@ export function AgentDetail() {
   const navigate = useNavigate();
   const { memories, loading } = useRealtimeMemories(room?.id ?? null, 200);
 
-  const filtered = memories.filter((m) => m.agent === name);
+  // Match by exact agent name or by user prefix (e.g. "armand" matches "armand-a3f2")
+  const filtered = memories.filter((m) => {
+    if (m.agent === name) return true;
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    if (meta.user === name) return true;
+    // Fallback: strip -xxxx suffix and compare
+    return m.agent.replace(/-[a-f0-9]{4}$/, "") === name;
+  });
 
   const handlePull = (memory: Memory) => {
     navigator.clipboard.writeText(

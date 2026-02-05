@@ -44,14 +44,19 @@ async function handleMcp(
   execCtx: ExecutionContext,
 ): Promise<Response> {
   const roomSlug = url.searchParams.get("room");
-  const agent = url.searchParams.get("agent");
+  const baseAgent = url.searchParams.get("agent");
 
-  if (!roomSlug || !agent) {
+  if (!roomSlug || !baseAgent) {
     return Response.json(
       { error: "Missing required query params: ?room=<slug>&agent=<name>" },
       { status: 400 },
     );
   }
+
+  // Each connection gets a unique agent identity: "armand-a3f2"
+  // The base name groups sessions by user for the UI.
+  const suffix = crypto.randomUUID().slice(0, 4);
+  const agent = `${baseAgent}-${suffix}`;
 
   const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
@@ -77,6 +82,7 @@ async function handleMcp(
     roomSlug: room.slug,
     roomName: room.name,
     agent,
+    user: baseAgent,
     sessionId,
   };
 
@@ -99,7 +105,7 @@ async function handleMcp(
       message_type: "resource",
       content: `Agent ${ctx.agent} connected to room ${ctx.roomName}`,
       token_count: 0,
-      metadata: { event: "agent_connected", room_slug: ctx.roomSlug },
+      metadata: { event: "agent_connected", room_slug: ctx.roomSlug, user: ctx.user },
     });
   }
 

@@ -59,22 +59,27 @@ export function useRealtimeAgents(roomId: string | null) {
 
     const { data } = await supabase
       .from("memories")
-      .select("agent, ts, session_id")
+      .select("agent, ts, session_id, metadata")
       .eq("room_id", roomId)
       .order("ts", { ascending: false });
 
     if (!data) return;
 
-    const map = new Map<string, { lastSeen: string; sessions: Set<string> }>();
+    // Group by user (from metadata) falling back to base agent name (strip -xxxx suffix)
+    const map = new Map<string, { lastSeen: string; sessions: Set<string>; agents: Set<string> }>();
     for (const row of data) {
-      const existing = map.get(row.agent);
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const user = (meta.user as string) ?? row.agent.replace(/-[a-f0-9]{4}$/, "");
+      const existing = map.get(user);
       if (!existing) {
-        map.set(row.agent, {
+        map.set(user, {
           lastSeen: row.ts,
           sessions: new Set([row.session_id]),
+          agents: new Set([row.agent]),
         });
       } else {
         existing.sessions.add(row.session_id);
+        existing.agents.add(row.agent);
       }
     }
 

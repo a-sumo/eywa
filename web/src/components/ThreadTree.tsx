@@ -11,7 +11,8 @@ import {
 import { ConnectAgent } from "./ConnectAgent";
 
 interface ThreadInfo {
-  agent: string;
+  agent: string;      // unique agent id, e.g. "armand-a3f2"
+  user: string;       // base user name for grouping, e.g. "armand"
   sessionId: string;
   memories: Memory[];
   status: "active" | "finished" | "idle";
@@ -134,8 +135,13 @@ function buildThreads(memories: Memory[]): ThreadInfo[] {
 
     const filePaths = extractFilePaths(sorted);
 
+    // Extract user from metadata, falling back to stripping -xxxx suffix
+    const firstMeta = (first.metadata ?? {}) as Record<string, unknown>;
+    const user = (firstMeta.user as string) ?? first.agent.replace(/-[a-f0-9]{4}$/, "");
+
     threads.push({
       agent: first.agent,
+      user,
       sessionId: first.session_id,
       memories: sorted,
       status,
@@ -345,7 +351,7 @@ export function ThreadTree() {
 
   // Collect all unique agents for filter bar
   const allAgents = useMemo(
-    () => Array.from(new Set(filteredThreads.map((t) => t.agent))),
+    () => Array.from(new Set(filteredThreads.map((t) => t.user))),
     [filteredThreads]
   );
 
@@ -353,7 +359,7 @@ export function ThreadTree() {
   const displayThreads = useMemo(() => {
     return filteredThreads.filter((t) => {
       if (statusFilter.size && !statusFilter.has(t.status)) return false;
-      if (agentFilter.size && !agentFilter.has(t.agent)) return false;
+      if (agentFilter.size && !agentFilter.has(t.user)) return false;
       if (typeFilter.size) {
         const tags = threadTagsMap.get(`${t.agent}::${t.sessionId}`) || [];
         const tagKeys = new Set(tags.map((tg) => tg.key));
@@ -367,12 +373,12 @@ export function ThreadTree() {
     });
   }, [filteredThreads, statusFilter, agentFilter, typeFilter, threadTagsMap]);
 
-  // Group threads by agent, then sort within each group
+  // Group threads by user, then sort within each group
   const agentThreads = new Map<string, ThreadInfo[]>();
   for (const t of displayThreads) {
-    const list = agentThreads.get(t.agent) || [];
+    const list = agentThreads.get(t.user) || [];
     list.push(t);
-    agentThreads.set(t.agent, list);
+    agentThreads.set(t.user, list);
   }
   for (const [agent, ts] of agentThreads) {
     agentThreads.set(agent, sortThreads(ts, effectiveSortMode));

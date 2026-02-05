@@ -9,7 +9,8 @@ export interface RemixContext {
   roomId: string;
   roomSlug: string;
   roomName: string;
-  agent: string;
+  agent: string;       // unique per connection, e.g. "armand-a3f2"
+  user: string;        // base name for grouping, e.g. "armand"
   sessionId: string;
 }
 

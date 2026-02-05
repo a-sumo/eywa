@@ -29,7 +29,7 @@ export function registerMemoryTools(
         message_type: role,
         content,
         token_count: estimateTokens(content),
-        metadata: {},
+        metadata: { user: ctx.user },
       });
       return {
         content: [
