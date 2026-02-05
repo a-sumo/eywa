@@ -2,22 +2,11 @@ import { useMemo, useState, useCallback } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import type { Memory, Link } from "../lib/supabase";
+import { agentColor } from "../lib/agentColor";
 import { ANIMAL_SPRITES } from "./animalSprites";
 
-// --- Palette (same as MiniRemix for consistency) ---
-
-const AGENT_PALETTE = [
-  "#E64980", "#CC5DE8", "#845EF7", "#5C7CFA",
-  "#339AF0", "#22B8CF", "#20C997", "#51CF66",
-  "#94D82D", "#FCC419", "#FF922B", "#E8590C",
-];
-
 function agentColorHex(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return AGENT_PALETTE[Math.abs(hash) % AGENT_PALETTE.length];
+  return agentColor(name);
 }
 
 function getAnimalSprite(name: string) {
