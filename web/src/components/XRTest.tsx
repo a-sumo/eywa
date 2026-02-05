@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
-import { Canvas } from "@react-three/fiber";
-import { createXRStore, XR, XROrigin } from "@react-three/xr";
+import { useState, useRef, useCallback } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { createXRStore, XR, XROrigin, useXR } from "@react-three/xr";
 import { Text, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -10,11 +10,59 @@ const xrStore = createXRStore({
   frameRate: "high",
 });
 
+// ---- Head-height anchor ----
+// In XR with local-floor, y=0 is the floor. We need to place content
+// at head height. This component waits 1s for tracking to stabilize,
+// then positions its children at the user's head height.
+
+function XRAnchor({ children }: { children: React.ReactNode }) {
+  const groupRef = useRef<THREE.Group>(null!);
+  const positioned = useRef(false);
+  const sessionStart = useRef(0);
+  const { camera } = useThree();
+  const xr = useXR();
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+
+    const inXR = !!xr.session;
+
+    if (inXR && !positioned.current) {
+      if (sessionStart.current === 0) {
+        sessionStart.current = Date.now();
+        return;
+      }
+      // Wait 1s for tracking to stabilize
+      if (Date.now() - sessionStart.current < 1000) return;
+
+      const headY = camera.position.y;
+      const headZ = camera.position.z;
+      groupRef.current.position.set(0, headY - 0.2, headZ - 1.0);
+      groupRef.current.visible = true;
+      positioned.current = true;
+    }
+
+    if (!inXR) {
+      // Reset for next session
+      positioned.current = false;
+      sessionStart.current = 0;
+      groupRef.current.position.set(0, 0, 0);
+      groupRef.current.visible = true;
+    }
+  });
+
+  return <group ref={groupRef}>{children}</group>;
+}
+
 // ---- Test 1: Spinning cube ----
 function TestCube() {
+  const meshRef = useRef<THREE.Mesh>(null!);
+  useFrame((_, dt) => {
+    if (meshRef.current) meshRef.current.rotation.y += dt * 0.5;
+  });
   return (
-    <mesh position={[0, 0, -1.5]} rotation={[0.4, 0.6, 0]}>
-      <boxGeometry args={[0.3, 0.3, 0.3]} />
+    <mesh ref={meshRef} position={[0, 0, -0.8]}>
+      <boxGeometry args={[0.15, 0.15, 0.15]} />
       <meshStandardMaterial color="#4488ff" />
     </mesh>
   );
@@ -25,8 +73,8 @@ function TestPanel() {
   return (
     <group>
       <TestCube />
-      <mesh position={[0.5, 0, -1.5]}>
-        <planeGeometry args={[0.5, 0.7]} />
+      <mesh position={[0.3, 0, -0.8]}>
+        <planeGeometry args={[0.3, 0.4]} />
         <meshStandardMaterial color="#ff6688" side={THREE.DoubleSide} />
       </mesh>
     </group>
@@ -38,14 +86,14 @@ function TestText() {
   return (
     <group>
       <TestCube />
-      <group position={[0.5, 0, -1.5]}>
+      <group position={[0.3, 0, -0.8]}>
         <mesh>
-          <planeGeometry args={[0.5, 0.7]} />
+          <planeGeometry args={[0.3, 0.4]} />
           <meshStandardMaterial color="#ff6688" transparent opacity={0.3} side={THREE.DoubleSide} />
         </mesh>
         <Text
-          position={[0, 0.2, 0.01]}
-          fontSize={0.04}
+          position={[0, 0.1, 0.01]}
+          fontSize={0.03}
           font="/fonts/JetBrainsMono-Regular.ttf"
           color="#ffffff"
           anchorX="center"
@@ -54,8 +102,8 @@ function TestText() {
           Hello XR
         </Text>
         <Text
-          position={[0, 0.05, 0.01]}
-          fontSize={0.025}
+          position={[0, 0.02, 0.01]}
+          fontSize={0.018}
           font="/fonts/JetBrainsMono-Regular.ttf"
           color="#aaaaff"
           anchorX="center"
@@ -73,8 +121,8 @@ function TestGlass() {
   return (
     <group>
       <TestCube />
-      <group position={[0.5, 0, -1.5]}>
-        <RoundedBox args={[0.5, 0.7, 0.02]} radius={0.01} smoothness={4}>
+      <group position={[0.3, 0, -0.8]}>
+        <RoundedBox args={[0.3, 0.4, 0.015]} radius={0.008} smoothness={4}>
           <meshStandardMaterial
             color="#4488ff"
             transparent
@@ -84,12 +132,12 @@ function TestGlass() {
           />
         </RoundedBox>
         <mesh>
-          <boxGeometry args={[0.504, 0.704, 0.01]} />
+          <boxGeometry args={[0.304, 0.404, 0.008]} />
           <meshBasicMaterial color="#4488ff" wireframe transparent opacity={0.5} />
         </mesh>
         <Text
-          position={[0, 0.25, 0.02]}
-          fontSize={0.035}
+          position={[0, 0.12, 0.015]}
+          fontSize={0.025}
           font="/fonts/JetBrainsMono-Regular.ttf"
           color="#ffffff"
           anchorX="center"
@@ -98,13 +146,13 @@ function TestGlass() {
           Glass Panel
         </Text>
         <Text
-          position={[0, 0.1, 0.02]}
-          fontSize={0.022}
+          position={[0, 0.04, 0.015]}
+          fontSize={0.016}
           font="/fonts/JetBrainsMono-Regular.ttf"
           color="#b8c0dd"
           anchorX="center"
           anchorY="middle"
-          maxWidth={0.45}
+          maxWidth={0.26}
         >
           {"agent-alpha / session-019\nAnalyzed 14 documents"}
         </Text>
@@ -116,16 +164,16 @@ function TestGlass() {
 // ---- Test 5: Multiple panels in arc ----
 function TestArc() {
   const panels = [
-    { x: -0.7, z: -1.8, rotY: 0.15, color: "#ff6688", label: "Browse" },
-    { x: 0, z: -1.5, rotY: 0, color: "#4488ff", label: "Context" },
-    { x: 0.65, z: -1.7, rotY: -0.12, color: "#ffaa44", label: "Gemini" },
+    { x: -0.4, z: -1.0, rotY: 0.12, color: "#ff6688", label: "Browse" },
+    { x: 0, z: -0.8, rotY: 0, color: "#4488ff", label: "Context" },
+    { x: 0.38, z: -0.95, rotY: -0.1, color: "#ffaa44", label: "Gemini" },
   ];
 
   return (
     <group>
       {panels.map((p, i) => (
         <group key={i} position={[p.x, 0, p.z]} rotation={[0, p.rotY, 0]}>
-          <RoundedBox args={[0.45, 0.6, 0.02]} radius={0.01} smoothness={4}>
+          <RoundedBox args={[0.28, 0.38, 0.015]} radius={0.008} smoothness={4}>
             <meshStandardMaterial
               color={p.color}
               transparent
@@ -135,12 +183,12 @@ function TestArc() {
             />
           </RoundedBox>
           <mesh>
-            <boxGeometry args={[0.454, 0.604, 0.01]} />
+            <boxGeometry args={[0.284, 0.384, 0.008]} />
             <meshBasicMaterial color={p.color} wireframe transparent opacity={i === 1 ? 0.7 : 0.4} />
           </mesh>
           <Text
-            position={[0, 0.2, 0.02]}
-            fontSize={0.03}
+            position={[0, 0.1, 0.015]}
+            fontSize={0.022}
             font="/fonts/JetBrainsMono-Regular.ttf"
             color="#ffffff"
             anchorX="center"
@@ -151,8 +199,8 @@ function TestArc() {
         </group>
       ))}
       {/* Sweet spot ring */}
-      <mesh position={[0, 0, -1.5]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.35, 0.004, 8, 48]} />
+      <mesh position={[0, 0, -0.8]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.2, 0.003, 8, 48]} />
         <meshBasicMaterial color="#50ffa0" transparent opacity={0.25} wireframe />
       </mesh>
     </group>
@@ -174,7 +222,6 @@ export function XRTest() {
   const handleEnterXR = useCallback(async () => {
     setXrError(null);
     try {
-      // Try AR first, fall back to VR
       if (navigator.xr) {
         const arOk = await navigator.xr.isSessionSupported("immersive-ar").catch(() => false);
         if (arOk) { await xrStore.enterAR(); return; }
@@ -216,13 +263,13 @@ export function XRTest() {
         {xrError && <span style={{ color: "#ff6666", fontSize: "0.75rem" }}>{xrError}</span>}
 
         <span style={{ color: "#555", fontSize: "0.7rem", marginLeft: "auto" }}>
-          XR Sanity Tests — {TESTS[testIdx].name}
+          XR Tests — {TESTS[testIdx].name}
         </span>
       </div>
 
       {/* Canvas */}
       <Canvas
-        camera={{ position: [0, 0, 0], fov: 70, near: 0.01, far: 100 }}
+        camera={{ position: [0, 1.6, 3], fov: 70, near: 0.01, far: 100 }}
       >
         <color attach="background" args={["#0e0e1a"]} />
         <ambientLight intensity={0.7} />
@@ -230,7 +277,9 @@ export function XRTest() {
 
         <XR store={xrStore}>
           <XROrigin>
-            <TestComponent />
+            <XRAnchor>
+              <TestComponent />
+            </XRAnchor>
           </XROrigin>
         </XR>
       </Canvas>
