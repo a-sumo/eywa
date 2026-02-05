@@ -14,6 +14,7 @@ import { LayoutAgentDemo } from "./components/LayoutAgentDemo";
 import { LayoutAgentXR } from "./components/LayoutAgentXR";
 import { XRTest } from "./components/XRTest";
 import { CLIAuth } from "./components/CLIAuth";
+import { SlidePresentation } from "./components/SlidePresentation";
 import "./App.css";
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/slides" element={<SlidePresentation />} />
         <Route path="/cli-auth" element={<CLIAuth />} />
         <Route path="/r/:slug/eink" element={<RoomProvider><MiniRemixEink /></RoomProvider>} />
         <Route path="/r/:slug/*" element={<RoomRoutes />} />
