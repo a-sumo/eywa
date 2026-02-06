@@ -2,48 +2,58 @@ import { useRoom } from "../hooks/useRoom";
 import { FlowBackground } from "./FlowBackground";
 import EywaLogo from "./EywaLogo";
 
-// SVG Icons
+// Animated SVG Icons - aurora colored, heartbeat-synced animations
 const IconThreads = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="3" y1="6" x2="21" y2="6" />
-    <line x1="3" y1="12" x2="21" y2="12" />
-    <line x1="3" y1="18" x2="15" y2="18" />
-    <circle cx="19" cy="18" r="2" fill="currentColor" stroke="none" />
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path className="anim-stream s1" d="M4 8c6-3 18 3 24 0" strokeWidth="2.5" strokeLinecap="round"/>
+    <path className="anim-stream s2" d="M4 16c6-3 18 3 24 0" strokeWidth="2.5" strokeLinecap="round"/>
+    <path className="anim-stream s3" d="M4 24c4-2 12 2 18 0" strokeWidth="2.5" strokeLinecap="round"/>
+    <circle className="anim-node" cx="26" cy="24" r="3"/>
   </svg>
 );
 
 const IconLink = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path className="anim-arc a1" d="M13.5 18.5a6.5 6.5 0 0 0 9.2.6l3.5-3.5a6.5 6.5 0 0 0-9.2-9.2l-2 2" strokeWidth="2.5" strokeLinecap="round"/>
+    <path className="anim-arc a2" d="M18.5 13.5a6.5 6.5 0 0 0-9.2-.6l-3.5 3.5a6.5 6.5 0 0 0 9.2 9.2l2-2" strokeWidth="2.5" strokeLinecap="round"/>
   </svg>
 );
 
 const IconInject = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 5v14" />
-    <path d="M19 12l-7 7-7-7" />
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <line className="anim-drop-shaft" x1="16" y1="4" x2="16" y2="22" strokeWidth="2.5" strokeLinecap="round"/>
+    <polyline className="anim-drop-head" points="10,18 16,24 22,18" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle className="anim-ripple" cx="16" cy="28" r="2" strokeWidth="1.5"/>
   </svg>
 );
 
 const IconBrain = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2a4 4 0 0 1 4 4c0 1.1-.4 2.1-1.1 2.9l.1.1a4 4 0 0 1 1 7.4V18a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-1.6a4 4 0 0 1 1-7.4l.1-.1A4 4 0 0 1 8 6a4 4 0 0 1 4-4z" />
-    <path d="M12 8v4" />
-    <path d="M10 14h4" />
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <line className="anim-synapse sy1" x1="16" y1="9" x2="9" y2="14" strokeWidth="2"/>
+    <line className="anim-synapse sy2" x1="16" y1="9" x2="23" y2="14" strokeWidth="2"/>
+    <line className="anim-synapse sy3" x1="9" y1="19" x2="16" y2="24" strokeWidth="2"/>
+    <line className="anim-synapse sy4" x1="23" y1="19" x2="16" y2="24" strokeWidth="2"/>
+    <circle className="anim-neuron n1" cx="16" cy="6" r="3" strokeWidth="2"/>
+    <circle className="anim-neuron n2" cx="7" cy="16" r="3" strokeWidth="2"/>
+    <circle className="anim-neuron n3" cx="25" cy="16" r="3" strokeWidth="2"/>
+    <circle className="anim-neuron n4" cx="16" cy="26" r="3" strokeWidth="2"/>
   </svg>
 );
 
 const IconCode = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 18 22 12 16 6" />
-    <polyline points="8 6 2 12 8 18" />
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <polyline className="anim-bracket bl" points="13,6 5,16 13,26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <polyline className="anim-bracket br" points="19,6 27,16 19,26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <line className="anim-cursor-line" x1="16" y1="10" x2="16" y2="22" strokeWidth="2.5" strokeLinecap="round"/>
   </svg>
 );
 
 const IconChat = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path className="anim-bubble" d="M27 20.5a2.5 2.5 0 0 1-2.5 2.5H9.5L5 27.5V7.5A2.5 2.5 0 0 1 7.5 5h17A2.5 2.5 0 0 1 27 7.5z" strokeWidth="2.5" strokeLinejoin="round"/>
+    <circle className="anim-typing d1" cx="11" cy="14" r="1.8"/>
+    <circle className="anim-typing d2" cx="16" cy="14" r="1.8"/>
+    <circle className="anim-typing d3" cx="21" cy="14" r="1.8"/>
   </svg>
 );
 
@@ -249,6 +259,149 @@ export function Landing() {
         </div>
       </section>
 
+      {/* MCP Compatibility */}
+      <section className="landing-section landing-compatibility-section">
+        <div className="landing-compatibility-badge">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+          MCP Native
+        </div>
+        <h2 className="landing-section-title">Works with every AI coding agent</h2>
+        <p className="landing-compatibility-subtitle">
+          Eywa uses the <strong>Model Context Protocol</strong> - the open standard for AI tool integration.
+          One setup. Every agent. Including local and self-hosted.
+        </p>
+
+        <div className="landing-agents-grid">
+          <div className="landing-agent-card landing-agent-featured">
+            <div className="landing-agent-logo">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <span className="landing-agent-name">Claude Code</span>
+            <span className="landing-agent-tag">CLI</span>
+          </div>
+
+          <div className="landing-agent-card">
+            <div className="landing-agent-logo">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <path d="M8 12h8M12 8v8"/>
+              </svg>
+            </div>
+            <span className="landing-agent-name">Cursor</span>
+            <span className="landing-agent-tag">IDE</span>
+          </div>
+
+          <div className="landing-agent-card">
+            <div className="landing-agent-logo">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+              </svg>
+            </div>
+            <span className="landing-agent-name">Windsurf</span>
+            <span className="landing-agent-tag">IDE</span>
+          </div>
+
+          <div className="landing-agent-card">
+            <div className="landing-agent-logo">
+              <img src="/gemini.svg" alt="Gemini" width="32" height="32" />
+            </div>
+            <span className="landing-agent-name">Gemini CLI</span>
+            <span className="landing-agent-tag">CLI</span>
+          </div>
+
+          <div className="landing-agent-card">
+            <div className="landing-agent-logo">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="4" fill="var(--bg-base)"/>
+              </svg>
+            </div>
+            <span className="landing-agent-name">Codex</span>
+            <span className="landing-agent-tag">CLI</span>
+          </div>
+
+          <div className="landing-agent-card">
+            <div className="landing-agent-logo">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M4 17l6-6-6-6M12 19h8"/>
+              </svg>
+            </div>
+            <span className="landing-agent-name">Cline</span>
+            <span className="landing-agent-tag">VS Code</span>
+          </div>
+
+          <div className="landing-agent-card">
+            <div className="landing-agent-logo">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 3a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm0 14c-2.5 0-4.71-1.28-6-3.22.03-2 4-3.08 6-3.08 2 0 5.97 1.08 6 3.08A7.46 7.46 0 0112 19z"/>
+              </svg>
+            </div>
+            <span className="landing-agent-name">Roo Code</span>
+            <span className="landing-agent-tag">VS Code</span>
+          </div>
+
+          <div className="landing-agent-card">
+            <div className="landing-agent-logo">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/>
+              </svg>
+            </div>
+            <span className="landing-agent-name">Aider</span>
+            <span className="landing-agent-tag">CLI</span>
+          </div>
+
+          <div className="landing-agent-card landing-agent-more">
+            <div className="landing-agent-logo">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="1"/>
+                <circle cx="19" cy="12" r="1"/>
+                <circle cx="5" cy="12" r="1"/>
+              </svg>
+            </div>
+            <span className="landing-agent-name">Any MCP Agent</span>
+            <span className="landing-agent-tag">Open Standard</span>
+          </div>
+        </div>
+
+        <div className="landing-compatibility-highlight">
+          <div className="landing-highlight-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--aurora-green)" strokeWidth="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <div>
+              <strong>Local-first privacy</strong>
+              <span>Your code never leaves your machine. Eywa syncs metadata only.</span>
+            </div>
+          </div>
+          <div className="landing-highlight-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--aurora-cyan)" strokeWidth="2">
+              <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+              <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>
+            </svg>
+            <div>
+              <strong>Zero config</strong>
+              <span>Add one MCP server. That's it. Works with your existing setup.</span>
+            </div>
+          </div>
+          <div className="landing-highlight-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--aurora-purple)" strokeWidth="2">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            <div>
+              <strong>Team-wide visibility</strong>
+              <span>See what every agent is doing, regardless of which tool runs it.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Powered by Gemini */}
       <section className="landing-section landing-gemini-section">
         <div className="landing-gemini-content">
@@ -264,7 +417,7 @@ export function Landing() {
           <h2 className="landing-gemini-title">Orchestration powered by Gemini</h2>
           <p className="landing-gemini-description">
             Eywa's communication engine is built on <strong>Google Gemini</strong>.
-            When you use the Remix workspace to combine context from multiple agent threads,
+            When you use Eywa to combine context from multiple agent threads,
             Gemini synthesizes the information, resolves conflicts, and generates coherent responses
             that understand the full picture of your team's work.
           </p>
@@ -308,39 +461,39 @@ export function Landing() {
         <h2 className="landing-section-title">Simple pricing</h2>
         <div className="landing-pricing-grid">
           <div className="landing-pricing-card">
-            <h3>Starter</h3>
+            <h3>Free</h3>
             <div className="landing-pricing-price">$0</div>
             <ul className="landing-pricing-features">
-              <li>Up to 3 team members</li>
-              <li>1 shared workspace</li>
+              <li>Up to 5 team members</li>
+              <li>Unlimited workspaces</li>
               <li>7-day history</li>
-              <li>Community support</li>
+              <li>VS Code + Discord integrations</li>
+              <li>All agent types supported</li>
             </ul>
             <a href="/r/demo" className="btn-landing-secondary" style={{ width: "100%" }}>
-              Try Demo
+              Get Started Free
             </a>
           </div>
           <div className="landing-pricing-card landing-pricing-featured">
-            <div className="landing-pricing-badge">Popular</div>
-            <h3>Team</h3>
-            <div className="landing-pricing-price">$19<span>/seat/month</span></div>
+            <div className="landing-pricing-badge">For Teams</div>
+            <h3>Pro</h3>
+            <div className="landing-pricing-price">$5<span>/seat/month</span></div>
             <ul className="landing-pricing-features">
               <li>Unlimited team members</li>
-              <li>Unlimited workspaces</li>
               <li>90-day history</li>
-              <li>Team bookmarks + decisions</li>
-              <li>VS Code + Discord integrations</li>
+              <li>Team knowledge base</li>
+              <li>Timeline rewind + forking</li>
               <li>Priority support</li>
             </ul>
             <button className="btn-landing-primary" style={{ width: "100%" }} onClick={() => createRoom()}>
-              Get Started
+              Start Pro Trial
             </button>
           </div>
           <div className="landing-pricing-card">
             <h3>Enterprise</h3>
             <div className="landing-pricing-price">Custom</div>
             <ul className="landing-pricing-features">
-              <li>Everything in Team</li>
+              <li>Everything in Pro</li>
               <li>Self-hosted deployment</li>
               <li>SSO / SAML</li>
               <li>Audit logs + compliance</li>
