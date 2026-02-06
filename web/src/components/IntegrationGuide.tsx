@@ -1,10 +1,11 @@
 import { useParams, Link } from "react-router-dom";
+import type { ReactNode } from "react";
 
 interface IntegrationConfig {
   name: string;
   description: string;
   tag: string;
-  logo: JSX.Element;
+  logo: ReactNode;
   website: string;
   mcpDocs?: string;
   configPath: string;
