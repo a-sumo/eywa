@@ -23,7 +23,7 @@ const OUT_DIR = join(ROOT, "docs");
 const FRAMES_DIR = join(OUT_DIR, "frames");
 
 const WIDTH = 1200;
-const HEIGHT = 400;
+const HEIGHT = 340;
 const FPS = 15;
 const DURATION_S = 4;
 const TOTAL_FRAMES = FPS * DURATION_S;
@@ -54,14 +54,39 @@ async function main() {
     process.exit(1);
   }
 
-  // Hide everything except the canvas background
+  // Hide nav, buttons, and secondary text. Keep particles + hero title.
   await page.evaluate(() => {
-    // Hide main content, keep only the FlowBackground canvas
     const style = document.createElement("style");
     style.textContent = `
-      .landing-page > *:not(.flow-bg) { display: none !important; }
-      .landing-page { overflow: hidden; }
+      /* Hide everything except particles + main title */
+      .landing-nav,
+      nav,
+      header,
+      .landing-hero-actions,
+      .landing-hero-subtitle,
+      .landing-hero-solution,
+      .landing-features,
+      .landing-footer,
+      footer { display: none !important; }
+
       body { margin: 0; overflow: hidden; }
+      .landing-page { overflow: hidden; padding-top: 0; }
+
+      /* Center the title vertically in the banner */
+      .landing-hero {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 340px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .landing-hero-title {
+        font-size: 3.4rem !important;
+        margin: 0 !important;
+        text-align: center !important;
+      }
     `;
     document.head.appendChild(style);
   });
