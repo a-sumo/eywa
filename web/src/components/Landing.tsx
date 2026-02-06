@@ -102,8 +102,12 @@ export function Landing() {
             <span className="landing-hero-gradient">human + AI teams</span>
           </h1>
           <p className="landing-hero-subtitle">
-            When everyone runs AI coding agents, context gets siloed.
-            Decisions diverge. Work gets duplicated.
+            When everyone runs AI coding agents, context gets{" "}
+            <span className="pain-word pain-siloed">siloed</span>.{" "}
+            Decisions <span className="pain-word pain-diverge">diverge</span>.{" "}
+            Work gets <span className="pain-word pain-duplicated">duplicated</span>.
+          </p>
+          <p className="landing-hero-solution">
             Eywa gives your team shared visibility and control.
           </p>
           <div className="landing-hero-actions">
@@ -121,20 +125,6 @@ export function Landing() {
           </div>
           {error && <p className="landing-error">{error}</p>}
         </div>
-      </section>
-
-      {/* Screenshot */}
-      <section className="landing-screenshot-section">
-        <div className="landing-screenshot-wrapper">
-          <img
-            src="/slides/thread-tree.png"
-            alt="Eywa dashboard showing AI agent sessions"
-            className="landing-screenshot-img"
-          />
-        </div>
-        <p className="landing-screenshot-caption">
-          Real-time view of your team's AI sessions
-        </p>
       </section>
 
       {/* Fade to solid background */}
