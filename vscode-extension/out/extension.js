@@ -8060,7 +8060,7 @@ var AgentTreeProvider = class {
   async getChildren(element) {
     const client2 = this.getClient();
     if (!client2) {
-      return [new UserItem("Configure remix settings", "", 0, 0)];
+      return [new UserItem("Configure eywa settings", "", 0, 0)];
     }
     if (!element) {
       try {
@@ -8101,10 +8101,10 @@ var UserItem = class extends vscode.TreeItem {
       activeCount > 0 ? new vscode.ThemeColor("testing.iconPassed") : new vscode.ThemeColor("disabledForeground")
     );
   }
-  contextValue = "remixUser";
+  contextValue = "eywaUser";
 };
 var SessionItem = class extends vscode.TreeItem {
-  contextValue = "remixSession";
+  contextValue = "eywaSession";
   session;
   constructor(session) {
     const sessionName = session.agent.includes("/") ? session.agent.split("/")[1] : session.sessionId.slice(0, 10);
@@ -8264,7 +8264,7 @@ var ActivityItem = class extends vscode3.TreeItem {
       colorMap[type] ? new vscode3.ThemeColor(colorMap[type]) : void 0
     );
   }
-  contextValue = "remixActivity";
+  contextValue = "eywaActivity";
 };
 
 // node_modules/@supabase/supabase-js/dist/index.mjs
@@ -12793,7 +12793,7 @@ function shouldShowDeprecationWarning() {
 if (shouldShowDeprecationWarning()) console.warn("\u26A0\uFE0F  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217");
 
 // src/client.ts
-var RemixClient = class {
+var EywaClient = class {
   supabase;
   roomSlug;
   roomId = null;
@@ -13018,7 +13018,7 @@ var vscode4 = __toESM(require("vscode"));
 async function injectSelection(getClient) {
   const client2 = getClient();
   if (!client2) {
-    vscode4.window.showWarningMessage("Configure remix.room, remix.supabaseUrl, and remix.supabaseKey first.");
+    vscode4.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
     return;
   }
   const editor = vscode4.window.activeTextEditor;
@@ -13086,8 +13086,8 @@ var KnowledgeCodeLensProvider = class {
     const titles = matches.map((m) => m.title || m.content.slice(0, 40)).join(", ");
     return [
       new vscode5.CodeLens(range, {
-        title: `$(book) Remix: ${matches.length} knowledge entr${matches.length === 1 ? "y" : "ies"} about this file`,
-        command: "remix.showKnowledgeForFile",
+        title: `$(book) Eywa: ${matches.length} knowledge entr${matches.length === 1 ? "y" : "ies"} about this file`,
+        command: "eywa.showKnowledgeForFile",
         arguments: [matches],
         tooltip: titles
       })
@@ -13096,10 +13096,10 @@ var KnowledgeCodeLensProvider = class {
 };
 function registerKnowledgeForFileCommand(context) {
   context.subscriptions.push(
-    vscode5.commands.registerCommand("remix.showKnowledgeForFile", (entries) => {
-      const channel = vscode5.window.createOutputChannel("Remix Knowledge");
+    vscode5.commands.registerCommand("eywa.showKnowledgeForFile", (entries) => {
+      const channel = vscode5.window.createOutputChannel("Eywa Knowledge");
       channel.clear();
-      channel.appendLine(`Remix Knowledge \u2014 ${entries.length} entries
+      channel.appendLine(`Eywa Knowledge - ${entries.length} entries
 `);
       for (const e of entries) {
         channel.appendLine(`--- ${e.title || "(untitled)"} ---`);
@@ -13118,9 +13118,9 @@ var statusBarItem;
 var realtime;
 function activate(context) {
   statusBarItem = vscode6.window.createStatusBarItem(vscode6.StatusBarAlignment.Left, 50);
-  statusBarItem.command = "remix.showStatus";
-  statusBarItem.text = "$(cloud) Remix";
-  statusBarItem.tooltip = "Click for Remix quick actions";
+  statusBarItem.command = "eywa.showStatus";
+  statusBarItem.text = "$(cloud) Eywa";
+  statusBarItem.tooltip = "Click for Eywa quick actions";
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
   const agentProvider = new AgentTreeProvider(() => client);
@@ -13176,7 +13176,7 @@ function activate(context) {
       });
       if (priority === "urgent") {
         vscode6.window.showWarningMessage(`$(alert) URGENT: ${msg}`, "Open Dashboard").then((choice) => {
-          if (choice === "Open Dashboard") vscode6.commands.executeCommand("remix.openDashboard");
+          if (choice === "Open Dashboard") vscode6.commands.executeCommand("eywa.openDashboard");
         });
       }
     } else if (event === "knowledge_stored" || mem.message_type === "knowledge") {
@@ -13204,24 +13204,24 @@ function activate(context) {
   }
   initClient(agentProvider, codeLensProvider, handleRealtimeEvent, context);
   context.subscriptions.push(
-    vscode6.window.registerTreeDataProvider("remixAgents", agentProvider),
-    vscode6.window.registerTreeDataProvider("remixKnowledge", knowledgeProvider),
-    vscode6.window.registerTreeDataProvider("remixActivity", activityProvider),
+    vscode6.window.registerTreeDataProvider("eywaAgents", agentProvider),
+    vscode6.window.registerTreeDataProvider("eywaKnowledge", knowledgeProvider),
+    vscode6.window.registerTreeDataProvider("eywaActivity", activityProvider),
     vscode6.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider)
   );
   context.subscriptions.push(
-    vscode6.commands.registerCommand("remix.refreshAgents", () => {
+    vscode6.commands.registerCommand("eywa.refreshAgents", () => {
       agentProvider.refresh();
       knowledgeProvider.refresh();
       activityProvider.refresh();
       codeLensProvider.refreshCache();
     }),
-    vscode6.commands.registerCommand("remix.openDashboard", () => {
+    vscode6.commands.registerCommand("eywa.openDashboard", () => {
       const room = getConfig("room");
-      const url = room ? `https://remix-memory.vercel.app/r/${room}` : "https://remix-memory.vercel.app";
+      const url = room ? `https://eywa-ai.dev/r/${room}` : "https://eywa-ai.dev";
       vscode6.env.openExternal(vscode6.Uri.parse(url));
     }),
-    vscode6.commands.registerCommand("remix.connectAgent", async () => {
+    vscode6.commands.registerCommand("eywa.connectAgent", async () => {
       const room = await vscode6.window.showInputBox({
         prompt: "Room slug",
         placeHolder: "my-project",
@@ -13233,7 +13233,7 @@ function activate(context) {
         placeHolder: "claude-code"
       });
       if (!agent) return;
-      const mcpUrl = `https://remix-mcp.armandsumo.workers.dev/mcp?room=${room}&agent=${agent}`;
+      const mcpUrl = `https://mcp.eywa-ai.dev/mcp?room=${room}&agent=${agent}`;
       await vscode6.env.clipboard.writeText(mcpUrl);
       vscode6.window.showInformationMessage(
         `MCP URL copied! Add to your MCP config:
@@ -13241,19 +13241,19 @@ ${mcpUrl}`,
         "Open Terminal"
       ).then((action) => {
         if (action === "Open Terminal") {
-          const terminal = vscode6.window.createTerminal("Remix");
-          terminal.sendText(`claude mcp add --transport http remix "${mcpUrl}"`);
+          const terminal = vscode6.window.createTerminal("Eywa");
+          terminal.sendText(`claude mcp add --transport http eywa "${mcpUrl}"`);
           terminal.show();
         }
       });
-      await vscode6.workspace.getConfiguration("remix").update("room", room, true);
+      await vscode6.workspace.getConfiguration("eywa").update("room", room, true);
       initClient(agentProvider, codeLensProvider, handleRealtimeEvent, context);
       agentProvider.refresh();
     }),
     // Original inject context (manual text input)
-    vscode6.commands.registerCommand("remix.injectContext", async () => {
+    vscode6.commands.registerCommand("eywa.injectContext", async () => {
       if (!client) {
-        vscode6.window.showWarningMessage("Configure remix.room, remix.supabaseUrl, and remix.supabaseKey first.");
+        vscode6.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
         return;
       }
       const agents = await client.getAgents();
@@ -13276,9 +13276,9 @@ ${mcpUrl}`,
       vscode6.window.showInformationMessage(`Injected context for ${target} (${priority})`);
     }),
     // Editor selection inject (Cmd+Shift+I)
-    vscode6.commands.registerCommand("remix.injectSelection", () => injectSelection(() => client)),
+    vscode6.commands.registerCommand("eywa.injectSelection", () => injectSelection(() => client)),
     // Session context menu: inject to session's agent
-    vscode6.commands.registerCommand("remix.injectToSession", async (item) => {
+    vscode6.commands.registerCommand("eywa.injectToSession", async (item) => {
       if (!client || !item.session) return;
       const content = await vscode6.window.showInputBox({
         prompt: `Inject context to ${item.session.agent}`,
@@ -13289,7 +13289,7 @@ ${mcpUrl}`,
       vscode6.window.showInformationMessage(`Injected context \u2192 ${item.session.agent}`);
     }),
     // Session context menu: copy summary
-    vscode6.commands.registerCommand("remix.copySessionSummary", async (item) => {
+    vscode6.commands.registerCommand("eywa.copySessionSummary", async (item) => {
       if (!item.session) return;
       const s = item.session;
       const text = `${s.agent} [${s.status}]: ${s.task}
@@ -13298,16 +13298,16 @@ Memories: ${s.memoryCount} \xB7 Last seen: ${s.lastSeen}`;
       vscode6.window.showInformationMessage("Session summary copied.");
     }),
     // Session context menu: open in dashboard
-    vscode6.commands.registerCommand("remix.openSessionInDashboard", (item) => {
+    vscode6.commands.registerCommand("eywa.openSessionInDashboard", (item) => {
       if (!item.session) return;
       const room = getConfig("room");
-      const url = `https://remix-memory.vercel.app/r/${room}`;
+      const url = `https://eywa-ai.dev/r/${room}`;
       vscode6.env.openExternal(vscode6.Uri.parse(url));
     }),
     // Enhanced status bar: QuickPick menu
-    vscode6.commands.registerCommand("remix.showStatus", async () => {
+    vscode6.commands.registerCommand("eywa.showStatus", async () => {
       if (!client) {
-        vscode6.window.showWarningMessage("Configure remix.room, remix.supabaseUrl, and remix.supabaseKey first.");
+        vscode6.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
         return;
       }
       const agents = await client.getAgents();
@@ -13330,22 +13330,22 @@ Memories: ${s.memoryCount} \xB7 Last seen: ${s.lastSeen}`;
         }
       ];
       const pick = await vscode6.window.showQuickPick(items, {
-        placeHolder: `Remix: ${getConfig("room")}`
+        placeHolder: `Eywa: ${getConfig("room")}`
       });
       if (!pick) return;
       if (pick.label.includes("Inject context")) {
-        vscode6.commands.executeCommand("remix.injectContext");
+        vscode6.commands.executeCommand("eywa.injectContext");
       } else if (pick.label.includes("Open web dashboard")) {
-        vscode6.commands.executeCommand("remix.openDashboard");
+        vscode6.commands.executeCommand("eywa.openDashboard");
       } else if (pick.label.includes("Connect new agent")) {
-        vscode6.commands.executeCommand("remix.connectAgent");
+        vscode6.commands.executeCommand("eywa.connectAgent");
       }
     })
   );
   registerKnowledgeForFileCommand(context);
   context.subscriptions.push(
     vscode6.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("remix.supabaseUrl") || e.affectsConfiguration("remix.supabaseKey") || e.affectsConfiguration("remix.room")) {
+      if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
         initClient(agentProvider, codeLensProvider, handleRealtimeEvent, context);
         agentProvider.refresh();
         knowledgeProvider.refresh();
@@ -13354,19 +13354,19 @@ Memories: ${s.memoryCount} \xB7 Last seen: ${s.lastSeen}`;
   );
 }
 function getConfig(key) {
-  return vscode6.workspace.getConfiguration("remix").get(key) ?? "";
+  return vscode6.workspace.getConfiguration("eywa").get(key) ?? "";
 }
 function updateStatusBar(agentProvider) {
   const room = getConfig("room");
   if (!room) {
-    statusBarItem.text = "$(cloud) Remix (unconfigured)";
+    statusBarItem.text = "$(cloud) Eywa (unconfigured)";
     return;
   }
   const active = agentProvider.getActiveCount();
   if (active > 0) {
-    statusBarItem.text = `$(cloud) Remix: /${room}  $(person) ${active} active`;
+    statusBarItem.text = `$(cloud) Eywa: /${room}  $(person) ${active} active`;
   } else {
-    statusBarItem.text = `$(cloud) Remix: /${room}`;
+    statusBarItem.text = `$(cloud) Eywa: /${room}`;
   }
 }
 function initClient(agentProvider, codeLensProvider, onEvent, context) {
@@ -13377,7 +13377,7 @@ function initClient(agentProvider, codeLensProvider, onEvent, context) {
     realtime.unsubscribe(client.getSupabase());
   }
   if (url && key && room) {
-    client = new RemixClient(url, key, room);
+    client = new EywaClient(url, key, room);
     updateStatusBar(agentProvider);
     codeLensProvider.refreshCache();
     realtime = new RealtimeManager();
@@ -13391,7 +13391,7 @@ function initClient(agentProvider, codeLensProvider, onEvent, context) {
   } else {
     client = void 0;
     realtime = void 0;
-    statusBarItem.text = "$(cloud) Remix (unconfigured)";
+    statusBarItem.text = "$(cloud) Eywa (unconfigured)";
   }
 }
 function deactivate() {
