@@ -2,13 +2,12 @@ import { useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 
-// Simplex-like noise for smooth blob shape
+// Smooth noise for blob shape
 function noise3D(x: number, y: number, z: number): number {
-  const p = x * 0.5 + y * 0.8 + z * 0.3;
   return (
-    Math.sin(p * 1.2) * 0.5 +
-    Math.sin(p * 2.1 + 1.3) * 0.25 +
-    Math.sin(p * 0.7 + 2.1) * 0.25
+    Math.sin(x * 2.1 + y * 1.3) * 0.4 +
+    Math.sin(y * 1.8 + z * 2.4) * 0.35 +
+    Math.sin(z * 1.5 + x * 1.9) * 0.25
   );
 }
 
@@ -16,22 +15,19 @@ function BlobSphere() {
   const geometry = useMemo(() => {
     const geo = new THREE.IcosahedronGeometry(1, 5);
     const positions = geo.attributes.position.array as Float32Array;
-    const noiseScale = 0.4; // Very low frequency
-    const noiseStrength = 0.25; // Visible blob deformation
+    const noiseStrength = 0.35;
 
     for (let i = 0; i < positions.length; i += 3) {
       const x = positions[i];
       const y = positions[i + 1];
       const z = positions[i + 2];
 
-      // Normalize to get direction
       const len = Math.sqrt(x * x + y * y + z * z);
       const nx = x / len;
       const ny = y / len;
       const nz = z / len;
 
-      // Low frequency noise displacement
-      const n = noise3D(nx * noiseScale, ny * noiseScale, nz * noiseScale);
+      const n = noise3D(nx * 1.2, ny * 1.2, nz * 1.2);
       const displacement = 1 + n * noiseStrength;
 
       positions[i] = nx * displacement;
@@ -43,21 +39,38 @@ function BlobSphere() {
     return geo;
   }, []);
 
-  // Custom shader for aurora gradient
+  // Frosted glass shader with internal glowing spheres
   const shaderMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
+      transparent: true,
       vertexShader: `
         varying vec3 vPosition;
         varying vec3 vNormal;
+        varying vec3 vViewDir;
         void main() {
           vPosition = position;
           vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          vViewDir = normalize(-mvPos.xyz);
+          gl_Position = projectionMatrix * mvPos;
         }
       `,
       fragmentShader: `
         varying vec3 vPosition;
         varying vec3 vNormal;
+        varying vec3 vViewDir;
+
+        // Internal light spheres - soft falloff
+        float sphereLight(vec3 p, vec3 center, float radius, float intensity) {
+          float d = length(p - center);
+          float falloff = 1.0 - smoothstep(0.0, radius, d);
+          return intensity * falloff * falloff;
+        }
+
+        // Frosted noise for surface texture
+        float hash(vec3 p) {
+          return fract(sin(dot(p, vec3(12.9898, 78.233, 45.5432))) * 43758.5453);
+        }
 
         void main() {
           // Aurora colors
@@ -66,29 +79,52 @@ function BlobSphere() {
           vec3 pink = vec3(0.957, 0.447, 0.714);
           vec3 blue = vec3(0.420, 0.549, 1.0);
 
-          // Mix based on position
-          float t1 = (vPosition.y + 1.0) * 0.5;
-          float t2 = (vPosition.x + 1.0) * 0.5;
+          vec3 p = vPosition;
 
-          // Fresnel for edge glow
-          vec3 viewDir = vec3(0.0, 0.0, 1.0);
-          float fresnel = pow(1.0 - abs(dot(vNormal, viewDir)), 2.5);
+          // Internal glowing orbs
+          float light1 = sphereLight(p, vec3(0.0, 0.15, 0.1), 0.6, 1.4);
+          float light2 = sphereLight(p, vec3(0.4, -0.15, 0.15), 0.45, 1.1);
+          float light3 = sphereLight(p, vec3(-0.35, -0.1, 0.25), 0.4, 1.0);
+          float light4 = sphereLight(p, vec3(0.15, 0.4, -0.15), 0.35, 0.9);
 
-          vec3 color1 = mix(purple, cyan, t1);
-          vec3 color2 = mix(pink, blue, t2);
-          vec3 finalColor = mix(color1, color2, 0.5);
+          vec3 internalGlow = vec3(0.0);
+          internalGlow += light1 * cyan * 1.3;
+          internalGlow += light2 * purple * 1.1;
+          internalGlow += light3 * pink * 1.0;
+          internalGlow += light4 * blue * 0.9;
 
-          // Add glow at edges
-          finalColor += fresnel * 0.4 * cyan;
+          // Fresnel for frosted glass rim
+          float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 2.5);
 
-          gl_FragColor = vec4(finalColor, 1.0);
+          // Subsurface scattering approximation
+          float scatter = pow(max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0))), 0.5);
+
+          // Frosted surface noise
+          float frost = hash(vPosition * 20.0) * 0.08;
+
+          // Base frosted color - milky white-ish tint
+          vec3 frostTint = vec3(0.85, 0.9, 0.95);
+
+          // Combine: internal glow shows through frosted surface
+          vec3 finalColor = internalGlow * (0.7 + scatter * 0.5);
+          finalColor = mix(finalColor, frostTint, 0.15 + frost);
+          finalColor += fresnel * cyan * 0.6;
+
+          // Boost vibrancy
+          float lum = dot(finalColor, vec3(0.299, 0.587, 0.114));
+          finalColor = mix(vec3(lum), finalColor, 1.5);
+
+          // Semi-transparent frosted glass
+          float alpha = 0.85 + fresnel * 0.15;
+
+          gl_FragColor = vec4(finalColor, alpha);
         }
       `,
     });
   }, []);
 
   return (
-    <mesh geometry={geometry} rotation={[0.3, 0.5, 0]}>
+    <mesh geometry={geometry} rotation={[0.2, 0.4, 0.1]}>
       <primitive object={shaderMaterial} attach="material" />
     </mesh>
   );
@@ -112,7 +148,7 @@ export default function EywaLogo({ size = 48, className = "" }: Props) {
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 2.5], fov: 50 }}
+        camera={{ position: [0, 0, 2.2], fov: 50 }}
         gl={{ antialias: true, alpha: true }}
         style={{ width: "100%", height: "100%" }}
         frameloop="demand"
