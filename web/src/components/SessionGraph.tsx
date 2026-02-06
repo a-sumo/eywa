@@ -33,6 +33,7 @@ const LABEL_GAP = 20;
 const TOP_PAD = 16;
 const BOTTOM_PAD = 24;
 const LINE_WIDTH = 2;
+const LABEL_MAX = 600;
 
 // Snap to pixel grid: even-width strokes align on integers,
 // odd-width strokes align on .5 for sharp rendering.
@@ -284,7 +285,6 @@ function buildGraphData(memories: Memory[]): GraphData {
 
   const graphRight = TRACK_LEFT + (tracks.length - 1) * TRACK_GAP;
   const labelX = graphRight + LABEL_GAP;
-  const LABEL_MAX = 600;
   const svgWidth = labelX + LABEL_MAX + 16;
   const svgHeight = TOP_PAD + totalRows * ROW_HEIGHT + BOTTOM_PAD;
 
@@ -618,18 +618,48 @@ function renderGraph(
     .attr("opacity", 0.7)
     .attr("shape-rendering", "geometricPrecision");
 
-  // Event labels - no truncation, let them extend
-  nodeGs.append("text")
+  // Event labels - wrap long text into 2 lines
+  const LABEL_FONT = 12;
+  const CHARS_PER_LINE = Math.floor(LABEL_MAX / (LABEL_FONT * 0.6)); // ~83 chars at 12px
+
+  const labelTexts = nodeGs.append("text")
     .attr("x", graph.labelX)
-    .attr("y", d => rowY(d.row) + 4)
-    .attr("font-size", 12)
+    .attr("y", d => rowY(d.row))
+    .attr("font-size", LABEL_FONT)
     .attr("fill", "var(--color-text-primary)")
-    .attr("class", "graph-event-label")
-    .text(d => {
-      if (d.type === "start") return d.label;
-      if (d.type === "end") return d.label || d.status || "done";
-      return d.label;
-    });
+    .attr("class", "graph-event-label");
+
+  labelTexts.each(function(d) {
+    const el = d3.select(this);
+    let raw = "";
+    if (d.type === "start") raw = d.label;
+    else if (d.type === "end") raw = d.label || d.status || "done";
+    else raw = d.label;
+
+    if (raw.length <= CHARS_PER_LINE) {
+      // Single line, vertically centered
+      el.append("tspan")
+        .attr("x", graph.labelX)
+        .attr("dy", "0.35em")
+        .text(raw);
+    } else {
+      // Wrap into 2 lines. Break at last space before limit, or hard-break.
+      let breakIdx = raw.lastIndexOf(" ", CHARS_PER_LINE);
+      if (breakIdx < CHARS_PER_LINE * 0.4) breakIdx = CHARS_PER_LINE; // no good space, hard break
+      const line1 = raw.slice(0, breakIdx).trimEnd();
+      let line2 = raw.slice(breakIdx).trimStart();
+      if (line2.length > CHARS_PER_LINE) line2 = line2.slice(0, CHARS_PER_LINE - 1) + "\u2026";
+
+      el.append("tspan")
+        .attr("x", graph.labelX)
+        .attr("dy", "-0.3em")
+        .text(line1);
+      el.append("tspan")
+        .attr("x", graph.labelX)
+        .attr("dy", "1.15em")
+        .text(line2);
+    }
+  });
 
   // --- Layer 7: Track hit areas (transparent wide rects for hover detection) ---
   const hitGroup = zoomGroup.append("g").attr("class", "track-hitareas");
