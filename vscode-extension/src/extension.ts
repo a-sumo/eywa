@@ -121,6 +121,11 @@ export function activate(context: vscode.ExtensionContext) {
   // Initialize client BEFORE registering tree providers so first getChildren sees the client
   initClient(agentProvider, codeLensProvider, handleRealtimeEvent, context);
 
+  // First-run onboarding: if no room is configured, prompt the user
+  if (!getConfig("room")) {
+    showWelcome();
+  }
+
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider("eywaAgents", agentProvider),
     vscode.window.registerTreeDataProvider("eywaKnowledge", knowledgeProvider),
@@ -299,6 +304,19 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }),
   );
+}
+
+async function showWelcome() {
+  const action = await vscode.window.showInformationMessage(
+    "Welcome to Eywa! Connect your agents by setting a room.",
+    "Set Room",
+    "Open Dashboard",
+  );
+  if (action === "Set Room") {
+    vscode.commands.executeCommand("eywa.connectAgent");
+  } else if (action === "Open Dashboard") {
+    vscode.commands.executeCommand("eywa.openDashboard");
+  }
 }
 
 function getConfig(key: string): string {
