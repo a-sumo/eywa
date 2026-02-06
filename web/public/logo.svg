@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <!-- Aurora gradient: purple -> pink -> cyan -->
+    <linearGradient id="aurora" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="50%" stop-color="#f472b6"/>
+      <stop offset="100%" stop-color="#4eeaff"/>
+    </linearGradient>
+
+    <!-- Radial glow for center -->
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#4eeaff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#4eeaff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Outer glow -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle (optional, for dark backgrounds) -->
+  <circle cx="60" cy="60" r="56" fill="#08090f"/>
+
+  <!-- Orbital paths - representing agent streams -->
+  <ellipse cx="60" cy="60" rx="40" ry="20" fill="none" stroke="url(#aurora)" stroke-width="1.5" stroke-opacity="0.3" transform="rotate(-30 60 60)"/>
+  <ellipse cx="60" cy="60" rx="35" ry="18" fill="none" stroke="url(#aurora)" stroke-width="1.5" stroke-opacity="0.25" transform="rotate(30 60 60)"/>
+  <ellipse cx="60" cy="60" rx="45" ry="22" fill="none" stroke="url(#aurora)" stroke-width="1" stroke-opacity="0.2" transform="rotate(0 60 60)"/>
+
+  <!-- Converging particles/dots -->
+  <g filter="url(#glow)">
+    <!-- Outer ring of particles -->
+    <circle cx="25" cy="50" r="3" fill="#a855f7" opacity="0.8"/>
+    <circle cx="95" cy="70" r="3" fill="#4eeaff" opacity="0.8"/>
+    <circle cx="40" cy="25" r="2.5" fill="#f472b6" opacity="0.7"/>
+    <circle cx="80" cy="95" r="2.5" fill="#6b8cff" opacity="0.7"/>
+    <circle cx="30" cy="85" r="2" fill="#4ade80" opacity="0.6"/>
+    <circle cx="90" cy="35" r="2" fill="#a855f7" opacity="0.6"/>
+
+    <!-- Middle ring -->
+    <circle cx="40" cy="55" r="3" fill="#f472b6" opacity="0.85"/>
+    <circle cx="80" cy="65" r="3" fill="#4eeaff" opacity="0.85"/>
+    <circle cx="50" cy="40" r="2.5" fill="#6b8cff" opacity="0.75"/>
+    <circle cx="70" cy="80" r="2.5" fill="#a855f7" opacity="0.75"/>
+    <circle cx="45" cy="75" r="2" fill="#4ade80" opacity="0.65"/>
+    <circle cx="75" cy="45" r="2" fill="#f472b6" opacity="0.65"/>
+
+    <!-- Inner ring - brighter, converging -->
+    <circle cx="50" cy="58" r="2.5" fill="#4eeaff" opacity="0.9"/>
+    <circle cx="70" cy="62" r="2.5" fill="#f472b6" opacity="0.9"/>
+    <circle cx="55" cy="50" r="2" fill="#a855f7" opacity="0.85"/>
+    <circle cx="65" cy="70" r="2" fill="#6b8cff" opacity="0.85"/>
+  </g>
+
+  <!-- Center core - Eywa -->
+  <circle cx="60" cy="60" r="10" fill="url(#centerGlow)" filter="url(#glow)"/>
+  <circle cx="60" cy="60" r="6" fill="#fff" opacity="0.95"/>
+</svg>
