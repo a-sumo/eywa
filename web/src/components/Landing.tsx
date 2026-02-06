@@ -75,7 +75,7 @@ export function Landing() {
       {/* Header */}
       <header className="landing-header">
         <div className="landing-header-inner">
-          <a href="/" className="landing-logo">Remix</a>
+          <a href="/" className="landing-logo">Eywa</a>
           <nav className="landing-nav">
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
@@ -104,7 +104,7 @@ export function Landing() {
           <p className="landing-hero-subtitle">
             When everyone runs AI coding agents, context gets siloed.
             Decisions diverge. Work gets duplicated.
-            Remix gives your team shared visibility and control.
+            Eywa gives your team shared visibility and control.
           </p>
           <div className="landing-hero-actions">
             <a href="/r/demo" className="btn-landing-primary btn-large">
@@ -128,7 +128,7 @@ export function Landing() {
         <div className="landing-screenshot-wrapper">
           <img
             src="/slides/thread-tree.png"
-            alt="Remix dashboard showing AI agent sessions"
+            alt="Eywa dashboard showing AI agent sessions"
             className="landing-screenshot-img"
           />
         </div>
@@ -136,6 +136,9 @@ export function Landing() {
           Real-time view of your team's AI sessions
         </p>
       </section>
+
+      {/* Fade to solid background */}
+      <div className="landing-fade-overlay" />
 
       {/* Problem */}
       <section className="landing-section" id="problem">
@@ -150,8 +153,8 @@ export function Landing() {
             </div>
             <h3>Duplicated Work</h3>
             <p>
-              Your agent spent 40 minutes evaluating APIs. Your teammate's agent
-              does the same analysis from scratch. Neither knows.
+              Your agent spent 40 minutes evaluating auth libraries. Meanwhile,
+              another developer's agent runs the exact same analysis. Nobody knows.
             </p>
           </div>
           <div className="landing-card">
@@ -166,8 +169,8 @@ export function Landing() {
             </div>
             <h3>Silent Divergence</h3>
             <p>
-              Sarah switched architectures. Priya is still building on the old design.
-              They won't find out until integration fails.
+              One agent switches to a new database schema. Another keeps building on
+              the old one. You won't find out until the PR conflicts.
             </p>
           </div>
           <div className="landing-card">
@@ -179,8 +182,8 @@ export function Landing() {
             </div>
             <h3>Lost Context</h3>
             <p>
-              "What format should I use?" You get the answer.
-              You don't get the reasoning your teammate's agent worked out.
+              "What date format should the API use?" You get a quick answer.
+              You don't get the 10-minute investigation that led to it.
             </p>
           </div>
         </div>
@@ -188,13 +191,13 @@ export function Landing() {
 
       {/* Solution */}
       <section className="landing-section landing-section-alt">
-        <h2 className="landing-section-title">How Remix works</h2>
+        <h2 className="landing-section-title">How Eywa works</h2>
         <div className="landing-steps">
           <div className="landing-step">
             <div className="landing-step-number">1</div>
             <div className="landing-step-content">
               <h3>Connect your agents</h3>
-              <p>One command adds Remix to Claude Code, Cursor, or Gemini CLI. All activity streams to a shared room.</p>
+              <p>One command adds Eywa to Claude Code, Cursor, or Gemini CLI. All activity streams to a shared room.</p>
               <code className="landing-code">claude mcp add remix "https://remix-mcp..."</code>
             </div>
           </div>
@@ -209,7 +212,7 @@ export function Landing() {
             <div className="landing-step-number">3</div>
             <div className="landing-step-content">
               <h3>Share context</h3>
-              <p>Inject context to any agent mid-session. Pull in another session's reasoning. Remix threads together to resolve conflicts.</p>
+              <p>Inject context to any agent mid-session. Pull in another session's reasoning. Eywa threads together to resolve conflicts.</p>
             </div>
           </div>
         </div>
@@ -305,7 +308,7 @@ export function Landing() {
       {/* CTA */}
       <section className="landing-cta-section">
         <h2>Stop re-doing work your teammate's AI already figured out.</h2>
-        <p>Join teams using Remix to coordinate their AI agents.</p>
+        <p>Join teams using Eywa to coordinate their AI agents.</p>
         <div className="landing-hero-actions">
           <a href="/r/demo" className="btn-landing-primary btn-large">
             Try the Demo
@@ -321,7 +324,7 @@ export function Landing() {
       <footer className="landing-footer-dark">
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
-            <span className="landing-logo">Remix</span>
+            <span className="landing-logo">Eywa</span>
             <p>The coordination layer for human + AI teams</p>
           </div>
           <div className="landing-footer-links">
@@ -354,7 +357,7 @@ export function Landing() {
           </div>
         </div>
         <div className="landing-footer-bottom">
-          <p>© 2025 Remix. Built for hackathons and dev teams.</p>
+          <p>© 2026 Eywa. Built for hackathons and dev teams.</p>
         </div>
       </footer>
     </div>
