@@ -42,7 +42,7 @@ export interface SlidesData {
 }
 
 export const slidesData: SlidesData = {
-  title: "Remix",
+  title: "Eywa",
   subtitle: "The coordination layer for human+AI teams",
   summary: [
     "1. The Problem",
@@ -359,7 +359,7 @@ export const slidesData: SlidesData = {
   ],
 
   closing: {
-    title: "Remix",
+    title: "Eywa",
     subtitle: "The coordination layer for human+AI teams",
   },
 };
