@@ -7,8 +7,8 @@ import { ANIMAL_SPRITES, CUTE_COUNT } from "./animalSprites";
 /* ── E-Ink 7-Color Palette (soft pastels for web preview) ── */
 
 const EINK = {
-  black: "#2D2D2D",
-  white: "#FFFDF8",
+  black: "#6B7280",    // soft gray for text/lines
+  white: "#FFFDF8",    // warm cream
   red: "#E8A0A0",      // soft rose
   green: "#A8D8B4",    // soft sage
   blue: "#A0C4E8",     // soft sky
