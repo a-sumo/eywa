@@ -176,7 +176,7 @@ export function registerMemoryTools(
     },
     async ({ query, limit }) => {
       const rows = await db.select<MemoryRow>("memories", {
-        select: "agent,message_type,content,ts",
+        select: "id,agent,message_type,content,ts",
         room_id: `eq.${ctx.roomId}`,
         content: `ilike.*${query}*`,
         order: "ts.desc",
@@ -191,13 +191,14 @@ export function registerMemoryTools(
         };
       }
 
-      const lines = [`Search results for '${query}':`];
+      const lines = [`Search results for '${query}' (${rows.length} found):`];
       for (const m of rows) {
         const agent = m.agent;
         const role = m.message_type ?? "";
-        const content = m.content?.slice(0, 300) ?? "";
-        lines.push(`[${agent}:${role}]: ${content}`);
+        const content = m.content?.slice(0, 200) ?? "";
+        lines.push(`[${m.id.slice(0, 8)}] ${agent}:${role} (${m.ts}):\n  ${content}${(m.content?.length ?? 0) > 200 ? "..." : ""}`);
       }
+      lines.push("\nUse remix_fetch(memory_id) to get full content.");
 
       return {
         content: [{ type: "text" as const, text: lines.join("\n\n") }],
