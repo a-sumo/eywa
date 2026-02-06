@@ -89,10 +89,9 @@ export const slidesData: SlidesData = {
     ],
     "Live Demo": ["See it live"],
     "Appendix: Labs": [
-      "Layout Agent",
-      "Spatial Remix",
       "Ambient Displays",
       "Knowledge Base",
+      "Physical Displays",
     ],
   },
 
@@ -328,35 +327,12 @@ export const slidesData: SlidesData = {
     // ── APPENDIX: LABS ──────────────────────────────────
     {
       type: "bullets",
-      title: "Layout Agent",
-      subtitle: "Gesture-driven predictive UI for Spectacles / XR",
-      items: [
-        "Hand gestures (reach, grab, pull, push) predict user intent in 3D space.",
-        "UI panels auto-slide to the <strong>sweet spot</strong> — zero arm travel.",
-        "Gemini vision analyzes the canvas in real-time, validates comfort + readability.",
-        "Scripted demo mode (8 steps) and live AI mode for presentations.",
-        "1,490 lines. Custom 3D hand renderer, perspective projection, panel interpolation.",
-      ],
-    },
-    {
-      type: "bullets",
-      title: "Spatial Remix",
-      subtitle: "3D drag-and-drop memory workspace",
-      items: [
-        "React Three Fiber scene — drag memory cards through 3D space into a context zone.",
-        "Collapse / expand threads, drop full threads or individual memories.",
-        "Version history with rewind — git-like undo across remix states.",
-        "Responsive: full 3D on desktop, flat card layout on mobile.",
-      ],
-    },
-    {
-      type: "bullets",
       title: "Ambient Displays",
-      subtitle: "Always-on team awareness, from pixel art to e-ink",
+      subtitle: "Always-on team awareness with pixel creatures",
       items: [
-        "<strong>MiniRemix</strong>: Compact dashboard with deterministic pixel-art creatures per agent. Activity bars show message type breakdown.",
-        "<strong>E-ink mode</strong>: 7-color palette, crisp rendering, 60s auto-refresh. Designed for wall-mounted displays.",
-        "<strong>Voice chat</strong>: Mobile-first — speak to post, hear what's happening. Stay in the loop without opening a laptop.",
+        "<strong>MiniRemix</strong>: Compact dashboard with deterministic pixel-art creatures per agent.",
+        "Activity sparklines show recent work patterns at a glance.",
+        "Pastel color palette for cozy, non-intrusive ambient presence.",
       ],
     },
     {
@@ -366,9 +342,18 @@ export const slidesData: SlidesData = {
       items: [
         "<strong>remix_learn</strong>: Store architecture decisions, conventions, gotchas, API patterns.",
         "<strong>remix_knowledge</strong>: Retrieve and search the knowledge base by tags or content.",
-        "<strong>remix_forget</strong>: Remove outdated entries.",
         "Knowledge persists across all sessions and agents — new teammates inherit the full context automatically.",
-        "Agents can also <strong>inject</strong> context directly to specific teammates via remix_inject / remix_inbox.",
+      ],
+    },
+    {
+      type: "bullets",
+      title: "Physical Displays",
+      subtitle: "E-ink, TFT touch, and Spectacles AR",
+      items: [
+        "<strong>E-ink</strong>: 7-color Waveshare display (600x448). Pastel palette, tracking marker for AR.",
+        "<strong>TFT Touch</strong>: 3.5\" ILI9341 with pygame. Tap agents, send injections, view details.",
+        "<strong>Spectacles</strong>: Image tracking anchors AR panel to physical e-ink display.",
+        "All three share the same Supabase backend — unified team awareness across form factors.",
       ],
     },
   ],

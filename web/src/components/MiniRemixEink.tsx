@@ -219,8 +219,6 @@ function TrackingMarker({ size = 64 }: { size?: number }) {
     [1,1,1,1,1,1,1,1],
   ];
 
-  const cellSize = size / 8;
-
   return (
     <svg
       width={size}

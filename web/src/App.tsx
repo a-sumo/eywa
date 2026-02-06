@@ -5,14 +5,10 @@ import { RoomLayout } from "./components/RoomLayout";
 import { ThreadTree } from "./components/ThreadTree";
 import { ThreadView } from "./components/ThreadView";
 import { RemixView } from "./components/RemixView";
-import { RemixView3D } from "./components/RemixView3D";
 import { AgentDetail } from "./components/AgentDetail";
 import { Chat } from "./components/Chat";
 import { MiniRemix } from "./components/MiniRemix";
 import { MiniRemixEink } from "./components/MiniRemixEink";
-import { LayoutAgentDemo } from "./components/LayoutAgentDemo";
-import { LayoutAgentXR } from "./components/LayoutAgentXR";
-import { XRTest } from "./components/XRTest";
 import { CLIAuth } from "./components/CLIAuth";
 import { SlidePresentation } from "./components/SlidePresentation";
 import { SessionGraph } from "./components/SessionGraph";
@@ -40,13 +36,9 @@ function RoomRoutes() {
           <Route index element={<ThreadTree />} />
           <Route path="thread/:agent/:sessionId" element={<ThreadView />} />
           <Route path="remix/new" element={<RemixView />} />
-          <Route path="remix3d" element={<RemixView3D />} />
           <Route path="agent/:name" element={<AgentDetail />} />
           <Route path="chat" element={<Chat />} />
           <Route path="mini" element={<MiniRemix />} />
-          <Route path="layout-agent" element={<LayoutAgentDemo />} />
-          <Route path="layout-xr" element={<LayoutAgentXR />} />
-          <Route path="xr-test" element={<XRTest />} />
           <Route path="graph" element={<SessionGraph />} />
           <Route path="eink" element={<MiniRemixEink />} />
         </Routes>
