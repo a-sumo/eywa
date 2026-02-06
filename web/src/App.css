@@ -4693,57 +4693,154 @@ html {
   flex-shrink: 0;
 }
 
+/* ── Stacked layout ── */
+
+.eink-body-stacked {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 24px - 50px); /* minus header and footer */
+  padding: 0 8px;
+  gap: 6px;
+}
+
+/* ── Agent cards strip ── */
+
+.eink-agents-strip {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--eink-black);
+}
+
+.eink-agent-card {
+  flex: 1;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--eink-black);
+}
+
+.eink-agent-card-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.eink-agent-card-name {
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.eink-agent-card-ago {
+  margin-left: auto;
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.eink-agent-card-task {
+  font-size: 9px;
+  line-height: 1.2;
+  margin-bottom: 3px;
+  opacity: 0.8;
+}
+
+/* ── Idle strip ── */
+
+.eink-idle-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--eink-black);
+}
+
+.eink-idle-label {
+  font-size: 9px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.eink-idle-chip {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+}
+
+.eink-idle-more {
+  font-size: 9px;
+  opacity: 0.6;
+}
+
+/* ── Full-width feed ── */
+
+.eink-feed-full {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.eink-feed-header-row {
+  padding: 4px 0;
+}
+
+.eink-feed-item {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--eink-black);
+  opacity: 0.2;
+}
+
+.eink-feed-item:nth-child(-n+3) {
+  opacity: 1;
+}
+
+.eink-feed-item:nth-child(n+4) {
+  opacity: 0.6;
+}
+
+.eink-feed-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.eink-feed-agent {
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.eink-feed-time {
+  margin-left: auto;
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.eink-feed-text {
+  font-size: 10px;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
 /* ── Footer with tracking marker ── */
 
 .eink-footer {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
+  bottom: 6px;
+  left: 6px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .eink-footer-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
   color: var(--eink-black);
-  opacity: 0.6;
-}
-
-/* ── Expanded feed items ── */
-
-.eink-feed-row {
-  margin-bottom: 4px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--eink-black);
-  opacity: 0.15;
-}
-
-.eink-feed-row:last-child {
-  border-bottom: none;
-}
-
-.eink-feed-expanded {
-  border-bottom-width: 1px;
-  opacity: 0.3;
-  margin-bottom: 6px;
-  padding-bottom: 6px;
-}
-
-.eink-feed-expanded .eink-feed-content {
-  margin-top: 2px;
-  line-height: 1.3;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.eink-feed-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  opacity: 0.5;
 }
 
 /* ── Kill all interactive states ── */

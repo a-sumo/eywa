@@ -392,6 +392,14 @@ export function MiniRemixEink() {
   // Sparkline text for the header (all agents combined)
   const headerSparkText = useMemo(() => sparkline(memories), [memories]);
 
+  // Smart truncate at word boundary
+  const truncate = (text: string, maxLen: number) => {
+    if (text.length <= maxLen) return text;
+    const truncated = text.slice(0, maxLen);
+    const lastSpace = truncated.lastIndexOf(" ");
+    return (lastSpace > maxLen * 0.6 ? truncated.slice(0, lastSpace) : truncated) + "...";
+  };
+
   return (
     <div className="eink-container">
       {/* Header */}
@@ -409,81 +417,68 @@ export function MiniRemixEink() {
         <span className="eink-header-time">{clockTime()}</span>
       </div>
 
-      {/* Body: two columns */}
-      <div className="eink-body">
-        {/* Left: Agents */}
-        <div className="eink-left">
-          {/* Active agents */}
-          {activeAgents.length > 0 && (
-            <>
-              <div className="eink-section-title">
-                ACTIVE ({activeAgents.length})
-              </div>
-              {activeAgents.slice(0, 6).map((info) => (
-                <div key={info.agent} className="eink-agent-active">
-                  <div className="eink-agent-row">
-                    <EinkPixelCreature name={info.agent} size={16} />
-                    <span className="eink-agent-name">{getShort(info.agent)}</span>
-                    <EinkSparkline memories={info.memories} />
-                    <span className="eink-agent-ago">{timeAgo(info.lastTs)}</span>
-                  </div>
-                  {info.lastAction && (
-                    <div className="eink-agent-action">{info.lastAction}</div>
-                  )}
+      {/* Stacked layout: Agents strip + Full-width feed */}
+      <div className="eink-body-stacked">
+        {/* Top: Active agents strip */}
+        {activeAgents.length > 0 && (
+          <div className="eink-agents-strip">
+            {activeAgents.slice(0, 4).map((info) => (
+              <div key={info.agent} className="eink-agent-card">
+                <div className="eink-agent-card-header">
+                  <EinkPixelCreature name={info.agent} size={20} />
+                  <span className="eink-agent-card-name">{getShort(info.agent)}</span>
+                  <span className="eink-agent-card-ago">{timeAgo(info.lastTs)}</span>
                 </div>
-              ))}
-            </>
-          )}
-
-          {/* Idle agents */}
-          {idleAgents.length > 0 && (
-            <>
-              <div className="eink-section-title eink-section-idle">
-                IDLE ({idleAgents.length})
+                {info.lastAction && (
+                  <div className="eink-agent-card-task">{truncate(info.lastAction, 40)}</div>
+                )}
+                <EinkSparkline memories={info.memories} />
               </div>
-              <div className="eink-idle-grid">
-                {idleAgents.slice(0, 12).map((info) => (
-                  <div key={info.agent} className="eink-idle-item">
-                    <EinkPixelCreature name={info.agent} size={12} />
-                    <span className="eink-idle-name">{getShort(info.agent)}</span>
-                    <span className="eink-idle-ago">{timeAgo(info.lastTs)}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+            ))}
+          </div>
+        )}
 
-          {agents.length === 0 && (
-            <div className="eink-empty">no agents</div>
-          )}
-        </div>
+        {/* Idle count (compact) */}
+        {idleAgents.length > 0 && (
+          <div className="eink-idle-strip">
+            <span className="eink-idle-label">IDLE</span>
+            {idleAgents.slice(0, 8).map((info) => (
+              <span key={info.agent} className="eink-idle-chip">
+                <EinkPixelCreature name={info.agent} size={10} />
+                {getShort(info.agent)}
+              </span>
+            ))}
+            {idleAgents.length > 8 && (
+              <span className="eink-idle-more">+{idleAgents.length - 8}</span>
+            )}
+          </div>
+        )}
 
-        {/* Right: Feed */}
-        <div className="eink-right">
-          <div className="eink-section-title">
-            ACTIVITY ({memories.length})
+        {/* Full-width activity feed */}
+        <div className="eink-feed-full">
+          <div className="eink-feed-header-row">
+            <span className="eink-section-title">RECENT ACTIVITY</span>
           </div>
           {feed.length === 0 && (
             <div className="eink-empty">no activity</div>
           )}
-          {feed.map((m, idx) => {
+          {feed.slice(0, 8).map((m, idx) => {
             const cat = typeToCategory(m.message_type);
-            const isRecent = idx < 3; // First 3 items get expanded view
             return (
-              <div key={m.id} className={`eink-feed-row ${isRecent ? "eink-feed-expanded" : ""}`}>
-                <div className="eink-feed-header">
-                  <span className="eink-feed-time">{timeAgo(m.ts)}</span>
-                  <span className="eink-feed-agent">{getShort(m.agent).slice(0, 10)}</span>
+              <div key={m.id} className="eink-feed-item">
+                <div className="eink-feed-meta">
+                  <EinkPixelCreature name={m.agent} size={12} />
+                  <span className="eink-feed-agent">{getShort(m.agent)}</span>
                   <span
                     className="eink-feed-badge"
                     style={{ background: cat ? EINK_CATEGORY_COLORS[cat] : EINK.white }}
                   >
                     {typeLabel(m.message_type)}
                   </span>
+                  <span className="eink-feed-time">{timeAgo(m.ts)}</span>
                 </div>
-                <div className="eink-feed-content">
-                  {isRecent ? m.content.slice(0, 200) : m.content.slice(0, 50)}
-                  {m.content.length > (isRecent ? 200 : 50) ? "..." : ""}
+                <div className="eink-feed-text">
+                  {truncate(m.content, idx < 2 ? 180 : 100)}
                 </div>
               </div>
             );
@@ -493,8 +488,8 @@ export function MiniRemixEink() {
 
       {/* Bottom: Tracking marker for Spectacles */}
       <div className="eink-footer">
-        <TrackingMarker size={48} />
-        <span className="eink-footer-label">remix</span>
+        <TrackingMarker size={40} />
+        <span className="eink-footer-label">REMIX</span>
       </div>
     </div>
   );
