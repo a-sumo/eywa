@@ -64,6 +64,7 @@ export function AgentList() {
             { path: "graph", label: "Session Graph", icon: "◉" },
             { path: "mini", label: "Mini", icon: "▪" },
             { path: "eink", label: "E-Ink", icon: "▫" },
+            { path: "spectacles", label: "Spectacles", icon: "◎" },
           ].map(({ path, label, icon }) => (
             <button
               key={path}
