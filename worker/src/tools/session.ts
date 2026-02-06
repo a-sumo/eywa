@@ -1,10 +1,26 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { RemixContext } from "../lib/types.js";
+import type { RemixContext, MemoryRow } from "../lib/types.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
+}
+
+/** Get the latest memory ID for this session (for parent chaining) */
+async function getLatestMemoryId(
+  db: SupabaseClient,
+  roomId: string,
+  sessionId: string,
+): Promise<string | null> {
+  const rows = await db.select<MemoryRow>("memories", {
+    select: "id",
+    room_id: `eq.${roomId}`,
+    session_id: `eq.${sessionId}`,
+    order: "ts.desc",
+    limit: "1",
+  });
+  return rows.length > 0 ? rows[0].id : null;
 }
 
 export function registerSessionTools(
@@ -31,10 +47,12 @@ export function registerSessionTools(
     "Start logging this session. Call this when beginning work on a task.",
     { task_description: z.string().describe("Brief description of what you're working on") },
     async ({ task_description }) => {
+      const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
         room_id: ctx.roomId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
+        parent_id: parentId,
         message_type: "resource",
         content: `SESSION START: ${task_description}`,
         token_count: estimateTokens(task_description),
@@ -56,10 +74,12 @@ export function registerSessionTools(
     "Stop logging and save a session summary.",
     { summary: z.string().describe("Summary of what was accomplished") },
     async ({ summary }) => {
+      const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
         room_id: ctx.roomId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
+        parent_id: parentId,
         message_type: "resource",
         content: `SESSION END: ${summary}`,
         token_count: estimateTokens(summary),
@@ -82,10 +102,12 @@ export function registerSessionTools(
       next_steps: z.string().optional().describe("Suggested follow-up work for the next session"),
     },
     async ({ summary, status, artifacts, tags, next_steps }) => {
+      const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
         room_id: ctx.roomId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
+        parent_id: parentId,
         message_type: "resource",
         content: `SESSION DONE [${status.toUpperCase()}]: ${summary}${next_steps ? `\nNext steps: ${next_steps}` : ""}${artifacts?.length ? `\nArtifacts: ${artifacts.join(", ")}` : ""}`,
         token_count: estimateTokens(summary),

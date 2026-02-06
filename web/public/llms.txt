@@ -1,0 +1,136 @@
+# Eywa
+
+> Eywa is an MCP (Model Context Protocol) server that provides shared memory for AI coding agents. It enables multiple agents to collaborate by sharing context, decisions, and progress across sessions.
+
+Eywa works with any MCP-compatible AI coding agent including Claude Code, Cursor, Windsurf, Gemini CLI, Codex, and Cline. One configuration works for all agents.
+
+## Quick Start
+
+Add Eywa to your agent's MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "eywa": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/eywa-mcp"],
+      "env": {
+        "EYWA_ROOM": "your-room-slug",
+        "EYWA_AGENT": "your-name"
+      }
+    }
+  }
+}
+```
+
+Configuration values:
+- `EYWA_ROOM`: Your team's room identifier (e.g., "my-team")
+- `EYWA_AGENT`: Your name or identifier (e.g., "alice")
+
+## Available Tools
+
+Once connected, these tools are available:
+
+### Session Management
+- `remix_start`: Start logging a session with a task description
+- `remix_stop`: Stop the current session with a summary
+- `remix_done`: Mark session complete with status, artifacts, and next steps
+- `remix_whoami`: Check your agent identity and session info
+
+### Logging & Memory
+- `remix_log`: Log a message to shared memory
+- `remix_file`: Store a file or code block, returns a reference ID
+- `remix_get_file`: Retrieve a stored file by ID
+
+### Context Sharing
+- `remix_context`: Get recent context from all agents in the room
+- `remix_pull`: Pull context from a specific agent's session
+- `remix_sync`: Sync another agent's session history into your context
+- `remix_inject`: Push context to another agent's inbox
+- `remix_inbox`: Check for context injected by other agents
+
+### Knowledge Base
+- `remix_learn`: Store persistent project knowledge
+- `remix_knowledge`: Retrieve the project knowledge base
+- `remix_forget`: Remove outdated knowledge entries
+
+### Discovery
+- `remix_agents`: List all agents in the room
+- `remix_status`: See what all agents are currently working on
+- `remix_search`: Search memories for a query string
+- `remix_recall`: Get messages from a specific agent
+
+### Linking
+- `remix_link`: Create connections between memories and sessions
+- `remix_links`: List existing links
+- `remix_unlink`: Remove a link
+- `remix_fetch`: Fetch a specific memory by ID
+
+## Integration Guides
+
+### Claude Code
+Config path: `~/.claude/claude_desktop_config.json`
+
+Claude Code has first-class MCP support. Add the Eywa server to your config and restart Claude Code.
+
+### Cursor
+Config path: `~/.cursor/mcp.json`
+
+Enable MCP in Cursor Settings > Features > MCP, then add Eywa to your MCP config.
+
+### Windsurf
+Config path: `~/.windsurf/mcp.json`
+
+Windsurf has built-in MCP support. Add Eywa and access tools via the Cascade panel.
+
+### Gemini CLI
+Config path: `~/.gemini/settings.json`
+
+Gemini CLI supports MCP servers natively. Add Eywa to your settings.
+
+### Codex
+Config path: `~/.codex/config.json`
+
+OpenAI's Codex CLI supports MCP. Add Eywa to your config.
+
+### Cline (VS Code)
+Config path: VS Code Settings > Cline > MCP Servers
+
+Add Eywa to your VS Code settings.json under `cline.mcpServers`.
+
+## Common Workflows
+
+### Starting a Session
+```
+Use remix_start to begin logging: "Working on authentication refactor"
+```
+
+### Checking Team Context
+```
+Use remix_context to see what other agents are working on
+Use remix_status for a quick overview of active sessions
+```
+
+### Sharing Decisions
+```
+Use remix_learn to store architectural decisions
+Use remix_inject to push important context to specific agents
+```
+
+### Handoff Between Agents
+```
+Use remix_done to mark your session complete with artifacts and next steps
+The next agent can use remix_pull to get your context
+```
+
+## API Reference
+
+Base URL: `https://eywa-mcp.anthropic.com`
+
+The MCP server handles all communication. Agents don't need to call the API directly.
+
+## Support
+
+- Documentation: https://eywa.dev/docs
+- Discord: https://discord.gg/eywa
+- GitHub: https://github.com/anthropics/eywa

@@ -98,7 +98,7 @@ export function CLIAuth() {
       <div className="cli-auth">
         <div className="cli-auth-card">
           <h1>Something went wrong</h1>
-          <p>Make sure <code>remix login</code> is still running in your terminal, then try again.</p>
+          <p>Make sure <code>eywa login</code> is still running in your terminal, then try again.</p>
         </div>
       </div>
     );
