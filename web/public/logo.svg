@@ -1,22 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
   <defs>
-    <!-- Aurora gradient: purple -> pink -> cyan -->
-    <linearGradient id="aurora" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Aurora gradient -->
+    <linearGradient id="aurora" x1="0%" y1="100%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#a855f7"/>
       <stop offset="50%" stop-color="#f472b6"/>
       <stop offset="100%" stop-color="#4eeaff"/>
     </linearGradient>
 
-    <!-- Radial glow for center -->
-    <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+    <!-- Radial glow for core -->
+    <radialGradient id="coreGlow" cx="50%" cy="70%" r="50%">
       <stop offset="0%" stop-color="#fff" stop-opacity="0.9"/>
-      <stop offset="40%" stop-color="#4eeaff" stop-opacity="0.6"/>
+      <stop offset="30%" stop-color="#4eeaff" stop-opacity="0.6"/>
       <stop offset="100%" stop-color="#4eeaff" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- Outer glow -->
+    <!-- Glow filter -->
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feGaussianBlur stdDeviation="2" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -24,40 +24,55 @@
     </filter>
   </defs>
 
-  <!-- Background circle (optional, for dark backgrounds) -->
+  <!-- Background -->
   <circle cx="60" cy="60" r="56" fill="#08090f"/>
 
-  <!-- Orbital paths - representing agent streams -->
-  <ellipse cx="60" cy="60" rx="40" ry="20" fill="none" stroke="url(#aurora)" stroke-width="1.5" stroke-opacity="0.3" transform="rotate(-30 60 60)"/>
-  <ellipse cx="60" cy="60" rx="35" ry="18" fill="none" stroke="url(#aurora)" stroke-width="1.5" stroke-opacity="0.25" transform="rotate(30 60 60)"/>
-  <ellipse cx="60" cy="60" rx="45" ry="22" fill="none" stroke="url(#aurora)" stroke-width="1" stroke-opacity="0.2" transform="rotate(0 60 60)"/>
+  <!-- Tree trunk/stem - rising from center -->
+  <path d="M60 95 Q60 75 60 70" stroke="url(#aurora)" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#glow)"/>
 
-  <!-- Converging particles/dots -->
-  <g filter="url(#glow)">
-    <!-- Outer ring of particles -->
-    <circle cx="25" cy="50" r="3" fill="#a855f7" opacity="0.8"/>
-    <circle cx="95" cy="70" r="3" fill="#4eeaff" opacity="0.8"/>
-    <circle cx="40" cy="25" r="2.5" fill="#f472b6" opacity="0.7"/>
-    <circle cx="80" cy="95" r="2.5" fill="#6b8cff" opacity="0.7"/>
-    <circle cx="30" cy="85" r="2" fill="#4ade80" opacity="0.6"/>
-    <circle cx="90" cy="35" r="2" fill="#a855f7" opacity="0.6"/>
+  <!-- Branching tendrils - spreading outward like bioluminescent tree -->
+  <g filter="url(#glow)" stroke="url(#aurora)" fill="none" stroke-linecap="round">
+    <!-- Main branches curving upward and outward -->
+    <path d="M60 70 Q55 55 35 35" stroke-width="2.5" opacity="0.9"/>
+    <path d="M60 70 Q65 55 85 35" stroke-width="2.5" opacity="0.9"/>
+    <path d="M60 70 Q50 50 25 50" stroke-width="2" opacity="0.8"/>
+    <path d="M60 70 Q70 50 95 50" stroke-width="2" opacity="0.8"/>
+    <path d="M60 70 Q45 60 30 65" stroke-width="1.5" opacity="0.7"/>
+    <path d="M60 70 Q75 60 90 65" stroke-width="1.5" opacity="0.7"/>
 
-    <!-- Middle ring -->
-    <circle cx="40" cy="55" r="3" fill="#f472b6" opacity="0.85"/>
-    <circle cx="80" cy="65" r="3" fill="#4eeaff" opacity="0.85"/>
-    <circle cx="50" cy="40" r="2.5" fill="#6b8cff" opacity="0.75"/>
-    <circle cx="70" cy="80" r="2.5" fill="#a855f7" opacity="0.75"/>
-    <circle cx="45" cy="75" r="2" fill="#4ade80" opacity="0.65"/>
-    <circle cx="75" cy="45" r="2" fill="#f472b6" opacity="0.65"/>
+    <!-- Secondary branches -->
+    <path d="M35 35 Q30 28 20 25" stroke-width="1.5" opacity="0.7"/>
+    <path d="M35 35 Q40 25 45 18" stroke-width="1.5" opacity="0.7"/>
+    <path d="M85 35 Q90 28 100 25" stroke-width="1.5" opacity="0.7"/>
+    <path d="M85 35 Q80 25 75 18" stroke-width="1.5" opacity="0.7"/>
 
-    <!-- Inner ring - brighter, converging -->
-    <circle cx="50" cy="58" r="2.5" fill="#4eeaff" opacity="0.9"/>
-    <circle cx="70" cy="62" r="2.5" fill="#f472b6" opacity="0.9"/>
-    <circle cx="55" cy="50" r="2" fill="#a855f7" opacity="0.85"/>
-    <circle cx="65" cy="70" r="2" fill="#6b8cff" opacity="0.85"/>
+    <!-- Fine tendrils -->
+    <path d="M25 50 Q18 45 15 38" stroke-width="1" opacity="0.6"/>
+    <path d="M95 50 Q102 45 105 38" stroke-width="1" opacity="0.6"/>
+    <path d="M30 65 Q22 68 18 72" stroke-width="1" opacity="0.5"/>
+    <path d="M90 65 Q98 68 102 72" stroke-width="1" opacity="0.5"/>
   </g>
 
-  <!-- Center core - Eywa -->
-  <circle cx="60" cy="60" r="10" fill="url(#centerGlow)" filter="url(#glow)"/>
-  <circle cx="60" cy="60" r="6" fill="#fff" opacity="0.95"/>
+  <!-- Glowing nodes at branch tips - representing connected agents -->
+  <g filter="url(#glow)">
+    <circle cx="20" cy="25" r="3" fill="#a855f7" opacity="0.9"/>
+    <circle cx="45" cy="18" r="2.5" fill="#f472b6" opacity="0.85"/>
+    <circle cx="75" cy="18" r="2.5" fill="#4eeaff" opacity="0.85"/>
+    <circle cx="100" cy="25" r="3" fill="#6b8cff" opacity="0.9"/>
+    <circle cx="15" cy="38" r="2" fill="#4ade80" opacity="0.8"/>
+    <circle cx="105" cy="38" r="2" fill="#a855f7" opacity="0.8"/>
+    <circle cx="18" cy="72" r="2" fill="#f472b6" opacity="0.7"/>
+    <circle cx="102" cy="72" r="2" fill="#4eeaff" opacity="0.7"/>
+  </g>
+
+  <!-- Central core - Eywa's heart -->
+  <ellipse cx="60" cy="72" rx="12" ry="8" fill="url(#coreGlow)" filter="url(#glow)"/>
+  <ellipse cx="60" cy="72" rx="6" ry="4" fill="#fff" opacity="0.95"/>
+
+  <!-- Root tendrils going down -->
+  <g stroke="url(#aurora)" fill="none" stroke-linecap="round" opacity="0.4">
+    <path d="M60 95 Q55 100 48 105" stroke-width="1.5"/>
+    <path d="M60 95 Q65 100 72 105" stroke-width="1.5"/>
+    <path d="M60 95 Q60 102 60 108" stroke-width="1"/>
+  </g>
 </svg>
