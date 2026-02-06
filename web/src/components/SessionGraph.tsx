@@ -626,7 +626,7 @@ function renderGraph(
     .attr("x", graph.labelX)
     .attr("y", d => rowY(d.row))
     .attr("font-size", LABEL_FONT)
-    .attr("fill", "var(--color-text-primary)")
+    .attr("fill", "var(--text-primary)")
     .attr("class", "graph-event-label");
 
   labelTexts.each(function(d) {
