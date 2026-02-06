@@ -39,13 +39,13 @@ function ThreeViewsDiagram() {
           <br />
           Select specific decisions, code, context.
           <br />
-          Drag into a Remix.
+          Drag into Eywa.
         </>
       ),
     },
     {
       icon: "\ud83d\udd00",
-      title: "Remix",
+      title: "Workspace",
       color: "var(--color-accent)",
       bg: "var(--color-card)",
       border: "var(--color-border)",
@@ -225,7 +225,7 @@ function ArchitectureDiagram() {
         <div className="dia-arch-dashboard">
           <div className="dia-arch-box-title">React Dashboard</div>
           <div className="dia-arch-box-detail">
-            Thread Tree {"\u00b7"} Thread View {"\u00b7"} Remix + Gemini {"\u00b7"} 3D / XR
+            Thread Tree {"\u00b7"} Thread View {"\u00b7"} Workspace + Gemini {"\u00b7"} 3D / XR
           </div>
         </div>
         <div className="dia-arch-dashboard" style={{ marginTop: 8 }}>
@@ -273,7 +273,7 @@ function DataFlowDiagram() {
       bg: "var(--color-card)",
       border: "rgba(180,140,80,0.3)",
       title: "Dashboard updates in real-time",
-      detail: "New memory appears in thread tree, thread view, and Remix source panel instantly",
+      detail: "New memory appears in thread tree, thread view, and Eywa source panel instantly",
     },
     {
       num: 5,
@@ -496,7 +496,7 @@ function InjectionPipelineDiagram() {
 
 const diagrams: Record<string, () => ReactNode> = {
   "three-views": ThreeViewsDiagram,
-  "the-remix": TheRemixDiagram,
+  "the-workspace": TheRemixDiagram,
   divergence: DivergenceDiagram,
   architecture: ArchitectureDiagram,
   "data-flow": DataFlowDiagram,

@@ -13,6 +13,7 @@ import { MiniRemixEink } from "./components/MiniRemixEink";
 import { CLIAuth } from "./components/CLIAuth";
 import { SlidePresentation } from "./components/SlidePresentation";
 import { SessionGraph } from "./components/SessionGraph";
+import { SpectaclesRenderer } from "./components/SpectaclesRenderer";
 import "./App.css";
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="/slides" element={<SlidePresentation />} />
           <Route path="/cli-auth" element={<CLIAuth />} />
           <Route path="/r/:slug/eink" element={<RoomProvider><MiniRemixEink /></RoomProvider>} />
+          <Route path="/r/:slug/spectacles" element={<RoomProvider><SpectaclesRenderer /></RoomProvider>} />
           <Route path="/r/:slug/*" element={<RoomRoutes />} />
         </Routes>
       </BrowserRouter>
