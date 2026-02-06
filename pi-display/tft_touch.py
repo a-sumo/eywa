@@ -345,23 +345,60 @@ class RemixTouchApp:
 
         y += 56
 
-        # Recent memories
+        # Recent memories with full content
         mem_label = self.font_small.render("Recent activity:", True, COLORS["text_light"])
         self.screen.blit(mem_label, (12, y))
         y += 20
 
-        memories = agent.get("memories", [])[:5]
+        memories = agent.get("memories", [])[:6]
         for mem in memories:
-            if y > HEIGHT - 20:
+            if y > HEIGHT - 40:
                 break
 
-            content = (mem.get("content") or "")[:50]
-            if len(mem.get("content") or "") > 50:
-                content += "..."
+            # Memory type badge
+            msg_type = mem.get("message_type", "")[:8]
+            type_text = self.font_small.render(msg_type, True, COLORS["text_light"])
+            self.screen.blit(type_text, (12, y))
 
-            mem_text = self.font_small.render(content, True, COLORS["text"])
-            self.screen.blit(mem_text, (12, y))
-            y += 18
+            # Timestamp
+            ts = mem.get("ts", "")
+            if ts:
+                try:
+                    ts_short = ts.split("T")[1][:5] if "T" in ts else ts[:5]
+                except:
+                    ts_short = ""
+                ts_text = self.font_small.render(ts_short, True, COLORS["text_light"])
+                self.screen.blit(ts_text, (WIDTH - 50, y))
+            y += 14
+
+            # Full content with word wrap
+            content = mem.get("content") or ""
+            max_chars_per_line = 38
+            lines = []
+            words = content.split()
+            current_line = ""
+            for word in words:
+                if len(current_line) + len(word) + 1 <= max_chars_per_line:
+                    current_line = f"{current_line} {word}".strip()
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    current_line = word
+                if len(lines) >= 3:  # Max 3 lines per memory
+                    break
+            if current_line and len(lines) < 3:
+                lines.append(current_line)
+            if len(content) > max_chars_per_line * 3:
+                lines[-1] = lines[-1][:max_chars_per_line-3] + "..."
+
+            for line in lines:
+                if y > HEIGHT - 20:
+                    break
+                line_text = self.font_small.render(line, True, COLORS["text"])
+                self.screen.blit(line_text, (12, y))
+                y += 13
+
+            y += 8  # Gap between memories
 
     def draw(self):
         """Draw the current view."""
