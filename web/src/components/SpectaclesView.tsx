@@ -321,7 +321,14 @@ export function SpectaclesView() {
     });
 
     channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") setChannelReady(true);
+      if (status === "SUBSCRIBED") {
+        setChannelReady(true);
+        // Resync: re-send all create ops + textures for tiles that already exist.
+        // The Spectacles side may connect after the initial burst was sent.
+        if (sceneRef.current) {
+          sceneRef.current.resync();
+        }
+      }
     });
 
     channelRef.current = channel;
