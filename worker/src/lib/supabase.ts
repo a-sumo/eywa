@@ -85,4 +85,56 @@ export class SupabaseClient {
       throw new Error(`Supabase delete ${table} failed (${res.status}): ${body}`);
     }
   }
+
+  /**
+   * UPDATE rows matching PostgREST filters.
+   * @param table   Table name
+   * @param filters PostgREST filter params
+   * @param updates Object with column values to update
+   * @returns       Updated row(s)
+   */
+  async update<T = Record<string, unknown>>(
+    table: string,
+    filters: Record<string, string>,
+    updates: Record<string, unknown>,
+  ): Promise<T[]> {
+    const qs = new URLSearchParams(filters).toString();
+    const res = await fetch(`${this.baseUrl}/${table}?${qs}`, {
+      method: "PATCH",
+      headers: this.headers({ Prefer: "return=representation" }),
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Supabase update ${table} failed (${res.status}): ${body}`);
+    }
+    return res.json() as Promise<T[]>;
+  }
+
+  /**
+   * UPSERT a row (insert or update on conflict).
+   * @param table      Table name
+   * @param row        Object to upsert
+   * @param onConflict Comma-separated column names for conflict resolution
+   * @returns          Upserted row(s)
+   */
+  async upsert<T = Record<string, unknown>>(
+    table: string,
+    row: Record<string, unknown>,
+    onConflict: string,
+  ): Promise<T[]> {
+    const res = await fetch(`${this.baseUrl}/${table}`, {
+      method: "POST",
+      headers: this.headers({
+        Prefer: `return=representation,resolution=merge-duplicates`,
+        "on-conflict": onConflict,
+      }),
+      body: JSON.stringify(row),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Supabase upsert ${table} failed (${res.status}): ${body}`);
+    }
+    return res.json() as Promise<T[]>;
+  }
 }

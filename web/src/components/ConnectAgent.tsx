@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const WORKER_URL = "https://remix-mcp.armandsumo.workers.dev/mcp";
 
-type Client = "claude" | "cursor" | "gemini";
+type Client = "claude" | "cursor" | "gemini" | "cline";
 
 function mcpUrl(slug: string, agent: string): string {
   return `${WORKER_URL}?room=${encodeURIComponent(slug)}&agent=${encodeURIComponent(agent)}`;
@@ -13,12 +13,12 @@ function getConfig(client: Client, slug: string, agent: string): string {
 
   switch (client) {
     case "claude":
-      return `claude mcp add --transport http remix "${url}"`;
+      return `claude mcp add --transport http eywa "${url}"`;
     case "cursor":
       return JSON.stringify(
         {
           mcpServers: {
-            remix: { url },
+            eywa: { url },
           },
         },
         null,
@@ -28,7 +28,20 @@ function getConfig(client: Client, slug: string, agent: string): string {
       return JSON.stringify(
         {
           mcpServers: {
-            remix: { httpUrl: url },
+            eywa: { httpUrl: url },
+          },
+        },
+        null,
+        2
+      );
+    case "cline":
+      return JSON.stringify(
+        {
+          mcpServers: {
+            eywa: {
+              url,
+              disabled: false,
+            },
           },
         },
         null,
@@ -42,9 +55,24 @@ function getLabel(client: Client): string {
     case "claude":
       return "Claude Code";
     case "cursor":
-      return "Cursor / Windsurf";
+      return "Cursor";
     case "gemini":
       return "Gemini CLI";
+    case "cline":
+      return "Cline / Roo";
+  }
+}
+
+function getConfigPath(client: Client): string | null {
+  switch (client) {
+    case "claude":
+      return null; // CLI handles it
+    case "cursor":
+      return "~/.cursor/mcp.json";
+    case "gemini":
+      return "~/.gemini/settings.json";
+    case "cline":
+      return "VS Code Settings → Cline MCP Servers";
   }
 }
 
@@ -53,9 +81,41 @@ function getHint(client: Client): string {
     case "claude":
       return "Run this in your terminal:";
     case "cursor":
-      return "Add to your MCP config file:";
+      return `Add to ${getConfigPath(client)}:`;
     case "gemini":
-      return "Add to your MCP config file (uses httpUrl):";
+      return `Add to ${getConfigPath(client)}:`;
+    case "cline":
+      return "Add to Cline settings in VS Code:";
+  }
+}
+
+function getSetupSteps(client: Client): string[] {
+  switch (client) {
+    case "claude":
+      return [
+        "Copy the command below",
+        "Paste into your terminal",
+        "Done! Eywa tools are now available",
+      ];
+    case "cursor":
+      return [
+        "Open Cursor Settings (Cmd/Ctrl + ,)",
+        'Search for "MCP" and click "Edit in settings.json"',
+        "Add the config below to mcpServers object",
+        "Restart Cursor",
+      ];
+    case "gemini":
+      return [
+        "Create ~/.gemini/settings.json if it doesn't exist",
+        "Add the config below",
+        "Restart Gemini CLI",
+      ];
+    case "cline":
+      return [
+        "Open VS Code Command Palette (Cmd/Ctrl + Shift + P)",
+        'Type "Cline: MCP Servers"',
+        "Click + to add server, paste config",
+      ];
   }
 }
 
@@ -71,9 +131,12 @@ export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
   const [client, setClient] = useState<Client>("claude");
   const [copied, setCopied] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [copiedScript, setCopiedScript] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
 
   const config = getConfig(client, slug, agent);
+  const configPath = getConfigPath(client);
+  const steps = getSetupSteps(client);
 
   function handleCopy() {
     navigator.clipboard.writeText(config);
@@ -85,6 +148,27 @@ export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
     navigator.clipboard.writeText(QUICK_START_PROMPT);
     setCopiedPrompt(true);
     setTimeout(() => setCopiedPrompt(false), 2000);
+  }
+
+  function handleDownloadConfig() {
+    const filename = client === "gemini" ? "settings.json" : "mcp.json";
+    const blob = new Blob([config], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleCopySetupScript() {
+    const script = `mkdir -p ~/.gemini && cat > ~/.gemini/settings.json << 'EOF'
+${config}
+EOF
+echo "Eywa configured for Gemini CLI"`;
+    navigator.clipboard.writeText(script);
+    setCopiedScript(true);
+    setTimeout(() => setCopiedScript(false), 2000);
   }
 
   return (
@@ -127,7 +211,7 @@ export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
             </label>
 
             <div className="connect-agent-clients">
-              {(["claude", "cursor", "gemini"] as Client[]).map((c) => (
+              {(["claude", "cursor", "gemini", "cline"] as Client[]).map((c) => (
                 <button
                   key={c}
                   className={`connect-client-btn ${client === c ? "connect-client-active" : ""}`}
@@ -139,12 +223,43 @@ export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
             </div>
           </div>
 
+          {/* Setup steps */}
+          <div className="connect-setup-steps">
+            {steps.map((s, i) => (
+              <div key={i} className="connect-setup-step">
+                <span className="connect-step-num">{i + 1}</span>
+                <span>{s}</span>
+              </div>
+            ))}
+          </div>
+
           <div className="connect-agent-config">
+            {configPath && (
+              <span className="connect-config-path">
+                <code>{configPath}</code>
+              </span>
+            )}
             <span className="connect-agent-hint">{getHint(client)}</span>
             <pre className="connect-agent-code">{config}</pre>
-            <button className="connect-agent-copy" onClick={handleCopy}>
-              {copied ? "Copied!" : "Copy"}
-            </button>
+            <div className="connect-config-actions">
+              <button className="connect-agent-copy" onClick={handleCopy}>
+                {copied ? "Copied!" : "Copy"}
+              </button>
+              {client !== "claude" && (
+                <button className="connect-agent-download" onClick={handleDownloadConfig}>
+                  Download
+                </button>
+              )}
+              {client === "gemini" && (
+                <button
+                  className="connect-agent-script"
+                  onClick={handleCopySetupScript}
+                  title="Copy a bash script that creates the config file"
+                >
+                  {copiedScript ? "Copied!" : "Setup Script"}
+                </button>
+              )}
+            </div>
           </div>
 
           <button className="connect-next-btn" onClick={() => setStep(2)}>

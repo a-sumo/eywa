@@ -7,6 +7,22 @@ function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
 }
 
+/** Get the latest memory ID for this session (for parent chaining) */
+async function getLatestMemoryId(
+  db: SupabaseClient,
+  roomId: string,
+  sessionId: string,
+): Promise<string | null> {
+  const rows = await db.select<MemoryRow>("memories", {
+    select: "id",
+    room_id: `eq.${roomId}`,
+    session_id: `eq.${sessionId}`,
+    order: "ts.desc",
+    limit: "1",
+  });
+  return rows.length > 0 ? rows[0].id : null;
+}
+
 export function registerInjectTools(
   server: McpServer,
   db: SupabaseClient,
@@ -22,10 +38,12 @@ export function registerInjectTools(
       label: z.string().optional().describe("Short label (e.g. 'code review feedback', 'architecture decision')"),
     },
     async ({ target, content, priority, label }) => {
+      const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
         room_id: ctx.roomId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
+        parent_id: parentId,
         message_type: "injection",
         content: `[INJECT → ${target}]${label ? ` (${label})` : ""}: ${content}`,
         token_count: estimateTokens(content),

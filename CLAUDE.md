@@ -17,6 +17,20 @@ Multi-agent shared memory system. Agents connect via MCP, share context through 
 - Write naturally. No corporate/formal AI speak. No filler words, no "leverage", no "streamline", no "ensure".
 - Keep it short. Say what you mean.
 
+## Visual Design
+
+See `DESIGN.md` for the full visual design system ("Nightly Aurora" theme).
+
+Key rules for any UI work:
+- **Never constant speed.** Always `ease-in-out` or multi-keyframe curves. Things accelerate and decelerate.
+- **Each element dances independently.** Different durations (2-7s), different phases. No global sync. Life comes from interplay.
+- **Deform, don't just move.** Combine `skewX/Y`, `rotate`, `scale` with `translate`. Lines bend, shapes warp.
+- **Layer animations.** Flowing dashes + swaying transform on the same element, different periods.
+- **Icons**: Inline SVGs, CSS keyframes, `stroke-dasharray`/`stroke-dashoffset` (ease-in-out, not linear), aurora colors, 2.5px strokes.
+- **Fonts**: Plus Jakarta Sans for display/headings (`--font-display`), Inter for body (`--font-sans`).
+- **Colors**: Aurora palette (purple/pink/cyan/blue/green) on dark space background. Use CSS vars from `web/src/styles/theme.css`.
+- **Landing vs Dashboard**: Landing page is fluid/dancing/alive. Dashboard is interactive/minimal animation.
+
 ## Discord Bot
 
 - Lives in `discord-bot/`. Run with `npm start`, deploy commands with `npm run deploy -- <guild_id>`.

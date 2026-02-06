@@ -7,6 +7,22 @@ function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
 }
 
+/** Get the latest memory ID for this session (for parent chaining) */
+async function getLatestMemoryId(
+  db: SupabaseClient,
+  roomId: string,
+  sessionId: string,
+): Promise<string | null> {
+  const rows = await db.select<MemoryRow>("memories", {
+    select: "id",
+    room_id: `eq.${roomId}`,
+    session_id: `eq.${sessionId}`,
+    order: "ts.desc",
+    limit: "1",
+  });
+  return rows.length > 0 ? rows[0].id : null;
+}
+
 export function registerMemoryTools(
   server: McpServer,
   db: SupabaseClient,
@@ -22,10 +38,12 @@ export function registerMemoryTools(
       content: z.string().describe("The message content"),
     },
     async ({ role, content }) => {
+      const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
         room_id: ctx.roomId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
+        parent_id: parentId,
         message_type: role,
         content,
         token_count: estimateTokens(content),
@@ -51,11 +69,13 @@ export function registerMemoryTools(
         .describe("Optional description of changes/purpose"),
     },
     async ({ path, content, description }) => {
+      const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       const fileId = `file_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
       await db.insert("memories", {
         room_id: ctx.roomId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
+        parent_id: parentId,
         message_type: "resource",
         content,
         token_count: estimateTokens(content),
@@ -128,31 +148,42 @@ export function registerMemoryTools(
         .describe("Brief description of what this session was about"),
     },
     async ({ messages, task_description }) => {
+      // Track parent chain through import
+      let parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
+
       // Log session start
       if (task_description) {
-        await db.insert("memories", {
+        const inserted = await db.insert<MemoryRow>("memories", {
           room_id: ctx.roomId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
+          parent_id: parentId,
           message_type: "resource",
           content: `SESSION START: ${task_description}`,
           token_count: estimateTokens(task_description),
           metadata: { event: "session_start", task: task_description, imported: true },
         });
+        if (inserted.length > 0) {
+          parentId = inserted[0].id;
+        }
       }
 
-      // Insert each message
+      // Insert each message with proper parent chain
       let count = 0;
       for (const msg of messages) {
-        await db.insert("memories", {
+        const inserted = await db.insert<MemoryRow>("memories", {
           room_id: ctx.roomId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
+          parent_id: parentId,
           message_type: msg.role,
           content: msg.content,
           token_count: estimateTokens(msg.content),
           metadata: { imported: true },
         });
+        if (inserted.length > 0) {
+          parentId = inserted[0].id;
+        }
         count++;
       }
 

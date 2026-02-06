@@ -30,8 +30,8 @@ export function AgentList() {
     <div className="agent-list">
       {/* Main nav */}
       <button
-        className={`agent-chip remix-primary ${isActive(`${basePath}/remix/new`) ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/remix/new`)}
+        className={`agent-chip eywa-primary ${isActive(`${basePath}/workspace`) ? "active" : ""}`}
+        onClick={() => navigate(`${basePath}/workspace`)}
       >
         + New Session
       </button>

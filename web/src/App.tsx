@@ -12,6 +12,7 @@ import { MiniRemixEink } from "./components/MiniRemixEink";
 import { CLIAuth } from "./components/CLIAuth";
 import { SlidePresentation } from "./components/SlidePresentation";
 import { SessionGraph } from "./components/SessionGraph";
+import { SpectaclesRenderer } from "./components/SpectaclesRenderer";
 import "./App.css";
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <Route path="/slides" element={<SlidePresentation />} />
         <Route path="/cli-auth" element={<CLIAuth />} />
         <Route path="/r/:slug/eink" element={<RoomProvider><MiniRemixEink /></RoomProvider>} />
+        <Route path="/r/:slug/spectacles" element={<RoomProvider><SpectaclesRenderer /></RoomProvider>} />
         <Route path="/r/:slug/*" element={<RoomRoutes />} />
       </Routes>
     </BrowserRouter>
@@ -35,7 +37,7 @@ function RoomRoutes() {
         <Routes>
           <Route index element={<ThreadTree />} />
           <Route path="thread/:agent/:sessionId" element={<ThreadView />} />
-          <Route path="remix/new" element={<RemixView />} />
+          <Route path="workspace" element={<RemixView />} />
           <Route path="agent/:name" element={<AgentDetail />} />
           <Route path="chat" element={<Chat />} />
           <Route path="mini" element={<MiniRemix />} />
