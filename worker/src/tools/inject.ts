@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { RemixContext, MemoryRow } from "../lib/types.js";
+import type { RemixContext, MemoryRow, LinkRow } from "../lib/types.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
@@ -83,6 +83,54 @@ export function registerInjectTools(
         limit: String(limit),
       });
 
+      // Get inject-type links targeting this agent's sessions
+      const injectLinks = await db.select<LinkRow>("links", {
+        select: "id,source_memory_id,created_by,label,ts",
+        room_id: `eq.${ctx.roomId}`,
+        link_type: "eq.inject",
+        target_agent: `eq.${ctx.agent}`,
+        order: "ts.desc",
+        limit: String(limit),
+      });
+
+      // Also check links targeting the user name
+      const userInjectLinks = await db.select<LinkRow>("links", {
+        select: "id,source_memory_id,created_by,label,ts",
+        room_id: `eq.${ctx.roomId}`,
+        link_type: "eq.inject",
+        target_agent: `eq.${ctx.user}`,
+        order: "ts.desc",
+        limit: String(limit),
+      });
+
+      // Fetch the source memories for inject links
+      const linkMemoryIds = new Set<string>();
+      for (const link of [...injectLinks, ...userInjectLinks]) {
+        linkMemoryIds.add(link.source_memory_id);
+      }
+
+      let linkedMemories: MemoryRow[] = [];
+      if (linkMemoryIds.size > 0) {
+        // Fetch memories by IDs (PostgREST in filter)
+        const ids = Array.from(linkMemoryIds);
+        linkedMemories = await db.select<MemoryRow>("memories", {
+          select: "id,agent,content,metadata,ts",
+          id: `in.(${ids.join(",")})`,
+        });
+      }
+
+      // Build a map of link metadata by source memory ID
+      const linkMetaByMemory = new Map<string, { createdBy: string; label: string | null; linkTs: string }>();
+      for (const link of [...injectLinks, ...userInjectLinks]) {
+        if (!linkMetaByMemory.has(link.source_memory_id)) {
+          linkMetaByMemory.set(link.source_memory_id, {
+            createdBy: link.created_by,
+            label: link.label,
+            linkTs: link.ts,
+          });
+        }
+      }
+
       // Merge, deduplicate, sort by time
       const seen = new Set<string>();
       const all: MemoryRow[] = [];
@@ -93,22 +141,49 @@ export function registerInjectTools(
         }
       }
       all.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
-      const results = all.slice(0, limit);
 
-      if (!results.length) {
+      // Also add linked memories (with special marking)
+      const linkedResults: { memory: MemoryRow; linkMeta: { createdBy: string; label: string | null; linkTs: string } }[] = [];
+      for (const mem of linkedMemories) {
+        if (!seen.has(mem.id)) {
+          seen.add(mem.id);
+          const meta = linkMetaByMemory.get(mem.id);
+          if (meta) {
+            linkedResults.push({ memory: mem, linkMeta: meta });
+          }
+        }
+      }
+      linkedResults.sort((a, b) => new Date(b.linkMeta.linkTs).getTime() - new Date(a.linkMeta.linkTs).getTime());
+
+      const injectionResults = all.slice(0, limit);
+
+      if (!injectionResults.length && !linkedResults.length) {
         return {
           content: [{ type: "text" as const, text: "Inbox empty — no injections pending." }],
         };
       }
 
-      const lines = [`Inbox (${results.length} injection${results.length > 1 ? "s" : ""}):\n`];
-      for (const m of results) {
-        const meta = m.metadata as Record<string, unknown>;
-        const pri = meta.priority === "urgent" ? " [URGENT]" : meta.priority === "high" ? " [HIGH]" : "";
-        const from = meta.from_agent as string;
-        const label = meta.label ? ` (${meta.label})` : "";
-        const content = m.content?.replace(/^\[INJECT[^\]]*\]\s*(\([^)]*\)\s*)?:\s*/, "") ?? "";
-        lines.push(`From ${from}${pri}${label}:\n  ${content.slice(0, 500)}\n  — ${m.ts}`);
+      const lines: string[] = [];
+
+      if (injectionResults.length) {
+        lines.push(`Inbox (${injectionResults.length} injection${injectionResults.length > 1 ? "s" : ""}):\n`);
+        for (const m of injectionResults) {
+          const meta = m.metadata as Record<string, unknown>;
+          const pri = meta.priority === "urgent" ? " [URGENT]" : meta.priority === "high" ? " [HIGH]" : "";
+          const from = meta.from_agent as string;
+          const label = meta.label ? ` (${meta.label})` : "";
+          const content = m.content?.replace(/^\[INJECT[^\]]*\]\s*(\([^)]*\)\s*)?:\s*/, "") ?? "";
+          lines.push(`From ${from}${pri}${label}:\n  ${content.slice(0, 500)}\n  — ${m.ts}`);
+        }
+      }
+
+      if (linkedResults.length) {
+        lines.push(`\nLinked memories (${linkedResults.length} inject-link${linkedResults.length > 1 ? "s" : ""}):\n`);
+        for (const { memory, linkMeta } of linkedResults) {
+          const label = linkMeta.label ? ` (${linkMeta.label})` : "";
+          const content = memory.content?.slice(0, 500) ?? "(no content)";
+          lines.push(`Linked by ${linkMeta.createdBy}${label}:\n  ${content}\n  — linked ${linkMeta.linkTs}`);
+        }
       }
 
       return {

@@ -124,4 +124,36 @@ export function registerLinkTools(
       };
     },
   );
+
+  server.tool(
+    "remix_fetch",
+    "Fetch a specific memory by ID. Use this to pull context from another session into your current context.",
+    {
+      memory_id: z.string().describe("UUID of the memory to fetch"),
+    },
+    async ({ memory_id }) => {
+      const rows = await db.select<MemoryRow>("memories", {
+        select: "id,agent,session_id,message_type,content,metadata,ts",
+        id: `eq.${memory_id}`,
+        room_id: `eq.${ctx.roomId}`,
+        limit: "1",
+      });
+
+      if (!rows.length) {
+        return {
+          content: [{ type: "text" as const, text: `Memory not found: ${memory_id}` }],
+        };
+      }
+
+      const m = rows[0];
+      const meta = m.metadata as Record<string, unknown>;
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Memory ${m.id}:\nAgent: ${m.agent}\nSession: ${m.session_id}\nType: ${m.message_type}\nTime: ${m.ts}\n${meta.event ? `Event: ${meta.event}\n` : ""}---\n${m.content ?? "(no content)"}`,
+        }],
+      };
+    },
+  );
 }

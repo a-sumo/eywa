@@ -68,6 +68,8 @@ export const slidesData: SlidesData = {
       "Threads, not tools",
       "The three views",
       "Thread Tree",
+      "Session Graph",
+      "Cross-Session Links",
       "The Remix",
       "Remix Workspace",
       "Gemini Terminal",
@@ -193,6 +195,29 @@ export const slidesData: SlidesData = {
       title: "Thread Tree",
       subtitle: "Live view — every agent's threads, filterable by status, type, and agent",
       src: "/slides/thread-tree.png",
+    },
+    {
+      type: "bullets",
+      title: "Session Graph",
+      subtitle: "Visual map of all sessions and their connections",
+      items: [
+        "Each session is a horizontal bar showing memory distribution over time.",
+        "Cross-session links appear as curved edges connecting memories.",
+        "Colors indicate link type: <strong>blue</strong> (reference), <strong>pink</strong> (inject), <strong>green</strong> (fork).",
+        "Click any session to view its detail panel alongside the graph.",
+      ],
+    },
+    {
+      type: "bullets",
+      title: "Cross-Session Links",
+      subtitle: "Connect memories across agent boundaries",
+      items: [
+        "<strong>Reference</strong>: read-only pointer — \"see also\" without pushing context.",
+        "<strong>Inject</strong>: push context to target agent — they see it in their inbox.",
+        "<strong>Fork</strong>: mark where a session branched from another's work.",
+        "Search for memories with <strong>remix_search</strong>, fetch with <strong>remix_fetch</strong>.",
+        "Links persist and show in the Session Graph as curved connection edges.",
+      ],
     },
     {
       type: "diagram",

@@ -1,9 +1,10 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import * as d3 from "d3";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import type { Memory, Link } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
-import { ANIMAL_SPRITES } from "./animalSprites";
+import { ANIMAL_SPRITES, CUTE_COUNT } from "./animalSprites";
 
 function agentColorHex(name: string): string {
   return agentColor(name);
@@ -14,7 +15,12 @@ function getAnimalSprite(name: string) {
   for (let i = 0; i < name.length; i++) {
     hash = ((hash << 7) - hash + name.charCodeAt(i)) | 0;
   }
-  return ANIMAL_SPRITES[Math.abs(hash) % ANIMAL_SPRITES.length];
+  // 75% chance of a cute animal (first CUTE_COUNT), 25% from the rest
+  const roll = Math.abs(hash >> 4) % 4;
+  if (roll > 0) {
+    return ANIMAL_SPRITES[Math.abs(hash) % CUTE_COUNT];
+  }
+  return ANIMAL_SPRITES[CUTE_COUNT + (Math.abs(hash) % (ANIMAL_SPRITES.length - CUTE_COUNT))];
 }
 
 // --- Layout constants ---
@@ -32,6 +38,29 @@ const LINE_WIDTH = 2;
 // odd-width strokes align on .5 for sharp rendering.
 function snap(v: number, strokeWidth: number): number {
   return strokeWidth % 2 === 0 ? Math.round(v) : Math.round(v) + 0.5;
+}
+
+// Step path: horizontal to target column, one rounded corner, vertical into target.
+function stepPath(x1: number, y1: number, x2: number, y2: number): string {
+  if (y1 === y2) return `M ${x1},${y1} L ${x2},${y2}`;
+  // Same column: bump out to the right so the curve is visible
+  let tx = x2;
+  if (x1 === x2) tx = x1 + TRACK_GAP * 0.5;
+  const r = Math.min(8, Math.abs(tx - x1), Math.abs(y2 - y1) / 2);
+  const sx = tx > x1 ? 1 : -1;
+  const sy = y2 > y1 ? 1 : -1;
+  if (x1 === x2) {
+    // Same track: horizontal out, corner, vertical, corner, horizontal back in
+    return [
+      `M ${x1},${y1}`,
+      `L ${tx - r * sx},${y1}`,
+      `Q ${tx},${y1} ${tx},${y1 + r * sy}`,
+      `L ${tx},${y2 - r * sy}`,
+      `Q ${tx},${y2} ${tx - r * sx},${y2}`,
+      `L ${x2},${y2}`,
+    ].join(" ");
+  }
+  return `M ${x1},${y1} L ${tx - r * sx},${y1} Q ${tx},${y1} ${tx},${y1 + r * sy} L ${tx},${y2}`;
 }
 
 // --- Data types ---
@@ -243,7 +272,7 @@ function buildGraphData(memories: Memory[]): GraphData {
       }
     } else {
       const toIdx = trackByUser.get(ev.targetUser);
-      if (toIdx !== undefined) {
+      if (toIdx !== undefined && toIdx !== fromIdx) {
         edges.push({
           fromTrack: fromIdx, toTrack: toIdx,
           fromRow: ev.row, toRow: ev.row,
@@ -270,10 +299,10 @@ function rowY(row: number): number {
 
 function statusColor(status: string): string {
   switch (status) {
-    case "completed": return "#489664";
-    case "blocked": return "#c9a227";
-    case "failed": return "#c44";
-    default: return "#888";
+    case "completed": return "#f2a5c8";
+    case "blocked": return "#e8b0d0";
+    case "failed": return "#d4809a";
+    default: return "#ddc0d0";
   }
 }
 
@@ -284,9 +313,11 @@ function creatureSvgMarkup(name: string, color: string): string {
   const r = parseInt(color.slice(1, 3), 16);
   const g = parseInt(color.slice(3, 5), 16);
   const b = parseInt(color.slice(5, 7), 16);
-  const dark = `rgb(${Math.round(r * 0.25)},${Math.round(g * 0.25)},${Math.round(b * 0.25)})`;
-  const mid = color;
-  const light = `rgb(${Math.min(255, Math.round(r * 1.3 + 40))},${Math.min(255, Math.round(g * 1.3 + 40))},${Math.min(255, Math.round(b * 1.3 + 40))})`;
+  // All tones stay bright - the base color is the darkest, body is near-white
+  const mix = (v: number, t: number) => Math.round(v + (255 - v) * t);
+  const dark = color;
+  const mid = `rgb(${mix(r, 0.45)},${mix(g, 0.45)},${mix(b, 0.45)})`;
+  const light = `rgb(${mix(r, 0.8)},${mix(g, 0.8)},${mix(b, 0.8)})`;
   const fills = ["none", dark, mid, light];
 
   const ROWS = sprite.grid.length;
@@ -326,8 +357,14 @@ function Tooltip({ data }: { data: TooltipData }) {
   return (
     <div className="graph-tooltip" style={{ left: data.x + 14, top: data.y - 10 }}>
       <div className="graph-tooltip-type">{event.type}</div>
-      <div className="graph-tooltip-agent">{event.agent}</div>
-      {event.label && <div className="graph-tooltip-label">{event.label}</div>}
+      <div className="graph-tooltip-agent">
+        {event.type === "inject" && event.targetUser
+          ? `${event.user} → ${event.targetUser}`
+          : event.agent}
+      </div>
+      {event.label && event.label !== "inject" && (
+        <div className="graph-tooltip-label">{event.label}</div>
+      )}
       {event.status && (
         <div className="graph-tooltip-status" style={{ color: statusColor(event.status) }}>
           {event.status}
@@ -341,6 +378,372 @@ function Tooltip({ data }: { data: TooltipData }) {
   );
 }
 
+// --- D3 rendering ---
+
+interface LinkEdge {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  color: string;
+  type: string;
+}
+
+type SegmentDatum = { track: Track; seg: { startRow: number; endRow: number | null }; si: number };
+
+interface RenderCallbacks {
+  onHover: (clientX: number, clientY: number, ev: LayoutEvent) => void;
+  onLeave: () => void;
+  onTrackHover: (trackIdx: number | null) => void;
+}
+
+function renderGraph(
+  svgEl: SVGSVGElement,
+  graph: GraphData,
+  linkEdges: LinkEdge[],
+  callbacks: RenderCallbacks,
+): d3.ZoomBehavior<SVGSVGElement, unknown> {
+  const svg = d3.select(svgEl);
+
+  // Set SVG dimensions
+  svg.attr("width", graph.svgWidth).attr("height", graph.svgHeight);
+
+  // Get or create zoom group
+  let zoomGroup = svg.select<SVGGElement>("g.zoom-group");
+  if (zoomGroup.empty()) {
+    zoomGroup = svg.append("g").attr("class", "zoom-group");
+  }
+
+  // Clear previous content inside zoom group
+  zoomGroup.selectAll("*").remove();
+
+  // --- Layer 1: Track highlight rects (initially invisible) ---
+  const hlGroup = zoomGroup.append("g").attr("class", "track-highlights");
+  hlGroup.selectAll("rect.track-hl")
+    .data(graph.tracks)
+    .join("rect")
+    .attr("class", "track-hl")
+    .attr("x", d => d.x - TRACK_GAP / 2)
+    .attr("y", TOP_PAD)
+    .attr("width", TRACK_GAP)
+    .attr("height", graph.svgHeight - TOP_PAD - BOTTOM_PAD)
+    .attr("fill", d => d.color)
+    .attr("opacity", 0);
+
+  // --- Layer 2: Track guides (faint vertical guidelines) ---
+  const guideGroup = zoomGroup.append("g").attr("class", "track-guides");
+  guideGroup.selectAll("line")
+    .data(graph.tracks)
+    .join("line")
+    .attr("x1", d => snap(d.x, 1))
+    .attr("y1", TOP_PAD)
+    .attr("x2", d => snap(d.x, 1))
+    .attr("y2", graph.svgHeight - BOTTOM_PAD)
+    .attr("stroke", d => d.color)
+    .attr("stroke-width", 1)
+    .attr("opacity", 0.08)
+    .attr("shape-rendering", "crispEdges");
+
+  // --- Layer 3: Track segments (active session lines) ---
+  const segGroup = zoomGroup.append("g").attr("class", "track-segments");
+  const segmentData: SegmentDatum[] = [];
+  for (const track of graph.tracks) {
+    if (track.segments.length === 0) {
+      // Ghost line for inactive tracks
+      segmentData.push({
+        track,
+        seg: { startRow: 0, endRow: graph.totalRows - 1 },
+        si: -1, // -1 signals ghost
+      });
+    } else {
+      track.segments.forEach((seg, si) => {
+        segmentData.push({ track, seg, si });
+      });
+    }
+  }
+
+  segGroup.selectAll("line")
+    .data(segmentData)
+    .join("line")
+    .attr("class", "track-seg")
+    .attr("x1", d => snap(d.track.x, d.si === -1 ? 1 : LINE_WIDTH))
+    .attr("y1", d => d.si === -1 ? TOP_PAD : rowY(d.seg.startRow))
+    .attr("x2", d => snap(d.track.x, d.si === -1 ? 1 : LINE_WIDTH))
+    .attr("y2", d => {
+      if (d.si === -1) return graph.svgHeight - BOTTOM_PAD;
+      return d.seg.endRow !== null ? rowY(d.seg.endRow) : graph.svgHeight - BOTTOM_PAD;
+    })
+    .attr("stroke", d => d.track.color)
+    .attr("stroke-width", d => d.si === -1 ? 1 : LINE_WIDTH)
+    .attr("stroke-linecap", "butt")
+    .attr("opacity", d => {
+      if (d.si === -1) return 0.15;
+      return d.seg.endRow === null ? 0.5 : 0.85;
+    })
+    .attr("stroke-dasharray", d => {
+      if (d.si === -1) return null;
+      return d.seg.endRow === null ? "6 3" : null;
+    })
+    .attr("shape-rendering", "crispEdges");
+
+  // --- Layer 4: Injection edges ---
+  const edgeGroup = zoomGroup.append("g").attr("class", "injection-edges");
+  edgeGroup.selectAll("path")
+    .data(graph.edges)
+    .join("path")
+    .attr("d", d => {
+      const x1 = snap(TRACK_LEFT + d.fromTrack * TRACK_GAP, LINE_WIDTH);
+      const x2 = snap(TRACK_LEFT + d.toTrack * TRACK_GAP, LINE_WIDTH);
+      const y1 = rowY(d.fromRow);
+      const y2 = d.fromRow === d.toRow ? y1 : rowY(d.toRow);
+      return stepPath(x1, y1, x2, y2);
+    })
+    .attr("stroke", d => d.color)
+    .attr("stroke-width", 2)
+    .attr("fill", "none")
+    .attr("opacity", 0.55)
+    .attr("shape-rendering", "geometricPrecision");
+
+  // --- Layer 5: Link edges (dashed paths + endpoint markers) ---
+  const linkGroup = zoomGroup.append("g").attr("class", "link-edges");
+  linkGroup.selectAll("path")
+    .data(linkEdges)
+    .join("path")
+    .attr("d", d => stepPath(d.fromX, d.fromY, d.toX, d.toY))
+    .attr("stroke", d => d.color)
+    .attr("stroke-width", 2.5)
+    .attr("stroke-dasharray", "6 3")
+    .attr("fill", "none")
+    .attr("opacity", 0.7)
+    .attr("shape-rendering", "geometricPrecision");
+
+  // Link endpoint markers
+  const linkEnds = zoomGroup.append("g").attr("class", "link-endpoints");
+  const endpointGroups = linkEnds.selectAll("g")
+    .data(linkEdges)
+    .join("g");
+
+  endpointGroups.append("circle")
+    .attr("cx", d => d.fromX)
+    .attr("cy", d => d.fromY)
+    .attr("r", 4)
+    .attr("fill", d => d.color)
+    .attr("opacity", 0.8);
+
+  endpointGroups.append("polygon")
+    .attr("points", d =>
+      `${d.toX},${d.toY - 5} ${d.toX + 4},${d.toY} ${d.toX},${d.toY + 5} ${d.toX - 4},${d.toY}`
+    )
+    .attr("fill", d => d.color)
+    .attr("opacity", 0.8);
+
+  // --- Layer 6: Event nodes ---
+  const nodeGroup = zoomGroup.append("g").attr("class", "event-nodes");
+
+  const nodeGs = nodeGroup.selectAll("g")
+    .data(graph.events)
+    .join("g")
+    .attr("class", "event-node")
+    .style("cursor", "pointer")
+    .on("mouseenter", function (event: MouseEvent, ev: LayoutEvent) {
+      callbacks.onHover(event.clientX, event.clientY, ev);
+    })
+    .on("mouseleave", function () {
+      callbacks.onLeave();
+    });
+
+  // Start / end / knowledge nodes: filled circle + border + creature image
+  const bigNodes = nodeGs.filter(d => d.type === "start" || d.type === "end" || d.type === "knowledge");
+
+  bigNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", NODE_R + 2)
+    .attr("fill", d => d.type === "end" ? statusColor(d.status ?? "completed") : graph.tracks[d.trackIdx].color)
+    .attr("shape-rendering", "geometricPrecision");
+
+  bigNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", NODE_R + 2)
+    .attr("fill", "none")
+    .attr("stroke", "var(--color-fill)")
+    .attr("stroke-width", 2)
+    .attr("shape-rendering", "geometricPrecision");
+
+  const iconSize = NODE_R * 2.6;
+  bigNodes.append("image")
+    .attr("href", d => creatureDataUri(d.user, graph.tracks[d.trackIdx].color))
+    .attr("x", d => Math.round(graph.tracks[d.trackIdx].x - iconSize / 2))
+    .attr("y", d => Math.round(rowY(d.row) - iconSize / 2))
+    .attr("width", Math.round(iconSize))
+    .attr("height", Math.round(iconSize))
+    .style("image-rendering", "pixelated");
+
+  // Inject nodes: outlined circle with inner dot
+  const injectNodes = nodeGs.filter(d => d.type === "inject");
+
+  injectNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", NODE_R)
+    .attr("fill", "var(--color-fill)")
+    .attr("stroke", d => graph.tracks[d.trackIdx].color)
+    .attr("stroke-width", 2)
+    .attr("shape-rendering", "geometricPrecision");
+
+  injectNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", 3)
+    .attr("fill", d => graph.tracks[d.trackIdx].color)
+    .attr("shape-rendering", "geometricPrecision");
+
+  // Work nodes: faded circle with inner dot
+  const workNodes = nodeGs.filter(d => d.type === "work");
+
+  workNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", NODE_R - 1)
+    .attr("fill", d => graph.tracks[d.trackIdx].color)
+    .attr("opacity", 0.35)
+    .attr("shape-rendering", "geometricPrecision");
+
+  workNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", 3)
+    .attr("fill", d => graph.tracks[d.trackIdx].color)
+    .attr("opacity", 0.7)
+    .attr("shape-rendering", "geometricPrecision");
+
+  // Event labels
+  const MAX_LABEL = 50;
+  nodeGs.append("text")
+    .attr("x", graph.labelX)
+    .attr("y", d => rowY(d.row) + 4)
+    .attr("font-size", 12)
+    .attr("fill", "var(--color-text-primary)")
+    .attr("class", "graph-event-label")
+    .text(d => {
+      let raw = "";
+      if (d.type === "start") raw = d.label;
+      else if (d.type === "end") raw = d.label || d.status || "done";
+      else raw = d.label;
+      return raw.length > MAX_LABEL ? raw.slice(0, MAX_LABEL) + "\u2026" : raw;
+    });
+
+  // --- Layer 7: Track hit areas (transparent wide rects for hover detection) ---
+  const hitGroup = zoomGroup.append("g").attr("class", "track-hitareas");
+
+  // Track username labels (shown on hover, initially hidden)
+  const labelGroup = zoomGroup.append("g").attr("class", "track-user-labels");
+  labelGroup.selectAll("text")
+    .data(graph.tracks)
+    .join("text")
+    .attr("class", "track-user-label")
+    .attr("x", d => d.x)
+    .attr("y", TOP_PAD - 4)
+    .attr("text-anchor", "middle")
+    .attr("font-size", 10)
+    .attr("font-weight", 600)
+    .attr("fill", d => d.color)
+    .attr("opacity", 0)
+    .text(d => d.user);
+
+  hitGroup.selectAll("rect")
+    .data(graph.tracks)
+    .join("rect")
+    .attr("x", d => d.x - TRACK_GAP / 2)
+    .attr("y", 0)
+    .attr("width", TRACK_GAP)
+    .attr("height", graph.svgHeight)
+    .attr("fill", "transparent")
+    .style("cursor", "pointer")
+    .on("mouseenter", function (_event: MouseEvent, d: Track) {
+      callbacks.onTrackHover(d.idx);
+    })
+    .on("mouseleave", function () {
+      callbacks.onTrackHover(null);
+    });
+
+  // --- Zoom behavior ---
+  const zoom = d3.zoom<SVGSVGElement, unknown>()
+    .scaleExtent([0.3, 3])
+    .on("zoom", (event) => {
+      zoomGroup.attr("transform", event.transform.toString());
+    });
+
+  svg.call(zoom);
+
+  // Initial fit: scale to fill container width, cap at 1x
+  const container = svgEl.parentElement;
+  if (container) {
+    const containerW = container.clientWidth;
+    const containerH = container.clientHeight;
+    const scaleX = containerW / graph.svgWidth;
+    const scaleY = containerH / graph.svgHeight;
+    const scale = Math.min(scaleX, scaleY, 1);
+    const tx = (containerW - graph.svgWidth * scale) / 2;
+    const ty = 0;
+    svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+  }
+
+  return zoom;
+}
+
+// --- Update track highlighting based on hoveredTrack ---
+
+function updateTrackHighlight(svgEl: SVGSVGElement, hoveredTrack: number | null) {
+  const svg = d3.select(svgEl);
+
+  // Highlight rects
+  svg.selectAll("rect.track-hl")
+    .attr("opacity", (_, i) => (hoveredTrack !== null && i === hoveredTrack) ? 0.08 : 0);
+
+  // Username labels
+  svg.selectAll("text.track-user-label")
+    .attr("opacity", (_, i) => (hoveredTrack !== null && i === hoveredTrack) ? 1 : 0);
+
+  // Dim non-hovered track segments and nodes
+  if (hoveredTrack !== null) {
+    svg.selectAll("line.track-seg")
+      .attr("opacity", function () {
+        const existing = d3.select(this);
+        const originalOpacity = parseFloat(existing.attr("data-orig-opacity") ?? existing.attr("opacity") ?? "1");
+        // Store original opacity on first hover
+        if (!existing.attr("data-orig-opacity")) {
+          existing.attr("data-orig-opacity", existing.attr("opacity"));
+        }
+        const datum = d3.select(this).datum() as SegmentDatum | undefined;
+        if (datum && datum.track.idx === hoveredTrack) return originalOpacity;
+        return originalOpacity * 0.25;
+      });
+
+    svg.selectAll("g.event-node")
+      .attr("opacity", function () {
+        const datum = d3.select(this).datum() as LayoutEvent | undefined;
+        if (datum && datum.trackIdx === hoveredTrack) return 1;
+        return 0.3;
+      });
+  } else {
+    // Restore original opacities
+    svg.selectAll("line.track-seg")
+      .attr("opacity", function () {
+        const orig = d3.select(this).attr("data-orig-opacity");
+        if (orig) {
+          d3.select(this).attr("data-orig-opacity", null);
+          return orig;
+        }
+        return d3.select(this).attr("opacity");
+      });
+
+    svg.selectAll("g.event-node")
+      .attr("opacity", 1);
+  }
+}
+
 // --- Main component ---
 
 interface SessionGraphProps {
@@ -351,19 +754,20 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
   const { room } = useRoomContext();
   const { memories, loading } = useRealtimeMemories(room?.id ?? null, 1000);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const [hoveredTrack, setHoveredTrack] = useState<number | null>(null);
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
   const graph = useMemo(() => buildGraphData(memories), [memories]);
 
-  // Map links onto the graph: find source memory's row position and target session's track
+  // Map links onto the graph
   const linkEdges = useMemo(() => {
     if (!links.length || !graph.events.length) return [];
-    // Build lookup: memory ID -> event row
     const memToRow = new Map<string, number>();
-    // Build lookup: session ID -> track index + last row
     const sessionToTrack = new Map<string, { trackIdx: number; lastRow: number }>();
 
     for (const ev of graph.events) {
-      // Map event ID to its row (events are from memories)
       memToRow.set(ev.id, ev.row);
       const key = ev.sessionId;
       const existing = sessionToTrack.get(key);
@@ -372,13 +776,12 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
       }
     }
 
-    const edges: { fromX: number; fromY: number; toX: number; toY: number; color: string; type: string }[] = [];
+    const edges: LinkEdge[] = [];
     for (const link of links) {
       const sourceRow = memToRow.get(link.source_memory_id);
       const targetInfo = sessionToTrack.get(link.target_session_id);
       if (sourceRow === undefined || !targetInfo) continue;
 
-      // Find source track
       const sourceEvent = graph.events.find((e) => e.id === link.source_memory_id);
       if (!sourceEvent) continue;
 
@@ -400,16 +803,56 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
     return edges;
   }, [links, graph]);
 
-  const handleHover = useCallback(
-    (e: React.MouseEvent, event: LayoutEvent) => {
-      const rect = (e.currentTarget as SVGElement)
-        .closest(".session-graph-canvas")!
-        .getBoundingClientRect();
-      setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, event });
-    },
-    []
-  );
-  const handleLeave = useCallback(() => setTooltip(null), []);
+  // Main D3 render effect
+  useEffect(() => {
+    if (!svgRef.current || graph.events.length === 0) return;
+    zoomRef.current = renderGraph(svgRef.current, graph, linkEdges, {
+      onHover: (clientX, clientY, ev) => {
+        const container = svgRef.current?.parentElement;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        setTooltip({ x: clientX - rect.left, y: clientY - rect.top, event: ev });
+      },
+      onLeave: () => setTooltip(null),
+      onTrackHover: setHoveredTrack,
+    });
+  }, [graph, linkEdges]);
+
+  // Track highlight effect
+  useEffect(() => {
+    if (!svgRef.current) return;
+    updateTrackHighlight(svgRef.current, hoveredTrack);
+  }, [hoveredTrack]);
+
+  // Zoom controls
+  const handleZoomIn = useCallback(() => {
+    if (!svgRef.current || !zoomRef.current) return;
+    d3.select(svgRef.current)
+      .transition().duration(200)
+      .call(zoomRef.current.scaleBy, 1.3);
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    if (!svgRef.current || !zoomRef.current) return;
+    d3.select(svgRef.current)
+      .transition().duration(200)
+      .call(zoomRef.current.scaleBy, 1 / 1.3);
+  }, []);
+
+  const handleZoomFit = useCallback(() => {
+    if (!svgRef.current || !zoomRef.current) return;
+    const container = svgRef.current.parentElement;
+    if (!container) return;
+    const containerW = container.clientWidth;
+    const containerH = container.clientHeight;
+    const scaleX = containerW / graph.svgWidth;
+    const scaleY = containerH / graph.svgHeight;
+    const scale = Math.min(scaleX, scaleY, 1);
+    const tx = (containerW - graph.svgWidth * scale) / 2;
+    d3.select(svgRef.current)
+      .transition().duration(300)
+      .call(zoomRef.current.transform, d3.zoomIdentity.translate(tx, 0).scale(scale));
+  }, [graph.svgWidth, graph.svgHeight]);
 
   if (loading) {
     return (
@@ -449,212 +892,15 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
         </div>
       </div>
       <div className="session-graph-canvas" style={{ position: "relative" }}>
-        <svg
-          width={graph.svgWidth}
-          height={graph.svgHeight}
-          style={{ display: "block" }}
-        >
-          {/* Faint guideline behind each track for full height */}
-          {graph.tracks.map((track) => {
-            const sx = snap(track.x, 1);
-            return (
-              <line
-                key={`guide-${track.idx}`}
-                x1={sx} y1={TOP_PAD}
-                x2={sx} y2={graph.svgHeight - BOTTOM_PAD}
-                stroke={track.color} strokeWidth={1} opacity={0.08}
-                shapeRendering="crispEdges"
-              />
-            );
-          })}
-
-          {/* Track lines — continuous colored verticals per active segment */}
-          {graph.tracks.map((track) => {
-            const sx = snap(track.x, LINE_WIDTH);
-            if (track.segments.length === 0) {
-              return (
-                <line
-                  key={`track-ghost-${track.idx}`}
-                  x1={sx} y1={TOP_PAD}
-                  x2={sx} y2={graph.svgHeight - BOTTOM_PAD}
-                  stroke={track.color} strokeWidth={1} opacity={0.15}
-                  shapeRendering="crispEdges"
-                />
-              );
-            }
-            return track.segments.map((seg, si) => {
-              const y1 = rowY(seg.startRow);
-              const y2 = seg.endRow !== null
-                ? rowY(seg.endRow)
-                : graph.svgHeight - BOTTOM_PAD;
-              return (
-                <line
-                  key={`track-${track.idx}-${si}`}
-                  x1={sx} y1={y1} x2={sx} y2={y2}
-                  stroke={track.color}
-                  strokeWidth={LINE_WIDTH}
-                  strokeLinecap="butt"
-                  opacity={seg.endRow === null ? 0.5 : 0.85}
-                  strokeDasharray={seg.endRow === null ? "6 3" : undefined}
-                  shapeRendering="crispEdges"
-                />
-              );
-            });
-          })}
-
-          {/* Injection edges — S-curves between tracks (keep geometricPrecision for smooth curves) */}
-          {graph.edges.map((edge, i) => {
-            const x1 = snap(TRACK_LEFT + edge.fromTrack * TRACK_GAP, LINE_WIDTH);
-            const x2 = snap(TRACK_LEFT + edge.toTrack * TRACK_GAP, LINE_WIDTH);
-            const y = rowY(edge.fromRow);
-            const dx = (x2 - x1) * 0.35;
-            return (
-              <path
-                key={`edge-${i}`}
-                d={`M ${x1},${y} C ${x1 + dx},${y - 8} ${x2 - dx},${y - 8} ${x2},${y}`}
-                stroke={edge.color}
-                strokeWidth={2}
-                fill="none"
-                opacity={0.55}
-                shapeRendering="geometricPrecision"
-              />
-            );
-          })}
-
-          {/* Vertical merge lines — connect injection source to target vertically */}
-          {graph.edges.map((edge, i) => {
-            if (edge.fromRow === edge.toRow) return null;
-            const x1 = snap(TRACK_LEFT + edge.fromTrack * TRACK_GAP, LINE_WIDTH);
-            const x2 = snap(TRACK_LEFT + edge.toTrack * TRACK_GAP, LINE_WIDTH);
-            const y1 = rowY(edge.fromRow);
-            const y2 = rowY(edge.toRow);
-            return (
-              <path
-                key={`vedge-${i}`}
-                d={`M ${x1},${y1} C ${x1},${y1 + (y2 - y1) * 0.5} ${x2},${y2 - (y2 - y1) * 0.5} ${x2},${y2}`}
-                stroke={edge.color}
-                strokeWidth={2}
-                fill="none"
-                opacity={0.45}
-                shapeRendering="geometricPrecision"
-              />
-            );
-          })}
-
-          {/* User-created links — dashed curves */}
-          {linkEdges.map((le, i) => {
-            const dx = (le.toX - le.fromX) * 0.4;
-            const dy = (le.toY - le.fromY) * 0.4;
-            return (
-              <path
-                key={`link-${i}`}
-                d={`M ${le.fromX},${le.fromY} C ${le.fromX + dx},${le.fromY + dy} ${le.toX - dx},${le.toY - dy} ${le.toX},${le.toY}`}
-                stroke={le.color}
-                strokeWidth={2.5}
-                strokeDasharray="6 3"
-                fill="none"
-                opacity={0.7}
-                shapeRendering="geometricPrecision"
-              />
-            );
-          })}
-
-          {/* Link endpoints — small diamonds */}
-          {linkEdges.map((le, i) => (
-            <g key={`link-end-${i}`}>
-              <circle cx={le.fromX} cy={le.fromY} r={4} fill={le.color} opacity={0.8} />
-              <polygon
-                points={`${le.toX},${le.toY - 5} ${le.toX + 4},${le.toY} ${le.toX},${le.toY + 5} ${le.toX - 4},${le.toY}`}
-                fill={le.color}
-                opacity={0.8}
-              />
-            </g>
-          ))}
-
-          {/* Event nodes */}
-          {graph.events.map((ev) => {
-            const track = graph.tracks[ev.trackIdx];
-            if (!track) return null;
-            const cx = track.x;
-            const cy = rowY(ev.row);
-            const color = track.color;
-            const creatureUri = creatureDataUri(ev.user, color);
-            const iconSize = NODE_R * 2.6;
-
-            return (
-              <g
-                key={ev.id}
-                onMouseEnter={(e) => handleHover(e, ev)}
-                onMouseLeave={handleLeave}
-                style={{ cursor: "pointer" }}
-              >
-                {(ev.type === "start" || ev.type === "end" || ev.type === "knowledge") && (
-                  <>
-                    <circle
-                      cx={cx} cy={cy}
-                      r={NODE_R + 2}
-                      fill={ev.type === "end" ? statusColor(ev.status ?? "completed") : color}
-                      shapeRendering="geometricPrecision"
-                    />
-                    <circle
-                      cx={cx} cy={cy}
-                      r={NODE_R + 2}
-                      fill="none"
-                      stroke="var(--color-bg)"
-                      strokeWidth={2}
-                      shapeRendering="geometricPrecision"
-                    />
-                    <image
-                      href={creatureUri}
-                      x={Math.round(cx - iconSize / 2)}
-                      y={Math.round(cy - iconSize / 2)}
-                      width={Math.round(iconSize)}
-                      height={Math.round(iconSize)}
-                      style={{ imageRendering: "pixelated" }}
-                    />
-                  </>
-                )}
-
-                {ev.type === "inject" && (
-                  <>
-                    <circle
-                      cx={cx} cy={cy} r={NODE_R}
-                      fill="var(--color-bg)"
-                      stroke={color}
-                      strokeWidth={2}
-                      shapeRendering="geometricPrecision"
-                    />
-                    <circle cx={cx} cy={cy} r={3} fill={color} shapeRendering="geometricPrecision" />
-                  </>
-                )}
-
-                {ev.type === "work" && (
-                  <>
-                    <circle cx={cx} cy={cy} r={NODE_R - 1} fill={color} opacity={0.35} shapeRendering="geometricPrecision" />
-                    <circle cx={cx} cy={cy} r={3} fill={color} opacity={0.7} shapeRendering="geometricPrecision" />
-                  </>
-                )}
-
-                <text
-                  x={graph.labelX}
-                  y={cy + 4}
-                  fontSize={12}
-                  fill="var(--color-text-primary)"
-                  className="graph-event-label"
-                >
-                  {(() => {
-                    const MAX = 50;
-                    let raw = "";
-                    if (ev.type === "start") raw = ev.label;
-                    else if (ev.type === "end") raw = ev.label || ev.status || "done";
-                    else raw = ev.label;
-                    return raw.length > MAX ? raw.slice(0, MAX) + "\u2026" : raw;
-                  })()}
-                </text>
-              </g>
-            );
-          })}
+        <svg ref={svgRef} style={{ display: "block" }}>
+          <g className="zoom-group" />
         </svg>
+
+        <div className="graph-zoom-controls">
+          <button onClick={handleZoomIn} title="Zoom in">+</button>
+          <button onClick={handleZoomOut} title="Zoom out">-</button>
+          <button onClick={handleZoomFit} title="Fit to view">Fit</button>
+        </div>
 
         {tooltip && <Tooltip data={tooltip} />}
       </div>

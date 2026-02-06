@@ -3,7 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import type { Memory } from "../lib/supabase";
-import { ANIMAL_SPRITES } from "./animalSprites";
+import { ANIMAL_SPRITES, CUTE_COUNT } from "./animalSprites";
 
 /* ── Palette ── */
 
@@ -62,66 +62,162 @@ function timeAgo(ts: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-interface SessionInfo {
+/* Strip common prefix ("armand/bold-dove" -> "bold-dove" when all share "armand/") */
+
+function shortName(agents: string[]): (agent: string) => string {
+  if (agents.length === 0) return (a) => a;
+  // Find the most common prefix before "/"
+  const prefixCounts = new Map<string, number>();
+  for (const a of agents) {
+    const slash = a.indexOf("/");
+    if (slash > 0) {
+      const p = a.slice(0, slash + 1);
+      prefixCounts.set(p, (prefixCounts.get(p) ?? 0) + 1);
+    }
+  }
+  // Strip prefix if majority of agents share it
+  let common = "";
+  for (const [p, count] of prefixCounts) {
+    if (count > agents.length / 2) { common = p; break; }
+  }
+  return (agent: string) => common && agent.startsWith(common) ? agent.slice(common.length) : agent;
+}
+
+/* ── Sparkline (SVG bar chart) ── */
+
+const SPARK_BUCKETS = 8;
+const SPARK_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function MiniSparkline({ memories, color }: { memories: Memory[]; color: string }) {
+  const now = Date.now();
+  const bucketSize = SPARK_WINDOW / SPARK_BUCKETS;
+  const counts = new Array(SPARK_BUCKETS).fill(0);
+
+  for (const m of memories) {
+    const age = now - new Date(m.ts).getTime();
+    if (age > SPARK_WINDOW || age < 0) continue;
+    const idx = Math.min(SPARK_BUCKETS - 1, Math.floor((SPARK_WINDOW - age) / bucketSize));
+    counts[idx]++;
+  }
+
+  const max = Math.max(1, ...counts);
+  const barW = 4;
+  const gap = 1;
+  const h = 12;
+  const w = SPARK_BUCKETS * (barW + gap) - gap;
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="mini-sparkline">
+      {counts.map((c, i) => {
+        const barH = Math.max(c > 0 ? 2 : 0, Math.round((c / max) * h));
+        return (
+          <rect
+            key={i}
+            x={i * (barW + gap)}
+            y={h - barH}
+            width={barW}
+            height={barH}
+            fill={color}
+            opacity={0.7}
+            rx={0.5}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+/* ── Agent builder ── */
+
+interface AgentInfo {
   agent: string;
-  sessionId: string;
   memories: Memory[];
   isActive: boolean;
   lastTs: string;
+  sessionCount: number;
+  lastAction: string;
+  typeCounts: TypeCounts;
 }
 
-function buildSessions(memories: Memory[]): Map<string, SessionInfo[]> {
-  const byAgent = new Map<string, Map<string, Memory[]>>();
+interface TypeCounts {
+  user: number;
+  assistant: number;
+  tool: number;
+  other: number;
+}
+
+function buildAgents(memories: Memory[]): AgentInfo[] {
+  const byAgent = new Map<string, Memory[]>();
+  const sessionIds = new Map<string, Set<string>>();
+
   for (const m of memories) {
-    let agentMap = byAgent.get(m.agent);
-    if (!agentMap) {
-      agentMap = new Map();
-      byAgent.set(m.agent, agentMap);
-    }
-    let arr = agentMap.get(m.session_id);
+    let arr = byAgent.get(m.agent);
     if (!arr) {
       arr = [];
-      agentMap.set(m.session_id, arr);
+      byAgent.set(m.agent, arr);
     }
     arr.push(m);
+
+    let sids = sessionIds.get(m.agent);
+    if (!sids) {
+      sids = new Set();
+      sessionIds.set(m.agent, sids);
+    }
+    sids.add(m.session_id);
   }
 
-  const result = new Map<string, SessionInfo[]>();
   const now = Date.now();
-  for (const [agent, sessionMap] of byAgent) {
-    const sessions: SessionInfo[] = [];
-    for (const [sessionId, mems] of sessionMap) {
-      const sorted = mems.sort(
-        (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
-      );
-      const lastTs = sorted[0]?.ts ?? "";
-      sessions.push({
-        agent,
-        sessionId,
-        memories: sorted,
-        isActive: now - new Date(lastTs).getTime() < 5 * 60 * 1000,
-        lastTs,
-      });
-    }
-    sessions.sort(
-      (a, b) => new Date(b.lastTs).getTime() - new Date(a.lastTs).getTime()
+  const agents: AgentInfo[] = [];
+
+  for (const [agent, mems] of byAgent) {
+    const sorted = [...mems].sort(
+      (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
     );
-    result.set(agent, sessions);
+    const lastTs = sorted[0]?.ts ?? "";
+    const isActive = now - new Date(lastTs).getTime() < 5 * 60 * 1000;
+
+    const lastMeaningful = sorted.find(
+      (m) => m.message_type === "assistant" || m.message_type === "user"
+    );
+    const lastAction = lastMeaningful?.content.slice(0, 80) ?? "";
+
+    const c: TypeCounts = { user: 0, assistant: 0, tool: 0, other: 0 };
+    for (const m of mems) {
+      const cat = typeToCategory(m.message_type);
+      if (cat) c[cat]++;
+      else c.other++;
+    }
+
+    agents.push({
+      agent, memories: sorted, isActive, lastTs,
+      sessionCount: sessionIds.get(agent)?.size ?? 0,
+      lastAction, typeCounts: c,
+    });
   }
-  return result;
+
+  agents.sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    return new Date(b.lastTs).getTime() - new Date(a.lastTs).getTime();
+  });
+
+  return agents;
 }
 
-/* ── Pixel Animal (Twemoji-derived) ── */
+/* ── Pixel Animal ── */
 
 function getAnimalSprite(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = ((hash << 7) - hash + name.charCodeAt(i)) | 0;
   }
-  return ANIMAL_SPRITES[Math.abs(hash) % ANIMAL_SPRITES.length];
+  const roll = Math.abs(hash >> 4) % 4;
+  if (roll > 0) {
+    return ANIMAL_SPRITES[Math.abs(hash) % CUTE_COUNT];
+  }
+  return ANIMAL_SPRITES[CUTE_COUNT + (Math.abs(hash) % (ANIMAL_SPRITES.length - CUTE_COUNT))];
 }
 
-function PixelCreature({ name, size = 20 }: { name: string; size?: number }) {
+function PixelCreature({ name, size = 16 }: { name: string; size?: number }) {
   const sprite = useMemo(() => getAnimalSprite(name), [name]);
   const color = agentColor(name);
   const ROWS = sprite.grid.length;
@@ -164,40 +260,7 @@ function PixelCreature({ name, size = 20 }: { name: string; size?: number }) {
   );
 }
 
-/* ── Activity Bar ── */
-
-interface TypeCounts {
-  user: number;
-  assistant: number;
-  tool: number;
-  other: number;
-}
-
-function MiniActivityBar({ counts }: { counts: TypeCounts }) {
-  const total = counts.user + counts.assistant + counts.tool + counts.other;
-  if (total === 0) return <div className="mini-bar mini-bar-empty" />;
-
-  const segments = [
-    { key: "user", color: CATEGORY_COLORS.user, n: counts.user },
-    { key: "assistant", color: CATEGORY_COLORS.assistant, n: counts.assistant },
-    { key: "tool", color: CATEGORY_COLORS.tool, n: counts.tool },
-    { key: "other", color: "#CED4DA", n: counts.other },
-  ].filter((s) => s.n > 0);
-
-  return (
-    <div className="mini-bar">
-      {segments.map((s) => (
-        <div
-          key={s.key}
-          className="mini-bar-seg"
-          style={{ width: `${(s.n / total) * 100}%`, background: s.color }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ── Legend (static, non-interactive) ── */
+/* ── Legend ── */
 
 function MiniLegend() {
   return (
@@ -217,9 +280,11 @@ function MiniLegend() {
 function MiniDetailPanel({
   agent,
   sessions,
+  getShort,
 }: {
   agent: string;
-  sessions: SessionInfo[];
+  sessions: { sessionId: string; memories: Memory[]; lastTs: string }[];
+  getShort: (a: string) => string;
 }) {
   const [idx, setIdx] = useState(0);
   const session = sessions[idx] ?? sessions[0];
@@ -230,11 +295,11 @@ function MiniDetailPanel({
       <div className="mini-detail-header">
         <PixelCreature name={agent} size={14} />
         <span className="mini-detail-agent" style={{ color: agentColor(agent) }}>
-          {agent}
+          {getShort(agent)}
         </span>
         <span className="mini-detail-sid">{session.sessionId.slice(0, 8)}</span>
         <span className="mini-detail-meta">
-          {session.memories.length}m · {timeAgo(session.lastTs)}
+          {session.memories.length}m - {timeAgo(session.lastTs)}
         </span>
       </div>
 
@@ -301,17 +366,21 @@ function MiniDetailPanel({
 function MiniActivityFeed({
   memories,
   filterAgent,
+  getShort,
 }: {
   memories: Memory[];
   filterAgent: string | null;
+  getShort: (a: string) => string;
 }) {
   const sorted = useMemo(() => {
     const list = filterAgent
       ? memories.filter((m) => m.agent === filterAgent)
       : memories;
-    return [...list].sort(
-      (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
-    );
+    return [...list]
+      .filter((m) => typeToCategory(m.message_type) !== null)
+      .sort(
+        (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
+      );
   }, [memories, filterAgent]);
 
   const items = sorted.slice(0, 40);
@@ -319,7 +388,7 @@ function MiniActivityFeed({
   return (
     <div className="mini-feed">
       <div className="mini-feed-header">
-        {filterAgent ? `${filterAgent}` : "feed"}
+        {filterAgent ? getShort(filterAgent) : "feed"}
         <span className="mini-feed-count">{sorted.length}</span>
       </div>
       <div className="mini-feed-list">
@@ -355,24 +424,46 @@ export function MiniRemix() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
 
-  const agentSessions = useMemo(() => buildSessions(memories), [memories]);
-  const agents = Array.from(agentSessions.entries());
+  const agents = useMemo(() => buildAgents(memories), [memories]);
+  const activeAgents = agents.filter((a) => a.isActive);
+  const idleAgents = agents.filter((a) => !a.isActive);
 
-  const agentTypeCounts = useMemo(() => {
-    const result = new Map<string, TypeCounts>();
-    for (const [agent, sessions] of agentSessions) {
-      const c: TypeCounts = { user: 0, assistant: 0, tool: 0, other: 0 };
-      for (const s of sessions) {
-        for (const m of s.memories) {
-          const cat = typeToCategory(m.message_type);
-          if (cat) c[cat]++;
-          else c.other++;
-        }
+  const getShort = useMemo(
+    () => shortName(agents.map((a) => a.agent)),
+    [agents]
+  );
+
+  // Build session lists for the detail panel
+  const agentSessions = useMemo(() => {
+    const byAgent = new Map<string, Map<string, Memory[]>>();
+    for (const m of memories) {
+      let agentMap = byAgent.get(m.agent);
+      if (!agentMap) {
+        agentMap = new Map();
+        byAgent.set(m.agent, agentMap);
       }
-      result.set(agent, c);
+      let arr = agentMap.get(m.session_id);
+      if (!arr) {
+        arr = [];
+        agentMap.set(m.session_id, arr);
+      }
+      arr.push(m);
+    }
+
+    const result = new Map<string, { sessionId: string; memories: Memory[]; lastTs: string }[]>();
+    for (const [agent, sessionMap] of byAgent) {
+      const sessions: { sessionId: string; memories: Memory[]; lastTs: string }[] = [];
+      for (const [sessionId, mems] of sessionMap) {
+        const sorted = mems.sort(
+          (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
+        );
+        sessions.push({ sessionId, memories: sorted, lastTs: sorted[0]?.ts ?? "" });
+      }
+      sessions.sort((a, b) => new Date(b.lastTs).getTime() - new Date(a.lastTs).getTime());
+      result.set(agent, sessions);
     }
     return result;
-  }, [agentSessions]);
+  }, [memories]);
 
   const handleTapAgent = useCallback((agent: string) => {
     setSelectedAgent((prev) => (prev === agent ? null : agent));
@@ -386,6 +477,13 @@ export function MiniRemix() {
     ? `${window.location.origin}/r/${room.slug}`
     : "";
 
+  const callsLast10m = useMemo(() => {
+    const cutoff = Date.now() - 10 * 60 * 1000;
+    return memories.filter(
+      (m) => new Date(m.ts).getTime() > cutoff && m.message_type === "tool_call"
+    ).length;
+  }, [memories]);
+
   return (
     <div className="mini-container">
       {/* Title bar */}
@@ -396,7 +494,8 @@ export function MiniRemix() {
         </span>
         <MiniLegend />
         <span className="mini-titlebar-stats">
-          {agentSessions.size}a · {memories.length}m
+          {activeAgents.length}/{agents.length}
+          {callsLast10m > 0 ? ` ${callsLast10m}c` : ""}
         </span>
         <button
           className="mini-qr-btn"
@@ -431,40 +530,62 @@ export function MiniRemix() {
           {agents.length === 0 && (
             <div className="mini-empty">no agents yet</div>
           )}
-          {agents.map(([agent, sessions]) => {
-            const counts = agentTypeCounts.get(agent)!;
-            const total =
-              counts.user + counts.assistant + counts.tool + counts.other;
-            const isActive = sessions.some((s) => s.isActive);
-            const lastTs = sessions[0]?.lastTs;
 
+          {/* Active agents - full rows with sparklines */}
+          {activeAgents.map((info) => {
+            const color = agentColor(info.agent);
             return (
               <div
-                key={agent}
-                className={`mini-agent-row ${selectedAgent === agent ? "selected" : ""}`}
-                onClick={() => handleTapAgent(agent)}
+                key={info.agent}
+                className={`mini-agent-row ${selectedAgent === info.agent ? "selected" : ""}`}
+                onClick={() => handleTapAgent(info.agent)}
               >
                 <div className="mini-agent-info">
-                  <PixelCreature name={agent} size={20} />
-                  <span
-                    className="mini-agent-name"
-                    style={{ color: agentColor(agent) }}
-                  >
-                    {agent}
+                  <PixelCreature name={info.agent} size={16} />
+                  <span className="mini-agent-name" style={{ color }}>
+                    {getShort(info.agent)}
                   </span>
                   <span className="mini-agent-spacer" />
-                  <span
-                    className={`mini-status-dot ${isActive ? "active" : ""}`}
-                  />
-                  <span className="mini-agent-meta">
-                    {sessions.length}s · {total}m ·{" "}
-                    {lastTs ? timeAgo(lastTs) : "\u2014"}
-                  </span>
+                  <MiniSparkline memories={info.memories} color={color} />
+                  <span className="mini-agent-ago">{timeAgo(info.lastTs)}</span>
                 </div>
-                <MiniActivityBar counts={counts} />
+                {info.lastAction && (
+                  <div className="mini-agent-action">{info.lastAction}</div>
+                )}
               </div>
             );
           })}
+
+          {/* Idle section header */}
+          {idleAgents.length > 0 && (
+            <div className="mini-idle-header">idle ({idleAgents.length})</div>
+          )}
+
+          {/* Idle agents - compact rows, capped at 8 */}
+          {idleAgents.slice(0, 8).map((info) => {
+            const color = agentColor(info.agent);
+            return (
+              <div
+                key={info.agent}
+                className={`mini-agent-row mini-agent-idle ${selectedAgent === info.agent ? "selected" : ""}`}
+                onClick={() => handleTapAgent(info.agent)}
+              >
+                <div className="mini-agent-info">
+                  <PixelCreature name={info.agent} size={14} />
+                  <span className="mini-agent-name mini-agent-name-idle" style={{ color }}>
+                    {getShort(info.agent)}
+                  </span>
+                  <span className="mini-agent-spacer" />
+                  <span className="mini-agent-ago">{timeAgo(info.lastTs)}</span>
+                </div>
+              </div>
+            );
+          })}
+          {idleAgents.length > 8 && (
+            <div className="mini-idle-overflow">
+              +{idleAgents.length - 8} more
+            </div>
+          )}
         </div>
 
         {/* Detail panel (when agent tapped) */}
@@ -472,12 +593,13 @@ export function MiniRemix() {
           <MiniDetailPanel
             agent={selectedAgent}
             sessions={selectedSessions}
+            getShort={getShort}
           />
         )}
 
         {/* Activity feed (when no agent selected) */}
         {!selectedAgent && (
-          <MiniActivityFeed memories={memories} filterAgent={null} />
+          <MiniActivityFeed memories={memories} filterAgent={null} getShort={getShort} />
         )}
       </div>
     </div>

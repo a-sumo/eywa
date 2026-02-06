@@ -3891,6 +3891,7 @@ html {
   flex: 0 0 auto;
   overflow-y: auto;
   padding: 0;
+  max-height: 55%;
 }
 
 .mini-empty {
@@ -3904,8 +3905,8 @@ html {
 .mini-agent-row {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 6px 8px;
+  gap: 2px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--mini-divider);
   cursor: pointer;
   transition: background 0.1s;
@@ -3925,11 +3926,15 @@ html {
   padding-left: 5px;
 }
 
+.mini-agent-idle {
+  padding: 2px 8px;
+}
+
 .mini-agent-info {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-height: 20px;
+  gap: 5px;
+  min-height: 18px;
 }
 
 .mini-pixel-creature {
@@ -3945,48 +3950,54 @@ html {
   min-width: 0;
 }
 
+.mini-agent-name-idle {
+  font-weight: 400;
+  font-size: 9px;
+}
+
 .mini-agent-spacer {
   flex: 1;
 }
 
-.mini-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--mini-gray);
+.mini-sparkline {
   flex-shrink: 0;
 }
 
-.mini-status-dot.active {
-  background: var(--mini-green);
-  box-shadow: 0 0 4px var(--mini-green);
-}
-
-.mini-agent-meta {
+.mini-agent-ago {
   font-size: 8px;
   color: var(--mini-text-light);
   flex-shrink: 0;
   white-space: nowrap;
+  width: 22px;
+  text-align: right;
 }
 
-/* ── Activity bar (proportional type segments) ── */
-.mini-bar {
-  height: 6px;
-  display: flex;
-  border-radius: 1px;
+.mini-agent-action {
+  font-size: 8px;
+  color: var(--mini-text-muted);
+  white-space: nowrap;
   overflow: hidden;
-  background: var(--mini-divider);
+  text-overflow: ellipsis;
+  padding-left: 21px;
+  line-height: 1.2;
 }
 
-.mini-bar-empty {
-  height: 6px;
-  background: var(--mini-divider);
-  border-radius: 1px;
+/* ── Idle section header ── */
+.mini-idle-header {
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--mini-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px 2px;
+  border-top: 1px solid var(--mini-divider);
 }
 
-.mini-bar-seg {
-  height: 100%;
-  min-width: 2px;
+.mini-idle-overflow {
+  font-size: 8px;
+  color: var(--mini-text-light);
+  padding: 2px 8px 4px;
+  text-align: center;
 }
 
 /* ── Detail panel (appears when agent tapped) ── */
@@ -4375,9 +4386,9 @@ html {
 }
 
 /* ============================================
-   E-Ink Dashboard — 600×448 7-Color Display
+   E-Ink Dashboard - 600x448 7-Color Display
    ============================================
-   Target: Waveshare 5.65" ACeP (600×448)
+   Target: Waveshare 5.65" ACeP (600x448)
    Colors: black/white/red/green/blue/yellow/orange ONLY
    No transparency, gradients, shadows, animations
    ============================================ */
@@ -4398,7 +4409,7 @@ html {
   background: var(--eink-white);
   color: var(--eink-black);
   font-family: "Courier New", Courier, monospace;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.2;
   overflow: hidden;
   image-rendering: pixelated;
@@ -4426,8 +4437,8 @@ html {
 .eink-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 28px;
+  gap: 8px;
+  height: 24px;
   padding: 0 6px;
   background: var(--eink-black);
   color: var(--eink-white);
@@ -4441,55 +4452,46 @@ html {
   flex-shrink: 1;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
+  max-width: 160px;
 }
 
-.eink-header-stats {
+.eink-header-counts {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.eink-header-spark {
+  font-size: 12px;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.eink-header-calls {
   flex-shrink: 0;
   font-size: 10px;
   font-weight: 400;
-}
-
-.eink-header-legend {
-  display: flex;
-  align-items: center;
-  gap: 3px;
   margin-left: auto;
-  font-size: 10px;
-  font-weight: 400;
-}
-
-.eink-legend-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border: 1px solid var(--eink-white);
-  margin-right: 1px;
 }
 
 .eink-header-time {
   flex-shrink: 0;
   font-size: 11px;
-  margin-left: 6px;
 }
 
 /* ── Body layout ── */
 
 .eink-body {
   display: flex;
-  height: calc(448px - 28px - 4px); /* container - header - border */
+  height: calc(448px - 24px - 4px);
 }
 
 .eink-left {
-  width: 280px;
+  width: 240px;
   flex-shrink: 0;
   border-right: 2px solid var(--eink-black);
   overflow: hidden;
   padding: 2px 4px;
-}
-
-.eink-gutter {
-  display: none;
 }
 
 .eink-right {
@@ -4507,85 +4509,106 @@ html {
   letter-spacing: 0.05em;
   color: var(--eink-black);
   border-bottom: 2px solid var(--eink-black);
-  padding-bottom: 2px;
+  padding-bottom: 1px;
   margin-bottom: 2px;
-  height: 16px;
-  line-height: 14px;
+  height: 14px;
+  line-height: 12px;
 }
 
-/* ── Agent cards ── */
+.eink-section-idle {
+  margin-top: 4px;
+}
 
-.eink-agent-card {
+/* ── Active agent rows ── */
+
+.eink-agent-active {
   border-bottom: 1px solid var(--eink-black);
   padding: 2px 0;
 }
 
-.eink-agent-card:last-child {
+.eink-agent-active:last-child {
   border-bottom: none;
 }
 
-.eink-agent-top {
+.eink-agent-row {
   display: flex;
   align-items: center;
   gap: 4px;
-  height: 20px;
+  height: 18px;
 }
 
 .eink-agent-name {
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--eink-black);
-  max-width: 100px;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.eink-agent-badge {
-  margin-left: auto;
+.eink-agent-ago {
+  flex-shrink: 0;
   font-size: 10px;
-  font-weight: 700;
-  padding: 0 3px;
-  border: 2px solid var(--eink-black);
+  font-weight: 400;
   color: var(--eink-black);
-  background: var(--eink-white);
+  width: 24px;
+  text-align: right;
 }
 
-.eink-agent-badge.active {
-  background: var(--eink-green);
+.eink-agent-action {
+  font-size: 9px;
   color: var(--eink-black);
-}
-
-.eink-agent-badge.idle {
-  background: var(--eink-white);
-  color: var(--eink-black);
-}
-
-.eink-agent-stats {
-  font-size: 10px;
-  color: var(--eink-black);
-  padding: 1px 0;
-}
-
-/* ── Activity bar ── */
-
-.eink-bar {
-  display: flex;
-  height: 8px;
-  border: 2px solid var(--eink-black);
-  background: var(--eink-white);
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 20px;
+  height: 12px;
+  line-height: 12px;
 }
 
-.eink-bar-empty {
-  height: 8px;
-  border: 2px solid var(--eink-black);
-  background: var(--eink-white);
+/* ── Sparkline SVG ── */
+
+.eink-sparkline {
+  flex-shrink: 0;
 }
 
-.eink-bar-seg {
-  height: 100%;
-  min-width: 2px;
+/* ── Idle agent grid ── */
+
+.eink-idle-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.eink-idle-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 50%;
+  height: 16px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.eink-idle-name {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--eink-black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.eink-idle-ago {
+  flex-shrink: 0;
+  font-size: 9px;
+  color: var(--eink-black);
+  width: 18px;
+  text-align: right;
 }
 
 /* ── Feed rows ── */
@@ -4594,10 +4617,10 @@ html {
   display: flex;
   align-items: center;
   gap: 3px;
-  height: 22px;
+  height: 18px;
   overflow: hidden;
   border-bottom: 1px solid var(--eink-black);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .eink-feed-row:last-child {
@@ -4606,33 +4629,34 @@ html {
 
 .eink-feed-time {
   flex-shrink: 0;
-  width: 28px;
-  font-size: 10px;
+  width: 22px;
+  font-size: 9px;
   color: var(--eink-black);
   text-align: right;
 }
 
-.eink-feed-dot {
+.eink-feed-agent {
   flex-shrink: 0;
-  width: 6px;
-  height: 6px;
-  border: 1px solid var(--eink-black);
-}
-
-.eink-feed-initial {
-  flex-shrink: 0;
-  width: 12px;
-  font-size: 10px;
+  width: 56px;
+  font-size: 9px;
   font-weight: 700;
-  text-align: center;
   color: var(--eink-black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.eink-feed-type {
+.eink-feed-badge {
   flex-shrink: 0;
-  width: 28px;
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 700;
+  color: var(--eink-black);
+  padding: 0 2px;
+  border: 1px solid var(--eink-black);
+  line-height: 12px;
+  height: 12px;
+  text-align: center;
+  min-width: 24px;
 }
 
 .eink-feed-content {
@@ -4642,7 +4666,7 @@ html {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--eink-black);
-  font-size: 11px;
+  font-size: 9px;
 }
 
 /* ── Empty state ── */
@@ -4715,13 +4739,17 @@ html {
 }
 
 .session-graph-canvas {
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: hidden;
   max-height: calc(100vh - 160px);
   border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-bg);
   position: relative;
+  cursor: grab;
+}
+
+.session-graph-canvas:active {
+  cursor: grabbing;
 }
 
 .session-graph-canvas svg {
@@ -4730,6 +4758,37 @@ html {
 
 .session-graph-canvas svg text {
   user-select: none;
+}
+
+.graph-zoom-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 5;
+}
+
+.graph-zoom-controls button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-card);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.graph-zoom-controls button:hover {
+  background: var(--color-fill);
+  color: var(--color-text-primary);
 }
 
 .graph-event-label {
