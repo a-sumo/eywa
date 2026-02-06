@@ -4,19 +4,27 @@ import { useRoomContext } from "../context/RoomContext";
 import type { Memory } from "../lib/supabase";
 import { ANIMAL_SPRITES, CUTE_COUNT } from "./animalSprites";
 
-/* ── E-Ink 7-Color Palette ── */
+/* ── E-Ink 7-Color Palette (soft pastels for web preview) ── */
 
 const EINK = {
-  black: "#000000",
-  white: "#FFFFFF",
-  red: "#FF0000",
-  green: "#00FF00",
-  blue: "#0000FF",
-  yellow: "#FFFF00",
-  orange: "#FF8000",
+  black: "#2D2D2D",
+  white: "#FFFDF8",
+  red: "#E8A0A0",      // soft rose
+  green: "#A8D8B4",    // soft sage
+  blue: "#A0C4E8",     // soft sky
+  yellow: "#F0E6A0",   // soft butter
+  orange: "#F0C8A0",   // soft peach
 } as const;
 
-const EINK_AGENT_COLORS = [EINK.red, EINK.blue, EINK.orange, EINK.green, EINK.yellow];
+// Pastel creature colors - soft and cozy
+const EINK_AGENT_COLORS = [
+  "#F4B4C4",  // blush pink
+  "#B4D4F4",  // baby blue
+  "#F4D4B4",  // warm peach
+  "#B4E4C4",  // mint green
+  "#E4D4F4",  // soft lavender
+  "#F4E4B4",  // pale yellow
+];
 
 function einkAgentColor(name: string): string {
   let hash = 0;
