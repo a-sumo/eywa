@@ -74,6 +74,10 @@ export class MicroTilePanel extends BaseScriptComponent {
   @hint("Show debug status text")
   public showStatus: boolean = true;
 
+  @input
+  @hint("Spawn colored test quads to verify mesh/material pipeline")
+  public showTestQuads: boolean = false;
+
   // Live quads
   private quads: Map<string, QuadEntry> = new Map();
   private quadParent: SceneObject;
@@ -121,8 +125,10 @@ export class MicroTilePanel extends BaseScriptComponent {
     print("[MicroTilePanel] Parent world pos: (" + worldPos.x.toFixed(1) + ", " + worldPos.y.toFixed(1) + ", " + worldPos.z.toFixed(1) + ")");
     print("[MicroTilePanel] Parent world scale: (" + worldScale.x.toFixed(2) + ", " + worldScale.y.toFixed(2) + ", " + worldScale.z.toFixed(2) + ")");
 
-    // --- DEBUG: spawn test quads to verify mesh/material pipeline ---
-    this.spawnTestQuads();
+    // Test quads (toggle via Inspector to verify mesh/material pipeline)
+    if (this.showTestQuads) {
+      this.spawnTestQuads();
+    }
 
     this.receiver = this.attachReceiver();
 
@@ -535,10 +541,14 @@ export class MicroTilePanel extends BaseScriptComponent {
 
     // Wire up scene ops and texture events
     receiver.onScene((payload: any) => {
+      print("[MicroTilePanel] onScene: " + JSON.stringify(payload).substring(0, 100));
       this.handleSceneEvent(payload);
     });
 
     receiver.onTex((payload: any) => {
+      const id = payload?.id ?? "?";
+      const imgLen = payload?.image?.length ?? 0;
+      print("[MicroTilePanel] onTex: id=" + id + " imgLen=" + imgLen);
       this.handleTexEvent(payload);
     });
 
