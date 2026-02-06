@@ -21,7 +21,7 @@ export function AgentList() {
   const agents = useRealtimeAgents(room?.id ?? null);
   const navigate = useNavigate();
   const location = useLocation();
-  const [showLabs, setShowLabs] = useState(false);
+  const [showViews, setShowLabs] = useState(false);
 
   const basePath = `/r/${slug}`;
   const isActive = (path: string) => location.pathname === path;
@@ -51,30 +51,26 @@ export function AgentList() {
       {/* Spacer pushes labs + agents to bottom */}
       <div style={{ flex: 1 }} />
 
-      {/* Labs */}
+      {/* Views */}
       <button
         className="nav-labs-toggle"
-        onClick={() => setShowLabs(!showLabs)}
+        onClick={() => setShowLabs(!showViews)}
       >
-        {showLabs ? "▾" : "▸"} Labs
+        {showViews ? "▾" : "▸"} Views
       </button>
-      {showLabs && (
+      {showViews && (
         <div className="nav-labs">
           {[
-            { path: "mini", label: "Mini Dashboard" },
-            { path: "eink", label: "E-Ink Dashboard" },
-            { path: "graph", label: "Session Graph" },
-            { path: "remix3d", label: "Remix 3D" },
-            { path: "layout-agent", label: "Layout Agent" },
-            { path: "layout-xr", label: "Layout XR" },
-            { path: "xr-test", label: "XR Test" },
-          ].map(({ path, label }) => (
+            { path: "graph", label: "Session Graph", icon: "◉" },
+            { path: "mini", label: "Mini", icon: "▪" },
+            { path: "eink", label: "E-Ink", icon: "▫" },
+          ].map(({ path, label, icon }) => (
             <button
               key={path}
               className={`nav-lab-item ${isActive(`${basePath}/${path}`) ? "active" : ""}`}
               onClick={() => navigate(`${basePath}/${path}`)}
             >
-              {label}
+              <span className="nav-lab-icon">{icon}</span> {label}
             </button>
           ))}
         </div>
