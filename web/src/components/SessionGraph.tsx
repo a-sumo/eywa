@@ -405,8 +405,8 @@ function renderGraph(
 ): d3.ZoomBehavior<SVGSVGElement, unknown> {
   const svg = d3.select(svgEl);
 
-  // Set SVG dimensions
-  svg.attr("width", graph.svgWidth).attr("height", graph.svgHeight);
+  // Width controlled by CSS (100%). Height from data so container sizes correctly.
+  svg.attr("width", null).attr("height", graph.svgHeight);
 
   // Get or create zoom group
   let zoomGroup = svg.select<SVGGElement>("g.zoom-group");
@@ -681,13 +681,10 @@ function renderGraph(
   const container = svgEl.parentElement;
   if (container) {
     const containerW = container.clientWidth;
-    const containerH = container.clientHeight;
     const scaleX = containerW / graph.svgWidth;
-    const scaleY = containerH / graph.svgHeight;
-    const scale = Math.min(scaleX, scaleY, 1);
+    const scale = Math.min(scaleX, 1);
     const tx = (containerW - graph.svgWidth * scale) / 2;
-    const ty = 0;
-    svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+    svg.call(zoom.transform, d3.zoomIdentity.translate(tx, 0).scale(scale));
   }
 
   return zoom;
@@ -844,15 +841,13 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
     const container = svgRef.current.parentElement;
     if (!container) return;
     const containerW = container.clientWidth;
-    const containerH = container.clientHeight;
     const scaleX = containerW / graph.svgWidth;
-    const scaleY = containerH / graph.svgHeight;
-    const scale = Math.min(scaleX, scaleY, 1);
+    const scale = Math.min(scaleX, 1);
     const tx = (containerW - graph.svgWidth * scale) / 2;
     d3.select(svgRef.current)
       .transition().duration(300)
       .call(zoomRef.current.transform, d3.zoomIdentity.translate(tx, 0).scale(scale));
-  }, [graph.svgWidth, graph.svgHeight]);
+  }, [graph.svgWidth]);
 
   if (loading) {
     return (
@@ -892,7 +887,7 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
         </div>
       </div>
       <div className="session-graph-canvas" style={{ position: "relative" }}>
-        <svg ref={svgRef} style={{ display: "block" }}>
+        <svg ref={svgRef}>
           <g className="zoom-group" />
         </svg>
 
