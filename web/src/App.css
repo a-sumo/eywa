@@ -2404,10 +2404,10 @@ body {
   margin: 0 0 1rem;
   padding: 0.75rem 1rem;
   border-radius: 8px;
-  background: rgba(72, 150, 100, 0.08);
-  border: 1px solid rgba(72, 150, 100, 0.2);
+  background: var(--aurora-green-glow);
+  border: 1px solid rgba(74, 222, 128, 0.25);
   font-size: 0.9rem;
-  color: #3a7a50;
+  color: var(--aurora-green);
 }
 
 /* ============================================
@@ -3860,8 +3860,8 @@ body {
 }
 
 .link-type-fork {
-  background: rgba(81, 207, 102, 0.12);
-  color: #3a8a4e;
+  background: var(--aurora-green-glow);
+  color: var(--aurora-green);
 }
 
 .thread-link-route {
