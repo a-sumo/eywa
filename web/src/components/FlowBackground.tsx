@@ -15,6 +15,7 @@ export function FlowBackground() {
   const animationRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
   const pulseTimeRef = useRef<number>(0);
+  const logoCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -22,6 +23,26 @@ export function FlowBackground() {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // Load and prepare white logo for center glow
+    const LOGO_SIZE = 54;
+    const logoImg = new Image();
+    logoImg.src = "/eywa-logo.svg";
+    logoImg.onload = () => {
+      const aspect = logoImg.width / logoImg.height;
+      const w = LOGO_SIZE;
+      const h = LOGO_SIZE / aspect;
+      const offscreen = document.createElement("canvas");
+      offscreen.width = w;
+      offscreen.height = h;
+      const offCtx = offscreen.getContext("2d")!;
+      offCtx.drawImage(logoImg, 0, 0, w, h);
+      // Tint to white - fill over with 'source-in' to keep alpha, replace color
+      offCtx.globalCompositeOperation = "source-in";
+      offCtx.fillStyle = "rgba(220, 235, 255, 1)";
+      offCtx.fillRect(0, 0, w, h);
+      logoCanvasRef.current = offscreen;
+    };
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -261,28 +282,45 @@ export function FlowBackground() {
         }
       }
 
-      // Eywa core glow
+      // Eywa core glow - radial halo behind the logo
       const coreGlow = ctx.createRadialGradient(
         centerX, centerY, 0,
-        centerX, centerY, 80
+        centerX, centerY, 100
       );
-      coreGlow.addColorStop(0, "rgba(200, 220, 255, 0.15)");
-      coreGlow.addColorStop(0.4, "rgba(150, 180, 255, 0.06)");
+      coreGlow.addColorStop(0, "rgba(200, 220, 255, 0.18)");
+      coreGlow.addColorStop(0.3, "rgba(150, 180, 255, 0.08)");
+      coreGlow.addColorStop(0.7, "rgba(100, 140, 255, 0.02)");
       coreGlow.addColorStop(1, "rgba(100, 140, 255, 0)");
       ctx.fillStyle = coreGlow;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Pulsing inner core
+      // Pulsing logo at center
       const corePulse = Math.sin(pulseTimeRef.current * Math.PI / PULSE_INTERVAL * 2) * 0.3 + 0.7;
-      const innerGlow = ctx.createRadialGradient(
-        centerX, centerY, 0,
-        centerX, centerY, 30
-      );
-      innerGlow.addColorStop(0, `rgba(255, 255, 255, ${0.35 * corePulse})`);
-      innerGlow.addColorStop(0.4, `rgba(220, 235, 255, ${0.15 * corePulse})`);
-      innerGlow.addColorStop(1, "rgba(150, 190, 255, 0)");
-      ctx.fillStyle = innerGlow;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const logoCanvas = logoCanvasRef.current;
+      if (logoCanvas) {
+        const lw = logoCanvas.width;
+        const lh = logoCanvas.height;
+        ctx.save();
+
+        // Subtle breathing scale
+        const breathScale = 1 + (corePulse - 0.7) * 0.08;
+        ctx.translate(centerX, centerY);
+        ctx.scale(breathScale, breathScale);
+
+        // Outer glow layer - draw logo blurred at lower opacity for bloom
+        ctx.shadowColor = "rgba(180, 210, 255, 0.9)";
+        ctx.shadowBlur = 30;
+        ctx.globalAlpha = 0.25 * corePulse;
+        ctx.drawImage(logoCanvas, -lw / 2, -lh / 2);
+
+        // Main logo layer - crisp on top
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "rgba(200, 225, 255, 0.7)";
+        ctx.globalAlpha = 0.55 * corePulse;
+        ctx.drawImage(logoCanvas, -lw / 2, -lh / 2);
+
+        ctx.restore();
+      }
 
       animationRef.current = requestAnimationFrame(animate);
     };

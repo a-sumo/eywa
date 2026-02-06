@@ -8060,7 +8060,7 @@ var AgentTreeProvider = class {
   async getChildren(element) {
     const client2 = this.getClient();
     if (!client2) {
-      return [new UserItem("Configure eywa settings", "", 0, 0)];
+      return [new UserItem("Not connected - run Eywa: Login", "", 0, 0)];
     }
     if (!element) {
       try {
@@ -13018,7 +13018,8 @@ var vscode4 = __toESM(require("vscode"));
 async function injectSelection(getClient) {
   const client2 = getClient();
   if (!client2) {
-    vscode4.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
+    const action = await vscode4.window.showWarningMessage("Not connected to Eywa.", "Login");
+    if (action === "Login") vscode4.commands.executeCommand("eywa.login");
     return;
   }
   const editor = vscode4.window.activeTextEditor;
@@ -13112,6 +13113,69 @@ function registerKnowledgeForFileCommand(context) {
   );
 }
 
+// src/authServer.ts
+var http = __toESM(require("http"));
+function startLoginFlow(openUrl) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const server = http.createServer((req, res) => {
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "86400"
+        });
+        res.end();
+        return;
+      }
+      if (req.method === "POST" && req.url === "/callback") {
+        let body = "";
+        req.on("data", (chunk) => {
+          body += chunk.toString();
+        });
+        req.on("end", () => {
+          res.writeHead(200, {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json"
+          });
+          res.end(JSON.stringify({ ok: true }));
+          try {
+            const data = JSON.parse(body);
+            if (data.supabaseUrl && data.supabaseKey && data.room) {
+              finish(data);
+            } else {
+              finish(null);
+            }
+          } catch {
+            finish(null);
+          }
+        });
+        return;
+      }
+      res.writeHead(404);
+      res.end();
+    });
+    function finish(result) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      server.close();
+      resolve(result);
+    }
+    const timeout = setTimeout(() => finish(null), 6e4);
+    server.listen(0, "127.0.0.1", () => {
+      const addr = server.address();
+      if (!addr || typeof addr === "string") {
+        finish(null);
+        return;
+      }
+      const port = addr.port;
+      openUrl(`https://eywa-ai.dev/cli-auth?port=${port}`);
+    });
+  });
+}
+
 // src/extension.ts
 var client;
 var statusBarItem;
@@ -13203,6 +13267,9 @@ function activate(context) {
     debouncedRefresh();
   }
   initClient(agentProvider, codeLensProvider, handleRealtimeEvent, context);
+  if (!getConfig("room")) {
+    showWelcome();
+  }
   context.subscriptions.push(
     vscode6.window.registerTreeDataProvider("eywaAgents", agentProvider),
     vscode6.window.registerTreeDataProvider("eywaKnowledge", knowledgeProvider),
@@ -13220,6 +13287,32 @@ function activate(context) {
       const room = getConfig("room");
       const url = room ? `https://eywa-ai.dev/r/${room}` : "https://eywa-ai.dev";
       vscode6.env.openExternal(vscode6.Uri.parse(url));
+    }),
+    vscode6.commands.registerCommand("eywa.login", async () => {
+      const result = await vscode6.window.withProgress(
+        {
+          location: vscode6.ProgressLocation.Notification,
+          title: "Waiting for browser login...",
+          cancellable: true
+        },
+        (_progress, token) => {
+          const loginPromise = startLoginFlow((url) => {
+            vscode6.env.openExternal(vscode6.Uri.parse(url));
+          });
+          return new Promise((resolve) => {
+            token.onCancellationRequested(() => resolve(null));
+            loginPromise.then(resolve);
+          });
+        }
+      );
+      if (!result) {
+        return;
+      }
+      const config = vscode6.workspace.getConfiguration("eywa");
+      await config.update("supabaseUrl", result.supabaseUrl, true);
+      await config.update("supabaseKey", result.supabaseKey, true);
+      await config.update("room", result.room, true);
+      vscode6.window.showInformationMessage(`Connected to Eywa room: ${result.room}`);
     }),
     vscode6.commands.registerCommand("eywa.connectAgent", async () => {
       const room = await vscode6.window.showInputBox({
@@ -13253,7 +13346,8 @@ ${mcpUrl}`,
     // Original inject context (manual text input)
     vscode6.commands.registerCommand("eywa.injectContext", async () => {
       if (!client) {
-        vscode6.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
+        const action = await vscode6.window.showWarningMessage("Not connected to Eywa.", "Login");
+        if (action === "Login") vscode6.commands.executeCommand("eywa.login");
         return;
       }
       const agents = await client.getAgents();
@@ -13307,7 +13401,8 @@ Memories: ${s.memoryCount} \xB7 Last seen: ${s.lastSeen}`;
     // Enhanced status bar: QuickPick menu
     vscode6.commands.registerCommand("eywa.showStatus", async () => {
       if (!client) {
-        vscode6.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
+        const action = await vscode6.window.showWarningMessage("Not connected to Eywa.", "Login");
+        if (action === "Login") vscode6.commands.executeCommand("eywa.login");
         return;
       }
       const agents = await client.getAgents();
@@ -13352,6 +13447,18 @@ Memories: ${s.memoryCount} \xB7 Last seen: ${s.lastSeen}`;
       }
     })
   );
+}
+async function showWelcome() {
+  const action = await vscode6.window.showInformationMessage(
+    "Welcome to Eywa! Log in to connect your agents.",
+    "Login with Browser",
+    "Open Dashboard"
+  );
+  if (action === "Login with Browser") {
+    vscode6.commands.executeCommand("eywa.login");
+  } else if (action === "Open Dashboard") {
+    vscode6.commands.executeCommand("eywa.openDashboard");
+  }
 }
 function getConfig(key) {
   return vscode6.workspace.getConfiguration("eywa").get(key) ?? "";

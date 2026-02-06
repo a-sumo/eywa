@@ -12,6 +12,7 @@ import { EywaClient } from "./client";
 import { RealtimeManager, type MemoryPayload } from "./realtime";
 import { injectSelection } from "./injectCommand";
 import { KnowledgeCodeLensProvider, registerKnowledgeForFileCommand } from "./knowledgeLens";
+import { startLoginFlow } from "./authServer";
 
 let client: EywaClient | undefined;
 let statusBarItem: vscode.StatusBarItem;
@@ -150,6 +151,35 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.env.openExternal(vscode.Uri.parse(url));
     }),
 
+    vscode.commands.registerCommand("eywa.login", async () => {
+      const result = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Waiting for browser login...",
+          cancellable: true,
+        },
+        (_progress, token) => {
+          const loginPromise = startLoginFlow((url) => {
+            vscode.env.openExternal(vscode.Uri.parse(url));
+          });
+          return new Promise<Awaited<typeof loginPromise>>((resolve) => {
+            token.onCancellationRequested(() => resolve(null));
+            loginPromise.then(resolve);
+          });
+        },
+      );
+
+      if (!result) {
+        return;
+      }
+
+      const config = vscode.workspace.getConfiguration("eywa");
+      await config.update("supabaseUrl", result.supabaseUrl, true);
+      await config.update("supabaseKey", result.supabaseKey, true);
+      await config.update("room", result.room, true);
+      vscode.window.showInformationMessage(`Connected to Eywa room: ${result.room}`);
+    }),
+
     vscode.commands.registerCommand("eywa.connectAgent", async () => {
       const room = await vscode.window.showInputBox({
         prompt: "Room slug",
@@ -186,7 +216,8 @@ export function activate(context: vscode.ExtensionContext) {
     // Original inject context (manual text input)
     vscode.commands.registerCommand("eywa.injectContext", async () => {
       if (!client) {
-        vscode.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
+        const action = await vscode.window.showWarningMessage("Not connected to Eywa.", "Login");
+        if (action === "Login") vscode.commands.executeCommand("eywa.login");
         return;
       }
 
@@ -248,7 +279,8 @@ export function activate(context: vscode.ExtensionContext) {
     // Enhanced status bar: QuickPick menu
     vscode.commands.registerCommand("eywa.showStatus", async () => {
       if (!client) {
-        vscode.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
+        const action = await vscode.window.showWarningMessage("Not connected to Eywa.", "Login");
+        if (action === "Login") vscode.commands.executeCommand("eywa.login");
         return;
       }
 
@@ -308,12 +340,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 async function showWelcome() {
   const action = await vscode.window.showInformationMessage(
-    "Welcome to Eywa! Connect your agents by setting a room.",
-    "Set Room",
+    "Welcome to Eywa! Log in to connect your agents.",
+    "Login with Browser",
     "Open Dashboard",
   );
-  if (action === "Set Room") {
-    vscode.commands.executeCommand("eywa.connectAgent");
+  if (action === "Login with Browser") {
+    vscode.commands.executeCommand("eywa.login");
   } else if (action === "Open Dashboard") {
     vscode.commands.executeCommand("eywa.openDashboard");
   }

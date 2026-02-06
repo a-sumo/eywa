@@ -21,10 +21,17 @@ __pycache__/
 .dev.vars
 worker/.dev.vars
 
-# Lens Studio (remix-specs)
+# Lens Studio
 remix-specs/Cache/
 remix-specs/Support/
 remix-specs/BackUp/
+eywa-specs/Cache/
+eywa-specs/Support/
+eywa-specs/BackUp/
+eywa-specs/Assets/RemoteServiceGateway.lspkg/
+eywa-specs/PluginsUserPreferences/
+eywa-specs/Workspaces/
+eywa-specs/*.lock
 
 # OS
 .DS_Store
