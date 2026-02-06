@@ -11,6 +11,16 @@
  * 4. Optionally add a ColliderComponent for precise raycasting
  */
 
+// SIK interaction event type (varies by SIK version)
+interface InteractionEvent {
+  interactor: {
+    targetHitInfo: {
+      hit: boolean;
+      position: vec3;
+    } | null;
+  };
+}
+
 @component
 export class RemoteUI extends BaseScriptComponent {
   /** Base URL for the Eywa server */
