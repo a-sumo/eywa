@@ -36,7 +36,7 @@ export function RoomLayout({ children }: RoomLayoutProps) {
     <div className="app">
       <header className="app-header">
         <Link to="/" className="logo-link">
-          <h1>Remix</h1>
+          <h1>Eywa</h1>
         </Link>
         <RoomHeader />
       </header>
@@ -50,7 +50,7 @@ export function RoomLayout({ children }: RoomLayoutProps) {
       </div>
       <nav className="mobile-tabs">
         <Link to={`/r/${slug}`}>Threads</Link>
-        <Link to={`/r/${slug}/remix/new`}>Remix</Link>
+        <Link to={`/r/${slug}/remix/new`}>Session</Link>
         <Link to={`/r/${slug}/remix3d`}>3D</Link>
         <Link to={`/r/${slug}/chat`}>Chat</Link>
         <Link to={`/r/${slug}/graph`}>Graph</Link>

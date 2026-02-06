@@ -600,7 +600,7 @@ export function ThreadTree() {
           className="btn-remix-new"
           onClick={() => navigate(`/r/${slug}/remix/new`)}
         >
-          + New Remix
+          + New Session
         </button>
       </div>
 

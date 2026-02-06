@@ -70,7 +70,7 @@ export function ThreadView() {
             })
           }
         >
-          Remix this thread
+          Mix this thread
         </button>
       </div>
 

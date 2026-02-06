@@ -33,7 +33,7 @@ export function AgentList() {
         className={`agent-chip remix-primary ${isActive(`${basePath}/remix/new`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/remix/new`)}
       >
-        + New Remix
+        + New Session
       </button>
       <button
         className={`agent-chip ${isActive(`${basePath}/chat`) ? "active" : ""}`}

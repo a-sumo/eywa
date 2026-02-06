@@ -48,14 +48,14 @@ export function useGeminiChat(systemContext: string) {
         ? {
             parts: [
               {
-                text: `You are a helpful AI assistant analyzing shared context from multiple AI agent threads in a Remix room. Here is the context:\n\n${systemContext}\n\nHelp the user understand, compare, and work with this context. Be concise and direct.`,
+                text: `You are a helpful AI assistant analyzing shared context from multiple AI agent threads in an Eywa room. Here is the context:\n\n${systemContext}\n\nHelp the user understand, compare, and work with this context. Be concise and direct.`,
               },
             ],
           }
         : {
             parts: [
               {
-                text: "You are a helpful AI assistant in Remix, a tool for managing multi-agent AI conversations. The user hasn't added any context yet - suggest they drag memories into the context panel first.",
+                text: "You are a helpful AI assistant in Eywa, a tool for managing multi-agent AI conversations. The user hasn't added any context yet - suggest they drag memories into the context panel first.",
               },
             ],
           };

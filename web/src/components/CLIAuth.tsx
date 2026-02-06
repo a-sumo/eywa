@@ -107,7 +107,7 @@ export function CLIAuth() {
   return (
     <div className="cli-auth">
       <div className="cli-auth-card">
-        <h1>Authorize Remix CLI</h1>
+        <h1>Authorize Eywa CLI</h1>
         <p>Select a room to connect your terminal to:</p>
 
         <div className="cli-auth-rooms">

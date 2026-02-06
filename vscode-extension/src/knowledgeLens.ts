@@ -49,7 +49,7 @@ export class KnowledgeCodeLensProvider implements vscode.CodeLensProvider {
 
     return [
       new vscode.CodeLens(range, {
-        title: `$(book) Remix: ${matches.length} knowledge entr${matches.length === 1 ? "y" : "ies"} about this file`,
+        title: `$(book) Eywa: ${matches.length} knowledge entr${matches.length === 1 ? "y" : "ies"} about this file`,
         command: "remix.showKnowledgeForFile",
         arguments: [matches],
         tooltip: titles,
@@ -62,9 +62,9 @@ export class KnowledgeCodeLensProvider implements vscode.CodeLensProvider {
 export function registerKnowledgeForFileCommand(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand("remix.showKnowledgeForFile", (entries: KnowledgeEntry[]) => {
-      const channel = vscode.window.createOutputChannel("Remix Knowledge");
+      const channel = vscode.window.createOutputChannel("Eywa Knowledge");
       channel.clear();
-      channel.appendLine(`Remix Knowledge — ${entries.length} entries\n`);
+      channel.appendLine(`Eywa Knowledge - ${entries.length} entries\n`);
       for (const e of entries) {
         channel.appendLine(`--- ${e.title || "(untitled)"} ---`);
         channel.appendLine(`Agent: ${e.agent} · Tags: ${e.tags.join(", ")}`);

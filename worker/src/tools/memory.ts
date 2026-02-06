@@ -14,7 +14,7 @@ export function registerMemoryTools(
 ) {
   server.tool(
     "remix_log",
-    "Log a message to Remix shared memory.",
+    "Log a message to Eywa shared memory.",
     {
       role: z
         .string()
@@ -33,7 +33,7 @@ export function registerMemoryTools(
       });
       return {
         content: [
-          { type: "text" as const, text: `Logged to Remix [${ctx.agent}:${role}]` },
+          { type: "text" as const, text: `Logged to Eywa [${ctx.agent}:${role}]` },
         ],
       };
     },
@@ -112,7 +112,7 @@ export function registerMemoryTools(
 
   server.tool(
     "remix_import",
-    "Bulk-import a conversation transcript into Remix. Use this to upload an existing session's history.",
+    "Bulk-import a conversation transcript into Eywa. Use this to upload an existing session's history.",
     {
       messages: z
         .array(
@@ -160,7 +160,7 @@ export function registerMemoryTools(
         content: [
           {
             type: "text" as const,
-            text: `Imported ${count} messages into Remix [${ctx.agent}:${ctx.sessionId}]${task_description ? `\nTask: ${task_description}` : ""}`,
+            text: `Imported ${count} messages into Eywa [${ctx.agent}:${ctx.sessionId}]${task_description ? `\nTask: ${task_description}` : ""}`,
           },
         ],
       };
@@ -169,7 +169,7 @@ export function registerMemoryTools(
 
   server.tool(
     "remix_search",
-    "Search Remix for messages containing a query string.",
+    "Search Eywa for messages containing a query string.",
     {
       query: z.string().describe("Text to search for"),
       limit: z.number().optional().default(10).describe("Maximum results"),

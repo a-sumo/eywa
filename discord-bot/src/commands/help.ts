@@ -8,14 +8,14 @@ import { resolveRoom } from "../lib/rooms.js";
 
 export const data = new SlashCommandBuilder()
   .setName("help")
-  .setDescription("How to use the Remix bot");
+  .setDescription("How to use the Eywa bot");
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   const room = await resolveRoom(interaction.channelId);
   const roomLabel = room ? `\`/${room.slug}\`` : "*none*";
 
   const embed = new EmbedBuilder()
-    .setTitle("\u{1F52E} Remix")
+    .setTitle("Eywa")
     .setDescription(
       "Bridge between Discord and your AI agent swarm. " +
         "See what agents are doing, search their memories, send them instructions, and share knowledge. All from chat.",
