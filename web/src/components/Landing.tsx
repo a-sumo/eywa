@@ -1,5 +1,6 @@
 import { useRoom } from "../hooks/useRoom";
 import { FlowBackground } from "./FlowBackground";
+import EywaLogo from "./EywaLogo";
 
 // SVG Icons
 const IconThreads = () => (
@@ -75,7 +76,10 @@ export function Landing() {
       {/* Header */}
       <header className="landing-header">
         <div className="landing-header-inner">
-          <a href="/" className="landing-logo">Eywa</a>
+          <a href="/" className="landing-logo">
+            <EywaLogo size={36} />
+            <span>Eywa</span>
+          </a>
           <nav className="landing-nav">
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
@@ -108,7 +112,7 @@ export function Landing() {
             Work gets <span className="pain-word pain-duplicated">duplicated</span>.
           </p>
           <p className="landing-hero-solution">
-            Eywa gives your team shared visibility and control.
+            Eywa connects every human-AI partnership on your team, so the whole is greater than the sum of its parts.
           </p>
           <div className="landing-hero-actions">
             <a href="/r/demo" className="btn-landing-primary btn-large">
@@ -245,16 +249,70 @@ export function Landing() {
         </div>
       </section>
 
+      {/* Powered by Gemini */}
+      <section className="landing-section landing-gemini-section">
+        <div className="landing-gemini-content">
+          <a
+            href="https://gemini.google/us/about"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="landing-gemini-logo"
+          >
+            <img src="/gemini.svg" alt="Gemini" className="gemini-logo-img" />
+            <span className="gemini-logo-text">Gemini</span>
+          </a>
+          <h2 className="landing-gemini-title">Orchestration powered by Gemini</h2>
+          <p className="landing-gemini-description">
+            Eywa's communication engine is built on <strong>Google Gemini</strong>.
+            When you use the Remix workspace to combine context from multiple agent threads,
+            Gemini synthesizes the information, resolves conflicts, and generates coherent responses
+            that understand the full picture of your team's work.
+          </p>
+          <div className="landing-gemini-features">
+            <div className="landing-gemini-feature">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+              <span>Multi-context synthesis</span>
+            </div>
+            <div className="landing-gemini-feature">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              <span>Real-time reasoning</span>
+            </div>
+            <div className="landing-gemini-feature">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <span>Conversational interface</span>
+            </div>
+          </div>
+          <a
+            href="https://gemini.google/us/about"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-landing-secondary landing-gemini-cta"
+          >
+            Learn more about Gemini
+            <IconArrowRight />
+          </a>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section className="landing-section landing-section-alt" id="pricing">
         <h2 className="landing-section-title">Simple pricing</h2>
         <div className="landing-pricing-grid">
           <div className="landing-pricing-card">
-            <h3>Free</h3>
+            <h3>Starter</h3>
             <div className="landing-pricing-price">$0</div>
             <ul className="landing-pricing-features">
-              <li>Up to 3 agents</li>
-              <li>1 room</li>
+              <li>Up to 3 team members</li>
+              <li>1 shared workspace</li>
               <li>7-day history</li>
               <li>Community support</li>
             </ul>
@@ -265,14 +323,14 @@ export function Landing() {
           <div className="landing-pricing-card landing-pricing-featured">
             <div className="landing-pricing-badge">Popular</div>
             <h3>Team</h3>
-            <div className="landing-pricing-price">$29<span>/month</span></div>
+            <div className="landing-pricing-price">$19<span>/seat/month</span></div>
             <ul className="landing-pricing-features">
-              <li>Unlimited agents</li>
-              <li>Unlimited rooms</li>
+              <li>Unlimited team members</li>
+              <li>Unlimited workspaces</li>
               <li>90-day history</li>
+              <li>Team bookmarks + decisions</li>
+              <li>VS Code + Discord integrations</li>
               <li>Priority support</li>
-              <li>VS Code extension</li>
-              <li>Discord bot</li>
             </ul>
             <button className="btn-landing-primary" style={{ width: "100%" }} onClick={() => createRoom()}>
               Get Started
@@ -283,10 +341,10 @@ export function Landing() {
             <div className="landing-pricing-price">Custom</div>
             <ul className="landing-pricing-features">
               <li>Everything in Team</li>
-              <li>Self-hosted option</li>
+              <li>Self-hosted deployment</li>
               <li>SSO / SAML</li>
-              <li>Audit logs</li>
-              <li>Dedicated support</li>
+              <li>Audit logs + compliance</li>
+              <li>Dedicated success manager</li>
             </ul>
             <a href="https://discord.gg/c7V2Ze58" className="btn-landing-secondary" style={{ width: "100%" }} target="_blank" rel="noopener noreferrer">
               Contact Sales
@@ -297,8 +355,8 @@ export function Landing() {
 
       {/* CTA */}
       <section className="landing-cta-section">
-        <h2>Stop re-doing work your teammate's AI already figured out.</h2>
-        <p>Join teams using Eywa to coordinate their AI agents.</p>
+        <h2>Accelerate your team's collective intelligence.</h2>
+        <p>When humans and AI work together, coordination becomes the multiplier. Eywa connects every human-AI partnership on your team.</p>
         <div className="landing-hero-actions">
           <a href="/r/demo" className="btn-landing-primary btn-large">
             Try the Demo
@@ -348,6 +406,14 @@ export function Landing() {
         </div>
         <div className="landing-footer-bottom">
           <p>© 2026 Eywa. Built for hackathons and dev teams.</p>
+          <a
+            href="https://gemini.google/us/about"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-gemini-link"
+          >
+            Orchestration powered by Gemini
+          </a>
         </div>
       </footer>
     </div>
