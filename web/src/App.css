@@ -4394,13 +4394,13 @@ html {
    ============================================ */
 
 :root {
-  --eink-black: #000000;
-  --eink-white: #FFFFFF;
-  --eink-red: #FF0000;
-  --eink-green: #00FF00;
-  --eink-blue: #0000FF;
-  --eink-yellow: #FFFF00;
-  --eink-orange: #FF8000;
+  --eink-black: #6B7280;   /* soft gray */
+  --eink-white: #FFFDF8;   /* warm cream */
+  --eink-red: #E8A0A0;     /* soft rose */
+  --eink-green: #A8D8B4;   /* soft sage */
+  --eink-blue: #A0C4E8;    /* soft sky */
+  --eink-yellow: #F0E6A0;  /* soft butter */
+  --eink-orange: #F0C8A0;  /* soft peach */
 }
 
 .eink-container {
