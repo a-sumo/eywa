@@ -1,13 +1,14 @@
 CollapsedEntities:
   type: stringset
   value:
-    size: 449
+    size: 450
     values:
       - 1-1.png
       - Echopark.hdr
       - MicroTilePanel.ts
       - RealtimePanel.ts
       - RealtimeTextureReceiver.ts
+      - RemoteServiceGateway.lspkg
       - RemoteServiceGateway.lspkg/package.native
       - SnapCloudRequirements.ts
       - SpectaclesInteractionKit.lspkg
