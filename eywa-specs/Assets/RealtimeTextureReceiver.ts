@@ -138,10 +138,12 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
     try {
       this.updateStatus("connecting");
 
-      this.client = createClient(
-        this.snapCloudRequirements.getSupabaseUrl(),
-        this.snapCloudRequirements.getSupabasePublicToken()
-      );
+      const url = this.snapCloudRequirements.getSupabaseUrl();
+      const key = this.snapCloudRequirements.getSupabasePublicToken();
+      this.log("Supabase URL: " + url);
+      this.log("Supabase key: " + key.substring(0, 20) + "...");
+
+      this.client = createClient(url, key);
 
       if (!this.client) {
         this.log("Failed to create Supabase client");
@@ -149,10 +151,17 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
         return;
       }
 
-      await this.client.auth.signInWithIdToken({
-        provider: "snapchat",
-        token: "spectacles-auth-token"
-      });
+      // Auth is optional for broadcast channels. Try Snapchat SSO
+      // (works on device), but proceed regardless if it fails (editor/preview).
+      try {
+        await this.client.auth.signInWithIdToken({
+          provider: "snapchat",
+          token: "spectacles-auth-token"
+        });
+        this.log("Auth succeeded (Snapchat SSO)");
+      } catch (authErr) {
+        this.log("Auth skipped (broadcast does not require auth): " + authErr);
+      }
 
       await this.subscribeToChannel();
       await this.joinLobby();
@@ -172,13 +181,15 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
       config: { broadcast: { self: false, ack: false } }
     });
 
-    // Listen for tile events (new format)
+    // Listen for tile events (grid format)
     this.realtimeChannel.on("broadcast", { event: "tile" }, (msg) => {
+      this.log(">> tile event received");
       this.onTile(msg.payload);
     });
 
     // Listen for frame events (legacy single-quad format)
     this.realtimeChannel.on("broadcast", { event: "frame" }, (msg) => {
+      this.log(">> frame event received");
       this.onFrame(msg.payload);
     });
 
@@ -191,6 +202,7 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
 
     // Micro-tile protocol: scene ops (create/move/destroy quads)
     this.realtimeChannel.on("broadcast", { event: "scene" }, (msg) => {
+      this.log(">> scene event: " + JSON.stringify(msg.payload).substring(0, 120));
       if (this.onSceneCallback) {
         this.onSceneCallback(msg.payload);
       }
@@ -202,11 +214,13 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
     });
 
     this.realtimeChannel.subscribe((status) => {
-      this.log("Channel: " + status);
+      this.log("Channel status: " + status + " (key: " + channelKey + ")");
       if (status === "SUBSCRIBED") {
         this.updateStatus("connected");
+        this.log("SUCCESS: Subscribed to " + channelKey + ". Waiting for events...");
       } else if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         this.updateStatus("error: " + status.toLowerCase());
+        this.log("FAILED: Channel " + channelKey + " status: " + status);
       }
     });
   }
