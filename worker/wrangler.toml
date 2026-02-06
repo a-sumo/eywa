@@ -6,11 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 [alias]
 ai = "./src/shims/ai.ts"
 
-# The worker uses the service_role key (server-side only, bypasses RLS).
-# NEVER expose this key in client code (web, VS Code extension, CLI).
-#
-# After running `wrangler secret put SUPABASE_KEY`, remove SUPABASE_KEY from [vars] below.
+# The worker needs the service_role key (server-side only, bypasses RLS).
+# Set it via: wrangler secret put SUPABASE_KEY
+# NEVER put the service_role key in this file or any client code.
 [vars]
 SUPABASE_URL = "https://beknjtxysmznenkotjvv.snapcloud.dev"
-# TEMPORARY: Remove this line after running `wrangler secret put SUPABASE_KEY`
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjEzNjM1NiwiZXhwIjoyMDgxNzEyMzU2fQ.Pp6DrVfZs2_XvbobCm0hLSCxpfxoK-SvVzgduFIcp_Q"

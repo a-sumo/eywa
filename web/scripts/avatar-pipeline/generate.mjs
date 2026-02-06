@@ -16,7 +16,11 @@ import { execSync } from "child_process";
 import { existsSync } from "fs";
 import path from "path";
 
-const API_KEY = process.env.VITE_GEMINI_API_KEY || "AIzaSyDhkpOu6it90ZJDPpu9lW-DAb6vKmvoWqs";
+const API_KEY = process.env.VITE_GEMINI_API_KEY;
+if (!API_KEY) {
+  console.error("Set VITE_GEMINI_API_KEY env var first");
+  process.exit(1);
+}
 const OUT_DIR = path.resolve("scripts/avatar-pipeline/out");
 const RASTER_DIR = path.join(OUT_DIR, "rasters");
 const SVG_DIR = path.join(OUT_DIR, "svgs");

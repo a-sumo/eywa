@@ -10,7 +10,7 @@ import { join } from "node:path";
 // Uses the anon key (public, RLS-enforced). NOT the service_role key.
 
 const SUPABASE_URL = "https://beknjtxysmznenkotjvv.snapcloud.dev";
-const SUPABASE_KEY = "PASTE_ANON_KEY_HERE";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzYzNTYsImV4cCI6MjA4MTcxMjM1Nn0.5ecajJdpaK4FN-CuQI2ExfZWhCZl0rUrbFT6MGV-egs";
 
 const MCP_BASE = "https://mcp.eywa-ai.dev/mcp";
 const DASHBOARD_BASE = "https://eywa-ai.dev/r";
