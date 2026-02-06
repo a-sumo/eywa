@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { RemixContext, MemoryRow, LinkRow } from "../lib/types.js";
+import type { EywaContext, MemoryRow, LinkRow } from "../lib/types.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
@@ -26,10 +26,10 @@ async function getLatestMemoryId(
 export function registerInjectTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: RemixContext,
+  ctx: EywaContext,
 ) {
   server.tool(
-    "remix_inject",
+    "eywa_inject",
     "Push curated context or instructions to another agent. They'll see it in their inbox next time they check.",
     {
       target: z.string().describe("Target agent name, or 'all' for broadcast"),
@@ -65,7 +65,7 @@ export function registerInjectTools(
   );
 
   server.tool(
-    "remix_inbox",
+    "eywa_inbox",
     "Check for context injections sent to you by other agents or the user. Call this periodically to stay in sync.",
     {
       limit: z.number().optional().default(10).describe("Maximum injections to retrieve"),

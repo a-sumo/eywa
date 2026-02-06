@@ -14,6 +14,7 @@ export interface TileDescriptor {
   type: string;
   x: number; // position in cm (Spectacles world units)
   y: number;
+  z?: number; // explicit z position (overrides layer-based z). Used for background tiles at z=0.
   w: number; // canvas pixel width (determines aspect ratio)
   h: number; // canvas pixel height
   scale: number;
@@ -40,6 +41,7 @@ export class MicroTile {
   // Position and layout (in cm, Spectacles world units)
   x = 0;
   y = 0;
+  z: number | undefined = undefined; // explicit z (overrides layer-based z on Spectacles)
   w: number;
   h: number;
   scale = 1.0;
@@ -120,11 +122,12 @@ export class MicroTile {
    */
   applyDescriptor(desc: TileDescriptor): boolean {
     let moved = false;
-    if (this.x !== desc.x || this.y !== desc.y || this.scale !== desc.scale || this.layer !== desc.layer) {
+    if (this.x !== desc.x || this.y !== desc.y || this.scale !== desc.scale || this.layer !== desc.layer || this.z !== desc.z) {
       moved = true;
     }
     this.x = desc.x;
     this.y = desc.y;
+    this.z = desc.z;
     this.scale = desc.scale;
     this.layer = desc.layer;
     this.interactive = desc.interactive;

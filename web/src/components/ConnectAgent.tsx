@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const WORKER_URL = "https://remix-mcp.armandsumo.workers.dev/mcp";
+const WORKER_URL = "https://mcp.eywa-ai.dev/mcp";
 
 type Client = "claude" | "cursor" | "gemini" | "cline";
 
@@ -119,7 +119,7 @@ function getSetupSteps(client: Client): string[] {
   }
 }
 
-const QUICK_START_PROMPT = `Start logging to Eywa. Call remix_start with a description of what we're working on, then use remix_import to upload a summary of our conversation so far. After that, periodically call remix_log for important exchanges.`;
+const QUICK_START_PROMPT = `Start logging to Eywa. Call eywa_start with a description of what we're working on, then use eywa_import to upload a summary of our conversation so far. After that, periodically call eywa_log for important exchanges.`;
 
 interface ConnectAgentProps {
   slug: string;
@@ -282,17 +282,17 @@ echo "Eywa configured for Gemini CLI"`;
           <div className="connect-agent-tools-info">
             <span className="connect-agent-hint">Available tools once connected:</span>
             <div className="connect-tools-grid">
-              <span className="connect-tool-tag">remix_start</span>
+              <span className="connect-tool-tag">eywa_start</span>
               <span className="connect-tool-desc">Begin logging a session</span>
-              <span className="connect-tool-tag">remix_log</span>
+              <span className="connect-tool-tag">eywa_log</span>
               <span className="connect-tool-desc">Log important exchanges</span>
-              <span className="connect-tool-tag">remix_import</span>
+              <span className="connect-tool-tag">eywa_import</span>
               <span className="connect-tool-desc">Bulk-upload conversation history</span>
-              <span className="connect-tool-tag">remix_file</span>
+              <span className="connect-tool-tag">eywa_file</span>
               <span className="connect-tool-desc">Store code files</span>
-              <span className="connect-tool-tag">remix_sync</span>
+              <span className="connect-tool-tag">eywa_sync</span>
               <span className="connect-tool-desc">Pull another agent's context</span>
-              <span className="connect-tool-tag">remix_msg</span>
+              <span className="connect-tool-tag">eywa_msg</span>
               <span className="connect-tool-desc">Message teammates</span>
             </div>
           </div>

@@ -1,4 +1,4 @@
--- Remix: Row Level Security policies
+-- Eywa: Row Level Security policies
 -- Run this in Supabase SQL Editor AFTER switching web to the anon key.
 --
 -- Policy design:

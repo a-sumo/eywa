@@ -33,12 +33,12 @@ const C = {
   border: "#30363d",
 };
 
-// Max scene ops per broadcast batch
-const MAX_OPS_PER_FRAME = 10;
+// Max scene ops per broadcast batch (high enough for initial burst of ~20 tiles)
+const MAX_OPS_PER_FRAME = 30;
 // Max textures per broadcast frame
-const MAX_TEX_PER_FRAME = 3;
+const MAX_TEX_PER_FRAME = 4;
 // Broadcast interval for scene ops (ms)
-const SCENE_BROADCAST_INTERVAL = 200; // 5fps
+const SCENE_BROADCAST_INTERVAL = 100; // 10fps
 
 interface ConnectedDevice {
   deviceId: string;
@@ -332,6 +332,9 @@ export function SpectaclesView() {
     };
   }, [broadcasting, room?.slug, deviceId, handleTileInteraction]);
 
+  // Track last hovered tile to avoid spamming visibility ops
+  const lastHoveredRef = useRef<string | null>(null);
+
   // --- Render loop ---
   useEffect(() => {
     let animId: number;
@@ -354,15 +357,18 @@ export function SpectaclesView() {
       // 3. Render dirty tiles
       scene.renderDirty();
 
-      // 4. Handle hover glow positioning
-      if (hoveredTileId) {
-        const hoveredTile = scene.getTile(hoveredTileId);
-        if (hoveredTile) {
-          scene.queueVisibilityOp("hover-glow", true);
-          scene.queueMoveOp("hover-glow", hoveredTile.x, hoveredTile.y);
+      // 4. Handle hover glow positioning (only on change)
+      if (hoveredTileId !== lastHoveredRef.current) {
+        lastHoveredRef.current = hoveredTileId;
+        if (hoveredTileId) {
+          const hoveredTile = scene.getTile(hoveredTileId);
+          if (hoveredTile) {
+            scene.queueVisibilityOp("hover-glow", true);
+            scene.queueMoveOp("hover-glow", hoveredTile.x, hoveredTile.y);
+          }
+        } else {
+          scene.queueVisibilityOp("hover-glow", false);
         }
-      } else {
-        scene.queueVisibilityOp("hover-glow", false);
       }
 
       // 5. Draw preview to visible canvas
@@ -432,14 +438,12 @@ export function SpectaclesView() {
     if (!channel || !channelReady) return;
 
     const now = performance.now();
-    const queue = scene.getBroadcastQueue();
 
-    // Throttle scene ops to 5fps
-    if (queue.sceneOps.length > 0 && now - lastSceneBroadcast.current >= SCENE_BROADCAST_INTERVAL) {
+    // Throttle scene ops to 10fps. Only take from queue when we're ready to send.
+    if (scene.pendingOpCount > 0 && now - lastSceneBroadcast.current >= SCENE_BROADCAST_INTERVAL) {
       lastSceneBroadcast.current = now;
 
-      // Batch ops
-      const ops = queue.sceneOps.slice(0, MAX_OPS_PER_FRAME);
+      const ops = scene.takeOps(MAX_OPS_PER_FRAME);
       if (ops.length === 1) {
         channel.send({
           type: "broadcast",
@@ -455,14 +459,16 @@ export function SpectaclesView() {
       }
     }
 
-    // Send textures (up to MAX_TEX_PER_FRAME per frame)
-    const textures = queue.textures.slice(0, MAX_TEX_PER_FRAME);
-    for (const tex of textures) {
-      channel.send({
-        type: "broadcast",
-        event: "tex",
-        payload: tex,
-      }).catch(() => {});
+    // Send textures when available (up to MAX_TEX_PER_FRAME per broadcast)
+    if (scene.pendingTexCount > 0) {
+      const textures = scene.takeTextures(MAX_TEX_PER_FRAME);
+      for (const tex of textures) {
+        channel.send({
+          type: "broadcast",
+          event: "tex",
+          payload: tex,
+        }).catch(() => {});
+      }
     }
   }, [channelReady]);
 

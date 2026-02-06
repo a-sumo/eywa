@@ -11,7 +11,7 @@ export function EmptyState({ type }: EmptyStateProps) {
     agents: {
       title: "No agents connected",
       description: "Connect an agent using the MCP tool",
-      code: room ? `remix_join("${room.slug}", "my-agent")` : 'remix_join("slug", "name")',
+      code: room ? `eywa_join("${room.slug}", "my-agent")` : 'eywa_join("slug", "name")',
     },
     memories: {
       title: "No memories yet",

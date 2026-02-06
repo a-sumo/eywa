@@ -1,6 +1,6 @@
-# Remix Pi Displays
+# Eywa Pi Displays
 
-Raspberry Pi scripts for physical Remix displays.
+Raspberry Pi scripts for physical Eywa displays.
 
 ## Hardware
 
@@ -27,7 +27,7 @@ sudo python3 setup.py install
 
 ### 3. Install Python deps
 ```bash
-cd ~/remix/pi-display
+cd ~/eywa/pi-display
 pip install -r requirements.txt
 ```
 
@@ -39,7 +39,7 @@ export SUPABASE_KEY="your-anon-key"
 
 ### 5. Run
 ```bash
-# Test once (saves preview to /tmp/remix_eink_preview.png)
+# Test once (saves preview to /tmp/eywa_eink_preview.png)
 python eink_display.py --room demo --once
 
 # Run continuously (60s refresh)
@@ -49,12 +49,12 @@ python eink_display.py --room demo --interval 60
 ### 6. Auto-start on boot
 ```bash
 # Add to /etc/rc.local or create a systemd service
-sudo nano /etc/systemd/system/remix-eink.service
+sudo nano /etc/systemd/system/eywa-eink.service
 ```
 
 ```ini
 [Unit]
-Description=Remix E-Ink Display
+Description=Eywa E-Ink Display
 After=network.target
 
 [Service]
@@ -62,7 +62,7 @@ Type=simple
 User=pi
 Environment=SUPABASE_URL=https://your-project.supabase.co
 Environment=SUPABASE_KEY=your-anon-key
-WorkingDirectory=/home/pi/remix/pi-display
+WorkingDirectory=/home/pi/eywa/pi-display
 ExecStart=/usr/bin/python3 eink_display.py --room demo --interval 60
 Restart=always
 
@@ -71,8 +71,8 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-sudo systemctl enable remix-eink
-sudo systemctl start remix-eink
+sudo systemctl enable eywa-eink
+sudo systemctl start eywa-eink
 ```
 
 ## TFT Touch Setup (ILI9341 3.5")
@@ -95,7 +95,7 @@ python tft_touch.py --room demo
 
 ## Spectacles Tracking
 
-The e-ink display includes a tracking marker in the top-right corner. This marker is designed for Snap Spectacles image tracking. When viewed through Spectacles, the RemixPanel AR interface appears anchored to the physical display.
+The e-ink display includes a tracking marker in the top-right corner. This marker is designed for Snap Spectacles image tracking. When viewed through Spectacles, the EywaPanel AR interface appears anchored to the physical display.
 
 See `remix-specs/` for the Lens Studio project.
 

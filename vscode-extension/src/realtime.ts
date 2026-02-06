@@ -1,5 +1,5 @@
 /**
- * Supabase Realtime channel wrapper for the Remix VS Code extension.
+ * Supabase Realtime channel wrapper for the Eywa VS Code extension.
  * Subscribes to postgres_changes on the memories table and fans out
  * INSERT events to registered listeners (activity feed, agent tree, etc.).
  */

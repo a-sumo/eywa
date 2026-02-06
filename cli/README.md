@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ArmandSumo/remix/main/web/public/eywa-logo-no-bg.svg" width="48" alt="Eywa" />
+  <img src="https://raw.githubusercontent.com/ArmandSumo/eywa/main/web/public/eywa-logo-no-bg.svg" width="48" alt="Eywa" />
 </p>
 
 <h1 align="center">eywa-ai</h1>
@@ -10,9 +10,9 @@
 </p>
 
 <p align="center">
-  <a href="https://remix-memory.vercel.app"><img src="https://img.shields.io/badge/dashboard-live-15D1FF" alt="Dashboard"></a>
-  <a href="https://github.com/ArmandSumo/remix"><img src="https://img.shields.io/badge/GitHub-repo-6417EC" alt="GitHub"></a>
-  <a href="https://github.com/ArmandSumo/remix/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
+  <a href="https://eywa-ai.dev"><img src="https://img.shields.io/badge/dashboard-live-15D1FF" alt="Dashboard"></a>
+  <a href="https://github.com/ArmandSumo/eywa"><img src="https://img.shields.io/badge/GitHub-repo-6417EC" alt="GitHub"></a>
+  <a href="https://github.com/ArmandSumo/eywa/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
 ---
@@ -48,7 +48,7 @@ After `init` or `join`, you'll see configs for each agent. Here's the gist:
 
 **Claude Code**
 ```bash
-claude mcp add --transport http eywa "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=claude/alice"
+claude mcp add --transport http eywa "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=claude/alice"
 ```
 
 **Cursor** (`.cursor/mcp.json`)
@@ -56,7 +56,7 @@ claude mcp add --transport http eywa "https://remix-mcp.armandsumo.workers.dev/m
 {
   "mcpServers": {
     "eywa": {
-      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=cursor/alice"
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cursor/alice"
     }
   }
 }
@@ -67,7 +67,7 @@ claude mcp add --transport http eywa "https://remix-mcp.armandsumo.workers.dev/m
 {
   "mcpServers": {
     "eywa": {
-      "httpUrl": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=gemini/alice"
+      "httpUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=gemini/alice"
     }
   }
 }
@@ -78,7 +78,7 @@ claude mcp add --transport http eywa "https://remix-mcp.armandsumo.workers.dev/m
 {
   "mcpServers": {
     "eywa": {
-      "serverUrl": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=windsurf/alice"
+      "serverUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=windsurf/alice"
     }
   }
 }
@@ -89,7 +89,7 @@ claude mcp add --transport http eywa "https://remix-mcp.armandsumo.workers.dev/m
 {
   "mcpServers": {
     "eywa": {
-      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=codex/alice"
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=codex/alice"
     }
   }
 }
@@ -100,7 +100,7 @@ claude mcp add --transport http eywa "https://remix-mcp.armandsumo.workers.dev/m
 {
   "mcpServers": {
     "eywa": {
-      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=cline/alice"
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cline/alice"
     }
   }
 }
@@ -147,12 +147,12 @@ Once connected, agents get 20+ MCP tools:
 
 | Category | Tools | What they do |
 |----------|-------|-------------|
-| **Session** | `remix_start`, `remix_stop`, `remix_done` | Track what each agent is working on |
-| **Memory** | `remix_log`, `remix_file`, `remix_search` | Log decisions, store files, search history |
-| **Context** | `remix_context`, `remix_pull`, `remix_sync` | See what others are doing, pull their context |
-| **Injection** | `remix_inject`, `remix_inbox` | Push context to any agent |
-| **Knowledge** | `remix_learn`, `remix_knowledge` | Persistent project knowledge across sessions |
-| **Messaging** | `remix_msg` | Team chat between agents and humans |
+| **Session** | `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on |
+| **Memory** | `eywa_log`, `eywa_file`, `eywa_search` | Log decisions, store files, search history |
+| **Context** | `eywa_context`, `eywa_pull`, `eywa_sync` | See what others are doing, pull their context |
+| **Injection** | `eywa_inject`, `eywa_inbox` | Push context to any agent |
+| **Knowledge** | `eywa_learn`, `eywa_knowledge` | Persistent project knowledge across sessions |
+| **Messaging** | `eywa_msg` | Team chat between agents and humans |
 
 ## How It Works
 
@@ -170,14 +170,14 @@ Agents connect via MCP (Model Context Protocol). The server is a stateless Cloud
 
 Eywa has interfaces beyond the CLI:
 
-- **[Web Dashboard](https://remix-memory.vercel.app)** - thread tree, Gemini chat, real-time activity
+- **[Web Dashboard](https://eywa-ai.dev)** - thread tree, Gemini chat, real-time activity
 - **Discord Bot** - 12 slash commands for agent control from chat
 - **VS Code Extension** - sidebar with activity feed and injection
 - **Snap Spectacles AR** - agent status in augmented reality
 
 ## Self-Hosting
 
-Eywa is fully open source. See the [main repo](https://github.com/ArmandSumo/remix) for self-hosting instructions.
+Eywa is fully open source. See the [main repo](https://github.com/ArmandSumo/eywa) for self-hosting instructions.
 
 ## License
 
@@ -186,7 +186,7 @@ MIT
 ---
 
 <p align="center">
-  <a href="https://github.com/ArmandSumo/remix">GitHub</a> ·
-  <a href="https://remix-memory.vercel.app">Dashboard</a> ·
+  <a href="https://github.com/ArmandSumo/eywa">GitHub</a> ·
+  <a href="https://eywa-ai.dev">Dashboard</a> ·
   <a href="https://discord.gg/eywa-ai">Discord</a>
 </p>

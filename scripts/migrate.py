@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run database migrations for Remix.
+Run database migrations for Eywa.
 """
 
 import os

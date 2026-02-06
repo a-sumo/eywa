@@ -1,7 +1,7 @@
 {
-  "name": "remix-agents",
-  "displayName": "Remix — Agent Memory",
-  "description": "Monitor and steer AI agents sharing context through Remix",
+  "name": "eywa-agents",
+  "displayName": "Eywa - Agent Memory",
+  "description": "Monitor and steer AI agents sharing context through Eywa",
   "version": "0.2.1",
   "publisher": "armandsumo",
   "engines": {
@@ -18,116 +18,116 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "remix",
-          "title": "Remix",
+          "id": "eywa",
+          "title": "Eywa",
           "icon": "icon.svg"
         }
       ]
     },
     "views": {
-      "remix": [
+      "eywa": [
         {
-          "id": "remixAgents",
+          "id": "eywaAgents",
           "name": "Agents"
         },
         {
-          "id": "remixActivity",
+          "id": "eywaActivity",
           "name": "Activity"
         },
         {
-          "id": "remixKnowledge",
+          "id": "eywaKnowledge",
           "name": "Knowledge"
         }
       ]
     },
     "commands": [
       {
-        "command": "remix.connectAgent",
-        "title": "Remix: Connect Agent"
+        "command": "eywa.connectAgent",
+        "title": "Eywa: Connect Agent"
       },
       {
-        "command": "remix.openDashboard",
-        "title": "Remix: Open Dashboard"
+        "command": "eywa.openDashboard",
+        "title": "Eywa: Open Dashboard"
       },
       {
-        "command": "remix.refreshAgents",
-        "title": "Remix: Refresh Agents",
+        "command": "eywa.refreshAgents",
+        "title": "Eywa: Refresh Agents",
         "icon": "$(refresh)"
       },
       {
-        "command": "remix.injectContext",
-        "title": "Remix: Inject Context to Agent"
+        "command": "eywa.injectContext",
+        "title": "Eywa: Inject Context to Agent"
       },
       {
-        "command": "remix.injectSelection",
-        "title": "Remix: Inject Selection to Agent",
+        "command": "eywa.injectSelection",
+        "title": "Eywa: Inject Selection to Agent",
         "icon": "$(arrow-right)"
       },
       {
-        "command": "remix.showStatus",
-        "title": "Remix: Show Status"
+        "command": "eywa.showStatus",
+        "title": "Eywa: Show Status"
       },
       {
-        "command": "remix.injectToSession",
+        "command": "eywa.injectToSession",
         "title": "Inject Context",
         "icon": "$(arrow-right)"
       },
       {
-        "command": "remix.copySessionSummary",
+        "command": "eywa.copySessionSummary",
         "title": "Copy Summary",
         "icon": "$(clippy)"
       },
       {
-        "command": "remix.openSessionInDashboard",
+        "command": "eywa.openSessionInDashboard",
         "title": "Open in Dashboard",
         "icon": "$(link-external)"
       },
       {
-        "command": "remix.showKnowledgeForFile",
-        "title": "Remix: Show Knowledge for File"
+        "command": "eywa.showKnowledgeForFile",
+        "title": "Eywa: Show Knowledge for File"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "remix.refreshAgents",
-          "when": "view == remixAgents",
+          "command": "eywa.refreshAgents",
+          "when": "view == eywaAgents",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "remix.injectToSession",
-          "when": "viewItem == remixSession",
+          "command": "eywa.injectToSession",
+          "when": "viewItem == eywaSession",
           "group": "inline"
         },
         {
-          "command": "remix.copySessionSummary",
-          "when": "viewItem == remixSession",
+          "command": "eywa.copySessionSummary",
+          "when": "viewItem == eywaSession",
           "group": "1_actions"
         },
         {
-          "command": "remix.openSessionInDashboard",
-          "when": "viewItem == remixSession",
+          "command": "eywa.openSessionInDashboard",
+          "when": "viewItem == eywaSession",
           "group": "1_actions"
         },
         {
-          "command": "remix.injectContext",
-          "when": "viewItem == remixUser",
+          "command": "eywa.injectContext",
+          "when": "viewItem == eywaUser",
           "group": "1_actions"
         }
       ],
       "editor/context": [
         {
-          "command": "remix.injectSelection",
+          "command": "eywa.injectSelection",
           "when": "editorHasSelection",
-          "group": "remix"
+          "group": "eywa"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "remix.injectSelection",
+        "command": "eywa.injectSelection",
         "key": "cmd+shift+i",
         "mac": "cmd+shift+i",
         "win": "ctrl+shift+i",
@@ -136,19 +136,19 @@
       }
     ],
     "configuration": {
-      "title": "Remix",
+      "title": "Eywa",
       "properties": {
-        "remix.supabaseUrl": {
+        "eywa.supabaseUrl": {
           "type": "string",
           "default": "",
           "description": "Supabase project URL"
         },
-        "remix.supabaseKey": {
+        "eywa.supabaseKey": {
           "type": "string",
           "default": "",
           "description": "Supabase anon key"
         },
-        "remix.room": {
+        "eywa.room": {
           "type": "string",
           "default": "",
           "description": "Room slug to monitor"

@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { RemixContext, MemoryRow } from "../lib/types.js";
+import type { EywaContext, MemoryRow } from "../lib/types.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
@@ -26,10 +26,10 @@ async function getLatestMemoryId(
 export function registerSessionTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: RemixContext,
+  ctx: EywaContext,
 ) {
   server.tool(
-    "remix_whoami",
+    "eywa_whoami",
     "Check your agent identity, session, and room.",
     {},
     async () => ({
@@ -43,7 +43,7 @@ export function registerSessionTools(
   );
 
   server.tool(
-    "remix_start",
+    "eywa_start",
     "Start logging this session. Call this when beginning work on a task.",
     { task_description: z.string().describe("Brief description of what you're working on") },
     async ({ task_description }) => {
@@ -62,7 +62,7 @@ export function registerSessionTools(
         content: [
           {
             type: "text" as const,
-            text: `Logging started for: ${task_description}\nSession: ${ctx.sessionId} in room /${ctx.roomSlug}\nRemember to call remix_log for important exchanges.`,
+            text: `Logging started for: ${task_description}\nSession: ${ctx.sessionId} in room /${ctx.roomSlug}\nRemember to call eywa_log for important exchanges.`,
           },
         ],
       };
@@ -70,7 +70,7 @@ export function registerSessionTools(
   );
 
   server.tool(
-    "remix_stop",
+    "eywa_stop",
     "Stop logging and save a session summary.",
     { summary: z.string().describe("Summary of what was accomplished") },
     async ({ summary }) => {
@@ -92,8 +92,8 @@ export function registerSessionTools(
   );
 
   server.tool(
-    "remix_done",
-    "Mark session as complete with structured summary, status, artifacts, and next steps. Use this instead of remix_stop when you want to record what was accomplished.",
+    "eywa_done",
+    "Mark session as complete with structured summary, status, artifacts, and next steps. Use this instead of eywa_stop when you want to record what was accomplished.",
     {
       summary: z.string().describe("What was accomplished this session"),
       status: z.enum(["completed", "blocked", "failed", "partial"]).describe("Session outcome"),

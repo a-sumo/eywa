@@ -81,7 +81,7 @@ export function MemoryCard({
           onDragStart(e);
         } else if (isDraggable) {
           e.dataTransfer.setData(
-            "application/remix-memory",
+            "application/eywa-memory",
             JSON.stringify({ id: memory.id })
           );
           e.dataTransfer.effectAllowed = "copy";

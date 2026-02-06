@@ -14,7 +14,7 @@ const presentation = {
     "The Problem": ["Saturday morning", "Everyone's heads down", "You ask a simple question", "Nobody told Priya"],
     "The Market": ["Faster agents, slower teams"],
     "The Insight": ["The new unit of work"],
-    "The Product": ["Threads, not tools", "The three views", "The Remix", "Gemini Terminal", "Divergence detection"],
+    "The Product": ["Threads, not tools", "The three views", "The Workspace", "Gemini Terminal", "Divergence detection"],
     "Architecture": ["System overview", "Data flow", "The MCP bridge", "Tool reference"],
     "Live Demo": ["See it live"],
   },
@@ -103,7 +103,7 @@ const presentation = {
       items: [
         "Each terminal session - Claude Code, Cursor, Gemini - is a <strong>thread</strong>.",
         "Threads capture everything: decisions, code, blockers, reasoning.",
-        "You can <strong>see</strong> any teammate's threads, <strong>pull</strong> specific context, or <strong>remix</strong> threads together.",
+        "You can <strong>see</strong> any teammate's threads, <strong>pull</strong> specific context, or <strong>combine</strong> threads together.",
         "No copy-paste. No \"hey what did your agent figure out?\" No re-doing work.",
       ]
     },
@@ -131,12 +131,12 @@ const presentation = {
               Full conversation history.<br>
               Each memory is a <strong>draggable card</strong>.<br>
               Select specific decisions, code, context.<br>
-              Drag into a Remix.
+              Drag into a Workspace.
             </div>
           </div>
           <div style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #fff 0%, #fff8de 100%); border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 16px; padding: 24px; text-align: left;">
             <div style="font-size: 1.4em; margin-bottom: 8px;">&#128256;</div>
-            <div style="font-weight: 700; font-size: 1.1em; margin-bottom: 6px; color: #6417EC;">Remix</div>
+            <div style="font-weight: 700; font-size: 1.1em; margin-bottom: 6px; color: #6417EC;">Workspace</div>
             <div style="font-size: 0.85em; color: #555; line-height: 1.5;">
               3-panel workspace.<br>
               Browse memories → Build context → <strong>Chat with Gemini</strong>.<br>
@@ -149,7 +149,7 @@ const presentation = {
     },
 
     {
-      title: "The Remix",
+      title: "The Workspace",
       type: "diagram",
       subtitle: "3-panel workspace: Browse → Context → Gemini Terminal",
       content: `
@@ -281,7 +281,7 @@ const presentation = {
             <div style="flex: 1; text-align: center;">
               <div style="font-weight: 600; color: #15D1FF; margin-bottom: 10px; font-size: 0.85em; text-transform: uppercase;">Cloudflare Worker</div>
               <div style="background: #fff; border: 2px solid #15D1FF; border-radius: 12px; padding: 16px;">
-                <div style="font-weight: 700; color: #15D1FF; margin-bottom: 6px;">remix-mcp</div>
+                <div style="font-weight: 700; color: #15D1FF; margin-bottom: 6px;">eywa-mcp</div>
                 <div style="font-size: 0.85em; color: #666;">12 MCP tools</div>
                 <div style="font-size: 0.85em; color: #666;">Streamable HTTP + SSE</div>
                 <div style="font-size: 0.85em; color: #666;">Stateless</div>
@@ -307,7 +307,7 @@ const presentation = {
           <div style="text-align: center; margin-top: 8px;">
             <div style="display: inline-block; background: #fff8de; border: 2px solid #B48C50; border-radius: 12px; padding: 12px 24px;">
               <div style="font-weight: 700; color: #B48C50; margin-bottom: 4px;">React Dashboard</div>
-              <div style="font-size: 0.85em; color: #666;">Thread Tree · Thread View · Remix + Gemini</div>
+              <div style="font-size: 0.85em; color: #666;">Thread Tree · Thread View · Workspace + Gemini</div>
             </div>
           </div>
         </div>
@@ -331,7 +331,7 @@ const presentation = {
             <div style="display: flex; align-items: center; gap: 12px;">
               <div style="width: 24px; height: 24px; background: #15D1FF; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: 700; flex-shrink: 0;">2</div>
               <div style="flex: 1; background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 10px 14px;">
-                <strong>Agent calls tools</strong> - <code style="background: rgba(21, 209, 255, 0.1); padding: 2px 6px; border-radius: 3px;">remix_log</code>, <code style="background: rgba(21, 209, 255, 0.1); padding: 2px 6px; border-radius: 3px;">remix_file</code>, etc.
+                <strong>Agent calls tools</strong> - <code style="background: rgba(21, 209, 255, 0.1); padding: 2px 6px; border-radius: 3px;">eywa_log</code>, <code style="background: rgba(21, 209, 255, 0.1); padding: 2px 6px; border-radius: 3px;">eywa_file</code>, etc.
                 <div style="color: #888; font-size: 0.85em;">Each call inserts a row into the memories table via PostgREST</div>
               </div>
             </div>
@@ -346,7 +346,7 @@ const presentation = {
               <div style="width: 24px; height: 24px; background: #B48C50; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: 700; flex-shrink: 0;">4</div>
               <div style="flex: 1; background: #fff8de; border: 1px solid rgba(180,140,80,0.3); border-radius: 8px; padding: 10px 14px;">
                 <strong>Dashboard updates in real-time</strong>
-                <div style="color: #888; font-size: 0.85em;">New memory appears in thread tree, thread view, and Remix source panel instantly</div>
+                <div style="color: #888; font-size: 0.85em;">New memory appears in thread tree, thread view, and Workspace source panel instantly</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
@@ -371,27 +371,27 @@ const presentation = {
             <div style="font-weight: 700; color: #15D1FF; margin-bottom: 12px;">Client Configuration</div>
             <div style="background: #f8f9fc; border-radius: 8px; padding: 12px; font-size: 0.9em; line-height: 1.6;">
               <div style="color: #888; margin-bottom: 4px;">// Claude Code / Cursor / Windsurf</div>
-              <div><span style="color: #15D1FF;">"url"</span>: <span style="color: #489664;">"https://remix-mcp.workers.dev/mcp?room=demo&agent=alpha"</span></div>
+              <div><span style="color: #15D1FF;">"url"</span>: <span style="color: #489664;">"https://mcp.eywa-ai.dev/mcp?room=demo&agent=alpha"</span></div>
               <div style="color: #888; margin-top: 8px;">// Gemini CLI</div>
-              <div><span style="color: #15D1FF;">"httpUrl"</span>: <span style="color: #489664;">"https://remix-mcp.workers.dev/mcp?room=demo&agent=alpha"</span></div>
+              <div><span style="color: #15D1FF;">"httpUrl"</span>: <span style="color: #489664;">"https://mcp.eywa-ai.dev/mcp?room=demo&agent=alpha"</span></div>
             </div>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div style="background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 12px;">
               <div style="font-weight: 600; color: #15D1FF; font-size: 0.85em; margin-bottom: 6px;">Session Tools</div>
-              <div style="font-size: 0.85em; color: #555;">remix_whoami<br>remix_start<br>remix_stop</div>
+              <div style="font-size: 0.85em; color: #555;">eywa_whoami<br>eywa_start<br>eywa_stop</div>
             </div>
             <div style="background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 12px;">
               <div style="font-weight: 600; color: #15D1FF; font-size: 0.85em; margin-bottom: 6px;">Memory Tools</div>
-              <div style="font-size: 0.85em; color: #555;">remix_log<br>remix_file<br>remix_get_file<br>remix_search</div>
+              <div style="font-size: 0.85em; color: #555;">eywa_log<br>eywa_file<br>eywa_get_file<br>eywa_search</div>
             </div>
             <div style="background: #f0fff4; border: 1px solid rgba(72,150,100,0.3); border-radius: 8px; padding: 12px;">
               <div style="font-weight: 600; color: #489664; font-size: 0.85em; margin-bottom: 6px;">Context Tools</div>
-              <div style="font-size: 0.85em; color: #555;">remix_context<br>remix_agents<br>remix_recall</div>
+              <div style="font-size: 0.85em; color: #555;">eywa_context<br>eywa_agents<br>eywa_recall</div>
             </div>
             <div style="background: #fff8de; border: 1px solid rgba(180,140,80,0.3); border-radius: 8px; padding: 12px;">
               <div style="font-weight: 600; color: #B48C50; font-size: 0.85em; margin-bottom: 6px;">Mesh Tools</div>
-              <div style="font-size: 0.85em; color: #555;">remix_status<br>remix_pull<br>remix_sync<br>remix_msg</div>
+              <div style="font-size: 0.85em; color: #555;">eywa_status<br>eywa_pull<br>eywa_sync<br>eywa_msg</div>
             </div>
           </div>
         </div>
@@ -413,17 +413,17 @@ const presentation = {
               </tr>
             </thead>
             <tbody>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_start</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Begin a work session</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">task</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_stop</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">End session with summary</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">summary</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_log</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Log a message to shared memory</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">role, content</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_file</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Store a file artifact</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">path, content, description</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_search</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Search memories by keyword</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">query, limit</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Get recent room context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">limit</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_recall</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Pull specific agent's memories</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent, limit</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_status</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Room overview + active agents</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">-</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_pull</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Pull another agent's context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent, limit</td></tr>
-              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">remix_sync</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Sync decisions from agent</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent</td></tr>
-              <tr><td style="padding: 6px 12px; font-weight: 600;">remix_msg</td><td style="padding: 6px 12px;">Send team chat message</td><td style="padding: 6px 12px; color: #888;">content, channel</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_start</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Begin a work session</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">task</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_stop</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">End session with summary</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">summary</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_log</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Log a message to shared memory</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">role, content</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_file</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Store a file artifact</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">path, content, description</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_search</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Search memories by keyword</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">query, limit</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Get recent room context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">limit</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_recall</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Pull specific agent's memories</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent, limit</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_status</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Room overview + active agents</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">-</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_pull</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Pull another agent's context</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent, limit</td></tr>
+              <tr><td style="padding: 6px 12px; border-bottom: 1px solid #eee; font-weight: 600;">eywa_sync</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee;">Sync decisions from agent</td><td style="padding: 6px 12px; border-bottom: 1px solid #eee; color: #888;">agent</td></tr>
+              <tr><td style="padding: 6px 12px; font-weight: 600;">eywa_msg</td><td style="padding: 6px 12px;">Send team chat message</td><td style="padding: 6px 12px; color: #888;">content, channel</td></tr>
             </tbody>
           </table>
         </div>
@@ -440,7 +440,7 @@ const presentation = {
         "2. Agent alpha starts working on auth. Agent beta starts on the database.",
         "3. Open the web dashboard → see both threads in real-time.",
         "4. Spot the <strong>divergence indicator</strong> - alpha and beta are solving the same problem differently.",
-        "5. Open Remix → browse memories → drag both threads into context → ask Gemini to integrate.",
+        "5. Open Workspace → browse memories → drag both threads into context → ask Gemini to integrate.",
       ]
     },
 

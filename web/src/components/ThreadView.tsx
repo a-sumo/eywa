@@ -63,9 +63,9 @@ export function ThreadView() {
           </span>
         </div>
         <button
-          className="btn-remix-from-thread"
+          className="btn-eywa-from-thread"
           onClick={() =>
-            navigate(`/r/${slug}/remix/new`, {
+            navigate(`/r/${slug}/workspace/new`, {
               state: { seedThread: { agent, sessionId } },
             })
           }
@@ -86,7 +86,7 @@ export function ThreadView() {
             draggable
             onDragStart={(e) => {
               e.dataTransfer.setData(
-                "application/remix-memory",
+                "application/eywa-memory",
                 JSON.stringify({ id: m.id })
               );
               e.dataTransfer.effectAllowed = "copy";

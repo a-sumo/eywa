@@ -1,10 +1,10 @@
 /**
- * Hierarchical User → Session tree for the Remix sidebar.
+ * Hierarchical User → Session tree for the Eywa sidebar.
  * Top-level nodes are users (derived from agent name prefix, e.g. "armand/quiet-oak").
  * Each user expands to show their sessions with status, task preview, and memory count.
  */
 import * as vscode from "vscode";
-import type { RemixClient, SessionInfo } from "./client";
+import type { EywaClient, SessionInfo } from "./client";
 
 function timeAgo(ts: string): string {
   const diff = Date.now() - new Date(ts).getTime();
@@ -23,7 +23,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
   private cachedSessions: Map<string, SessionInfo[]> = new Map();
 
-  constructor(private getClient: () => RemixClient | undefined) {}
+  constructor(private getClient: () => EywaClient | undefined) {}
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
@@ -76,7 +76,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
 
 /** Top-level tree node representing a user (e.g. "armand"). Expands to show sessions. */
 class UserItem extends vscode.TreeItem {
-  contextValue = "remixUser";
+  contextValue = "eywaUser";
 
   constructor(
     label: string,
@@ -111,7 +111,7 @@ class UserItem extends vscode.TreeItem {
 
 /** Leaf tree node representing an individual agent session with status icon and task preview. */
 export class SessionItem extends vscode.TreeItem {
-  contextValue = "remixSession";
+  contextValue = "eywaSession";
   public readonly session: SessionInfo;
 
   constructor(session: SessionInfo) {

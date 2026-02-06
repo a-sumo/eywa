@@ -3,8 +3,8 @@
  *
  * Maintains a registry of live MicroTiles. Reconcile() diffs desired vs current
  * state, emitting create/destroy/move ops. renderDirty() calls render on tiles
- * whose content hash changed. getBroadcastQueue() returns pending scene ops and
- * dirty texture payloads.
+ * whose content hash changed. takeOps(n)/takeTextures(n) return pending scene
+ * ops and dirty texture payloads without draining more than requested.
  */
 
 import { MicroTile, type TileDescriptor, type TileLayer, type RenderFn } from "./microTile";
@@ -15,6 +15,7 @@ export interface SceneOp {
   id: string;
   x?: number;
   y?: number;
+  z?: number; // explicit z position (overrides layer-based z on Spectacles)
   w?: number;
   h?: number;
   s?: number;
@@ -31,12 +32,6 @@ export interface TexPayload {
   image: string; // base64 JPEG
 }
 
-// Broadcast queue returned each frame
-export interface BroadcastQueue {
-  sceneOps: SceneOp[];
-  textures: TexPayload[];
-}
-
 export class TileScene {
   private tiles = new Map<string, MicroTile>();
   private renderers = new Map<string, RenderFn>();
@@ -45,6 +40,7 @@ export class TileScene {
 
   // JPEG quality per tile type
   private qualityMap: Record<string, number> = {
+    "panel-bg": 0.3, // solid color, minimal quality needed
     "header": 0.6,
     "agent-dot": 0.55,
     "mem-card": 0.55,
@@ -136,7 +132,7 @@ export class TileScene {
         // If this is a new tile, also queue create op
         if (!tile.created) {
           tile.created = true;
-          this.pendingOps.push({
+          const createOp: SceneOp = {
             op: "create",
             id: tile.id,
             x: tile.x,
@@ -147,7 +143,9 @@ export class TileScene {
             layer: tile.layer,
             interactive: tile.interactive,
             draggable: tile.draggable,
-          });
+          };
+          if (tile.z !== undefined) createOp.z = tile.z;
+          this.pendingOps.push(createOp);
           tile.positionDirty = false;
         }
       }
@@ -170,15 +168,35 @@ export class TileScene {
   }
 
   /**
-   * Drain the broadcast queue. Returns all pending ops and textures,
-   * then clears the queue.
+   * Take up to `n` scene ops from the pending queue.
+   * Leaves remaining ops for the next call.
    */
-  getBroadcastQueue(): BroadcastQueue {
-    const queue: BroadcastQueue = {
-      sceneOps: this.pendingOps.splice(0),
-      textures: this.pendingTextures.splice(0),
-    };
-    return queue;
+  takeOps(n: number): SceneOp[] {
+    if (this.pendingOps.length === 0) return [];
+    return this.pendingOps.splice(0, n);
+  }
+
+  /**
+   * Take up to `n` texture payloads from the pending queue.
+   * Leaves remaining textures for the next call.
+   */
+  takeTextures(n: number): TexPayload[] {
+    if (this.pendingTextures.length === 0) return [];
+    return this.pendingTextures.splice(0, n);
+  }
+
+  /**
+   * Number of pending scene ops.
+   */
+  get pendingOpCount(): number {
+    return this.pendingOps.length;
+  }
+
+  /**
+   * Number of pending textures.
+   */
+  get pendingTexCount(): number {
+    return this.pendingTextures.length;
   }
 
   /**

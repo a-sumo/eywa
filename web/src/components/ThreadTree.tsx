@@ -14,7 +14,7 @@ import { SessionGraph } from "./SessionGraph";
 import { getAvatar } from "./avatars";
 import { useRealtimeLinks } from "../hooks/useRealtimeLinks";
 
-// --- Pixel creature palette (matches MiniRemix / SessionGraph) ---
+// --- Pixel creature palette (matches MiniEywa / SessionGraph) ---
 
 const AGENT_PALETTE = [
   "#E64980", "#CC5DE8", "#845EF7", "#5C7CFA",
@@ -563,8 +563,8 @@ export function ThreadTree() {
         </button>
 
         <button
-          className="btn-remix-new"
-          onClick={() => navigate(`/r/${slug}/remix/new`)}
+          className="btn-eywa-new"
+          onClick={() => navigate(`/r/${slug}/workspace/new`)}
         >
           + New Session
         </button>
@@ -815,7 +815,7 @@ export function ThreadTree() {
                       draggable
                       onDragStart={(e) => {
                         e.dataTransfer.setData(
-                          "application/remix-thread",
+                          "application/eywa-thread",
                           JSON.stringify({
                             agent: thread.agent,
                             sessionId: thread.sessionId,
@@ -978,7 +978,7 @@ export function ThreadTree() {
                         draggable
                         onDragStart={(e) => {
                           e.dataTransfer.setData(
-                            "application/remix-memory",
+                            "application/eywa-memory",
                             JSON.stringify({ id: m.id })
                           );
                           e.dataTransfer.effectAllowed = "copy";

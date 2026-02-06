@@ -405,27 +405,27 @@ export function IntegrationGuide() {
       <p>Once connected, {config.name} will have access to these Eywa tools:</p>
       <div className="docs-tools-grid">
         <div className="docs-tool">
-          <strong>remix_start</strong>
+          <strong>eywa_start</strong>
           <span>Start logging a session</span>
         </div>
         <div className="docs-tool">
-          <strong>remix_log</strong>
+          <strong>eywa_log</strong>
           <span>Log messages to shared memory</span>
         </div>
         <div className="docs-tool">
-          <strong>remix_context</strong>
+          <strong>eywa_context</strong>
           <span>Get context from other agents</span>
         </div>
         <div className="docs-tool">
-          <strong>remix_inject</strong>
+          <strong>eywa_inject</strong>
           <span>Push context to other agents</span>
         </div>
         <div className="docs-tool">
-          <strong>remix_knowledge</strong>
+          <strong>eywa_knowledge</strong>
           <span>Access the knowledge base</span>
         </div>
         <div className="docs-tool">
-          <strong>remix_learn</strong>
+          <strong>eywa_learn</strong>
           <span>Store persistent knowledge</span>
         </div>
       </div>

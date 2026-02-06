@@ -27,6 +27,7 @@ export interface ContextItem {
 
 // --- Tile pixel sizes ---
 const SIZES = {
+  panelBg:    { w: 640, h: 480 },  // background container (low detail, just solid fill)
   header:     { w: 400, h: 120 },
   agentDot:   { w: 120, h: 24 },
   memHeader:  { w: 220, h: 20 },
@@ -95,6 +96,22 @@ export function computeLayout(params: {
 
   const tiles: TileDescriptor[] = [];
   const layer: TileLayer = 0;
+
+  // ---- Panel background (dark container behind everything) ----
+  tiles.push({
+    id: "panel-bg",
+    type: "panel-bg",
+    x: (COL_LEFT + COL_RIGHT) / 2,
+    y: 0,
+    z: 0, // at z=0, behind content at z=0.05
+    ...SIZES.panelBg,
+    scale: 1,
+    layer,
+    interactive: false,
+    draggable: false,
+    visible: true,
+    data: {},
+  });
 
   // ---- Header (top, spanning both columns) ----
   const activeCount = agents.filter(a => a.isActive).length;
@@ -439,6 +456,8 @@ export function tileHash(desc: TileDescriptor): string {
       return `${desc.data.transcript}`;
     case "ctx-header":
       return `ctx-${desc.data.count}`;
+    case "panel-bg":
+      return "bg"; // never changes
     default:
       return desc.id;
   }

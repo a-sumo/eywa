@@ -1,5 +1,5 @@
 const presentation = {
-  title: "Remix",
+  title: "Eywa",
   subtitle: "The coordination layer for human+AI teams",
   summary: [
     "1. The Problem",
@@ -13,7 +13,7 @@ const presentation = {
     "The Problem": ["The Scene", "Hour 3", "The Question", "Stale"],
     "The Market": ["The Explosion", "The Players", "The Paradox", "The Missing Layer"],
     "The Insight": ["The New Unit", "The Gap", "The Hard Part"],
-    "The Product": ["Remix", "From 0 to 1", "On Your Laptop", "On Your Phone", "At Integration"],
+    "The Product": ["Eywa", "From 0 to 1", "On Your Laptop", "On Your Phone", "At Integration"],
     "Let's Build": ["What Exists", "The Ask"],
   },
 
@@ -167,7 +167,7 @@ const presentation = {
 
     // ── THE PRODUCT ──────────────────────────────────
     {
-      title: "Remix",
+      title: "Eywa",
       type: "bullets",
       subtitle: "Shared memory across your team's human+AI pairs",
       items: [
@@ -251,7 +251,7 @@ const presentation = {
   ],
 
   closing: {
-    title: "Remix",
+    title: "Eywa",
     subtitle: "The compound intelligence is here. Nothing is built for it yet."
   }
 };

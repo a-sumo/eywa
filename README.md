@@ -15,9 +15,9 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/eywa-ai"><img src="https://img.shields.io/npm/v/eywa-ai?color=6417EC&label=npx%20eywa-ai" alt="npm"></a>
-  <a href="https://remix-memory.vercel.app"><img src="https://img.shields.io/badge/dashboard-live-15D1FF" alt="Dashboard"></a>
+  <a href="https://eywa-ai.dev"><img src="https://img.shields.io/badge/dashboard-live-15D1FF" alt="Dashboard"></a>
   <a href="https://discord.gg/eywa-ai"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/ArmandSumo/remix/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
+  <a href="https://github.com/ArmandSumo/eywa/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@
   <a href="#how-it-works">How It Works</a> ·
   <a href="#integrations">Integrations</a> ·
   <a href="#contributing">Contributing</a> ·
-  <a href="https://remix-memory.vercel.app">Live Demo</a>
+  <a href="https://eywa-ai.dev">Live Demo</a>
 </p>
 
 ---
@@ -70,7 +70,7 @@ After running `init` or `join`, you'll see configs for each agent. Here's what t
 <summary><img src="https://cdn.simpleicons.org/anthropic/white" width="16" height="16" /> <strong>Claude Code</strong></summary>
 
 ```bash
-claude mcp add --transport http eywa "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=claude/alice"
+claude mcp add --transport http eywa "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=claude/alice"
 ```
 </details>
 
@@ -82,7 +82,7 @@ Add to `.cursor/mcp.json`:
 {
   "mcpServers": {
     "eywa": {
-      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=cursor/alice"
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cursor/alice"
     }
   }
 }
@@ -97,7 +97,7 @@ Add to `~/.gemini/settings.json`:
 {
   "mcpServers": {
     "eywa": {
-      "httpUrl": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=gemini/alice"
+      "httpUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=gemini/alice"
     }
   }
 }
@@ -112,7 +112,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 {
   "mcpServers": {
     "eywa": {
-      "serverUrl": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=windsurf/alice"
+      "serverUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=windsurf/alice"
     }
   }
 }
@@ -127,7 +127,7 @@ Add to `~/.codex/config.json`:
 {
   "mcpServers": {
     "eywa": {
-      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=codex/alice"
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=codex/alice"
     }
   }
 }
@@ -142,7 +142,7 @@ Add to VS Code MCP settings:
 {
   "mcpServers": {
     "eywa": {
-      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=cline/alice"
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cline/alice"
     }
   }
 }
@@ -180,40 +180,40 @@ Agents connect via [MCP](https://modelcontextprotocol.io) (Model Context Protoco
 
 | Category | Tools | What they do |
 |----------|-------|-------------|
-| **Session** | `remix_start`, `remix_stop`, `remix_done` | Track what each agent is working on |
-| **Memory** | `remix_log`, `remix_file`, `remix_search` | Log decisions, store files, search history |
-| **Context** | `remix_context`, `remix_pull`, `remix_sync` | See what other agents are doing, pull their context |
-| **Injection** | `remix_inject`, `remix_inbox` | Push context to any agent. They see it on their next action. |
-| **Knowledge** | `remix_learn`, `remix_knowledge` | Persistent project knowledge across all sessions |
-| **Messaging** | `remix_msg` | Team chat between agents and humans |
-| **Linking** | `remix_link`, `remix_fetch` | Connect memories across sessions |
+| **Session** | `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on |
+| **Memory** | `eywa_log`, `eywa_file`, `eywa_search` | Log decisions, store files, search history |
+| **Context** | `eywa_context`, `eywa_pull`, `eywa_sync` | See what other agents are doing, pull their context |
+| **Injection** | `eywa_inject`, `eywa_inbox` | Push context to any agent. They see it on their next action. |
+| **Knowledge** | `eywa_learn`, `eywa_knowledge` | Persistent project knowledge across all sessions |
+| **Messaging** | `eywa_msg` | Team chat between agents and humans |
+| **Linking** | `eywa_link`, `eywa_fetch` | Connect memories across sessions |
 
 ### Common workflows
 
 **Start a session:**
 ```
-remix_start("Implementing user authentication")
+eywa_start("Implementing user authentication")
 ```
 
 **Check what the team is doing:**
 ```
-remix_status()   # overview of all agents
-remix_pull("bob")  # get bob's recent context
+eywa_status()   # overview of all agents
+eywa_pull("bob")  # get bob's recent context
 ```
 
 **Share a decision:**
 ```
-remix_learn("API uses /api/v1 prefix, JWT for auth", title="API conventions", tags=["api"])
+eywa_learn("API uses /api/v1 prefix, JWT for auth", title="API conventions", tags=["api"])
 ```
 
 **Push context to another agent:**
 ```
-remix_inject(target="bob", content="Schema changed: user_id is UUID not integer", priority="high")
+eywa_inject(target="bob", content="Schema changed: user_id is UUID not integer", priority="high")
 ```
 
 **End a session:**
 ```
-remix_done("Added JWT auth", status="completed", artifacts=["src/auth.ts"])
+eywa_done("Added JWT auth", status="completed", artifacts=["src/auth.ts"])
 ```
 
 ---
@@ -224,12 +224,12 @@ Eywa meets your team where they already work.
 
 | Integration | Description | Path |
 |------------|-------------|------|
-| <img src="https://cdn.simpleicons.org/react/61DAFB" width="16" /> **Web Dashboard** | Thread tree, Gemini chat, remix studio, notifications | [`web/`](web/) |
+| <img src="https://cdn.simpleicons.org/react/61DAFB" width="16" /> **Web Dashboard** | Thread tree, Gemini chat, workspace, notifications | [`web/`](web/) |
 | <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" /> **CLI** | `npx eywa-ai init`, status, inject, log | [`cli/`](cli/) |
 | <img src="https://cdn.simpleicons.org/discord/5865F2" width="16" /> **Discord Bot** | 12 slash commands for full agent control from chat | [`discord-bot/`](discord-bot/) |
 | <img src="https://cdn.simpleicons.org/visualstudiocode/007ACC" width="16" /> **VS Code Extension** | Sidebar with activity feed and injection | [`vscode-extension/`](vscode-extension/) |
 | <img src="https://cdn.simpleicons.org/snapchat/FFFC00" width="16" /> **Snap Spectacles** | AR panel anchored to physical displays | [`remix-specs/`](remix-specs/) |
-| <img src="https://cdn.simpleicons.org/raspberrypi/A22846" width="16" /> **E-ink Display** | 7-color Waveshare ambient agent status | [`web/` (MiniRemixEink)](web/src/components/MiniRemixEink.tsx) |
+| <img src="https://cdn.simpleicons.org/raspberrypi/A22846" width="16" /> **E-ink Display** | 7-color Waveshare ambient agent status | [`web/` (MiniEywaEink)](web/src/components/MiniEywaEink.tsx) |
 
 ---
 
@@ -257,7 +257,7 @@ eywa/
 │
 ├── web/              # React/Vite dashboard
 │   └── src/
-│       ├── components/       # ThreadTree, ThreadView, RemixView, MiniRemix, Landing, ...
+│       ├── components/       # ThreadTree, ThreadView, WorkspaceView, MiniEywa, Landing, ...
 │       ├── hooks/            # useRealtimeMemories, useNotifications, useGeminiChat, ...
 │       └── lib/              # Supabase client, thread similarity
 │
@@ -326,7 +326,7 @@ We welcome contributions from both humans and AI agents.
 
 ### For AI agents
 
-We have an [`llms.txt`](https://remix-memory.vercel.app/llms.txt) that describes the full API surface, available tools, and integration guides. Point your agent at it for context.
+We have an [`llms.txt`](https://eywa-ai.dev/llms.txt) that describes the full API surface, available tools, and integration guides. Point your agent at it for context.
 
 Key files to know:
 - **MCP tools**: `worker/src/tools/` - each file is a tool category
@@ -352,8 +352,8 @@ cd discord-bot && npm install && npm start
 ## Community
 
 - **Discord**: [discord.gg/eywa-ai](https://discord.gg/eywa-ai) - get help, share what you're building
-- **GitHub Issues**: [Bug reports and feature requests](https://github.com/ArmandSumo/remix/issues)
-- **Live Dashboard**: [remix-memory.vercel.app](https://remix-memory.vercel.app)
+- **GitHub Issues**: [Bug reports and feature requests](https://github.com/ArmandSumo/eywa/issues)
+- **Live Dashboard**: [eywa-ai.dev](https://eywa-ai.dev)
 
 ---
 

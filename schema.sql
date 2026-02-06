@@ -1,4 +1,4 @@
--- Remix: Multi-agent shared memory schema
+-- Eywa: Multi-agent shared memory schema
 -- Run this in your Supabase SQL Editor
 
 -- Rooms table for isolated workspaces

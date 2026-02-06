@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { RemixContext, MemoryRow } from "../lib/types.js";
+import type { EywaContext, MemoryRow } from "../lib/types.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
@@ -26,10 +26,10 @@ async function getLatestMemoryId(
 export function registerKnowledgeTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: RemixContext,
+  ctx: EywaContext,
 ) {
   server.tool(
-    "remix_learn",
+    "eywa_learn",
     "Store persistent project knowledge that survives across sessions. Use for architecture decisions, conventions, gotchas, API patterns, or anything future sessions should know.",
     {
       content: z.string().describe("The knowledge to store"),
@@ -63,7 +63,7 @@ export function registerKnowledgeTools(
   );
 
   server.tool(
-    "remix_knowledge",
+    "eywa_knowledge",
     "Retrieve the project knowledge base. Returns persistent context accumulated across all sessions — architecture decisions, conventions, gotchas, patterns.",
     {
       tag: z.string().optional().describe("Filter by tag"),
@@ -100,7 +100,7 @@ export function registerKnowledgeTools(
             type: "text" as const,
             text: tag || search
               ? `No knowledge entries found${tag ? ` with tag "${tag}"` : ""}${search ? ` matching "${search}"` : ""}.`
-              : "Knowledge base is empty. Use remix_learn to store project knowledge.",
+              : "Knowledge base is empty. Use eywa_learn to store project knowledge.",
           }],
         };
       }
@@ -123,7 +123,7 @@ export function registerKnowledgeTools(
   );
 
   server.tool(
-    "remix_forget",
+    "eywa_forget",
     "Remove a knowledge entry by its ID. Use when knowledge is outdated or incorrect.",
     {
       knowledge_id: z.string().describe("The ID of the knowledge entry to remove"),

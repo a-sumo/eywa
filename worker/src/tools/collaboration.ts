@@ -1,15 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { RemixContext, MemoryRow } from "../lib/types.js";
+import type { EywaContext, MemoryRow } from "../lib/types.js";
 
 export function registerCollaborationTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: RemixContext,
+  ctx: EywaContext,
 ) {
   server.tool(
-    "remix_status",
+    "eywa_status",
     "See what all agents are currently working on in this room.",
     {},
     async () => {
@@ -66,7 +66,7 @@ export function registerCollaborationTools(
   );
 
   server.tool(
-    "remix_pull",
+    "eywa_pull",
     "Pull recent context from another agent's session.",
     {
       agent: z.string().describe("Agent name to pull context from"),
@@ -105,7 +105,7 @@ export function registerCollaborationTools(
   );
 
   server.tool(
-    "remix_sync",
+    "eywa_sync",
     "Sync another agent's current session history into your context.",
     {
       agent: z.string().describe("Agent name to sync from"),
@@ -168,7 +168,7 @@ export function registerCollaborationTools(
   );
 
   server.tool(
-    "remix_msg",
+    "eywa_msg",
     "Send a message to teammates via Eywa.",
     {
       content: z.string().describe("Message text"),

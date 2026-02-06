@@ -292,7 +292,7 @@ function BorderSquares() {
 
 /* ── Main Component ── */
 
-export function MiniRemixEink() {
+export function MiniEywaEink() {
   const { room } = useRoomContext();
   const { memories } = useRealtimeMemories(room?.id ?? null, 200);
 
