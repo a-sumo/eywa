@@ -150,8 +150,8 @@
         },
         "eywa.supabaseKey": {
           "type": "string",
-          "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjEzNjM1NiwiZXhwIjoyMDgxNzEyMzU2fQ.Pp6DrVfZs2_XvbobCm0hLSCxpfxoK-SvVzgduFIcp_Q",
-          "description": "Supabase anon key (default: Eywa hosted instance)"
+          "default": "PASTE_ANON_KEY_HERE",
+          "description": "Supabase anon key (get from Supabase dashboard > Settings > API)"
         },
         "eywa.room": {
           "type": "string",

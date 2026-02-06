@@ -75,6 +75,22 @@ async function handleMcp(
     );
   }
 
+  // Validate room slug: alphanumeric, hyphens, underscores, 1-64 chars
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(roomSlug)) {
+    return Response.json(
+      { error: "Invalid room slug. Use only letters, numbers, hyphens, underscores (max 64 chars)." },
+      { status: 400 },
+    );
+  }
+
+  // Validate agent name: alphanumeric, hyphens, underscores, dots, 1-64 chars
+  if (!/^[a-zA-Z0-9_.\-]{1,64}$/.test(baseAgent)) {
+    return Response.json(
+      { error: "Invalid agent name. Use only letters, numbers, hyphens, underscores, dots (max 64 chars)." },
+      { status: 400 },
+    );
+  }
+
   // Each connection gets a unique agent identity: "armand/quiet-oak"
   // The base name groups sessions by user for the UI.
   const agent = `${baseAgent}/${generateName()}`;
@@ -96,7 +112,7 @@ async function handleMcp(
   }
 
   const room = rooms[0];
-  const sessionId = `session_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}_${crypto.randomUUID().slice(0, 8)}`;
+  const sessionId = `session_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}_${crypto.randomUUID()}`;
 
   const ctx: EywaContext = {
     roomId: room.id,

@@ -206,10 +206,12 @@ export function registerMemoryTools(
       limit: z.number().optional().default(10).describe("Maximum results"),
     },
     async ({ query, limit }) => {
+      // Sanitize query: escape PostgREST special chars to prevent filter injection
+      const sanitized = query.replace(/[%_*(),.]/g, (c) => `\\${c}`);
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,agent,message_type,content,ts",
         room_id: `eq.${ctx.roomId}`,
-        content: `ilike.*${query}*`,
+        content: `ilike.*${sanitized}*`,
         order: "ts.desc",
         limit: String(limit),
       });
