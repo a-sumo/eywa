@@ -17,7 +17,7 @@
   <circle cx="60" cy="60" r="56" fill="#08090f"/>
 
   <g filter="url(#glow)">
-    <!-- Center tendril -->
+    <!-- Center tendril - straight up -->
     <circle cx="60" cy="72" r="4" fill="#4eeaff"/>
     <circle cx="60" cy="60" r="4.5" fill="#4eeaff" opacity="0.9"/>
     <circle cx="60" cy="48" r="4" fill="#4eeaff" opacity="0.8"/>
@@ -25,63 +25,31 @@
     <circle cx="60" cy="29" r="2.7" fill="#4eeaff" opacity="0.6"/>
     <circle cx="60" cy="22" r="2.2" fill="#4eeaff" opacity="0.5"/>
 
-    <!-- Left arc 1 - curves up then tips outward -->
-    <circle cx="54" cy="70" r="3.5" fill="#a855f7"/>
-    <circle cx="42" cy="56" r="4" fill="#a855f7" opacity="0.9"/>
-    <circle cx="32" cy="44" r="3.5" fill="#a855f7" opacity="0.8"/>
-    <circle cx="24" cy="34" r="3" fill="#a855f7" opacity="0.7"/>
-    <circle cx="20" cy="26" r="2.5" fill="#a855f7" opacity="0.6"/>
-    <circle cx="18" cy="20" r="2" fill="#a855f7" opacity="0.5"/>
+    <!-- Left arc - curves out and droops down -->
+    <circle cx="52" cy="72" r="3.5" fill="#a855f7"/>
+    <circle cx="38" cy="64" r="4" fill="#a855f7" opacity="0.9"/>
+    <circle cx="26" cy="62" r="3.6" fill="#a855f7" opacity="0.8"/>
+    <circle cx="16" cy="66" r="3" fill="#a855f7" opacity="0.7"/>
+    <circle cx="10" cy="76" r="2.5" fill="#a855f7" opacity="0.6"/>
 
-    <!-- Left arc 2 - wider, droops -->
-    <circle cx="50" cy="74" r="3.2" fill="#f472b6"/>
-    <circle cx="34" cy="64" r="3.7" fill="#f472b6" opacity="0.9"/>
-    <circle cx="22" cy="58" r="3.3" fill="#f472b6" opacity="0.8"/>
-    <circle cx="14" cy="58" r="2.8" fill="#f472b6" opacity="0.7"/>
-    <circle cx="10" cy="64" r="2.3" fill="#f472b6" opacity="0.6"/>
-    <circle cx="10" cy="72" r="1.9" fill="#f472b6" opacity="0.5"/>
+    <!-- Left outer arc - droops more -->
+    <circle cx="48" cy="78" r="3" fill="#f472b6"/>
+    <circle cx="34" cy="78" r="3.4" fill="#f472b6" opacity="0.85"/>
+    <circle cx="22" cy="84" r="3" fill="#f472b6" opacity="0.7"/>
+    <circle cx="16" cy="96" r="2.5" fill="#f472b6" opacity="0.55"/>
 
-    <!-- Left arc 3 - widest, droops most -->
-    <circle cx="48" cy="78" r="2.8" fill="#6b8cff"/>
-    <circle cx="34" cy="76" r="3.2" fill="#6b8cff" opacity="0.85"/>
-    <circle cx="22" cy="78" r="2.8" fill="#6b8cff" opacity="0.7"/>
-    <circle cx="14" cy="84" r="2.4" fill="#6b8cff" opacity="0.6"/>
-    <circle cx="12" cy="94" r="2" fill="#6b8cff" opacity="0.5"/>
+    <!-- Right arc - curves out and droops down -->
+    <circle cx="68" cy="72" r="3.5" fill="#4eeaff"/>
+    <circle cx="82" cy="64" r="4" fill="#4eeaff" opacity="0.9"/>
+    <circle cx="94" cy="62" r="3.6" fill="#4eeaff" opacity="0.8"/>
+    <circle cx="104" cy="66" r="3" fill="#4eeaff" opacity="0.7"/>
+    <circle cx="110" cy="76" r="2.5" fill="#4eeaff" opacity="0.6"/>
 
-    <!-- Right arc 1 - mirror -->
-    <circle cx="66" cy="70" r="3.5" fill="#4eeaff"/>
-    <circle cx="78" cy="56" r="4" fill="#4eeaff" opacity="0.9"/>
-    <circle cx="88" cy="44" r="3.5" fill="#4eeaff" opacity="0.8"/>
-    <circle cx="96" cy="34" r="3" fill="#4eeaff" opacity="0.7"/>
-    <circle cx="100" cy="26" r="2.5" fill="#4eeaff" opacity="0.6"/>
-    <circle cx="102" cy="20" r="2" fill="#4eeaff" opacity="0.5"/>
-
-    <!-- Right arc 2 - wider, droops -->
-    <circle cx="70" cy="74" r="3.2" fill="#a855f7"/>
-    <circle cx="86" cy="64" r="3.7" fill="#a855f7" opacity="0.9"/>
-    <circle cx="98" cy="58" r="3.3" fill="#a855f7" opacity="0.8"/>
-    <circle cx="106" cy="58" r="2.8" fill="#a855f7" opacity="0.7"/>
-    <circle cx="110" cy="64" r="2.3" fill="#a855f7" opacity="0.6"/>
-    <circle cx="110" cy="72" r="1.9" fill="#a855f7" opacity="0.5"/>
-
-    <!-- Right arc 3 - widest, droops most -->
-    <circle cx="72" cy="78" r="2.8" fill="#f472b6"/>
-    <circle cx="86" cy="76" r="3.2" fill="#f472b6" opacity="0.85"/>
-    <circle cx="98" cy="78" r="2.8" fill="#f472b6" opacity="0.7"/>
-    <circle cx="106" cy="84" r="2.4" fill="#f472b6" opacity="0.6"/>
-    <circle cx="108" cy="94" r="2" fill="#f472b6" opacity="0.5"/>
-
-    <!-- Inner left tendril -->
-    <circle cx="56" cy="68" r="2.8" fill="#6b8cff" opacity="0.9"/>
-    <circle cx="48" cy="54" r="3.2" fill="#6b8cff" opacity="0.8"/>
-    <circle cx="42" cy="42" r="2.8" fill="#6b8cff" opacity="0.7"/>
-    <circle cx="40" cy="32" r="2.3" fill="#6b8cff" opacity="0.6"/>
-
-    <!-- Inner right tendril -->
-    <circle cx="64" cy="68" r="2.8" fill="#f472b6" opacity="0.9"/>
-    <circle cx="72" cy="54" r="3.2" fill="#f472b6" opacity="0.8"/>
-    <circle cx="78" cy="42" r="2.8" fill="#f472b6" opacity="0.7"/>
-    <circle cx="80" cy="32" r="2.3" fill="#f472b6" opacity="0.6"/>
+    <!-- Right outer arc - droops more -->
+    <circle cx="72" cy="78" r="3" fill="#6b8cff"/>
+    <circle cx="86" cy="78" r="3.4" fill="#6b8cff" opacity="0.85"/>
+    <circle cx="98" cy="84" r="3" fill="#6b8cff" opacity="0.7"/>
+    <circle cx="104" cy="96" r="2.5" fill="#6b8cff" opacity="0.55"/>
   </g>
 
   <!-- Core -->

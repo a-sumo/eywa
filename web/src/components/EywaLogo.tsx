@@ -4,7 +4,6 @@ interface Props {
 }
 
 export default function EywaLogo({ size = 48, className = '' }: Props) {
-  // Aurora colors
   const cyan = '#4eeaff';
   const blue = '#6b8cff';
   const purple = '#a855f7';
@@ -40,54 +39,31 @@ export default function EywaLogo({ size = 48, className = '' }: Props) {
         <circle cx="24" cy="13" r="1.8" fill={cyan} opacity="0.7" />
         <circle cx="24" cy="9" r="1.5" fill={cyan} opacity="0.6" />
 
-        {/* Left arc 1 - curves up then droops */}
-        <circle cx="21" cy="29" r="2" fill={purple} />
-        <circle cx="16" cy="22" r="2.3" fill={purple} opacity="0.9" />
-        <circle cx="12" cy="16" r="2" fill={purple} opacity="0.8" />
-        <circle cx="10" cy="12" r="1.7" fill={purple} opacity="0.7" />
-        <circle cx="9" cy="9" r="1.4" fill={purple} opacity="0.6" />
+        {/* Left arc - curves out and droops down */}
+        <circle cx="20" cy="30" r="1.9" fill={purple} />
+        <circle cx="14" cy="26" r="2.2" fill={purple} opacity="0.9" />
+        <circle cx="9" cy="25" r="2" fill={purple} opacity="0.8" />
+        <circle cx="5" cy="27" r="1.7" fill={purple} opacity="0.7" />
+        <circle cx="3" cy="32" r="1.4" fill={purple} opacity="0.6" />
 
-        {/* Left arc 2 - wider, droops more */}
-        <circle cx="19" cy="31" r="1.8" fill={pink} />
-        <circle cx="12" cy="26" r="2.1" fill={pink} opacity="0.9" />
-        <circle cx="7" cy="23" r="1.9" fill={pink} opacity="0.8" />
-        <circle cx="4" cy="24" r="1.6" fill={pink} opacity="0.7" />
-        <circle cx="3" cy="28" r="1.3" fill={pink} opacity="0.6" />
+        {/* Left outer arc - droops more */}
+        <circle cx="18" cy="32" r="1.6" fill={pink} />
+        <circle cx="12" cy="32" r="1.8" fill={pink} opacity="0.85" />
+        <circle cx="7" cy="35" r="1.6" fill={pink} opacity="0.7" />
+        <circle cx="5" cy="40" r="1.4" fill={pink} opacity="0.55" />
 
-        {/* Left arc 3 - widest, droops most */}
-        <circle cx="18" cy="33" r="1.6" fill={blue} />
-        <circle cx="11" cy="32" r="1.8" fill={blue} opacity="0.85" />
-        <circle cx="6" cy="34" r="1.6" fill={blue} opacity="0.7" />
-        <circle cx="4" cy="38" r="1.4" fill={blue} opacity="0.55" />
+        {/* Right arc - curves out and droops down */}
+        <circle cx="28" cy="30" r="1.9" fill={cyan} />
+        <circle cx="34" cy="26" r="2.2" fill={cyan} opacity="0.9" />
+        <circle cx="39" cy="25" r="2" fill={cyan} opacity="0.8" />
+        <circle cx="43" cy="27" r="1.7" fill={cyan} opacity="0.7" />
+        <circle cx="45" cy="32" r="1.4" fill={cyan} opacity="0.6" />
 
-        {/* Right arc 1 - mirror */}
-        <circle cx="27" cy="29" r="2" fill={cyan} />
-        <circle cx="32" cy="22" r="2.3" fill={cyan} opacity="0.9" />
-        <circle cx="36" cy="16" r="2" fill={cyan} opacity="0.8" />
-        <circle cx="38" cy="12" r="1.7" fill={cyan} opacity="0.7" />
-        <circle cx="39" cy="9" r="1.4" fill={cyan} opacity="0.6" />
-
-        {/* Right arc 2 - wider, droops */}
-        <circle cx="29" cy="31" r="1.8" fill={purple} />
-        <circle cx="36" cy="26" r="2.1" fill={purple} opacity="0.9" />
-        <circle cx="41" cy="23" r="1.9" fill={purple} opacity="0.8" />
-        <circle cx="44" cy="24" r="1.6" fill={purple} opacity="0.7" />
-        <circle cx="45" cy="28" r="1.3" fill={purple} opacity="0.6" />
-
-        {/* Right arc 3 - widest, droops most */}
-        <circle cx="30" cy="33" r="1.6" fill={pink} />
-        <circle cx="37" cy="32" r="1.8" fill={pink} opacity="0.85" />
-        <circle cx="42" cy="34" r="1.6" fill={pink} opacity="0.7" />
-        <circle cx="44" cy="38" r="1.4" fill={pink} opacity="0.55" />
-
-        {/* Inner tendrils */}
-        <circle cx="22" cy="28" r="1.5" fill={blue} opacity="0.9" />
-        <circle cx="19" cy="21" r="1.7" fill={blue} opacity="0.8" />
-        <circle cx="17" cy="15" r="1.5" fill={blue} opacity="0.7" />
-
-        <circle cx="26" cy="28" r="1.5" fill={pink} opacity="0.9" />
-        <circle cx="29" cy="21" r="1.7" fill={pink} opacity="0.8" />
-        <circle cx="31" cy="15" r="1.5" fill={pink} opacity="0.7" />
+        {/* Right outer arc - droops more */}
+        <circle cx="30" cy="32" r="1.6" fill={blue} />
+        <circle cx="36" cy="32" r="1.8" fill={blue} opacity="0.85" />
+        <circle cx="41" cy="35" r="1.6" fill={blue} opacity="0.7" />
+        <circle cx="43" cy="40" r="1.4" fill={blue} opacity="0.55" />
       </g>
 
       {/* Core */}
