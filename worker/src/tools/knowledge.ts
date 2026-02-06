@@ -80,7 +80,9 @@ export function registerKnowledgeTools(
       };
 
       if (search) {
-        params.content = `ilike.*${search}*`;
+        // Sanitize: escape PostgREST special chars to prevent filter injection
+        const sanitized = search.replace(/[%_*(),.]/g, (c) => `\\${c}`);
+        params.content = `ilike.*${sanitized}*`;
       }
 
       const rows = await db.select<MemoryRow>("memories", params);

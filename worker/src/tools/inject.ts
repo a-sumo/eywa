@@ -32,7 +32,7 @@ export function registerInjectTools(
     "eywa_inject",
     "Push curated context or instructions to another agent. They'll see it in their inbox next time they check.",
     {
-      target: z.string().describe("Target agent name, or 'all' for broadcast"),
+      target: z.string().max(128).regex(/^[a-zA-Z0-9_.\-\/]+$|^all$/, "Target must be an agent name (letters, numbers, hyphens, underscores, dots, slashes) or 'all'").describe("Target agent name, or 'all' for broadcast"),
       content: z.string().describe("The context, instructions, or information to inject"),
       priority: z.enum(["normal", "high", "urgent"]).optional().default("normal").describe("Priority level"),
       label: z.string().optional().describe("Short label (e.g. 'code review feedback', 'architecture decision')"),

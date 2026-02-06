@@ -6,11 +6,11 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-// ── Baked-in credentials (public Supabase project) ─────
+// ── Baked-in defaults (public Supabase project) ─────
+// Uses the anon key (public, RLS-enforced). NOT the service_role key.
 
 const SUPABASE_URL = "https://beknjtxysmznenkotjvv.snapcloud.dev";
-const SUPABASE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjEzNjM1NiwiZXhwIjoyMDgxNzEyMzU2fQ.Pp6DrVfZs2_XvbobCm0hLSCxpfxoK-SvVzgduFIcp_Q";
+const SUPABASE_KEY = "PASTE_ANON_KEY_HERE";
 
 const MCP_BASE = "https://mcp.eywa-ai.dev/mcp";
 const DASHBOARD_BASE = "https://eywa-ai.dev/r";
@@ -396,8 +396,8 @@ function banner() {
 function usage() {
   banner();
   console.log(`${bold("  Quick start:")}
-    ${cyan("npx eywa init my-hackathon")}    Create a room and get MCP configs
-    ${cyan("npx eywa join cosmic-fox-a1b2")} Join an existing room
+    ${cyan("npx eywa-ai init my-hackathon")}    Create a room and get MCP configs
+    ${cyan("npx eywa-ai join cosmic-fox-a1b2")} Join an existing room
 
 ${bold("  Commands:")}
     init [name]               Create a new room (opens dashboard)
@@ -409,12 +409,12 @@ ${bold("  Commands:")}
     help                      Show this help
 
 ${bold("  Examples:")}
-    ${dim("$")} npx eywa init                         ${dim("# random room name")}
-    ${dim("$")} npx eywa init my-team                  ${dim("# named room")}
-    ${dim("$")} npx eywa status                        ${dim("# check your agents")}
-    ${dim("$")} npx eywa inject agent-beta "use REST"  ${dim("# push context")}
+    ${dim("$")} npx eywa-ai init                         ${dim("# random room name")}
+    ${dim("$")} npx eywa-ai init my-team                  ${dim("# named room")}
+    ${dim("$")} npx eywa-ai status                        ${dim("# check your agents")}
+    ${dim("$")} npx eywa-ai inject agent-beta "use REST"  ${dim("# push context")}
 
-  ${dim("Docs: https://github.com/ArmandSumo/eywa")}
+  ${dim("Docs: https://github.com/a-sumo/eywa")}
 `);
 }
 
