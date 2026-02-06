@@ -1,14 +1,15 @@
 /**
  * RealtimeTextureReceiver.ts
  *
- * Receives realtime texture updates via Supabase broadcast and displays them on a quad.
- * Uses WebSocket streaming instead of HTTP polling for lower latency.
+ * Receives realtime texture updates via Supabase broadcast and applies them
+ * to materials. Supports two modes:
  *
- * Setup in Lens Studio:
- * 1. Create a Quad mesh or Image component
- * 2. Add this script to the SceneObject
- * 3. Assign SnapCloudRequirements reference
- * 4. Set the channel name to match your room slug
+ * 1. Single-quad mode (legacy): listens for "frame" events, applies texture
+ *    to whatever visual component is on this object.
+ *
+ * 2. Tile-grid mode: listens for "tile" events with { col, row, image },
+ *    routes each tile to the correct material in a materials[row][col] grid.
+ *    The grid is set by RealtimePanel via setMaterialsGrid().
  */
 
 import { SnapCloudRequirements } from './SnapCloudRequirements';
@@ -22,102 +23,111 @@ import {
 @component
 export class RealtimeTextureReceiver extends BaseScriptComponent {
 
-  // Supabase Configuration
   @input
-  @hint("Reference to SnapCloudRequirements for centralized Supabase configuration")
+  @allowUndefined
+  @hint("Reference to SnapCloudRequirements for Supabase config")
   public snapCloudRequirements: SnapCloudRequirements;
 
   @input
+  @allowUndefined
   @hint("Channel name - typically your room slug")
   public channelName: string = "demo";
 
-  // Visual Configuration
-  @input
-  @hint("Width of the panel in world units (cm)")
-  public panelWidth: number = 40;
-
-  @input
-  @hint("Height of the panel in world units (cm)")
-  public panelHeight: number = 40;
-
-  // Status Display
   @input
   @allowUndefined
   @hint("Optional Text component to display connection status")
   public statusText: Text;
 
-  // Debug
   @input
-  @hint("Show debug information in console")
+  @hint("Grid columns (set by RealtimePanel, 0 = single-quad mode)")
+  public gridCols: number = 0;
+
+  @input
+  @hint("Grid rows (set by RealtimePanel)")
+  public gridRows: number = 0;
+
+  @input
+  @allowUndefined
+  @hint("Lobby channel name for auto-discovery (set by RealtimePanel)")
+  public lobbyChannelName: string = "";
+
+  @input
+  @allowUndefined
+  @hint("Device ID for lobby announcements (set by RealtimePanel)")
+  public deviceId: string = "";
+
+  @input
+  @hint("Show debug info in console")
   public enableDebugLogs: boolean = true;
 
   @input
-  @hint("Log frame reception frequency (every N frames)")
+  @hint("Log frame reception every N frames")
   @widget(new SliderWidget(1, 50, 1))
   public logFrequency: number = 10;
 
-  // Private variables
   private client: SupabaseClient;
   private realtimeChannel: RealtimeChannel;
-  private isInitialized: boolean = false;
-
-  private material: Material;
-  private transform: Transform;
-
-  // Stats
+  private lobbyChannel: RealtimeChannel;
+  private singleMaterial: Material; // for single-quad mode
+  private materialsGrid: Material[][] = []; // for tile-grid mode
+  private microTileMaterials: Map<string, Material> = new Map(); // for micro-tile mode (keyed by tile ID)
   private frameCount: number = 0;
+  private tileUpdateCounts: Map<string, number> = new Map();
   private lastFrameTime: number = 0;
   private connectionStatus: string = "disconnected";
+  private heartbeatEvent: any = null;
+  private onCursorCallback: ((payload: any) => void) | null = null;
+  private onSceneCallback: ((payload: any) => void) | null = null;
+  private onTexCallback: ((payload: any) => void) | null = null;
 
   onAwake() {
-    this.log("RealtimeTextureReceiver awakening...");
-
-    this.transform = this.sceneObject.getTransform();
-
-    // Deferred init - components not ready on frame 0
-    this.createEvent("OnStartEvent").bind(() => {
-      this.setupQuad();
-      this.initializeSupabase();
-    });
-
-    this.createEvent("OnDestroyEvent").bind(() => {
-      this.cleanup();
-    });
+    this.log("awakening...");
+    this.createEvent("OnStartEvent").bind(() => this.start());
+    this.createEvent("OnDestroyEvent").bind(() => this.cleanup());
   }
 
   /**
-   * Setup the quad mesh and material for texture display
+   * Set the materials grid for tile-based rendering.
+   * Called by RealtimePanel after creating all quads.
    */
-  private setupQuad(): void {
-    // Try to get Image component first
-    let image = this.sceneObject.getComponent("Component.Image") as Image;
+  public setMaterialsGrid(grid: Material[][]) {
+    this.materialsGrid = grid;
+    this.log("Materials grid set: " + grid.length + " rows");
+  }
 
-    if (image) {
-      // Clone material so we can modify it
-      this.material = image.mainMaterial.clone();
-      image.mainMaterial = this.material;
-      this.log("Using Image component for texture display");
-    } else {
-      // Try RenderMeshVisual
-      let rmv = this.sceneObject.getComponent("Component.RenderMeshVisual") as RenderMeshVisual;
-      if (rmv) {
-        this.material = rmv.mainMaterial.clone();
-        rmv.mainMaterial = this.material;
-        this.log("Using RenderMeshVisual for texture display");
-      } else {
-        this.log("WARNING: No Image or RenderMeshVisual component found!");
+  private start(): void {
+    // In single-quad mode, find material on this object
+    if (this.gridCols === 0 || this.gridRows === 0) {
+      this.singleMaterial = this.findAndCloneMaterial();
+      if (!this.singleMaterial) {
+        this.log("No Image or RenderMeshVisual found. Cannot display texture.");
         return;
       }
     }
 
-    // Set panel size
-    this.transform.setLocalScale(new vec3(this.panelWidth, this.panelHeight, 1));
-    this.log(`Panel size set to ${this.panelWidth}x${this.panelHeight}`);
+    this.initializeSupabase();
   }
 
-  /**
-   * Initialize Supabase client and realtime connection
-   */
+  private findAndCloneMaterial(): Material | null {
+    const image = this.sceneObject.getComponent("Component.Image") as Image;
+    if (image && image.mainMaterial) {
+      const mat = image.mainMaterial.clone();
+      image.mainMaterial = mat;
+      this.log("Using Image component");
+      return mat;
+    }
+
+    const rmv = this.sceneObject.getComponent("Component.RenderMeshVisual") as RenderMeshVisual;
+    if (rmv && rmv.mainMaterial) {
+      const mat = rmv.mainMaterial.clone();
+      rmv.mainMaterial = mat;
+      this.log("Using RenderMeshVisual");
+      return mat;
+    }
+
+    return null;
+  }
+
   private async initializeSupabase() {
     if (!this.snapCloudRequirements || !this.snapCloudRequirements.isConfigured()) {
       this.log("SnapCloudRequirements not configured");
@@ -128,7 +138,6 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
     try {
       this.updateStatus("connecting");
 
-      // Create Supabase client
       this.client = createClient(
         this.snapCloudRequirements.getSupabaseUrl(),
         this.snapCloudRequirements.getSupabasePublicToken()
@@ -140,186 +149,316 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
         return;
       }
 
-      // Sign in user
-      await this.signInUser();
+      await this.client.auth.signInWithIdToken({
+        provider: "snapchat",
+        token: "spectacles-auth-token"
+      });
 
-      // Setup realtime channel
-      await this.setupRealtimeChannel();
-
-      this.isInitialized = true;
-      this.log("Supabase realtime initialized");
+      await this.subscribeToChannel();
+      await this.joinLobby();
+      this.log("Realtime initialized");
 
     } catch (error) {
-      this.log(`Initialization error: ${error}`);
+      this.log("Init error: " + error);
       this.updateStatus("error: init");
     }
   }
 
-  /**
-   * Sign in user with Snapchat provider
-   */
-  private async signInUser() {
-    const { data, error } = await this.client.auth.signInWithIdToken({
-      provider: "snapchat",
-      token: "spectacles-auth-token"
-    });
-
-    if (error) {
-      this.log("Sign in warning: " + JSON.stringify(error));
-    } else {
-      this.log("User signed in successfully");
-    }
-  }
-
-  /**
-   * Setup Supabase Realtime channel to receive frames
-   */
-  private async setupRealtimeChannel() {
-    const channelKey = `spectacles:${this.channelName}`;
-    this.log(`Subscribing to channel: ${channelKey}`);
+  private async subscribeToChannel() {
+    const channelKey = "spectacles:" + this.channelName;
+    this.log("Subscribing to: " + channelKey);
 
     this.realtimeChannel = this.client.channel(channelKey, {
-      config: {
-        broadcast: { self: false, ack: false }
+      config: { broadcast: { self: false, ack: false } }
+    });
+
+    // Listen for tile events (new format)
+    this.realtimeChannel.on("broadcast", { event: "tile" }, (msg) => {
+      this.onTile(msg.payload);
+    });
+
+    // Listen for frame events (legacy single-quad format)
+    this.realtimeChannel.on("broadcast", { event: "frame" }, (msg) => {
+      this.onFrame(msg.payload);
+    });
+
+    // Listen for cursor position from web (lightweight JSON, no texture)
+    this.realtimeChannel.on("broadcast", { event: "cursor" }, (msg) => {
+      if (this.onCursorCallback) {
+        this.onCursorCallback(msg.payload);
       }
     });
 
-    // Listen for frame broadcasts
-    this.realtimeChannel
-      .on("broadcast", { event: "frame" }, (msg) => {
-        this.handleIncomingFrame(msg.payload);
-      });
+    // Micro-tile protocol: scene ops (create/move/destroy quads)
+    this.realtimeChannel.on("broadcast", { event: "scene" }, (msg) => {
+      if (this.onSceneCallback) {
+        this.onSceneCallback(msg.payload);
+      }
+    });
 
-    // Subscribe to channel
-    this.realtimeChannel.subscribe(async (status) => {
-      this.log(`Channel status: ${status}`);
+    // Micro-tile protocol: texture updates (JPEG base64 by tile ID)
+    this.realtimeChannel.on("broadcast", { event: "tex" }, (msg) => {
+      this.onMicroTex(msg.payload);
+    });
 
+    this.realtimeChannel.subscribe((status) => {
+      this.log("Channel: " + status);
       if (status === "SUBSCRIBED") {
-        this.log("Subscribed to realtime channel!");
         this.updateStatus("connected");
       } else if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-        this.log("Channel closed or error occurred");
         this.updateStatus("error: " + status.toLowerCase());
       }
     });
   }
 
   /**
-   * Handle incoming frame data
+   * Join the lobby channel and announce this device.
+   * Sends a heartbeat every 10s so the web renderer knows we're alive.
    */
-  private handleIncomingFrame(payload: any) {
-    if (!payload || !payload.image) {
-      this.log("Received frame with no image data");
-      return;
-    }
+  private async joinLobby() {
+    if (!this.lobbyChannelName || !this.deviceId) return;
+
+    const lobbyKey = "spectacles:" + this.lobbyChannelName + ":lobby";
+    this.log("Joining lobby: " + lobbyKey);
+
+    this.lobbyChannel = this.client.channel(lobbyKey, {
+      config: { broadcast: { self: false, ack: false } }
+    });
+
+    this.lobbyChannel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        this.log("Lobby joined, announcing device: " + this.deviceId);
+        this.announceLobby("device_connect");
+        this.startHeartbeat();
+      }
+    });
+  }
+
+  private announceLobby(event: string) {
+    if (!this.lobbyChannel) return;
+    this.lobbyChannel.send({
+      type: "broadcast",
+      event: event,
+      payload: {
+        deviceId: this.deviceId,
+        channelName: this.channelName,
+        gridCols: this.gridCols,
+        gridRows: this.gridRows,
+        timestamp: Date.now(),
+      },
+    });
+  }
+
+  private startHeartbeat() {
+    // Send heartbeat every 10 seconds
+    this.heartbeatEvent = this.createEvent("UpdateEvent");
+    let lastBeat = 0;
+    this.heartbeatEvent.bind(() => {
+      const now = Date.now();
+      if (now - lastBeat >= 10000) {
+        this.announceLobby("device_heartbeat");
+        lastBeat = now;
+      }
+    });
+  }
+
+  /**
+   * Handle a tile update event.
+   * Payload: { col: number, row: number, image: string }
+   */
+  private onTile(payload: any) {
+    if (!payload || !payload.image || payload.col === undefined || payload.row === undefined) return;
+
+    const col = payload.col as number;
+    const row = payload.row as number;
+
+    if (row < 0 || row >= this.materialsGrid.length) return;
+    if (col < 0 || col >= (this.materialsGrid[row]?.length ?? 0)) return;
+
+    const material = this.materialsGrid[row][col];
+    if (!material) return;
 
     this.frameCount++;
     this.lastFrameTime = Date.now();
 
-    // Log based on frequency setting
+    const key = col + "," + row;
+    this.tileUpdateCounts.set(key, (this.tileUpdateCounts.get(key) ?? 0) + 1);
+
     if (this.frameCount % this.logFrequency === 0) {
-      this.log(`Received frame #${this.frameCount} (${payload.frame ?? '?'})`);
+      this.log("Tile (" + col + "," + row + ") #" + this.frameCount);
     }
 
-    // Decode base64 image and update texture
-    this.updateTexture(payload.image);
-
-    // Update status
-    this.updateStatus(`streaming (${this.frameCount})`);
+    this.applyTextureToMaterial(payload.image, material, col, row);
+    this.updateStatus("tiles (" + this.frameCount + ")");
   }
 
   /**
-   * Decode base64 image and apply to material
+   * Handle a legacy single-frame update.
    */
-  private updateTexture(base64Image: string) {
-    if (!this.material) {
-      this.log("Material not initialized");
-      return;
+  private onFrame(payload: any) {
+    if (!payload || !payload.image) return;
+
+    this.frameCount++;
+    this.lastFrameTime = Date.now();
+
+    if (this.frameCount % this.logFrequency === 0) {
+      this.log("Frame #" + this.frameCount);
     }
 
+    if (this.singleMaterial) {
+      this.applyTextureToMaterial(payload.image, this.singleMaterial, -1, -1);
+    }
+    this.updateStatus("streaming (" + this.frameCount + ")");
+  }
+
+  private applyTextureToMaterial(base64Image: string, material: Material, col: number, row: number) {
     Base64.decodeTextureAsync(
       base64Image,
       (texture: Texture) => {
-        // Successfully decoded - apply to material
-        this.material.mainPass.baseTex = texture;
-
+        material.mainPass.baseTex = texture;
         if (this.frameCount <= 3) {
-          this.log(`Texture decoded and applied (${texture.getWidth()}x${texture.getHeight()})`);
+          const label = col >= 0 ? " tile(" + col + "," + row + ")" : "";
+          this.log("Texture applied" + label + ": " + texture.getWidth() + "x" + texture.getHeight());
         }
       },
       () => {
-        this.log("Failed to decode base64 texture");
+        this.log("Failed to decode texture" + (col >= 0 ? " for tile(" + col + "," + row + ")" : ""));
       }
     );
   }
 
-  /**
-   * Update connection status display
-   */
   private updateStatus(status: string) {
     this.connectionStatus = status;
+    if (!this.statusText) return;
 
-    if (this.statusText) {
-      const timeSince = this.lastFrameTime > 0
-        ? Math.floor((Date.now() - this.lastFrameTime) / 1000)
-        : null;
+    let text = "Status: " + status + "\n";
+    text += "Channel: spectacles:" + this.channelName + "\n";
 
-      let displayText = `Status: ${status}\n`;
-      displayText += `Channel: spectacles:${this.channelName}\n`;
-      displayText += `Frames: ${this.frameCount}`;
-
-      if (timeSince !== null) {
-        displayText += `\nLast: ${timeSince}s ago`;
-      }
-
-      this.statusText.text = displayText;
+    if (this.gridCols > 0) {
+      text += "Grid: " + this.gridCols + "x" + this.gridRows + "\n";
     }
+
+    text += "Updates: " + this.frameCount;
+
+    if (this.lastFrameTime > 0) {
+      const ago = Math.floor((Date.now() - this.lastFrameTime) / 1000);
+      text += "\nLast: " + ago + "s ago";
+    }
+
+    this.statusText.text = text;
   }
 
-  /**
-   * Cleanup connections
-   */
   private cleanup() {
+    if (this.lobbyChannel) {
+      this.announceLobby("device_disconnect");
+      this.client.removeChannel(this.lobbyChannel);
+    }
     if (this.client && this.realtimeChannel) {
       this.client.removeChannel(this.realtimeChannel);
     }
-    this.log("Disconnected and cleaned up");
+    this.log("Cleaned up");
   }
 
-  /**
-   * Logging helper
-   */
   private log(message: string) {
     if (this.enableDebugLogs) {
-      print(`[RealtimeTextureReceiver] ${message}`);
+      print("[RealtimeTextureReceiver] " + message);
     }
   }
 
-  /**
-   * Public API - Check if connected
-   */
   public isConnected(): boolean {
-    return this.isInitialized && this.connectionStatus === "connected";
+    return this.connectionStatus === "connected" || this.connectionStatus.startsWith("streaming") || this.connectionStatus.startsWith("tiles");
   }
 
-  /**
-   * Public API - Get frame count
-   */
   public getFrameCount(): number {
     return this.frameCount;
   }
 
-  /**
-   * Public API - Get channel name
-   */
   public getChannelName(): string {
     return this.channelName;
   }
 
-  /**
-   * Public API - Get connection status
-   */
   public getStatus(): string {
     return this.connectionStatus;
+  }
+
+  /**
+   * Register a callback for cursor position updates from the web.
+   * Payload: { col, row, u, v } or { col: -1 } for exit.
+   */
+  public onCursor(callback: (payload: any) => void) {
+    this.onCursorCallback = callback;
+  }
+
+  /**
+   * Register a callback for micro-tile scene ops (create/move/destroy).
+   * Used by MicroTilePanel to manage quads dynamically.
+   */
+  public onScene(callback: (payload: any) => void) {
+    this.onSceneCallback = callback;
+  }
+
+  /**
+   * Handle a micro-tile texture update.
+   * Payload: { id: string, image: string (base64) }
+   */
+  private onMicroTex(payload: any) {
+    if (!payload || !payload.id || !payload.image) return;
+
+    const id = payload.id as string;
+    this.frameCount++;
+    this.lastFrameTime = Date.now();
+
+    if (this.frameCount % this.logFrequency === 0) {
+      this.log("MicroTex " + id + " #" + this.frameCount);
+    }
+
+    // Try micro-tile material map first
+    const mat = this.microTileMaterials.get(id);
+    if (mat) {
+      this.applyTextureToMaterial(payload.image, mat, -1, -1);
+    }
+
+    // Also forward to the tex callback if registered (MicroTilePanel handles its own materials)
+    if (this.onTexCallback) {
+      this.onTexCallback(payload);
+    }
+
+    this.updateStatus("micro (" + this.frameCount + ")");
+  }
+
+  /**
+   * Register a callback for micro-tile texture events.
+   * Used by MicroTilePanel when it manages its own materials.
+   */
+  public onTex(callback: (payload: any) => void) {
+    this.onTexCallback = callback;
+  }
+
+  /**
+   * Register a material for a micro-tile ID.
+   * Used when this receiver manages materials directly.
+   */
+  public setMicroTileMaterial(id: string, material: Material) {
+    this.microTileMaterials.set(id, material);
+  }
+
+  /**
+   * Remove a material for a micro-tile ID.
+   */
+  public removeMicroTileMaterial(id: string) {
+    this.microTileMaterials.delete(id);
+  }
+
+  /**
+   * Send an event back to the web via the same broadcast channel.
+   * Used by RealtimePanel and MicroTilePanel to relay interaction events.
+   */
+  public sendEvent(event: string, payload: any) {
+    if (!this.realtimeChannel) return;
+    this.realtimeChannel.send({
+      type: "broadcast",
+      event: event,
+      payload: payload,
+    });
   }
 }

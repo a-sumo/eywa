@@ -43,52 +43,31 @@ export interface SlidesData {
 
 export const slidesData: SlidesData = {
   title: "Eywa",
-  subtitle: "The coordination layer for human+AI teams",
+  subtitle: "Shared memory for AI agent swarms",
   summary: [
     "1. The Problem",
-    "2. The Market",
-    "3. The Insight",
-    "4. The Product",
-    "5. Integrations",
-    "6. Architecture",
-    "7. Live Demo",
+    "2. The Solution",
+    "3. How It Works",
+    "4. Live Demo",
     "Appendix: Labs",
   ],
 
   sections: {
     "The Problem": [
-      "Saturday morning",
-      "Everyone's heads down",
-      "You ask a simple question",
-      "Nobody told Priya",
+      "The coordination gap",
+      "Faster agents, slower teams",
+      "It's only accelerating",
     ],
-    "The Market": ["Faster agents, slower teams"],
-    "The Insight": ["The new unit of work", "No centaurs"],
-    "The Product": [
-      "Threads, not tools",
-      "The three views",
+    "The Solution": [
+      "Eywa",
       "Thread Tree",
-      "Session Graph",
-      "Cross-Session Links",
-      "The Workspace",
-      "Eywa Workspace",
-      "Gemini Terminal",
-      "Divergence detection",
-      "Context Injection",
-      "Web Inject UI",
-      "Knowledge Base",
+      "Workspace + Gemini",
+      "Coordination primitives",
     ],
-    Integrations: [
-      "MCP Native",
-      "VS Code Extension",
-      "Discord Bot",
-      "Docs Portal",
-    ],
-    Architecture: [
+    "How It Works": [
+      "Works with your agents",
+      "Ecosystem",
       "System overview",
-      "Data flow",
-      "The MCP bridge",
-      "Tool reference",
     ],
     "Live Demo": ["See it live"],
     "Appendix: Labs": [
@@ -99,276 +78,120 @@ export const slidesData: SlidesData = {
   },
 
   slides: [
-    // ── THE PROBLEM ──────────────────────────────────
+    // -- THE PROBLEM --
     {
       type: "bullets",
-      title: "Saturday morning",
-      subtitle: "MIT Reality Hack. Your team just formed.",
+      title: "The coordination gap",
+      subtitle: "AI agents are powerful alone. On a team, they're blind.",
       items: [
-        "You're building an AR app that translates sign language in real-time.",
-        "48 hours to ship.",
+        "92% of developers use AI coding agents daily. Each runs in <strong>complete isolation</strong>.",
+        "Agent A decides on an API format. Agent B never finds out. Work diverges silently.",
+        "The more agents you run, the more time you spend re-syncing them manually.",
       ],
     },
     {
-      type: "bullets",
-      title: "Everyone's heads down",
-      subtitle: "Hour 3. Everyone is deep in their own world.",
-      items: [
-        "Sarah: Unity scene, hand tracking overlay. Two agents running.",
-        "Marco: backend, text-to-speech output. Three terminals.",
-        "Priya: UI design, caption placement. Cursor + Gemini.",
-        "You: hand pose recognition model. Two agents, different branches.",
-        "Nobody knows what anyone else's AI has figured out.",
-      ],
-    },
-    {
-      type: "bullets",
-      title: "You ask a simple question",
-      items: [
-        'You walk over to Marco. "What format should I send the recognized signs in?"',
-        "He gives you a quick answer. JSON, a text field.",
-        "But his agent spent 40 minutes evaluating three TTS services, benchmarking latency, picking one for a specific reason.",
-        "You get the format. You don't get the reasoning. Your agent re-evaluates the same options from scratch.",
-      ],
-    },
-    {
-      type: "bullets",
-      title: "Nobody told Priya",
-      items: [
-        "Priya designed her caption UI around hand tracking bounding boxes.",
-        "Sarah scrapped that approach 20 minutes ago. Switched to wrist anchoring.",
-        "Priya won't find out until they try to integrate tonight.",
-        "<strong>There is nothing for this today.</strong>",
-      ],
-    },
-
-    // ── THE MARKET ──────────────────────────────────
-    {
-      type: "bars",
+      type: "bigstat",
       title: "Faster agents, slower teams",
-      items: [
-        { label: "AI-generated PRs wait longer for review", value: 460, display: "4.6x", color: "var(--error)" },
-        { label: "AI code churn rate vs human code", value: 141, display: "+41%", color: "var(--warning)" },
-        { label: "Context switching increase with AI tools", value: 147, display: "+47%", color: "#c77a30" },
-        { label: "Developers who say AI improved team collaboration", value: 17, display: "17%", color: "var(--success)" },
+      subtitle: "Individual productivity is up. Team coordination is down.",
+      stats: [
+        { value: "4.6x", label: "Longer review wait for AI-generated PRs" },
+        { value: "+41%", label: "Higher code churn from AI vs human code" },
+        { value: "+47%", label: "More context switching with AI tools" },
+        { value: "17%", label: "Say AI improved team collaboration" },
       ],
-      source: "92% of devs use AI daily. $34B market. Yet only 17% say it helps collaboration.",
-    },
-
-    // ── THE INSIGHT ──────────────────────────────────
-    {
-      type: "bullets",
-      title: "The new unit of work",
-      subtitle: "Something changed and the tooling hasn't caught up",
-      items: [
-        "Sarah with her coding agent is a compound intelligence.",
-        "She steers. The AI executes. They think together.",
-        "Your team isn't 4 people. It's 4 human+AI pairs, each running multiple agents.",
-        "Everyone is adopting agents. Nobody has solved how they coordinate across people.",
-      ],
+      footnote: "$34B AI coding tools market. Coordination is the bottleneck.",
     },
     {
       type: "quote",
-      title: "No centaurs",
-      subtitle: "The centaur model, human + AI as a stable pair, is already breaking down",
+      title: "It's only accelerating",
+      subtitle: "The number of agents per developer is only going up",
       quote: "it's just so clear humans are the bottleneck to writing software. number of agents we can manage, information flow, state management. there will just be no centaurs soon as it is not a stable state",
       attribution: "@tszzl (roon)",
     },
 
-    // ── THE PRODUCT ──────────────────────────────────
+    // -- THE SOLUTION --
     {
       type: "bullets",
-      title: "Threads, not tools",
-      subtitle: "Every AI conversation is a thread. Like git branches for context.",
+      title: "Eywa",
+      subtitle: "Shared memory that keeps every agent in sync. Like git, but for AI context.",
       items: [
-        "Each terminal session, Claude Code, Cursor, Gemini, is a <strong>thread</strong>.",
-        "Threads capture everything: decisions, code, blockers, reasoning.",
-        "You can <strong>see</strong> any teammate's threads, <strong>pull</strong> specific context, or <strong>combine</strong> threads together.",
-        'No copy-paste. No "hey what did your agent figure out?" No re-doing work.',
+        "Every agent session becomes a <strong>shared thread</strong> with memories, artifacts, and decisions.",
+        "Any team member can browse, search, or inject context into any agent's session.",
+        "One MCP endpoint. Zero config. Works with 8+ AI coding agents today.",
       ],
     },
     {
-      type: "diagram",
-      title: "The three views",
-      diagramKey: "three-views",
-    },
-    {
-      type: "image",
+      type: "bullets",
       title: "Thread Tree",
-      subtitle: "3-pane layout: thread list, inline detail, session graph",
-      src: "/slides/thread-tree.png",
-    },
-    {
-      type: "bullets",
-      title: "Session Graph",
-      subtitle: "Visual map of all sessions and their connections",
+      subtitle: "See every agent's work in real-time.",
       items: [
-        "Each session is a horizontal bar showing memory distribution over time.",
-        "Cross-session links appear as curved edges connecting memories.",
-        "Colors indicate link type: <strong>blue</strong> (reference), <strong>pink</strong> (inject), <strong>green</strong> (fork).",
-        "Click any session to view its detail panel alongside the graph.",
+        "Live tree of all agent sessions across your team.",
+        "Click into any thread for the full conversation, artifacts, and status.",
+        "Filter by agent, owner, status, or search across all threads.",
       ],
     },
     {
       type: "bullets",
-      title: "Cross-Session Links",
-      subtitle: "Connect memories across agent boundaries",
+      title: "Workspace + Gemini",
+      subtitle: "Build context from threads. Ask questions across all of it.",
       items: [
-        "<strong>Reference</strong>: read-only pointer, \"see also\" without pushing context.",
-        "<strong>Inject</strong>: push context to target agent, they see it in their inbox.",
-        "<strong>Fork</strong>: mark where a session branched from another's work.",
-        "Search for memories with <strong>remix_search</strong>, fetch with <strong>remix_fetch</strong>.",
-        "Links persist and show in the Session Graph as curved connection edges.",
-      ],
-    },
-    {
-      type: "diagram",
-      title: "The Workspace",
-      subtitle: "3-panel workspace: Browse → Context → Gemini Terminal",
-      diagramKey: "the-workspace",
-    },
-    {
-      type: "image",
-      title: "Eywa Workspace",
-      subtitle: "Browse sessions on the left, drag into context, chat with Gemini on the right",
-      src: "/slides/remix-view.png",
-    },
-    {
-      type: "bullets",
-      title: "Gemini Terminal",
-      subtitle: "Orchestration powered by Google Gemini",
-      items: [
-        "The right panel isn't just a preview, it's a <strong>Gemini-powered chat</strong>.",
-        "System context auto-updates as you drag memories into the context panel.",
-        'Ask questions across threads: "What did Sarah and Marco decide about latency?"',
-        "Gemini synthesizes information, resolves conflicts, and generates coherent responses.",
-        "Every terminal session becomes a new thread, shareable with the whole team.",
-      ],
-    },
-    {
-      type: "diagram",
-      title: "Divergence detection",
-      subtitle: "Get alerted when teammates' threads go in different directions",
-      diagramKey: "divergence",
-    },
-    {
-      type: "diagram",
-      title: "Context Injection",
-      subtitle: "Push context to any agent, they see it on their next tool call",
-      diagramKey: "injection-pipeline",
-    },
-    {
-      type: "bullets",
-      title: "Web Inject UI",
-      subtitle: "Inline inject panel in the thread tree, no separate page",
-      items: [
-        "Target any agent or broadcast to all.",
-        "Priority levels: normal, high, <strong>urgent</strong> (triggers native VS Code popup).",
-        "Per-agent inject button (<strong>⇨</strong>) for quick targeted sends.",
-        "Content flows through Supabase → piggybacks on the agent's next MCP tool response.",
+        "Drag memories from any thread into a shared workspace.",
+        "Context auto-compiles. Ask Gemini questions grounded in your agents' actual work.",
+        "Output becomes a new shareable thread.",
       ],
     },
     {
       type: "bullets",
-      title: "Knowledge Base",
-      subtitle: "Persistent project memory that survives across sessions",
+      title: "Coordination primitives",
+      subtitle: "Built-in mechanisms so agents don't drift apart",
       items: [
-        "<strong>remix_learn</strong>: Store architecture decisions, conventions, gotchas, API patterns.",
-        "<strong>remix_knowledge</strong>: Retrieve and search the knowledge base by tags or content.",
-        "<strong>remix_forget</strong>: Remove outdated or incorrect knowledge entries.",
-        "Knowledge persists across all sessions and agents, new teammates inherit the full context automatically.",
+        "<strong>Divergence alerts</strong>: warnings when two agents solve the same problem differently.",
+        "<strong>Context injection</strong>: push a decision to any agent. They see it on their next action.",
+        "<strong>Knowledge base</strong>: architecture decisions and conventions persist across all sessions.",
       ],
     },
 
-    // ── INTEGRATIONS ──────────────────────────────────
+    // -- HOW IT WORKS --
     {
       type: "bullets",
-      title: "MCP Native",
-      subtitle: "Works with every AI coding agent via the Model Context Protocol",
+      title: "Works with your agents",
+      subtitle: "One URL. Zero config. Works with 8+ AI coding agents.",
       items: [
-        "<strong>8 agents documented</strong>: Claude Code, Cursor, Windsurf, Gemini CLI, Codex, Cline, Mistral, Cohere.",
-        "One URL connects any MCP-compatible agent to the mesh.",
-        "<strong>Local-first privacy</strong>: Your code never leaves your machine. Eywa syncs metadata only.",
-        "<strong>Zero config</strong>: Add one MCP server. That's it. Works with your existing setup.",
-        "Team-wide visibility regardless of which tool runs the agent.",
+        "Claude Code, Cursor, Windsurf, Gemini CLI, Codex, Cline, Mistral, Cohere.",
+        "One line in your MCP config. That's the entire setup.",
+        "Your code stays local. Eywa syncs context only.",
       ],
     },
     {
       type: "bullets",
-      title: "VS Code Extension",
-      subtitle: "Full team awareness without leaving your editor",
+      title: "Ecosystem",
+      subtitle: "Meet your team where they already work",
       items: [
-        "Realtime sidebar: hierarchical <strong>User → Session</strong> tree with live status indicators.",
-        "Activity feed: session starts, completions, injections, knowledge stored, all in real-time.",
-        "<strong>Cmd+Shift+I</strong>: select code, pick agent, inject, 3 steps.",
-        "Knowledge <strong>CodeLens</strong>: see relevant team knowledge inline in your editor.",
-        "No context switching. No web dashboard needed.",
+        "<strong>VS Code</strong>: Realtime sidebar, activity feed, one-click code injection.",
+        "<strong>Discord</strong>: 12 slash commands for full agent control from chat.",
+        "<strong>Docs portal</strong>: Step-by-step setup for every supported agent.",
       ],
     },
-    {
-      type: "bullets",
-      title: "Discord Bot",
-      subtitle: "Observe and interact with your agent swarm from Discord",
-      items: [
-        "<strong>12 slash commands</strong> for full agent control.",
-        "<strong>/status</strong>: See what all agents are working on.",
-        "<strong>/inject</strong>: Push context to any agent from Discord.",
-        "<strong>/knowledge</strong>: Search and add to the team knowledge base.",
-        "Messages from Discord show as <code>discord/&lt;username&gt;</code> in the web dashboard.",
-      ],
-    },
-    {
-      type: "bullets",
-      title: "Docs Portal",
-      subtitle: "Step-by-step integration guides for every supported agent",
-      items: [
-        "Dedicated setup page for each agent: config path, JSON example, notes.",
-        "Available tools reference with descriptions.",
-        "Quick start prompts to get agents logging immediately.",
-        "Live at <strong>/docs</strong> with sidebar navigation.",
-      ],
-    },
-
-    // ── ARCHITECTURE ──────────────────────────────────
     {
       type: "diagram",
       title: "System overview",
-      subtitle: "Stateless MCP server + Supabase + React dashboard",
+      subtitle: "Stateless MCP server + Supabase + realtime dashboard",
       diagramKey: "architecture",
     },
-    {
-      type: "diagram",
-      title: "Data flow",
-      subtitle: "From agent terminal to shared context in real-time",
-      diagramKey: "data-flow",
-    },
-    {
-      type: "diagram",
-      title: "The MCP bridge",
-      subtitle: "One URL connects any AI agent to the mesh",
-      diagramKey: "mcp-bridge",
-    },
-    {
-      type: "diagram",
-      title: "Tool reference",
-      subtitle: "20+ tools organized in 5 categories",
-      diagramKey: "tool-reference",
-    },
 
-    // ── LIVE DEMO ──────────────────────────────────
+    // -- LIVE DEMO --
     {
       type: "bullets",
       title: "See it live",
+      subtitle: "Two agents. One room. Real-time shared context.",
       items: [
-        "1. Open two Claude Code terminals → both connect to the same room via one URL.",
-        "2. Agent alpha starts working on auth. Agent beta starts on the database.",
-        "3. Open the web dashboard → see both threads in real-time.",
-        "4. Spot the <strong>divergence indicator</strong>, alpha and beta are solving the same problem differently.",
-        "5. Open Eywa → browse memories → drag both threads into context → ask Gemini to integrate.",
+        "Agent alpha works on auth. Agent beta works on the database.",
+        "Both threads appear in the dashboard as they work.",
+        "Drag both into Eywa. Ask Gemini to integrate.",
       ],
     },
 
-    // ── APPENDIX: LABS ──────────────────────────────────
+    // -- APPENDIX: LABS --
     {
       type: "bullets",
       title: "Ambient Displays",
@@ -386,9 +209,7 @@ export const slidesData: SlidesData = {
       items: [
         "<strong>Rewind</strong>: Jump back to any point in session history.",
         "<strong>Fork</strong>: Branch from a historical moment to explore alternatives.",
-        "<strong>Bookmark</strong>: Mark important memories for quick reference.",
         "<strong>Compare</strong>: Diff two sessions to find divergence points.",
-        "Available in Pro tier with 90-day history retention.",
       ],
     },
     {
@@ -396,16 +217,15 @@ export const slidesData: SlidesData = {
       title: "Physical Displays",
       subtitle: "E-ink, TFT touch, and Spectacles AR",
       items: [
-        "<strong>E-ink</strong>: 7-color Waveshare display (600x448). Pastel palette, tracking marker for AR.",
-        "<strong>TFT Touch</strong>: 3.5\" ILI9341 with pygame. Tap agents, send injections, view details.",
+        "<strong>E-ink</strong>: 7-color Waveshare display. Pastel palette, AR tracking marker.",
+        "<strong>TFT Touch</strong>: 3.5\" ILI9341 with pygame. Tap agents, send injections.",
         "<strong>Spectacles</strong>: Image tracking anchors AR panel to physical e-ink display.",
-        "All three share the same Supabase backend, unified team awareness across form factors.",
       ],
     },
   ],
 
   closing: {
     title: "Eywa",
-    subtitle: "The coordination layer for human+AI teams",
+    subtitle: "Your agents are powerful. Make them a team.",
   },
 };

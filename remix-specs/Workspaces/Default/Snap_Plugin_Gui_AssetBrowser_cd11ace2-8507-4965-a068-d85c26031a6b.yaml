@@ -1,18 +1,14 @@
 CollapsedEntities:
   type: stringset
   value:
-    size: 452
+    size: 449
     values:
-      - AgentTab.ts
-      - ContextTab.ts
+      - 1-1.png
       - Echopark.hdr
-      - MemoriesTab.ts
-      - MockData.ts
+      - MicroTilePanel.ts
       - RealtimePanel.ts
       - RealtimeTextureReceiver.ts
-      - RemixPanel.ts
-      - RemixTypes.ts
-      - RemoteUI.ts
+      - RemoteServiceGateway.lspkg/package.native
       - SnapCloudRequirements.ts
       - SpectaclesInteractionKit.lspkg
       - SpectaclesInteractionKit.lspkg/Assets
@@ -454,5 +450,6 @@ CollapsedEntities:
       - SupabaseClient.lspkg/supabase-snapcloud.d.ts
       - SupabaseClient.lspkg/supabase-snapcloud.js
       - SupabaseProject main.supabaseProject
-      - TabContent.ts
+      - Unlit.mat
+      - Unlit.ss_graph
   options: 4

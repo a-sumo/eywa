@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useRoom } from "../hooks/useRoom";
 import { FlowBackground } from "./FlowBackground";
@@ -79,6 +80,7 @@ const IconDiscord = () => (
 
 export function Landing() {
   const { createRoom, creating, error } = useRoom();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="landing-dark">
@@ -106,24 +108,51 @@ export function Landing() {
               {creating ? "Creating..." : "Get Started"}
             </button>
           </div>
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Open menu"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
         </div>
       </header>
+
+      {/* Mobile menu overlay */}
+      <div className={`mobile-menu${menuOpen ? " open" : ""}`}>
+        <button className="mobile-menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+          ×
+        </button>
+        <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
+        <a href="#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
+        <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Contact</a>
+        <a href="/r/demo" onClick={() => setMenuOpen(false)}>Try Demo</a>
+        <button
+          onClick={() => { createRoom(); setMenuOpen(false); }}
+          disabled={creating}
+        >
+          {creating ? "Creating..." : "Get Started"}
+        </button>
+      </div>
 
       {/* Hero */}
       <section className="landing-hero-dark">
         <div className="landing-hero-content">
           <h1 className="landing-hero-title">
-            The coordination layer for<br />
-            <span className="landing-hero-gradient">human + AI teams</span>
+            Shared memory for<br />
+            <span className="landing-hero-gradient">AI agent teams</span>
           </h1>
           <p className="landing-hero-subtitle">
-            When everyone runs AI coding agents, context gets{" "}
-            <span className="pain-word pain-siloed">siloed</span>.{" "}
+            Your agents work in <span className="pain-word pain-siloed">isolation</span>.{" "}
             Decisions <span className="pain-word pain-diverge">diverge</span>.{" "}
             Work gets <span className="pain-word pain-duplicated">duplicated</span>.
           </p>
           <p className="landing-hero-solution">
-            Eywa <span className="highlight">connects</span> every human-AI partnership on your team, so the <span className="highlight">whole</span> is greater than the sum of its parts.
+            Eywa gives every agent on your team a <span className="highlight">shared context layer</span>, so they stop re-doing each other's work.
           </p>
           <div className="landing-hero-actions">
             <a href="/r/demo" className="btn-landing-primary btn-large">
@@ -147,29 +176,30 @@ export function Landing() {
 
       {/* Problem */}
       <section className="landing-section" id="problem">
-        <h2 className="landing-section-title">The problem with AI teams today</h2>
+        <h2 className="landing-section-title">Your agents don't talk to each other</h2>
         <div className="landing-cards-grid">
           <div className="landing-card">
             <div className="landing-card-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M4 4v16h16" />
-                <path d="M4 14l4-4 4 4 8-8" />
+              <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <path className="anim-dup-line dup-a" d="M5 26L12 16l5 6 10-14" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path className="anim-dup-line dup-b" d="M5 26L12 16l5 6 10-14" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle className="anim-dup-dot" cx="27" cy="8" r="2.5"/>
               </svg>
             </div>
             <h3>Duplicated Work</h3>
             <p>
-              Your agent spent 40 minutes evaluating auth libraries. Meanwhile,
-              another developer's agent runs the exact same analysis. Nobody knows.
+              One agent spent 40 minutes evaluating TTS services. Another developer's agent
+              runs the exact same analysis from scratch. Neither knows the other exists.
             </p>
           </div>
           <div className="landing-card">
             <div className="landing-card-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M6 3v18" />
-                <path d="M18 3v18" />
-                <path d="M6 12h12" />
-                <path d="M6 6l6 6-6 6" />
-                <path d="M18 6l-6 6 6 6" />
+              <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <path className="anim-div-trunk" d="M16 28V16" strokeWidth="2.5" strokeLinecap="round"/>
+                <path className="anim-div-left" d="M16 16C14 12 8 8 4 4" strokeWidth="2.5" strokeLinecap="round"/>
+                <path className="anim-div-right" d="M16 16C18 12 24 8 28 4" strokeWidth="2.5" strokeLinecap="round"/>
+                <circle className="anim-div-dot-l" cx="4" cy="4" r="2.5"/>
+                <circle className="anim-div-dot-r" cx="28" cy="4" r="2.5"/>
               </svg>
             </div>
             <h3>Silent Divergence</h3>
@@ -180,9 +210,11 @@ export function Landing() {
           </div>
           <div className="landing-card">
             <div className="landing-card-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v6l4 2" />
+              <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <circle className="anim-clock-ring" cx="16" cy="16" r="13" strokeWidth="2.5"/>
+                <path className="anim-clock-hand-m" d="M16 16V6" strokeWidth="2.5" strokeLinecap="round"/>
+                <path className="anim-clock-hand-h" d="M16 16l5 4" strokeWidth="2.5" strokeLinecap="round"/>
+                <circle className="anim-clock-center" cx="16" cy="16" r="2" fill="var(--aurora-pink)"/>
               </svg>
             </div>
             <h3>Lost Context</h3>
@@ -225,7 +257,7 @@ export function Landing() {
 
       {/* Features */}
       <section className="landing-section" id="features">
-        <h2 className="landing-section-title">Everything you need</h2>
+        <h2 className="landing-section-title">Built for teams running multiple agents</h2>
         <div className="landing-features-grid">
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconThreads /></div>
@@ -267,12 +299,11 @@ export function Landing() {
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             <path d="M9 12l2 2 4-4" />
           </svg>
-          MCP Native
+          Open Standard
         </div>
-        <h2 className="landing-section-title">Works with every AI coding agent</h2>
+        <h2 className="landing-section-title">Works with your agents</h2>
         <p className="landing-compatibility-subtitle">
-          Eywa uses the <strong>Model Context Protocol</strong> - the open standard for AI tool integration.
-          One setup. Every agent. Including local and self-hosted.
+          One URL connects any AI coding agent. One line in your config. That's the entire setup.
         </p>
 
         <div className="landing-agents-grid">
@@ -374,8 +405,9 @@ export function Landing() {
 
         <div className="landing-compatibility-highlight">
           <div className="landing-highlight-item">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--aurora-green)" strokeWidth="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <svg className="anim-icon" width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <path className="anim-shield-body" d="M16 29s10-5 10-13V7L16 3 6 7v9c0 8 10 13 10 13z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path className="anim-shield-check" d="M11 16l3.5 3.5L21 12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <div>
               <strong>Local-first privacy</strong>
@@ -383,9 +415,10 @@ export function Landing() {
             </div>
           </div>
           <div className="landing-highlight-item">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--aurora-cyan)" strokeWidth="2">
-              <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-              <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>
+            <svg className="anim-icon" width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <path className="anim-cube-back" d="M16 4L4 10v12l12 6 12-6V10L16 4z" strokeWidth="2.5" strokeLinejoin="round"/>
+              <path className="anim-cube-mid" d="M4 10l12 6 12-6" strokeWidth="2.5" strokeLinejoin="round"/>
+              <path className="anim-cube-vert" d="M16 16v12" strokeWidth="2.5"/>
             </svg>
             <div>
               <strong>Zero config</strong>
@@ -393,10 +426,13 @@ export function Landing() {
             </div>
           </div>
           <div className="landing-highlight-item">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--aurora-purple)" strokeWidth="2">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            <svg className="anim-icon" width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <circle className="anim-team-head1" cx="16" cy="8" r="4" strokeWidth="2.5"/>
+              <path className="anim-team-body1" d="M8 26v-2a8 8 0 0116 0v2" strokeWidth="2.5" strokeLinecap="round"/>
+              <circle className="anim-team-head2" cx="26" cy="10" r="3" strokeWidth="2"/>
+              <path className="anim-team-body2" d="M22 26v-1a5 5 0 015-1" strokeWidth="2" strokeLinecap="round"/>
+              <circle className="anim-team-head3" cx="6" cy="10" r="3" strokeWidth="2"/>
+              <path className="anim-team-body3" d="M10 26v-1a5 5 0 00-5-1" strokeWidth="2" strokeLinecap="round"/>
             </svg>
             <div>
               <strong>Team-wide visibility</strong>
@@ -418,45 +454,12 @@ export function Landing() {
             <img src="/gemini.svg" alt="Gemini" className="gemini-logo-img" />
             <span className="gemini-logo-text">Gemini</span>
           </a>
-          <h2 className="landing-gemini-title">Orchestration powered by Gemini</h2>
+          <h2 className="landing-gemini-title">Ask questions across all your agents' threads</h2>
           <p className="landing-gemini-description">
-            Eywa's communication engine is built on <strong>Google Gemini</strong>.
-            When you use Eywa to combine context from multiple agent threads,
-            Gemini synthesizes the information, resolves conflicts, and generates coherent responses
-            that understand the full picture of your team's work.
+            Drag context from multiple agent sessions into the workspace.
+            Gemini synthesizes information across threads, resolves conflicts,
+            and gives you answers that understand the full picture.
           </p>
-          <div className="landing-gemini-features">
-            <div className="landing-gemini-feature">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-              <span>Multi-context synthesis</span>
-            </div>
-            <div className="landing-gemini-feature">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v6l4 2" />
-              </svg>
-              <span>Real-time reasoning</span>
-            </div>
-            <div className="landing-gemini-feature">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              <span>Conversational interface</span>
-            </div>
-          </div>
-          <a
-            href="https://gemini.google/us/about"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-landing-secondary landing-gemini-cta"
-          >
-            Learn more about Gemini
-            <IconArrowRight />
-          </a>
         </div>
       </section>
 
@@ -512,8 +515,8 @@ export function Landing() {
 
       {/* CTA */}
       <section className="landing-cta-section">
-        <h2>Accelerate your team's collective intelligence.</h2>
-        <p>When humans and AI work together, coordination becomes the multiplier. Eywa connects every human-AI partnership on your team.</p>
+        <h2>Your agents are powerful. Make them a team.</h2>
+        <p>92% of developers use AI coding tools daily. Eywa is the missing layer that lets their agents actually work together.</p>
         <div className="landing-hero-actions">
           <a href="/r/demo" className="btn-landing-primary btn-large">
             Try the Demo
@@ -533,7 +536,7 @@ export function Landing() {
               <EywaLogo size={32} />
               <span>Eywa</span>
             </div>
-            <p>The coordination layer for human + AI teams</p>
+            <p>Shared memory for AI agent teams</p>
           </div>
           <div className="landing-footer-links">
             <div className="landing-footer-col">

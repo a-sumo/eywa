@@ -15,6 +15,7 @@ import { SlidePresentation } from "./components/SlidePresentation";
 import { SessionGraph } from "./components/SessionGraph";
 import { SpectaclesView } from "./components/SpectaclesView";
 import { SpectaclesReceiver } from "./components/SpectaclesReceiver";
+import { BroadcastTest } from "./components/BroadcastTest";
 import { DocsLayout, DocsOverview } from "./components/DocsLayout";
 import { IntegrationGuide } from "./components/IntegrationGuide";
 import "./App.css";
@@ -34,6 +35,7 @@ function App() {
           <Route path="/r/:slug/eink" element={<RoomProvider><MiniRemixEink /></RoomProvider>} />
           <Route path="/r/:slug/spectacles" element={<RoomProvider><SpectaclesView /></RoomProvider>} />
           <Route path="/r/:slug/spectacles/rx" element={<RoomProvider><SpectaclesReceiver /></RoomProvider>} />
+          <Route path="/r/:slug/spectacles/test" element={<RoomProvider><BroadcastTest /></RoomProvider>} />
           <Route path="/r/:slug/*" element={<RoomRoutes />} />
         </Routes>
       </BrowserRouter>

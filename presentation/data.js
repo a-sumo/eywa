@@ -114,9 +114,9 @@ const presentation = {
       subtitle: "",
       content: `
         <div style="display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin-top: 10px;">
-          <div style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%); border: 1px solid #aac4f5; border-radius: 16px; padding: 24px; text-align: left;">
+          <div style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%); border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 16px; padding: 24px; text-align: left;">
             <div style="font-size: 1.4em; margin-bottom: 8px;">&#128464;</div>
-            <div style="font-weight: 700; font-size: 1.1em; margin-bottom: 6px; color: #667eea;">Overview</div>
+            <div style="font-weight: 700; font-size: 1.1em; margin-bottom: 6px; color: #15D1FF;">Overview</div>
             <div style="font-size: 0.85em; color: #555; line-height: 1.5;">
               Tree of all active threads.<br>
               Who's working on what.<br>
@@ -134,9 +134,9 @@ const presentation = {
               Drag into a Remix.
             </div>
           </div>
-          <div style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #fff 0%, #fff8de 100%); border: 1px solid #aac4f5; border-radius: 16px; padding: 24px; text-align: left;">
+          <div style="flex: 1; min-width: 220px; background: linear-gradient(135deg, #fff 0%, #fff8de 100%); border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 16px; padding: 24px; text-align: left;">
             <div style="font-size: 1.4em; margin-bottom: 8px;">&#128256;</div>
-            <div style="font-weight: 700; font-size: 1.1em; margin-bottom: 6px; color: #8CA9FF;">Remix</div>
+            <div style="font-weight: 700; font-size: 1.1em; margin-bottom: 6px; color: #6417EC;">Remix</div>
             <div style="font-size: 0.85em; color: #555; line-height: 1.5;">
               3-panel workspace.<br>
               Browse memories → Build context → <strong>Chat with Gemini</strong>.<br>
@@ -155,11 +155,11 @@ const presentation = {
       content: `
         <div style="font-family: 'Mulish', sans-serif; margin-top: 10px;">
           <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 16px; max-width: 900px; margin: 0 auto;">
-            <div style="background: #fff; border: 2px solid #aac4f5; border-radius: 12px; padding: 16px;">
+            <div style="background: #fff; border: 2px solid rgba(21, 209, 255, 0.35); border-radius: 12px; padding: 16px;">
               <div style="font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.05em; color: #999; margin-bottom: 8px; font-weight: 600;">Browse</div>
               <div style="font-size: 0.8em; color: #555; line-height: 1.6;">
-                <div style="padding: 6px 8px; background: #f0f4ff; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #667eea;">
-                  <strong style="color: #667eea;">Sarah</strong> <span style="color: #999; font-size: 0.8em;">12 mem</span><br>
+                <div style="padding: 6px 8px; background: #f0f4ff; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #15D1FF;">
+                  <strong style="color: #15D1FF;">Sarah</strong> <span style="color: #999; font-size: 0.8em;">12 mem</span><br>
                   <span style="font-size: 0.85em;">hand tracking, Unity...</span>
                 </div>
                 <div style="padding: 6px 8px; background: #f0fff4; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #489664;">
@@ -172,20 +172,20 @@ const presentation = {
                 </div>
               </div>
             </div>
-            <div style="background: #fff; border: 2px dashed #8CA9FF; border-radius: 12px; padding: 16px; position: relative;">
+            <div style="background: #fff; border: 2px dashed #6417EC; border-radius: 12px; padding: 16px; position: relative;">
               <div style="font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.05em; color: #999; margin-bottom: 8px; font-weight: 600;">Context</div>
               <div style="font-size: 0.8em; color: #555; line-height: 1.6;">
-                <div style="text-align: center; padding: 20px 0; color: #aac4f5; font-size: 0.9em;">
+                <div style="text-align: center; padding: 20px 0; color: rgba(21, 209, 255, 0.35); font-size: 0.9em;">
                   &#8592; Drag memories here<br>
                   <span style="font-size: 0.8em; color: #ccc;">or click + to add</span>
                 </div>
               </div>
               <div style="position: absolute; bottom: 8px; right: 8px; font-size: 0.65em; color: #ccc;">v0 - Start</div>
             </div>
-            <div style="background: #f8f9fc; border: 2px solid #667eea; border-radius: 12px; padding: 16px;">
+            <div style="background: #f8f9fc; border: 2px solid #15D1FF; border-radius: 12px; padding: 16px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.05em; color: #667eea; font-weight: 600;">Gemini Agent</div>
-                <div style="font-size: 0.65em; background: linear-gradient(135deg, #8CA9FF, #667eea); color: white; padding: 2px 8px; border-radius: 10px;">Live</div>
+                <div style="font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.05em; color: #15D1FF; font-weight: 600;">Gemini Agent</div>
+                <div style="font-size: 0.65em; background: linear-gradient(135deg, #6417EC, #15D1FF); color: white; padding: 2px 8px; border-radius: 10px;">Live</div>
               </div>
               <div style="font-size: 0.8em; color: #555; line-height: 1.6; background: #fff; border-radius: 8px; padding: 10px; border: 1px solid #eee;">
                 <div style="color: #999; font-size: 0.8em; margin-bottom: 4px; font-weight: 600;">YOU</div>
@@ -219,17 +219,17 @@ const presentation = {
       content: `
         <div style="font-family: 'Mulish', sans-serif; max-width: 700px; margin: 20px auto 0;">
           <div style="display: flex; gap: 20px; margin-bottom: 24px;">
-            <div style="flex: 1; background: #fff; border: 1px solid #aac4f5; border-radius: 12px; padding: 16px;">
+            <div style="flex: 1; background: #fff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 12px; padding: 16px;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: #667eea;"></span>
-                <strong style="color: #667eea;">Sarah's Thread</strong>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #15D1FF;"></span>
+                <strong style="color: #15D1FF;">Sarah's Thread</strong>
               </div>
               <div style="font-size: 0.8em; color: #555; line-height: 1.5;">
                 Exploring <strong>wrist anchoring</strong> for hand tracking.<br>
                 MediaPipe → custom pipeline.
               </div>
             </div>
-            <div style="flex: 1; background: #fff; border: 1px solid #aac4f5; border-radius: 12px; padding: 16px;">
+            <div style="flex: 1; background: #fff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 12px; padding: 16px;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                 <span style="width: 10px; height: 10px; border-radius: 50%; background: #B48C50;"></span>
                 <strong style="color: #B48C50;">Priya's Thread</strong>
@@ -268,20 +268,20 @@ const presentation = {
         <div style="font-family: 'Roboto Mono', monospace; max-width: 800px; margin: 20px auto 0; font-size: 0.75em;">
           <div style="display: flex; gap: 24px; justify-content: center; align-items: stretch;">
             <div style="flex: 1; text-align: center;">
-              <div style="font-weight: 600; color: #667eea; margin-bottom: 10px; font-size: 0.85em; text-transform: uppercase;">AI Agents</div>
+              <div style="font-weight: 600; color: #15D1FF; margin-bottom: 10px; font-size: 0.85em; text-transform: uppercase;">AI Agents</div>
               <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 10px;">Claude Code</div>
-                <div style="background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 10px;">Gemini CLI</div>
-                <div style="background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 10px;">Cursor / Copilot</div>
+                <div style="background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 10px;">Claude Code</div>
+                <div style="background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 10px;">Gemini CLI</div>
+                <div style="background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 10px;">Cursor / Copilot</div>
               </div>
             </div>
             <div style="display: flex; flex-direction: column; justify-content: center; color: #999; font-size: 1.2em;">
               &#8594;<br>MCP<br>&#8594;
             </div>
             <div style="flex: 1; text-align: center;">
-              <div style="font-weight: 600; color: #667eea; margin-bottom: 10px; font-size: 0.85em; text-transform: uppercase;">Cloudflare Worker</div>
-              <div style="background: #fff; border: 2px solid #667eea; border-radius: 12px; padding: 16px;">
-                <div style="font-weight: 700; color: #667eea; margin-bottom: 6px;">remix-mcp</div>
+              <div style="font-weight: 600; color: #15D1FF; margin-bottom: 10px; font-size: 0.85em; text-transform: uppercase;">Cloudflare Worker</div>
+              <div style="background: #fff; border: 2px solid #15D1FF; border-radius: 12px; padding: 16px;">
+                <div style="font-weight: 700; color: #15D1FF; margin-bottom: 6px;">remix-mcp</div>
                 <div style="font-size: 0.85em; color: #666;">12 MCP tools</div>
                 <div style="font-size: 0.85em; color: #666;">Streamable HTTP + SSE</div>
                 <div style="font-size: 0.85em; color: #666;">Stateless</div>
@@ -322,16 +322,16 @@ const presentation = {
         <div style="font-family: 'Roboto Mono', monospace; max-width: 750px; margin: 20px auto 0; font-size: 0.8em;">
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 24px; height: 24px; background: #667eea; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: 700; flex-shrink: 0;">1</div>
-              <div style="flex: 1; background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 10px 14px;">
-                <strong>Agent connects</strong> - <code style="background: rgba(140,169,255,0.15); padding: 2px 6px; border-radius: 3px;">?room=demo&agent=alpha</code>
+              <div style="width: 24px; height: 24px; background: #15D1FF; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: 700; flex-shrink: 0;">1</div>
+              <div style="flex: 1; background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 10px 14px;">
+                <strong>Agent connects</strong> - <code style="background: rgba(21, 209, 255, 0.1); padding: 2px 6px; border-radius: 3px;">?room=demo&agent=alpha</code>
                 <div style="color: #888; font-size: 0.85em;">Worker resolves room slug → room_id, creates session</div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 24px; height: 24px; background: #667eea; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: 700; flex-shrink: 0;">2</div>
-              <div style="flex: 1; background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 10px 14px;">
-                <strong>Agent calls tools</strong> - <code style="background: rgba(140,169,255,0.15); padding: 2px 6px; border-radius: 3px;">remix_log</code>, <code style="background: rgba(140,169,255,0.15); padding: 2px 6px; border-radius: 3px;">remix_file</code>, etc.
+              <div style="width: 24px; height: 24px; background: #15D1FF; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: 700; flex-shrink: 0;">2</div>
+              <div style="flex: 1; background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 10px 14px;">
+                <strong>Agent calls tools</strong> - <code style="background: rgba(21, 209, 255, 0.1); padding: 2px 6px; border-radius: 3px;">remix_log</code>, <code style="background: rgba(21, 209, 255, 0.1); padding: 2px 6px; border-radius: 3px;">remix_file</code>, etc.
                 <div style="color: #888; font-size: 0.85em;">Each call inserts a row into the memories table via PostgREST</div>
               </div>
             </div>
@@ -367,22 +367,22 @@ const presentation = {
       subtitle: "One URL connects any AI agent to the mesh",
       content: `
         <div style="max-width: 700px; margin: 20px auto 0; font-family: 'Roboto Mono', monospace; font-size: 0.8em;">
-          <div style="background: #fff; border: 2px solid #aac4f5; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
-            <div style="font-weight: 700; color: #667eea; margin-bottom: 12px;">Client Configuration</div>
+          <div style="background: #fff; border: 2px solid rgba(21, 209, 255, 0.35); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+            <div style="font-weight: 700; color: #15D1FF; margin-bottom: 12px;">Client Configuration</div>
             <div style="background: #f8f9fc; border-radius: 8px; padding: 12px; font-size: 0.9em; line-height: 1.6;">
               <div style="color: #888; margin-bottom: 4px;">// Claude Code / Cursor / Windsurf</div>
-              <div><span style="color: #667eea;">"url"</span>: <span style="color: #489664;">"https://remix-mcp.workers.dev/mcp?room=demo&agent=alpha"</span></div>
+              <div><span style="color: #15D1FF;">"url"</span>: <span style="color: #489664;">"https://remix-mcp.workers.dev/mcp?room=demo&agent=alpha"</span></div>
               <div style="color: #888; margin-top: 8px;">// Gemini CLI</div>
-              <div><span style="color: #667eea;">"httpUrl"</span>: <span style="color: #489664;">"https://remix-mcp.workers.dev/mcp?room=demo&agent=alpha"</span></div>
+              <div><span style="color: #15D1FF;">"httpUrl"</span>: <span style="color: #489664;">"https://remix-mcp.workers.dev/mcp?room=demo&agent=alpha"</span></div>
             </div>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div style="background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 12px;">
-              <div style="font-weight: 600; color: #667eea; font-size: 0.85em; margin-bottom: 6px;">Session Tools</div>
+            <div style="background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 12px;">
+              <div style="font-weight: 600; color: #15D1FF; font-size: 0.85em; margin-bottom: 6px;">Session Tools</div>
               <div style="font-size: 0.85em; color: #555;">remix_whoami<br>remix_start<br>remix_stop</div>
             </div>
-            <div style="background: #f0f4ff; border: 1px solid #aac4f5; border-radius: 8px; padding: 12px;">
-              <div style="font-weight: 600; color: #667eea; font-size: 0.85em; margin-bottom: 6px;">Memory Tools</div>
+            <div style="background: #f0f4ff; border: 1px solid rgba(21, 209, 255, 0.35); border-radius: 8px; padding: 12px;">
+              <div style="font-weight: 600; color: #15D1FF; font-size: 0.85em; margin-bottom: 6px;">Memory Tools</div>
               <div style="font-size: 0.85em; color: #555;">remix_log<br>remix_file<br>remix_get_file<br>remix_search</div>
             </div>
             <div style="background: #f0fff4; border: 1px solid rgba(72,150,100,0.3); border-radius: 8px; padding: 12px;">
@@ -407,9 +407,9 @@ const presentation = {
           <table style="width: 100%; border-collapse: collapse; font-family: 'Mulish', sans-serif;">
             <thead>
               <tr style="background: #f0f4ff;">
-                <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #aac4f5; color: #667eea;">Tool</th>
-                <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #aac4f5; color: #667eea;">Purpose</th>
-                <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #aac4f5; color: #667eea;">Key Params</th>
+                <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid rgba(21, 209, 255, 0.35); color: #15D1FF;">Tool</th>
+                <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid rgba(21, 209, 255, 0.35); color: #15D1FF;">Purpose</th>
+                <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid rgba(21, 209, 255, 0.35); color: #15D1FF;">Key Params</th>
               </tr>
             </thead>
             <tbody>
