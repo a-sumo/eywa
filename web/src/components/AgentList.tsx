@@ -62,6 +62,8 @@ export function AgentList() {
         <div className="nav-labs">
           {[
             { path: "mini", label: "Mini Dashboard" },
+            { path: "eink", label: "E-Ink Dashboard" },
+            { path: "graph", label: "Session Graph" },
             { path: "remix3d", label: "Remix 3D" },
             { path: "layout-agent", label: "Layout Agent" },
             { path: "layout-xr", label: "Layout XR" },

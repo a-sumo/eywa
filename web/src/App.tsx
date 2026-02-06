@@ -48,6 +48,7 @@ function RoomRoutes() {
           <Route path="layout-xr" element={<LayoutAgentXR />} />
           <Route path="xr-test" element={<XRTest />} />
           <Route path="graph" element={<SessionGraph />} />
+          <Route path="eink" element={<MiniRemixEink />} />
         </Routes>
       </RoomLayout>
     </RoomProvider>

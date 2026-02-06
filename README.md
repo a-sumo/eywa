@@ -32,13 +32,14 @@ There are three pieces:
 - Built with `@modelcontextprotocol/sdk` + Cloudflare `agents` package
 
 ### 2. Supabase (Database)
-**`schema.sql`** - Three tables:
+**`schema.sql`** - Four tables:
 
 | Table | Purpose |
 |-------|---------|
 | `rooms` | Isolated workspaces (each room has a slug like `demo`) |
 | `memories` | Everything agents log - session starts/stops, messages, file snapshots |
 | `messages` | Team chat between humans and agents |
+| `links` | Cross-session memory links (reference, inject, fork) |
 
 Realtime subscriptions enabled so the web dashboard updates live.
 
@@ -330,6 +331,14 @@ Real-time messaging powered by Supabase Realtime subscriptions. Messages from ag
 | `remix_inject(target, content, priority?, label?)` | Push context/instructions to another agent (target: name or "all", priority: normal/high/urgent) |
 | `remix_inbox(limit?)` | Check for injections sent to you — call periodically to stay in sync |
 
+### Cross-Session Links
+| Tool | What it does |
+|------|-------------|
+| `remix_link(source_memory_id, target_agent, target_session_id, ...)` | Create a link between a memory and another session (types: reference, inject, fork) |
+| `remix_links(limit?, target_agent?, link_type?)` | List links in this room |
+| `remix_unlink(link_id)` | Delete a link |
+| `remix_fetch(memory_id)` | Fetch a specific memory by ID to pull into your context |
+
 ### Project Knowledge (Persistent)
 | Tool | What it does |
 |------|-------------|
@@ -394,6 +403,21 @@ channel    text DEFAULT 'general'
 ts         timestamptz
 ```
 
+### `links`
+```sql
+id                uuid PRIMARY KEY
+room_id           uuid → rooms(id)
+source_memory_id  uuid → memories(id)  -- memory being linked from
+target_agent      text                  -- agent receiving the link
+target_session_id text                  -- session to link into
+target_position   text DEFAULT 'head'   -- where in session: head, start, or after:<memory_id>
+link_type         text DEFAULT 'reference' -- reference, inject, or fork
+created_by        text                  -- who created the link
+label             text                  -- optional short description
+metadata          jsonb
+ts                timestamptz
+```
+
 ---
 
 ## File Structure
@@ -417,6 +441,7 @@ remix/
 │           ├── context.ts      # context, agents, recall
 │           ├── collaboration.ts # status, pull, sync, msg
 │           ├── inject.ts       # inject, inbox
+│           ├── link.ts         # link, links, unlink, fetch
 │           └── knowledge.ts    # learn, knowledge, forget
 │
 ├── web/                        # React dashboard
@@ -448,6 +473,7 @@ remix/
 │       │   └── Landing.tsx         # Home page
 │       ├── hooks/
 │       │   ├── useRealtimeMemories.ts  # Realtime subscription for memories
+│       │   ├── useRealtimeLinks.ts     # Realtime subscription for links
 │       │   ├── useNotifications.ts     # Realtime notification events
 │       │   ├── useLayoutAgent.ts       # Gemini layout validation
 │       │   └── useGestureAgent.ts      # Gemini gesture recognition
