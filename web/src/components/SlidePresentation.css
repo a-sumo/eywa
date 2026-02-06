@@ -526,9 +526,9 @@
   line-height: 1.55;
 }
 
-/* ── Diagram: Remix 3-panel ────────────────────────── */
+/* ── Diagram: Eywa 3-panel ────────────────────────── */
 
-.dia-remix-grid {
+.dia-eywa-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1.5fr;
   gap: 16px;
@@ -536,19 +536,19 @@
   margin: 0 auto;
 }
 
-.dia-remix-panel {
+.dia-eywa-panel {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 16px;
 }
 
-.dia-remix-context {
+.dia-eywa-context {
   border-style: dashed;
   border-color: #15D1FF;
 }
 
-.dia-remix-agent {
+.dia-eywa-agent {
   background: rgba(168, 85, 247, 0.06);
   border-color: #6417EC;
 }
@@ -1152,7 +1152,7 @@
   .slide-h2 { font-size: 1.2em; }
   .slide-bullets li { font-size: 0.82em; }
 
-  .dia-remix-grid { grid-template-columns: 1fr; }
+  .dia-eywa-grid { grid-template-columns: 1fr; }
   .dia-cards { flex-direction: column; }
   .dia-divergence-threads { flex-direction: column; }
   .dia-mcp-grid { grid-template-columns: 1fr 1fr; }

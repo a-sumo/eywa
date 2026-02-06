@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Seed the demo room with sample data for Remix.
+Seed the demo room with sample data for Eywa.
 
 Usage:
   python scripts/seed_demo.py
@@ -344,7 +344,7 @@ def seed_messages(room_id: str):
 
 
 def main():
-    print("Seeding Remix demo data...")
+    print("Seeding Eywa demo data...")
 
     room = create_demo_room()
     room_id = room["id"]

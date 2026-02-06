@@ -1,10 +1,10 @@
 /**
- * CodeLens provider that surfaces relevant Remix knowledge entries inline.
+ * CodeLens provider that surfaces relevant Eywa knowledge entries inline.
  * Matches knowledge to files by checking whether the entry content or tags
  * reference the current file's relative path or filename.
  */
 import * as vscode from "vscode";
-import type { RemixClient, KnowledgeEntry } from "./client";
+import type { EywaClient, KnowledgeEntry } from "./client";
 
 /**
  * Shows a CodeLens at line 0 when knowledge entries match the open file.
@@ -15,7 +15,7 @@ export class KnowledgeCodeLensProvider implements vscode.CodeLensProvider {
   readonly onDidChangeCodeLenses = this._onDidChangeCodeLenses.event;
   private cache: KnowledgeEntry[] = [];
 
-  constructor(private getClient: () => RemixClient | undefined) {}
+  constructor(private getClient: () => EywaClient | undefined) {}
 
   async refreshCache(): Promise<void> {
     const client = this.getClient();
@@ -50,7 +50,7 @@ export class KnowledgeCodeLensProvider implements vscode.CodeLensProvider {
     return [
       new vscode.CodeLens(range, {
         title: `$(book) Eywa: ${matches.length} knowledge entr${matches.length === 1 ? "y" : "ies"} about this file`,
-        command: "remix.showKnowledgeForFile",
+        command: "eywa.showKnowledgeForFile",
         arguments: [matches],
         tooltip: titles,
       }),
@@ -58,10 +58,10 @@ export class KnowledgeCodeLensProvider implements vscode.CodeLensProvider {
   }
 }
 
-/** Register the `remix.showKnowledgeForFile` command that displays matched entries in an output channel. */
+/** Register the `eywa.showKnowledgeForFile` command that displays matched entries in an output channel. */
 export function registerKnowledgeForFileCommand(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand("remix.showKnowledgeForFile", (entries: KnowledgeEntry[]) => {
+    vscode.commands.registerCommand("eywa.showKnowledgeForFile", (entries: KnowledgeEntry[]) => {
       const channel = vscode.window.createOutputChannel("Eywa Knowledge");
       channel.clear();
       channel.appendLine(`Eywa Knowledge - ${entries.length} entries\n`);

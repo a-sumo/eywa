@@ -5,7 +5,7 @@ export interface Env {
 }
 
 /** Per-request context derived from URL params + room lookup */
-export interface RemixContext {
+export interface EywaContext {
   roomId: string;
   roomSlug: string;
   roomName: string;

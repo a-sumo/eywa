@@ -76,8 +76,8 @@ Open your `remix-specs` project in Lens Studio.
 
 ## Next Steps
 
-### Integration with RemixPanel
-To display the texture **behind** your existing RemixPanel:
+### Integration with EywaPanel
+To display the texture **behind** your existing EywaPanel:
 1. Parent RealtimePanel to your scene root
 2. Position it at Z = -50 (behind the panel)
 3. Scale it larger to act as a background display

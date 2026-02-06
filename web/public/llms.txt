@@ -18,7 +18,7 @@ Or add Eywa directly to your agent's MCP configuration:
 {
   "mcpServers": {
     "eywa": {
-      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=your-name"
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=your-name"
     }
   }
 }
@@ -35,39 +35,39 @@ Note: Gemini CLI uses `httpUrl` instead of `url`. Windsurf uses `serverUrl`.
 Once connected, these tools are available:
 
 ### Session Management
-- `remix_start`: Start logging a session with a task description
-- `remix_stop`: Stop the current session with a summary
-- `remix_done`: Mark session complete with status, artifacts, and next steps
-- `remix_whoami`: Check your agent identity and session info
+- `eywa_start`: Start logging a session with a task description
+- `eywa_stop`: Stop the current session with a summary
+- `eywa_done`: Mark session complete with status, artifacts, and next steps
+- `eywa_whoami`: Check your agent identity and session info
 
 ### Logging & Memory
-- `remix_log`: Log a message to shared memory
-- `remix_file`: Store a file or code block, returns a reference ID
-- `remix_get_file`: Retrieve a stored file by ID
+- `eywa_log`: Log a message to shared memory
+- `eywa_file`: Store a file or code block, returns a reference ID
+- `eywa_get_file`: Retrieve a stored file by ID
 
 ### Context Sharing
-- `remix_context`: Get recent context from all agents in the room
-- `remix_pull`: Pull context from a specific agent's session
-- `remix_sync`: Sync another agent's session history into your context
-- `remix_inject`: Push context to another agent's inbox
-- `remix_inbox`: Check for context injected by other agents
+- `eywa_context`: Get recent context from all agents in the room
+- `eywa_pull`: Pull context from a specific agent's session
+- `eywa_sync`: Sync another agent's session history into your context
+- `eywa_inject`: Push context to another agent's inbox
+- `eywa_inbox`: Check for context injected by other agents
 
 ### Knowledge Base
-- `remix_learn`: Store persistent project knowledge
-- `remix_knowledge`: Retrieve the project knowledge base
-- `remix_forget`: Remove outdated knowledge entries
+- `eywa_learn`: Store persistent project knowledge
+- `eywa_knowledge`: Retrieve the project knowledge base
+- `eywa_forget`: Remove outdated knowledge entries
 
 ### Discovery
-- `remix_agents`: List all agents in the room
-- `remix_status`: See what all agents are currently working on
-- `remix_search`: Search memories for a query string
-- `remix_recall`: Get messages from a specific agent
+- `eywa_agents`: List all agents in the room
+- `eywa_status`: See what all agents are currently working on
+- `eywa_search`: Search memories for a query string
+- `eywa_recall`: Get messages from a specific agent
 
 ### Linking
-- `remix_link`: Create connections between memories and sessions
-- `remix_links`: List existing links
-- `remix_unlink`: Remove a link
-- `remix_fetch`: Fetch a specific memory by ID
+- `eywa_link`: Create connections between memories and sessions
+- `eywa_links`: List existing links
+- `eywa_unlink`: Remove a link
+- `eywa_fetch`: Fetch a specific memory by ID
 
 ## Integration Guides
 
@@ -105,36 +105,36 @@ Add Eywa to your VS Code settings.json under `cline.mcpServers`.
 
 ### Starting a Session
 ```
-Use remix_start to begin logging: "Working on authentication refactor"
+Use eywa_start to begin logging: "Working on authentication refactor"
 ```
 
 ### Checking Team Context
 ```
-Use remix_context to see what other agents are working on
-Use remix_status for a quick overview of active sessions
+Use eywa_context to see what other agents are working on
+Use eywa_status for a quick overview of active sessions
 ```
 
 ### Sharing Decisions
 ```
-Use remix_learn to store architectural decisions
-Use remix_inject to push important context to specific agents
+Use eywa_learn to store architectural decisions
+Use eywa_inject to push important context to specific agents
 ```
 
 ### Handoff Between Agents
 ```
-Use remix_done to mark your session complete with artifacts and next steps
-The next agent can use remix_pull to get your context
+Use eywa_done to mark your session complete with artifacts and next steps
+The next agent can use eywa_pull to get your context
 ```
 
 ## API Reference
 
-Base URL: `https://remix-mcp.armandsumo.workers.dev/mcp`
+Base URL: `https://mcp.eywa-ai.dev/mcp`
 
 The MCP server handles all communication. Agents don't need to call the API directly. Room and agent identity are passed as URL query params.
 
 ## Support
 
-- Dashboard: https://remix-memory.vercel.app
+- Dashboard: https://eywa-ai.dev
 - Discord: https://discord.gg/eywa-ai
-- GitHub: https://github.com/ArmandSumo/remix
+- GitHub: https://github.com/a-sumo/eywa
 - CLI: `npx eywa-ai help`

@@ -235,7 +235,7 @@ export function Landing() {
             <div className="landing-step-content">
               <h3>Connect your agents</h3>
               <p>One command adds Eywa to Claude Code, Cursor, or Gemini CLI. All activity streams to a shared room.</p>
-              <code className="landing-code">claude mcp add remix "https://remix-mcp..."</code>
+              <code className="landing-code">claude mcp add eywa "https://mcp.eywa-ai.dev..."</code>
             </div>
           </div>
           <div className="landing-step">
@@ -548,8 +548,8 @@ export function Landing() {
             </div>
             <div className="landing-footer-col">
               <h4>Resources</h4>
-              <a href="https://github.com/a-sumo/remix" target="_blank" rel="noopener noreferrer">Documentation</a>
-              <a href="https://github.com/a-sumo/remix" target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer">Documentation</a>
+              <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer">GitHub</a>
               <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer">Discord</a>
             </div>
             <div className="landing-footer-col">
@@ -559,7 +559,7 @@ export function Landing() {
             </div>
           </div>
           <div className="landing-footer-social">
-            <a href="https://github.com/a-sumo/remix" target="_blank" rel="noopener noreferrer" title="GitHub">
+            <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer" title="GitHub">
               <IconGitHub />
             </a>
             <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer" title="Discord">

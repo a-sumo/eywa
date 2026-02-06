@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { RemixClient, KnowledgeEntry } from "./client";
+import type { EywaClient, KnowledgeEntry } from "./client";
 
 function timeAgo(ts: string): string {
   const diff = Date.now() - new Date(ts).getTime();
@@ -15,7 +15,7 @@ export class KnowledgeTreeProvider implements vscode.TreeDataProvider<KnowledgeI
   private _onDidChangeTreeData = new vscode.EventEmitter<KnowledgeItem | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor(private getClient: () => RemixClient | undefined) {}
+  constructor(private getClient: () => EywaClient | undefined) {}
 
   refresh(): void {
     this._onDidChangeTreeData.fire();

@@ -153,7 +153,7 @@ function ArchitectureDiagram() {
         <div className="dia-arch-col">
           <div className="dia-arch-label">Cloudflare Worker</div>
           <div className="dia-arch-box dia-arch-worker">
-            <div className="dia-arch-box-title">remix-mcp</div>
+            <div className="dia-arch-box-title">eywa-mcp</div>
             <div className="dia-arch-box-detail">20 MCP tools</div>
             <div className="dia-arch-box-detail">Streamable HTTP + SSE</div>
             <div className="dia-arch-box-detail">Stateless</div>

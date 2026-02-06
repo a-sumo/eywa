@@ -75,7 +75,7 @@ export function CLIAuth() {
       <div className="cli-auth">
         <div className="cli-auth-card">
           <h1>CLI Auth</h1>
-          <p>This page is opened by <code>remix login</code>. Run it from your terminal first.</p>
+          <p>This page is opened by <code>eywa login</code>. Run it from your terminal first.</p>
         </div>
       </div>
     );

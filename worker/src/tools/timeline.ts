@@ -14,7 +14,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { RemixContext, MemoryRow, RefRow } from "../lib/types.js";
+import type { EywaContext, MemoryRow, RefRow } from "../lib/types.js";
 
 /** HEAD ref name for a session */
 function headRef(agent: string, sessionId: string): string {
@@ -70,13 +70,13 @@ function formatMemory(m: MemoryRow, short = false): string {
 export function registerTimelineTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: RemixContext,
+  ctx: EywaContext,
 ) {
   // ============================================================
-  // remix_history - View the timeline of what happened
+  // eywa_history - View the timeline of what happened
   // ============================================================
   server.tool(
-    "remix_history",
+    "eywa_history",
     "View the history of a session. Shows what happened, when, and in what order. Like scrolling back through a conversation.",
     {
       session: z.string().optional().describe("Session to view (defaults to your current session)"),
@@ -108,8 +108,8 @@ export function registerTimelineTools(
       }
 
       lines.push("─".repeat(50));
-      lines.push("Use remix_rewind <id> to go back to any point.");
-      lines.push("Use remix_bookmark <id> to mark important moments.");
+      lines.push("Use eywa_rewind <id> to go back to any point.");
+      lines.push("Use eywa_bookmark <id> to mark important moments.");
 
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
@@ -118,13 +118,13 @@ export function registerTimelineTools(
   );
 
   // ============================================================
-  // remix_rewind - Go back to an earlier point
+  // eywa_rewind - Go back to an earlier point
   // ============================================================
   server.tool(
-    "remix_rewind",
+    "eywa_rewind",
     "Rewind to an earlier point in the timeline. This moves your current position back, like an undo. You can always go forward again.",
     {
-      to: z.string().describe("The ID of the point to rewind to (from remix_history)"),
+      to: z.string().describe("The ID of the point to rewind to (from eywa_history)"),
     },
     async ({ to }) => {
       // Find the target commit
@@ -146,7 +146,7 @@ export function registerTimelineTools(
 
         if (!prefixRows.length) {
           return {
-            content: [{ type: "text" as const, text: `Point not found: ${to}\nUse remix_history to see available points.` }],
+            content: [{ type: "text" as const, text: `Point not found: ${to}\nUse eywa_history to see available points.` }],
           };
         }
         rows.push(prefixRows[0]);
@@ -167,10 +167,10 @@ export function registerTimelineTools(
   );
 
   // ============================================================
-  // remix_fork - Create a new timeline from any point
+  // eywa_fork - Create a new timeline from any point
   // ============================================================
   server.tool(
-    "remix_fork",
+    "eywa_fork",
     "Create a new timeline branching from the current point (or any point). Use this to explore alternatives without affecting the original work.",
     {
       name: z.string().describe("Name for the new timeline (e.g., 'try-redis', 'experiment-v2')"),
@@ -228,17 +228,17 @@ export function registerTimelineTools(
       return {
         content: [{
           type: "text" as const,
-          text: `Created timeline "${name}" from ${startCommit.slice(0, 8)}\n\nTo work on this timeline, use remix_switch "${name}".\nThe original timeline is unchanged.`,
+          text: `Created timeline "${name}" from ${startCommit.slice(0, 8)}\n\nTo work on this timeline, use eywa_switch "${name}".\nThe original timeline is unchanged.`,
         }],
       };
     },
   );
 
   // ============================================================
-  // remix_bookmark - Mark an important moment
+  // eywa_bookmark - Mark an important moment
   // ============================================================
   server.tool(
-    "remix_bookmark",
+    "eywa_bookmark",
     "Bookmark an important moment so you can easily find it later. Good for marking decisions, milestones, or points you might want to return to.",
     {
       name: z.string().describe("Name for the bookmark (e.g., 'decided-on-postgres', 'auth-working')"),
@@ -292,17 +292,17 @@ export function registerTimelineTools(
       return {
         content: [{
           type: "text" as const,
-          text: `Bookmarked "${name}" at ${commitId.slice(0, 8)}${note ? `\nNote: ${note}` : ""}\n\nFind it later with remix_bookmarks or jump there with remix_rewind "${name}".`,
+          text: `Bookmarked "${name}" at ${commitId.slice(0, 8)}${note ? `\nNote: ${note}` : ""}\n\nFind it later with eywa_bookmarks or jump there with eywa_rewind "${name}".`,
         }],
       };
     },
   );
 
   // ============================================================
-  // remix_bookmarks - List all bookmarks
+  // eywa_bookmarks - List all bookmarks
   // ============================================================
   server.tool(
-    "remix_bookmarks",
+    "eywa_bookmarks",
     "List all bookmarks in this room. Bookmarks mark important moments across all timelines.",
     {},
     async () => {
@@ -315,7 +315,7 @@ export function registerTimelineTools(
 
       if (!refs.length) {
         return {
-          content: [{ type: "text" as const, text: "No bookmarks yet. Use remix_bookmark to mark important moments." }],
+          content: [{ type: "text" as const, text: "No bookmarks yet. Use eywa_bookmark to mark important moments." }],
         };
       }
 
@@ -326,7 +326,7 @@ export function registerTimelineTools(
         lines.push(`  ${name} → ${ref.commit_id.slice(0, 8)} (by ${ref.created_by}, ${time})`);
       }
 
-      lines.push("\nUse remix_rewind <name> to jump to any bookmark.");
+      lines.push("\nUse eywa_rewind <name> to jump to any bookmark.");
 
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
@@ -335,10 +335,10 @@ export function registerTimelineTools(
   );
 
   // ============================================================
-  // remix_compare - See what changed between two points
+  // eywa_compare - See what changed between two points
   // ============================================================
   server.tool(
-    "remix_compare",
+    "eywa_compare",
     "Compare two points in the timeline to see what changed between them. Useful for understanding how work evolved.",
     {
       from: z.string().describe("Starting point (older)"),
@@ -432,13 +432,13 @@ export function registerTimelineTools(
   );
 
   // ============================================================
-  // remix_pick - Bring specific moments to current timeline
+  // eywa_pick - Bring specific moments to current timeline
   // ============================================================
   server.tool(
-    "remix_pick",
+    "eywa_pick",
     "Copy specific moments from another timeline into your current one. Like cherry-picking the best parts of someone else's work.",
     {
-      ids: z.array(z.string()).describe("IDs of the moments to bring in (from remix_history)"),
+      ids: z.array(z.string()).describe("IDs of the moments to bring in (from eywa_history)"),
     },
     async ({ ids }) => {
       const picked: string[] = [];
@@ -504,10 +504,10 @@ export function registerTimelineTools(
   );
 
   // ============================================================
-  // remix_timelines - List all active timelines
+  // eywa_timelines - List all active timelines
   // ============================================================
   server.tool(
-    "remix_timelines",
+    "eywa_timelines",
     "List all timelines (branches) in this room. Shows what parallel work streams exist.",
     {},
     async () => {
@@ -553,7 +553,7 @@ export function registerTimelineTools(
         }
       }
 
-      lines.push("\nUse remix_fork to create a new branch.");
+      lines.push("\nUse eywa_fork to create a new branch.");
 
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],
@@ -562,10 +562,10 @@ export function registerTimelineTools(
   );
 
   // ============================================================
-  // remix_merge - Combine timelines (with AI-assisted conflict resolution)
+  // eywa_merge - Combine timelines (with AI-assisted conflict resolution)
   // ============================================================
   server.tool(
-    "remix_merge",
+    "eywa_merge",
     "Combine another timeline into your current one. If there are conflicts, they'll be flagged for review.",
     {
       timeline: z.string().describe("Name of the timeline to merge in"),
@@ -581,7 +581,7 @@ export function registerTimelineTools(
 
       if (!refs.length) {
         return {
-          content: [{ type: "text" as const, text: `Timeline not found: ${timeline}\nUse remix_timelines to see available timelines.` }],
+          content: [{ type: "text" as const, text: `Timeline not found: ${timeline}\nUse eywa_timelines to see available timelines.` }],
         };
       }
 
@@ -627,7 +627,7 @@ export function registerTimelineTools(
       return {
         content: [{
           type: "text" as const,
-          text: `Merged "${timeline}" into your current timeline.\n\nThe branch's work is now part of your history. Use remix_history to see the combined timeline.`,
+          text: `Merged "${timeline}" into your current timeline.\n\nThe branch's work is now part of your history. Use eywa_history to see the combined timeline.`,
         }],
       };
     },

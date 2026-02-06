@@ -1,4 +1,4 @@
-# Remix
+# Eywa
 
 Multi-agent shared memory system. Agents connect via MCP, share context through a Supabase backend, and coordinate work across sessions.
 
@@ -50,3 +50,4 @@ Key rules for any UI work:
 - Three tables: `rooms`, `memories`, `messages`.
 - `memories.metadata` JSONB stores event type, tags, injection targets, etc.
 - `memories.message_type`: resource, user, assistant, tool_call, tool_result, injection, knowledge.
+- MCP tool names use `eywa_*` prefix (e.g. `eywa_log`, `eywa_start`, `eywa_context`).

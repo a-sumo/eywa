@@ -72,6 +72,26 @@ function clearTile(ctx: OffscreenCanvasRenderingContext2D, w: number, h: number)
   ctx.fillRect(0, 0, w, h);
 }
 
+// --- Panel background tile: dark container ---
+export const renderPanelBg: RenderFn = (ctx, w, h) => {
+  // Dark space background
+  ctx.fillStyle = "#08080f";
+  ctx.fillRect(0, 0, w, h);
+
+  // Subtle rounded inner area
+  ctx.fillStyle = "#0c0c18";
+  ctx.beginPath();
+  ctx.roundRect(8, 8, w - 16, h - 16, 12);
+  ctx.fill();
+
+  // Very subtle border
+  ctx.strokeStyle = "rgba(21, 209, 255, 0.08)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(8, 8, w - 16, h - 16, 12);
+  ctx.stroke();
+};
+
 // --- Header tile: logo + room + status ---
 // data: { room, channelReady, deviceId, agentCount, activeCount, memoryCount, contextCount }
 export const renderHeader: RenderFn = (ctx, w, h, data) => {
@@ -481,6 +501,7 @@ export const renderMemoriesHeader: RenderFn = (ctx, w, h) => {
 
 // --- Registry of all renderers ---
 export const RENDERERS: Record<string, RenderFn> = {
+  "panel-bg": renderPanelBg,
   "header": renderHeader,
   "agent-dot": renderAgentDot,
   "mem-card": renderMemoryCard,

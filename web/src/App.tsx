@@ -5,11 +5,11 @@ import { Landing } from "./components/Landing";
 import { RoomLayout } from "./components/RoomLayout";
 import { ThreadTree } from "./components/ThreadTree";
 import { ThreadView } from "./components/ThreadView";
-import { RemixView } from "./components/RemixView";
+import { WorkspaceView } from "./components/WorkspaceView";
 import { AgentDetail } from "./components/AgentDetail";
 import { Chat } from "./components/Chat";
-import { MiniRemix } from "./components/MiniRemix";
-import { MiniRemixEink } from "./components/MiniRemixEink";
+import { MiniEywa } from "./components/MiniEywa";
+import { MiniEywaEink } from "./components/MiniEywaEink";
 import { CLIAuth } from "./components/CLIAuth";
 import { SlidePresentation } from "./components/SlidePresentation";
 import { SessionGraph } from "./components/SessionGraph";
@@ -32,7 +32,7 @@ function App() {
             <Route index element={<DocsOverview />} />
             <Route path="integrations/:provider" element={<IntegrationGuide />} />
           </Route>
-          <Route path="/r/:slug/eink" element={<RoomProvider><MiniRemixEink /></RoomProvider>} />
+          <Route path="/r/:slug/eink" element={<RoomProvider><MiniEywaEink /></RoomProvider>} />
           <Route path="/r/:slug/spectacles" element={<RoomProvider><SpectaclesView /></RoomProvider>} />
           <Route path="/r/:slug/spectacles/rx" element={<RoomProvider><SpectaclesReceiver /></RoomProvider>} />
           <Route path="/r/:slug/spectacles/test" element={<RoomProvider><BroadcastTest /></RoomProvider>} />
@@ -50,12 +50,12 @@ function RoomRoutes() {
         <Routes>
           <Route index element={<ThreadTree />} />
           <Route path="thread/:agent/:sessionId" element={<ThreadView />} />
-          <Route path="workspace" element={<RemixView />} />
+          <Route path="workspace" element={<WorkspaceView />} />
           <Route path="agent/:name" element={<AgentDetail />} />
           <Route path="chat" element={<Chat />} />
-          <Route path="mini" element={<MiniRemix />} />
+          <Route path="mini" element={<MiniEywa />} />
           <Route path="graph" element={<SessionGraph />} />
-          <Route path="eink" element={<MiniRemixEink />} />
+          <Route path="eink" element={<MiniEywaEink />} />
         </Routes>
       </RoomLayout>
     </RoomProvider>

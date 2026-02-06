@@ -1,17 +1,17 @@
 /**
- * Injection piggyback module for the Remix MCP worker.
+ * Injection piggyback module for the Eywa MCP worker.
  * {@link InboxTracker} is instantiated per-session and checked on every tool
  * response. New injections (targeted, broadcast, or user-level) are automatically
  * appended to the tool result so agents see them without polling.
  * Deduplication via surfacedIds (bounded to 200) prevents double-surfacing.
  */
 import type { SupabaseClient } from "./supabase.js";
-import type { RemixContext, MemoryRow, LinkRow } from "./types.js";
+import type { EywaContext, MemoryRow, LinkRow } from "./types.js";
 
 /**
  * Session-scoped tracker for pending injections.
  * Appends new injections to every tool response so agents
- * see them without explicitly calling remix_inbox.
+ * see them without explicitly calling eywa_inbox.
  */
 export class InboxTracker {
   private lastCheck: string;
@@ -27,7 +27,7 @@ export class InboxTracker {
    */
   async check(
     db: SupabaseClient,
-    ctx: RemixContext,
+    ctx: EywaContext,
   ): Promise<string | null> {
     const since = this.lastCheck;
     this.lastCheck = new Date().toISOString();

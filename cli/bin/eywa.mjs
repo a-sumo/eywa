@@ -12,8 +12,8 @@ const SUPABASE_URL = "https://beknjtxysmznenkotjvv.snapcloud.dev";
 const SUPABASE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjEzNjM1NiwiZXhwIjoyMDgxNzEyMzU2fQ.Pp6DrVfZs2_XvbobCm0hLSCxpfxoK-SvVzgduFIcp_Q";
 
-const MCP_BASE = "https://remix-mcp.armandsumo.workers.dev/mcp";
-const DASHBOARD_BASE = "https://remix-memory.vercel.app/r";
+const MCP_BASE = "https://mcp.eywa-ai.dev/mcp";
+const DASHBOARD_BASE = "https://eywa-ai.dev/r";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -414,7 +414,7 @@ ${bold("  Examples:")}
     ${dim("$")} npx eywa status                        ${dim("# check your agents")}
     ${dim("$")} npx eywa inject agent-beta "use REST"  ${dim("# push context")}
 
-  ${dim("Docs: https://github.com/ArmandSumo/remix")}
+  ${dim("Docs: https://github.com/ArmandSumo/eywa")}
 `);
 }
 

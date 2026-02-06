@@ -1,5 +1,5 @@
 /**
- * Live activity feed for the Remix sidebar.
+ * Live activity feed for the Eywa sidebar.
  * Displays session starts/completions, injections, knowledge events, and
  * general messages in reverse-chronological order. Capped at {@link MAX_EVENTS}.
  */
@@ -30,7 +30,7 @@ function timeAgo(ts: string): string {
 const MAX_EVENTS = 50;
 
 /**
- * TreeDataProvider for the "Remix Activity" panel.
+ * TreeDataProvider for the "Eywa Activity" panel.
  * Events are deduped by ID and capped at MAX_EVENTS.
  */
 export class ActivityTreeProvider implements vscode.TreeDataProvider<ActivityItem> {
@@ -80,7 +80,7 @@ export class ActivityTreeProvider implements vscode.TreeDataProvider<ActivityIte
 }
 
 class ActivityItem extends vscode.TreeItem {
-  contextValue = "remixActivity";
+  contextValue = "eywaActivity";
 
   constructor(
     message: string,

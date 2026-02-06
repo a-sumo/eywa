@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Remix TFT Touch Display for ILI9341 3.5" LCD
+Eywa TFT Touch Display for ILI9341 3.5" LCD
 Raspberry Pi interactive display with touch support.
 
 Hardware: 3.5" ILI9341 TFT LCD with XPT2046 touch controller
@@ -68,7 +68,7 @@ def get_agent_color(name: str) -> tuple:
     return AGENT_PALETTE[idx]
 
 
-class RemixTouchApp:
+class EywaTouchApp:
     def __init__(self, room: str):
         self.room = room
         self.room_id: Optional[str] = None
@@ -84,7 +84,7 @@ class RemixTouchApp:
 
         # Set up display
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption("Remix")
+        pygame.display.set_caption("Eywa")
 
         # Fonts
         try:
@@ -214,7 +214,7 @@ class RemixTouchApp:
         pygame.draw.rect(self.screen, COLORS["accent"], (0, 0, WIDTH, 44))
 
         # Title
-        title = self.font_large.render("Remix", True, COLORS["white"])
+        title = self.font_large.render("Eywa", True, COLORS["white"])
         self.screen.blit(title, (12, 10))
 
         # Room name
@@ -436,7 +436,7 @@ class RemixTouchApp:
         clock = pygame.time.Clock()
         running = True
 
-        print(f"Remix TFT Touch - Room: {self.room}")
+        print(f"Eywa TFT Touch - Room: {self.room}")
         print(f"Display: {WIDTH}x{HEIGHT}")
         print("Touch to interact, Ctrl+C to exit")
 
@@ -468,11 +468,11 @@ class RemixTouchApp:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Remix TFT Touch Display")
+    parser = argparse.ArgumentParser(description="Eywa TFT Touch Display")
     parser.add_argument("--room", default="demo", help="Room slug")
     args = parser.parse_args()
 
-    app = RemixTouchApp(args.room)
+    app = EywaTouchApp(args.room)
     app.run()
 
 

@@ -1,15 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { RemixContext, LinkRow, MemoryRow } from "../lib/types.js";
+import type { EywaContext, LinkRow, MemoryRow } from "../lib/types.js";
 
 export function registerLinkTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: RemixContext,
+  ctx: EywaContext,
 ) {
   server.tool(
-    "remix_link",
+    "eywa_link",
     "Create a link connecting a specific memory to another session. Use this to reference, fork, or inject a memory into a different agent's session.",
     {
       source_memory_id: z.string().describe("UUID of the memory to link from"),
@@ -63,7 +63,7 @@ export function registerLinkTools(
   );
 
   server.tool(
-    "remix_links",
+    "eywa_links",
     "List links in this room. Shows connections between memories and sessions.",
     {
       limit: z.number().optional().default(20).describe("Maximum links to return"),
@@ -108,7 +108,7 @@ export function registerLinkTools(
   );
 
   server.tool(
-    "remix_unlink",
+    "eywa_unlink",
     "Delete a link by its ID.",
     {
       link_id: z.string().describe("UUID of the link to delete"),
@@ -126,7 +126,7 @@ export function registerLinkTools(
   );
 
   server.tool(
-    "remix_fetch",
+    "eywa_fetch",
     "Fetch a specific memory by ID. Use this to pull context from another session into your current context.",
     {
       memory_id: z.string().describe("UUID of the memory to fetch"),

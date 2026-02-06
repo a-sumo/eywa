@@ -1,4 +1,4 @@
--- Remix: Links table for connecting memories across sessions
+-- Eywa: Links table for connecting memories across sessions
 -- Run this in Supabase SQL Editor.
 --
 -- A link is a directed edge: source memory -> target session at a position.

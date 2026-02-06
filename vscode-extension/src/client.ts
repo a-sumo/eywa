@@ -1,5 +1,5 @@
 /**
- * Supabase client for the Remix VS Code extension.
+ * Supabase client for the Eywa VS Code extension.
  * Provides typed access to rooms, agents, sessions, knowledge, and injections.
  */
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
@@ -46,7 +46,7 @@ export interface SessionInfo {
   lastSeen: string;
 }
 
-export class RemixClient {
+export class EywaClient {
   private supabase: SupabaseClient;
   private roomSlug: string;
   private roomId: string | null = null;

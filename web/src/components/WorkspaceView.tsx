@@ -53,13 +53,13 @@ interface ThreadGroup {
   memories: Memory[];
 }
 
-interface RemixVersion {
+interface WorkspaceVersion {
   memoryIds: string[];
   label: string;
   ts: number;
 }
 
-export function RemixView() {
+export function WorkspaceView() {
   const { slug } = useParams<{ slug: string }>();
   const { room } = useRoomContext();
   const navigate = useNavigate();
@@ -77,7 +77,7 @@ export function RemixView() {
     new Set()
   );
 
-  // Context panel: memories pulled into the remix
+  // Context panel: memories pulled into the workspace
   const [contextIds, setContextIds] = useState<string[]>(() => {
     const state = location.state as {
       seedThread?: { agent: string; sessionId: string };
@@ -96,7 +96,7 @@ export function RemixView() {
   });
 
   // Version history
-  const [history, setHistory] = useState<RemixVersion[]>([
+  const [history, setHistory] = useState<WorkspaceVersion[]>([
     { memoryIds: [], label: "Start", ts: Date.now() },
   ]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -272,7 +272,7 @@ export function RemixView() {
       setDragOver(false);
 
       const memoryData = e.dataTransfer.getData(
-        "application/remix-memory"
+        "application/eywa-memory"
       );
       if (memoryData) {
         try {
@@ -285,7 +285,7 @@ export function RemixView() {
       }
 
       const threadData = e.dataTransfer.getData(
-        "application/remix-thread"
+        "application/eywa-thread"
       );
       if (threadData) {
         try {
@@ -338,21 +338,21 @@ export function RemixView() {
   };
 
   return (
-    <div className="remix-view">
-      <div className="remix-header">
+    <div className="eywa-view">
+      <div className="eywa-header">
         <button className="back-btn" onClick={() => navigate(`/r/${slug}`)}>
           &larr; Back
         </button>
         <h2>Session Mixer</h2>
-        <span className="remix-meta">
+        <span className="eywa-meta">
           {contextMemories.length} memories from{" "}
           {contextByAgent.size} agent{contextByAgent.size !== 1 ? "s" : ""}
         </span>
       </div>
 
-      <div className="remix-layout">
+      <div className="eywa-layout">
         {/* Source Panel - browse all memories */}
-        <div className="remix-source-panel">
+        <div className="eywa-source-panel">
           <h3>Browse Memories</h3>
           <div className="browse-group-toggle">
             {(["agent", "session", "timeline"] as const).map((mode) => (
@@ -366,12 +366,12 @@ export function RemixView() {
             ))}
           </div>
           <input
-            className="remix-search"
+            className="eywa-search"
             placeholder="Search memories..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className="remix-source-list">
+          <div className="eywa-source-list">
             {groupMode === "timeline" ? (
               <>
                 {timelineMemories.map((m) => (
@@ -382,7 +382,7 @@ export function RemixView() {
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData(
-                        "application/remix-memory",
+                        "application/eywa-memory",
                         JSON.stringify({ id: m.id })
                       );
                       e.dataTransfer.effectAllowed = "copy";
@@ -416,13 +416,13 @@ export function RemixView() {
                   const latestTs =
                     group.memories[group.memories.length - 1]?.ts;
                   return (
-                    <div key={key} className="remix-source-thread">
+                    <div key={key} className="eywa-source-thread">
                       <div
-                        className="remix-source-thread-label"
+                        className="eywa-source-thread-label"
                         onClick={() => toggleThread(key)}
                       >
                         <span
-                          className={`remix-source-thread-toggle ${isExpanded ? "expanded" : ""}`}
+                          className={`eywa-source-thread-toggle ${isExpanded ? "expanded" : ""}`}
                         >
                           &#9654;
                         </span>
@@ -430,24 +430,24 @@ export function RemixView() {
                           {group.agent}
                         </span>
                         {groupMode === "session" && (
-                          <span className="remix-source-thread-session">
+                          <span className="eywa-source-thread-session">
                             / {shortSessionId(group.sessionId)}
                           </span>
                         )}
-                        <span className="remix-source-thread-count">
+                        <span className="eywa-source-thread-count">
                           {group.memories.length} mem
                         </span>
                         {latestTs && (
-                          <span className="remix-source-thread-time">
+                          <span className="eywa-source-thread-time">
                             {timeAgo(latestTs)}
                           </span>
                         )}
                       </div>
 
                       {isExpanded && (
-                        <div className="remix-source-memories">
+                        <div className="eywa-source-memories">
                           <button
-                            className="btn-remix-new"
+                            className="btn-eywa-new"
                             style={{
                               marginBottom: "0.35rem",
                               fontSize: "0.75rem",
@@ -468,7 +468,7 @@ export function RemixView() {
                               draggable
                               onDragStart={(e) => {
                                 e.dataTransfer.setData(
-                                  "application/remix-memory",
+                                  "application/eywa-memory",
                                   JSON.stringify({ id: m.id })
                                 );
                                 e.dataTransfer.effectAllowed = "copy";
@@ -491,7 +491,7 @@ export function RemixView() {
 
         {/* Context Panel (drop zone) */}
         <div
-          className={`remix-context-panel ${dragOver ? "remix-drop-active" : ""}`}
+          className={`eywa-context-panel ${dragOver ? "eywa-drop-active" : ""}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -499,9 +499,9 @@ export function RemixView() {
           <h3>Context</h3>
 
           {contextMemories.length === 0 && (
-            <div className="remix-drop-zone">
+            <div className="eywa-drop-zone">
               <p>Drag memories here</p>
-              <span className="remix-drop-hint">
+              <span className="eywa-drop-hint">
                 Expand a thread on the left and drag memory cards here, or click
                 "Add entire thread" to pull a whole conversation
               </span>
@@ -509,20 +509,20 @@ export function RemixView() {
           )}
 
           {Array.from(contextByAgent.entries()).map(([agent, mems]) => (
-            <div key={agent} className="remix-agent-section">
+            <div key={agent} className="eywa-agent-section">
               <div
-                className="remix-agent-label"
+                className="eywa-agent-label"
                 style={{ color: agentColor(agent) }}
               >
                 {agent} ({mems.length})
               </div>
               {mems.map((m) => (
-                <div key={m.id} className="remix-memory-item">
+                <div key={m.id} className="eywa-memory-item">
                   <MemoryCard memory={m} compact />
                   <button
-                    className="remix-remove-btn"
+                    className="eywa-remove-btn"
                     onClick={() => removeMemory(m.id)}
-                    title="Remove from remix"
+                    title="Remove from workspace"
                   >
                     &times;
                   </button>
@@ -533,19 +533,19 @@ export function RemixView() {
 
           {/* Version History */}
           {history.length > 1 && (
-            <div className="remix-history">
+            <div className="eywa-history">
               <h4>History</h4>
               {history.map((ver, i) => (
                 <button
                   key={i}
-                  className={`remix-history-item ${i === historyIndex ? "active" : ""}`}
+                  className={`eywa-history-item ${i === historyIndex ? "active" : ""}`}
                   onClick={() => rewindTo(i)}
                 >
-                  <span className="remix-history-dot" />
+                  <span className="eywa-history-dot" />
                   <span>
                     v{i} - {ver.label}
                   </span>
-                  <span className="remix-history-count">
+                  <span className="eywa-history-count">
                     {ver.memoryIds.length}
                   </span>
                 </button>
@@ -555,8 +555,8 @@ export function RemixView() {
         </div>
 
         {/* Gemini Chat Terminal */}
-        <div className="remix-terminal-panel">
-          <div className="remix-terminal-header">
+        <div className="eywa-terminal-panel">
+          <div className="eywa-terminal-header">
             <span>Gemini Agent</span>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               {contextMemories.length > 0 && (
@@ -582,9 +582,9 @@ export function RemixView() {
             </div>
           </div>
 
-          <div className="remix-terminal">
+          <div className="eywa-terminal">
             {chatMessages.length === 0 && !chatLoading && (
-              <div className="remix-terminal-empty">
+              <div className="eywa-terminal-empty">
                 {contextMemories.length === 0 ? (
                   <>
                     <p>Add context from the left panels first.</p>
@@ -604,34 +604,34 @@ export function RemixView() {
             {chatMessages.map((msg, i) => (
               <div
                 key={i}
-                className={`remix-chat-msg remix-chat-${msg.role}`}
+                className={`eywa-chat-msg eywa-chat-${msg.role}`}
               >
-                <div className="remix-chat-msg-role">
+                <div className="eywa-chat-msg-role">
                   {msg.role === "user" ? "You" : "Gemini"}
                 </div>
-                <div className="remix-chat-msg-content">
+                <div className="eywa-chat-msg-content">
                   {msg.content}
                 </div>
               </div>
             ))}
 
             {chatLoading && (
-              <div className="remix-chat-msg remix-chat-model">
-                <div className="remix-chat-msg-role">Gemini</div>
-                <div className="remix-chat-msg-content remix-chat-typing">
+              <div className="eywa-chat-msg eywa-chat-model">
+                <div className="eywa-chat-msg-role">Gemini</div>
+                <div className="eywa-chat-msg-content eywa-chat-typing">
                   Thinking...
                 </div>
               </div>
             )}
 
             {chatError && (
-              <div className="remix-chat-error">{chatError}</div>
+              <div className="eywa-chat-error">{chatError}</div>
             )}
 
             <div ref={chatBottomRef} />
           </div>
 
-          <div className="remix-chat-input">
+          <div className="eywa-chat-input">
             <input
               placeholder={
                 contextMemories.length === 0

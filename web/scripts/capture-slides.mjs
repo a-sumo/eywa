@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Capture screenshots of Remix views for the slide deck.
+ * Capture screenshots of Eywa views for the slide deck.
  *
  * Usage:
  *   node scripts/capture-slides.mjs [base-url] [room-slug]
@@ -53,10 +53,10 @@ const captures = [
     },
   },
   {
-    name: "remix-view",
-    path: `/r/${ROOM}/remix/new`,
-    description: "3-panel Remix workspace",
-    waitFor: ".remix-view",
+    name: "workspace-view",
+    path: `/r/${ROOM}/workspace/new`,
+    description: "3-panel Eywa workspace",
+    waitFor: ".eywa-view",
   },
   {
     name: "chat",

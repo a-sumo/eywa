@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createMcpHandler } from "agents/mcp";
 import { SupabaseClient } from "./lib/supabase.js";
 import { InboxTracker } from "./lib/inbox.js";
-import type { Env, RemixContext, RoomRow } from "./lib/types.js";
+import type { Env, EywaContext, RoomRow } from "./lib/types.js";
 import { registerSessionTools } from "./tools/session.js";
 import { registerMemoryTools } from "./tools/memory.js";
 import { registerContextTools } from "./tools/context.js";
@@ -19,7 +19,7 @@ export default {
     // Health check / info endpoint
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({
-        name: "remix-mcp",
+        name: "eywa-mcp",
         version: "1.0.0",
         status: "ok",
         docs: "Connect via MCP at /mcp?room=<slug>&agent=<name>",
@@ -90,7 +90,7 @@ async function handleMcp(
 
   if (!rooms.length) {
     return Response.json(
-      { error: `Room not found: ${roomSlug}. Create one at remix-memory.vercel.app first.` },
+      { error: `Room not found: ${roomSlug}. Create one at eywa-ai.dev first.` },
       { status: 404 },
     );
   }
@@ -98,7 +98,7 @@ async function handleMcp(
   const room = rooms[0];
   const sessionId = `session_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}_${crypto.randomUUID().slice(0, 8)}`;
 
-  const ctx: RemixContext = {
+  const ctx: EywaContext = {
     roomId: room.id,
     roomSlug: room.slug,
     roomName: room.name,
@@ -131,12 +131,12 @@ async function handleMcp(
   }
 
   // Create MCP server and register all tools
-  const server = new McpServer({ name: "remix", version: "1.0.0" });
+  const server = new McpServer({ name: "eywa", version: "1.0.0" });
 
   // Wrap server.tool to piggyback pending injections on every tool response.
-  // This ensures agents see injections without explicitly calling remix_inbox.
+  // This ensures agents see injections without explicitly calling eywa_inbox.
   const inbox = new InboxTracker();
-  const SKIP_INBOX = new Set(["remix_inject", "remix_inbox"]);
+  const SKIP_INBOX = new Set(["eywa_inject", "eywa_inbox"]);
   const origTool = server.tool.bind(server) as Function;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (server as any).tool = function (...args: any[]) {

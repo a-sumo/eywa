@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Remix E-Ink Display for Waveshare 5.65" 7-Color ACeP
+Eywa E-Ink Display for Waveshare 5.65" 7-Color ACeP
 Raspberry Pi ambient display showing agent status.
 
 Hardware: Waveshare 5.65inch e-Paper Module (F) - 600x448, 7-color
@@ -246,7 +246,7 @@ def render_display(agents: list) -> Image.Image:
         font_small = ImageFont.load_default()
 
     # Header
-    draw.text((20, 15), "Remix", fill=COLORS["black"], font=font_large)
+    draw.text((20, 15), "Eywa", fill=COLORS["black"], font=font_large)
 
     # Timestamp
     now = datetime.now().strftime("%H:%M")
@@ -303,7 +303,7 @@ def render_display(agents: list) -> Image.Image:
 
     # Footer
     draw.line([(20, HEIGHT - 40), (WIDTH - 20, HEIGHT - 40)], fill=COLORS["black"], width=1)
-    draw.text((20, HEIGHT - 30), "remix-memory.vercel.app", fill=COLORS["black"], font=font_small)
+    draw.text((20, HEIGHT - 30), "eywa-ai.dev", fill=COLORS["black"], font=font_small)
 
     return img
 
@@ -312,8 +312,8 @@ def display_image(img: Image.Image):
     """Push image to e-paper display."""
     if not HAS_EPD:
         # Preview mode - save to file
-        img.save("/tmp/remix_eink_preview.png")
-        print("Preview saved to /tmp/remix_eink_preview.png")
+        img.save("/tmp/eywa_eink_preview.png")
+        print("Preview saved to /tmp/eywa_eink_preview.png")
         return
 
     epd = epd5in65f.EPD()
@@ -324,13 +324,13 @@ def display_image(img: Image.Image):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Remix E-Ink Display")
+    parser = argparse.ArgumentParser(description="Eywa E-Ink Display")
     parser.add_argument("--room", default="demo", help="Room slug")
     parser.add_argument("--interval", type=int, default=60, help="Refresh interval in seconds")
     parser.add_argument("--once", action="store_true", help="Run once and exit")
     args = parser.parse_args()
 
-    print(f"Remix E-Ink Display - Room: {args.room}")
+    print(f"Eywa E-Ink Display - Room: {args.room}")
     print(f"Display: {WIDTH}x{HEIGHT}, 7-color")
     print(f"Refresh interval: {args.interval}s")
 

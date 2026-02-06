@@ -6,7 +6,7 @@ Creates a high-resolution PNG of the asymmetric marker pattern.
 
 from PIL import Image, ImageDraw
 
-# Marker pattern (8x8) - same as in MiniRemixEink.tsx
+# Marker pattern (8x8) - same as in MiniEywaEink.tsx
 # 1=filled (dark), 0=empty (white)
 PATTERN = [
     [1,1,1,1,1,1,1,1],
@@ -23,7 +23,7 @@ PATTERN = [
 DARK = (107, 114, 128)   # soft gray #6B7280
 LIGHT = (255, 253, 248)  # warm cream #FFFDF8
 
-def generate_marker(size=512, output_path="remix_tracking_marker.png"):
+def generate_marker(size=512, output_path="eywa_tracking_marker.png"):
     """Generate marker at specified size."""
     cell_size = size // 8
     actual_size = cell_size * 8
@@ -71,4 +71,4 @@ def generate_marker(size=512, output_path="remix_tracking_marker.png"):
 
 
 if __name__ == "__main__":
-    generate_marker(512, "remix_tracking_marker.png")
+    generate_marker(512, "eywa_tracking_marker.png")

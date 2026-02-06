@@ -1,15 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { RemixContext, MemoryRow } from "../lib/types.js";
+import type { EywaContext, MemoryRow } from "../lib/types.js";
 
 export function registerContextTools(
   server: McpServer,
   db: SupabaseClient,
-  ctx: RemixContext,
+  ctx: EywaContext,
 ) {
   server.tool(
-    "remix_context",
+    "eywa_context",
     "Get shared context from all agents. See what others are working on.",
     {
       limit: z.number().optional().default(20).describe("Maximum messages to retrieve"),
@@ -41,7 +41,7 @@ export function registerContextTools(
   );
 
   server.tool(
-    "remix_agents",
+    "eywa_agents",
     "List all agents that have logged to Eywa in this room.",
     {},
     async () => {
@@ -76,7 +76,7 @@ export function registerContextTools(
   );
 
   server.tool(
-    "remix_recall",
+    "eywa_recall",
     "Recall messages from a specific agent.",
     {
       agent: z.string().describe("Agent name to query"),

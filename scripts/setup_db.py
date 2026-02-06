@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup database for Remix using REST API.
+Setup database for Eywa using REST API.
 """
 
 import os
@@ -285,7 +285,7 @@ export async function POST(req: NextRequest) {
     print(f"Seeded {len(messages)} messages")
 
 def main():
-    print("Setting up Remix database...")
+    print("Setting up Eywa database...")
     print(f"Using Supabase URL: {SUPABASE_URL}")
 
     # Check if rooms table exists
