@@ -47,6 +47,11 @@
     },
     "commands": [
       {
+        "command": "eywa.login",
+        "title": "Eywa: Login",
+        "icon": "$(log-in)"
+      },
+      {
         "command": "eywa.connectAgent",
         "title": "Eywa: Connect Agent"
       },
@@ -92,8 +97,20 @@
         "title": "Eywa: Show Knowledge for File"
       }
     ],
+    "viewsWelcome": [
+      {
+        "view": "eywaAgents",
+        "contents": "Connect to Eywa to monitor your agents.\n[Login with Browser](command:eywa.login)",
+        "when": "config.eywa.room == ''"
+      }
+    ],
     "menus": {
       "view/title": [
+        {
+          "command": "eywa.login",
+          "when": "view == eywaAgents && config.eywa.room == ''",
+          "group": "navigation"
+        },
         {
           "command": "eywa.refreshAgents",
           "when": "view == eywaAgents",

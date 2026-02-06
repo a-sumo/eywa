@@ -6,13 +6,15 @@ import { useRoomContext } from "../context/RoomContext";
 import { supabase } from "../lib/supabase";
 import type { Memory, Room } from "../lib/supabase";
 import { getAvatar } from "./avatars";
+import { EywaLogoMono } from "./EywaLogo";
+import { GrainTexture } from "./GrainTexture";
 
-/* ── Palette (pastel, pleasant) ── */
+/* ── Palette (aurora-derived, vivid on dark) ── */
 
 const AGENT_PALETTE = [
-  "#B88EC7", "#8EAED4", "#7EB5A0", "#D4A87E",
-  "#C78E9E", "#8EC7B5", "#A08ED4", "#D4C78E",
-  "#8EC7C7", "#C7A08E", "#8E9ED4", "#D48EB8",
+  "#15D1FF", "#6417EC", "#E72B76", "#4ade80",
+  "#2543FF", "#ff6b9d", "#8b5cf6", "#06b6d4",
+  "#a78bfa", "#f472b6", "#34d399", "#60a5fa",
 ];
 
 function agentColor(name: string): string {
@@ -24,11 +26,11 @@ function agentColor(name: string): string {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  user: "#7EAE8E",
-  assistant: "#7B9ACC",
-  tool_call: "#CCA87E",
-  tool_result: "#CCA87E",
-  injection: "#C78E9E",
+  user: "#4ade80",
+  assistant: "#15D1FF",
+  tool_call: "#a78bfa",
+  tool_result: "#8b5cf6",
+  injection: "#E72B76",
 };
 
 type TypeCategory = "user" | "assistant" | "tool";
@@ -630,9 +632,17 @@ export function MiniEywa() {
 
   return (
     <div className="mini-container">
+      <GrainTexture
+        width={320}
+        height={480}
+        density={0.005}
+        seed={31}
+        noiseIntensity={12}
+      />
+
       {/* Title bar */}
       <div className="mini-titlebar">
-        <span className="mini-led" />
+        <EywaLogoMono size={14} className="mini-logo" />
         <button
           className="mini-titlebar-name mini-titlebar-name-btn"
           onClick={() => setShowRoomPicker((p) => !p)}
@@ -701,7 +711,7 @@ export function MiniEywa() {
               <span className="mini-strip-status">
                 <span
                   className="mini-strip-dot"
-                  style={{ background: info.isActive ? "#7EAE8E" : "#B8B8C8" }}
+                  style={{ background: info.isActive ? "#4ade80" : "#334155" }}
                 />
                 {timeAgo(info.lastTs)}
               </span>

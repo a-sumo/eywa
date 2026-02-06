@@ -13,7 +13,8 @@ import type { EywaClient } from "./client";
 export async function injectSelection(getClient: () => EywaClient | undefined): Promise<void> {
   const client = getClient();
   if (!client) {
-    vscode.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
+    const action = await vscode.window.showWarningMessage("Not connected to Eywa.", "Login");
+    if (action === "Login") vscode.commands.executeCommand("eywa.login");
     return;
   }
 

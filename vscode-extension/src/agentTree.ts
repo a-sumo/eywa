@@ -45,7 +45,7 @@ export class AgentTreeProvider implements vscode.TreeDataProvider<TreeNode> {
   async getChildren(element?: TreeNode): Promise<TreeNode[]> {
     const client = this.getClient();
     if (!client) {
-      return [new UserItem("Configure eywa settings", "", 0, 0)];
+      return [new UserItem("Not connected - run Eywa: Login", "", 0, 0)];
     }
 
     // Top level: user items

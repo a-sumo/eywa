@@ -10,6 +10,7 @@ export function CLIAuth() {
   const [selected, setSelected] = useState<string>("");
   const [newSlug, setNewSlug] = useState("");
   const [status, setStatus] = useState<"picking" | "sending" | "done" | "error">("picking");
+  const [authorizedRoom, setAuthorizedRoom] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -64,6 +65,7 @@ export function CLIAuth() {
         body: JSON.stringify(payload),
       });
 
+      setAuthorizedRoom(roomSlug);
       setStatus("done");
     } catch {
       setStatus("error");
@@ -75,7 +77,7 @@ export function CLIAuth() {
       <div className="cli-auth">
         <div className="cli-auth-card">
           <h1>CLI Auth</h1>
-          <p>This page is opened by <code>eywa login</code>. Run it from your terminal first.</p>
+          <p>This page is opened by <code>eywa login</code> or the VS Code extension. Run one of those first.</p>
         </div>
       </div>
     );
@@ -87,7 +89,8 @@ export function CLIAuth() {
         <div className="cli-auth-card">
           <div className="cli-auth-check">&#10003;</div>
           <h1>Logged in!</h1>
-          <p>You can close this tab and return to your terminal.</p>
+          <p>You can close this tab and return to your editor, or</p>
+          <a className="cli-auth-btn" href={`/r/${authorizedRoom}`}>Open Dashboard</a>
         </div>
       </div>
     );
@@ -98,7 +101,7 @@ export function CLIAuth() {
       <div className="cli-auth">
         <div className="cli-auth-card">
           <h1>Something went wrong</h1>
-          <p>Make sure <code>eywa login</code> is still running in your terminal, then try again.</p>
+          <p>Make sure <code>eywa login</code> or the VS Code login flow is still running, then try again.</p>
         </div>
       </div>
     );
@@ -107,8 +110,8 @@ export function CLIAuth() {
   return (
     <div className="cli-auth">
       <div className="cli-auth-card">
-        <h1>Authorize Eywa CLI</h1>
-        <p>Select a room to connect your terminal to:</p>
+        <h1>Authorize Eywa</h1>
+        <p>Select a room to connect to:</p>
 
         <div className="cli-auth-rooms">
           {loading && <p className="cli-auth-loading">Loading rooms...</p>}

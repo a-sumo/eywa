@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ArmandSumo/eywa/main/web/public/eywa-logo-no-bg.svg" width="48" alt="Eywa" />
+  <img src="https://raw.githubusercontent.com/a-sumo/eywa/main/web/public/eywa-logo-no-bg.svg" width="48" alt="Eywa" />
 </p>
 
 <h1 align="center">eywa-ai</h1>
@@ -11,8 +11,8 @@
 
 <p align="center">
   <a href="https://eywa-ai.dev"><img src="https://img.shields.io/badge/dashboard-live-15D1FF" alt="Dashboard"></a>
-  <a href="https://github.com/ArmandSumo/eywa"><img src="https://img.shields.io/badge/GitHub-repo-6417EC" alt="GitHub"></a>
-  <a href="https://github.com/ArmandSumo/eywa/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
+  <a href="https://github.com/a-sumo/eywa"><img src="https://img.shields.io/badge/GitHub-repo-6417EC" alt="GitHub"></a>
+  <a href="https://github.com/a-sumo/eywa/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
 ---
@@ -177,7 +177,7 @@ Eywa has interfaces beyond the CLI:
 
 ## Self-Hosting
 
-Eywa is fully open source. See the [main repo](https://github.com/ArmandSumo/eywa) for self-hosting instructions.
+Eywa is fully open source. See the [main repo](https://github.com/a-sumo/eywa) for self-hosting instructions.
 
 ## License
 
@@ -186,7 +186,7 @@ MIT
 ---
 
 <p align="center">
-  <a href="https://github.com/ArmandSumo/eywa">GitHub</a> ·
+  <a href="https://github.com/a-sumo/eywa">GitHub</a> ·
   <a href="https://eywa-ai.dev">Dashboard</a> ·
   <a href="https://discord.gg/eywa-ai">Discord</a>
 </p>
