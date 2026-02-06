@@ -17,42 +17,50 @@
   <circle cx="60" cy="60" r="56" fill="#08090f"/>
 
   <g filter="url(#glow)">
-    <!-- Center tendril - straight up -->
-    <circle cx="60" cy="72" r="4" fill="#4eeaff"/>
-    <circle cx="60" cy="60" r="4.5" fill="#4eeaff" opacity="0.9"/>
-    <circle cx="60" cy="48" r="4" fill="#4eeaff" opacity="0.8"/>
-    <circle cx="60" cy="38" r="3.3" fill="#4eeaff" opacity="0.7"/>
-    <circle cx="60" cy="29" r="2.7" fill="#4eeaff" opacity="0.6"/>
-    <circle cx="60" cy="22" r="2.2" fill="#4eeaff" opacity="0.5"/>
+    <!-- Center tendril - straight up (cyan) -->
+    <circle cx="60" cy="78" r="4" fill="#4eeaff"/>
+    <circle cx="60" cy="66" r="4.5" fill="#4eeaff" opacity="0.9"/>
+    <circle cx="60" cy="54" r="4" fill="#4eeaff" opacity="0.8"/>
+    <circle cx="60" cy="43" r="3.5" fill="#4eeaff" opacity="0.7"/>
+    <circle cx="60" cy="33" r="3" fill="#4eeaff" opacity="0.6"/>
+    <circle cx="60" cy="25" r="2.5" fill="#4eeaff" opacity="0.5"/>
 
-    <!-- Left arc - curves out and droops down -->
-    <circle cx="52" cy="72" r="3.5" fill="#a855f7"/>
-    <circle cx="38" cy="64" r="4" fill="#a855f7" opacity="0.9"/>
-    <circle cx="26" cy="62" r="3.6" fill="#a855f7" opacity="0.8"/>
-    <circle cx="16" cy="66" r="3" fill="#a855f7" opacity="0.7"/>
-    <circle cx="10" cy="76" r="2.5" fill="#a855f7" opacity="0.6"/>
+    <!-- Left arc - UP then OUT and DOWN (purple) -->
+    <circle cx="52" cy="78" r="3.3" fill="#a855f7"/>
+    <circle cx="44" cy="66" r="3.8" fill="#a855f7" opacity="0.9"/>
+    <circle cx="35" cy="54" r="3.5" fill="#a855f7" opacity="0.85"/>
+    <circle cx="26" cy="44" r="3.2" fill="#a855f7" opacity="0.75"/>
+    <circle cx="18" cy="38" r="2.8" fill="#a855f7" opacity="0.65"/>
+    <circle cx="12" cy="40" r="2.4" fill="#a855f7" opacity="0.55"/>
+    <circle cx="10" cy="50" r="2" fill="#a855f7" opacity="0.45"/>
 
-    <!-- Left outer arc - droops more -->
-    <circle cx="48" cy="78" r="3" fill="#f472b6"/>
-    <circle cx="34" cy="78" r="3.4" fill="#f472b6" opacity="0.85"/>
-    <circle cx="22" cy="84" r="3" fill="#f472b6" opacity="0.7"/>
-    <circle cx="16" cy="96" r="2.5" fill="#f472b6" opacity="0.55"/>
+    <!-- Left outer arc - UP then OUT and DOWN (pink) -->
+    <circle cx="48" cy="82" r="2.8" fill="#f472b6"/>
+    <circle cx="36" cy="74" r="3.2" fill="#f472b6" opacity="0.9"/>
+    <circle cx="24" cy="66" r="3" fill="#f472b6" opacity="0.8"/>
+    <circle cx="14" cy="62" r="2.6" fill="#f472b6" opacity="0.7"/>
+    <circle cx="10" cy="66" r="2.2" fill="#f472b6" opacity="0.6"/>
+    <circle cx="10" cy="78" r="1.8" fill="#f472b6" opacity="0.5"/>
 
-    <!-- Right arc - curves out and droops down -->
-    <circle cx="68" cy="72" r="3.5" fill="#4eeaff"/>
-    <circle cx="82" cy="64" r="4" fill="#4eeaff" opacity="0.9"/>
-    <circle cx="94" cy="62" r="3.6" fill="#4eeaff" opacity="0.8"/>
-    <circle cx="104" cy="66" r="3" fill="#4eeaff" opacity="0.7"/>
-    <circle cx="110" cy="76" r="2.5" fill="#4eeaff" opacity="0.6"/>
+    <!-- Right arc - UP then OUT and DOWN (purple) -->
+    <circle cx="68" cy="78" r="3.3" fill="#a855f7"/>
+    <circle cx="76" cy="66" r="3.8" fill="#a855f7" opacity="0.9"/>
+    <circle cx="85" cy="54" r="3.5" fill="#a855f7" opacity="0.85"/>
+    <circle cx="94" cy="44" r="3.2" fill="#a855f7" opacity="0.75"/>
+    <circle cx="102" cy="38" r="2.8" fill="#a855f7" opacity="0.65"/>
+    <circle cx="108" cy="40" r="2.4" fill="#a855f7" opacity="0.55"/>
+    <circle cx="110" cy="50" r="2" fill="#a855f7" opacity="0.45"/>
 
-    <!-- Right outer arc - droops more -->
-    <circle cx="72" cy="78" r="3" fill="#6b8cff"/>
-    <circle cx="86" cy="78" r="3.4" fill="#6b8cff" opacity="0.85"/>
-    <circle cx="98" cy="84" r="3" fill="#6b8cff" opacity="0.7"/>
-    <circle cx="104" cy="96" r="2.5" fill="#6b8cff" opacity="0.55"/>
+    <!-- Right outer arc - UP then OUT and DOWN (pink) -->
+    <circle cx="72" cy="82" r="2.8" fill="#f472b6"/>
+    <circle cx="84" cy="74" r="3.2" fill="#f472b6" opacity="0.9"/>
+    <circle cx="96" cy="66" r="3" fill="#f472b6" opacity="0.8"/>
+    <circle cx="106" cy="62" r="2.6" fill="#f472b6" opacity="0.7"/>
+    <circle cx="110" cy="66" r="2.2" fill="#f472b6" opacity="0.6"/>
+    <circle cx="110" cy="78" r="1.8" fill="#f472b6" opacity="0.5"/>
   </g>
 
   <!-- Core -->
-  <ellipse cx="60" cy="86" rx="12" ry="7" fill="url(#core-glow)" filter="url(#glow)"/>
-  <ellipse cx="60" cy="86" rx="6" ry="3.5" fill="#fff"/>
+  <ellipse cx="60" cy="92" rx="12" ry="7" fill="url(#core-glow)" filter="url(#glow)"/>
+  <ellipse cx="60" cy="92" rx="6" ry="3.5" fill="#fff"/>
 </svg>
