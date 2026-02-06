@@ -1,66 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
   <defs>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+    <radialGradient id="eywa-grad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#4eeaff"/>
+      <stop offset="40%" stop-color="#a855f7"/>
+      <stop offset="70%" stop-color="#f472b6"/>
+      <stop offset="100%" stop-color="#6b8cff"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    <radialGradient id="core-glow" cx="50%" cy="40%" r="60%">
-      <stop offset="0%" stop-color="#fff"/>
-      <stop offset="50%" stop-color="#4eeaff"/>
-      <stop offset="100%" stop-color="#4eeaff" stop-opacity="0"/>
-    </radialGradient>
   </defs>
-
   <circle cx="60" cy="60" r="56" fill="#08090f"/>
-
-  <g filter="url(#glow)">
-    <!-- Center tendril - straight up (cyan) -->
-    <circle cx="60" cy="78" r="4" fill="#4eeaff"/>
-    <circle cx="60" cy="66" r="4.5" fill="#4eeaff" opacity="0.9"/>
-    <circle cx="60" cy="54" r="4" fill="#4eeaff" opacity="0.8"/>
-    <circle cx="60" cy="43" r="3.5" fill="#4eeaff" opacity="0.7"/>
-    <circle cx="60" cy="33" r="3" fill="#4eeaff" opacity="0.6"/>
-    <circle cx="60" cy="25" r="2.5" fill="#4eeaff" opacity="0.5"/>
-
-    <!-- Left arc - UP then OUT and DOWN (purple) -->
-    <circle cx="52" cy="78" r="3.3" fill="#a855f7"/>
-    <circle cx="44" cy="66" r="3.8" fill="#a855f7" opacity="0.9"/>
-    <circle cx="35" cy="54" r="3.5" fill="#a855f7" opacity="0.85"/>
-    <circle cx="26" cy="44" r="3.2" fill="#a855f7" opacity="0.75"/>
-    <circle cx="18" cy="38" r="2.8" fill="#a855f7" opacity="0.65"/>
-    <circle cx="12" cy="40" r="2.4" fill="#a855f7" opacity="0.55"/>
-    <circle cx="10" cy="50" r="2" fill="#a855f7" opacity="0.45"/>
-
-    <!-- Left outer arc - UP then OUT and DOWN (pink) -->
-    <circle cx="48" cy="82" r="2.8" fill="#f472b6"/>
-    <circle cx="36" cy="74" r="3.2" fill="#f472b6" opacity="0.9"/>
-    <circle cx="24" cy="66" r="3" fill="#f472b6" opacity="0.8"/>
-    <circle cx="14" cy="62" r="2.6" fill="#f472b6" opacity="0.7"/>
-    <circle cx="10" cy="66" r="2.2" fill="#f472b6" opacity="0.6"/>
-    <circle cx="10" cy="78" r="1.8" fill="#f472b6" opacity="0.5"/>
-
-    <!-- Right arc - UP then OUT and DOWN (purple) -->
-    <circle cx="68" cy="78" r="3.3" fill="#a855f7"/>
-    <circle cx="76" cy="66" r="3.8" fill="#a855f7" opacity="0.9"/>
-    <circle cx="85" cy="54" r="3.5" fill="#a855f7" opacity="0.85"/>
-    <circle cx="94" cy="44" r="3.2" fill="#a855f7" opacity="0.75"/>
-    <circle cx="102" cy="38" r="2.8" fill="#a855f7" opacity="0.65"/>
-    <circle cx="108" cy="40" r="2.4" fill="#a855f7" opacity="0.55"/>
-    <circle cx="110" cy="50" r="2" fill="#a855f7" opacity="0.45"/>
-
-    <!-- Right outer arc - UP then OUT and DOWN (pink) -->
-    <circle cx="72" cy="82" r="2.8" fill="#f472b6"/>
-    <circle cx="84" cy="74" r="3.2" fill="#f472b6" opacity="0.9"/>
-    <circle cx="96" cy="66" r="3" fill="#f472b6" opacity="0.8"/>
-    <circle cx="106" cy="62" r="2.6" fill="#f472b6" opacity="0.7"/>
-    <circle cx="110" cy="66" r="2.2" fill="#f472b6" opacity="0.6"/>
-    <circle cx="110" cy="78" r="1.8" fill="#f472b6" opacity="0.5"/>
-  </g>
-
-  <!-- Core -->
-  <ellipse cx="60" cy="92" rx="12" ry="7" fill="url(#core-glow)" filter="url(#glow)"/>
-  <ellipse cx="60" cy="92" rx="6" ry="3.5" fill="#fff"/>
+  <circle cx="60" cy="60" r="42" fill="url(#eywa-grad)" filter="url(#glow)"/>
 </svg>
