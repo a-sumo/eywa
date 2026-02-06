@@ -52,7 +52,7 @@ export function registerCollaborationTools(
         agents.set(row.agent, { status, description, lastSeen: row.ts });
       }
 
-      const lines = ["=== Remix Agent Status ===\n"];
+      const lines = ["=== Eywa Agent Status ===\n"];
       for (const [name, info] of agents) {
         lines.push(
           `  ${name} [${info.status}] - ${info.description}\n    Last seen: ${info.lastSeen}`,
@@ -169,7 +169,7 @@ export function registerCollaborationTools(
 
   server.tool(
     "remix_msg",
-    "Send a message to teammates via Remix.",
+    "Send a message to teammates via Eywa.",
     {
       content: z.string().describe("Message text"),
       channel: z.string().optional().default("general").describe("Channel to send to"),

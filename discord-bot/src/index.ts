@@ -23,7 +23,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 // ── Ready ───────────────────────────────────────────────────────
 
 client.once(Events.ClientReady, (c) => {
-  const line = `Remix Discord Bot | ${c.user.tag} | ${c.guilds.cache.size} server${c.guilds.cache.size !== 1 ? "s" : ""}`;
+  const line = `Eywa Discord Bot | ${c.user.tag} | ${c.guilds.cache.size} server${c.guilds.cache.size !== 1 ? "s" : ""}`;
   console.log();
   console.log(`  \u2554${"═".repeat(line.length + 2)}\u2557`);
   console.log(`  \u2551 ${line} \u2551`);

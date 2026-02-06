@@ -1,5 +1,5 @@
 /**
- * Remix VS Code Extension — entry point.
+ * Eywa VS Code Extension — entry point.
  * Wires up tree providers (agents, knowledge, activity), realtime subscriptions,
  * CodeLens, status bar, and all commands (inject, connect, dashboard, etc.).
  * Configuration is read from `remix.*` settings; changes trigger re-init.
@@ -21,8 +21,8 @@ export function activate(context: vscode.ExtensionContext) {
   // Status bar — enhanced with active agent count
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   statusBarItem.command = "remix.showStatus";
-  statusBarItem.text = "$(cloud) Remix";
-  statusBarItem.tooltip = "Click for Remix quick actions";
+  statusBarItem.text = "$(cloud) Eywa";
+  statusBarItem.tooltip = "Click for Eywa quick actions";
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
 
@@ -89,7 +89,7 @@ export function activate(context: vscode.ExtensionContext) {
       // Only urgent injections get a native popup
       if (priority === "urgent") {
         vscode.window.showWarningMessage(`$(alert) URGENT: ${msg}`, "Open Dashboard").then((choice) => {
-          if (choice === "Open Dashboard") vscode.commands.executeCommand("remix.openDashboard");
+          if (choice === "Open Dashboard") vscode.commands.executeCommand("eywa.openDashboard");
         });
       }
     } else if (event === "knowledge_stored" || mem.message_type === "knowledge") {
@@ -167,7 +167,7 @@ export function activate(context: vscode.ExtensionContext) {
         "Open Terminal",
       ).then((action) => {
         if (action === "Open Terminal") {
-          const terminal = vscode.window.createTerminal("Remix");
+          const terminal = vscode.window.createTerminal("Eywa");
           terminal.sendText(`claude mcp add --transport http remix "${mcpUrl}"`);
           terminal.show();
         }
@@ -181,7 +181,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Original inject context (manual text input)
     vscode.commands.registerCommand("remix.injectContext", async () => {
       if (!client) {
-        vscode.window.showWarningMessage("Configure remix.room, remix.supabaseUrl, and remix.supabaseKey first.");
+        vscode.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
         return;
       }
 
@@ -243,7 +243,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Enhanced status bar: QuickPick menu
     vscode.commands.registerCommand("remix.showStatus", async () => {
       if (!client) {
-        vscode.window.showWarningMessage("Configure remix.room, remix.supabaseUrl, and remix.supabaseKey first.");
+        vscode.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
         return;
       }
 
@@ -268,7 +268,7 @@ export function activate(context: vscode.ExtensionContext) {
       ];
 
       const pick = await vscode.window.showQuickPick(items, {
-        placeHolder: `Remix: ${getConfig("room")}`,
+        placeHolder: `Eywa: ${getConfig("room")}`,
       });
       if (!pick) return;
 
@@ -308,14 +308,14 @@ function getConfig(key: string): string {
 function updateStatusBar(agentProvider: AgentTreeProvider) {
   const room = getConfig("room");
   if (!room) {
-    statusBarItem.text = "$(cloud) Remix (unconfigured)";
+    statusBarItem.text = "$(cloud) Eywa (unconfigured)";
     return;
   }
   const active = agentProvider.getActiveCount();
   if (active > 0) {
-    statusBarItem.text = `$(cloud) Remix: /${room}  $(person) ${active} active`;
+    statusBarItem.text = `$(cloud) Eywa: /${room}  $(person) ${active} active`;
   } else {
-    statusBarItem.text = `$(cloud) Remix: /${room}`;
+    statusBarItem.text = `$(cloud) Eywa: /${room}`;
   }
 }
 
@@ -357,7 +357,7 @@ function initClient(
   } else {
     client = undefined;
     realtime = undefined;
-    statusBarItem.text = "$(cloud) Remix (unconfigured)";
+    statusBarItem.text = "$(cloud) Eywa (unconfigured)";
   }
 }
 

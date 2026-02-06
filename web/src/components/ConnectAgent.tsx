@@ -59,7 +59,7 @@ function getHint(client: Client): string {
   }
 }
 
-const QUICK_START_PROMPT = `Start logging to Remix. Call remix_start with a description of what we're working on, then use remix_import to upload a summary of our conversation so far. After that, periodically call remix_log for important exchanges.`;
+const QUICK_START_PROMPT = `Start logging to Eywa. Call remix_start with a description of what we're working on, then use remix_import to upload a summary of our conversation so far. After that, periodically call remix_log for important exchanges.`;
 
 interface ConnectAgentProps {
   slug: string;

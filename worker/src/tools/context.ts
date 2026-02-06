@@ -24,7 +24,7 @@ export function registerContextTools(
 
       if (!rows.length) {
         return {
-          content: [{ type: "text" as const, text: "No activity in Remix yet." }],
+          content: [{ type: "text" as const, text: "No activity in Eywa yet." }],
         };
       }
 
@@ -42,7 +42,7 @@ export function registerContextTools(
 
   server.tool(
     "remix_agents",
-    "List all agents that have logged to Remix in this room.",
+    "List all agents that have logged to Eywa in this room.",
     {},
     async () => {
       const rows = await db.select<MemoryRow>("memories", {
@@ -64,7 +64,7 @@ export function registerContextTools(
         };
       }
 
-      const lines = ["Agents in Remix:"];
+      const lines = ["Agents in Eywa:"];
       for (const [name, ts] of agents) {
         lines.push(`  ${name} (last: ${ts})`);
       }

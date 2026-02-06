@@ -343,7 +343,7 @@ export function RemixView() {
         <button className="back-btn" onClick={() => navigate(`/r/${slug}`)}>
           &larr; Back
         </button>
-        <h2>Remix</h2>
+        <h2>Session Mixer</h2>
         <span className="remix-meta">
           {contextMemories.length} memories from{" "}
           {contextByAgent.size} agent{contextByAgent.size !== 1 ? "s" : ""}

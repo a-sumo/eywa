@@ -13,7 +13,7 @@ import type { RemixClient } from "./client";
 export async function injectSelection(getClient: () => RemixClient | undefined): Promise<void> {
   const client = getClient();
   if (!client) {
-    vscode.window.showWarningMessage("Configure remix.room, remix.supabaseUrl, and remix.supabaseKey first.");
+    vscode.window.showWarningMessage("Configure eywa.room, eywa.supabaseUrl, and eywa.supabaseKey first.");
     return;
   }
 

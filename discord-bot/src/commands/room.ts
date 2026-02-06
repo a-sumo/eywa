@@ -12,11 +12,11 @@ import {
 
 export const data = new SlashCommandBuilder()
   .setName("room")
-  .setDescription("Manage which Remix room this channel is connected to")
+  .setDescription("Manage which Eywa room this channel is connected to")
   .addSubcommand((sub) =>
     sub
       .setName("set")
-      .setDescription("Bind this channel to a Remix room")
+      .setDescription("Bind this channel to an Eywa room")
       .addStringOption((opt) =>
         opt
           .setName("slug")

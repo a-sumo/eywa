@@ -8,7 +8,7 @@ import { resolveRoom } from "../lib/rooms.js";
 
 export const data = new SlashCommandBuilder()
   .setName("msg")
-  .setDescription("Send a message to the Remix team chat")
+  .setDescription("Send a message to the Eywa team chat")
   .addStringOption((opt) =>
     opt
       .setName("text")
