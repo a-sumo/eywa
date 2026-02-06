@@ -212,7 +212,8 @@ function EinkPixelCreature({ name, size = 18 }: { name: string; size?: number })
   const color = einkAgentColor(name);
   const ROWS = sprite.grid.length;
   const COLS = sprite.grid[0].length;
-  const fills = ["", EINK.black, color, EINK.white];
+  // 0=empty, 1=black (eyes), 2=black (accents), 3=agent color (body)
+  const fills = ["", EINK.black, EINK.black, color];
 
   return (
     <svg
