@@ -32,7 +32,7 @@ export function FlowBackground() {
     const CENTER_Y_OFFSET = -40;
 
     // Load logo with original colors (no white tint)
-    const LOGO_SIZE = 96;
+    const LOGO_SIZE = 68;
     const LOGO_RENDER_SCALE = 2;
     const LOGO_EXCLUSION_RADIUS = LOGO_SIZE * 0.7;
     const LOGO_GLOW_BLUR = 56;
