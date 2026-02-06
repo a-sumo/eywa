@@ -914,13 +914,286 @@ body {
 }
 
 .landing-feature-icon {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 1rem;
-  color: var(--text-secondary);
+  border-radius: var(--radius-lg);
+  background: rgba(168, 85, 247, 0.06);
+  border: 1px solid rgba(168, 85, 247, 0.1);
+  animation: heartbeat-icon-glow 2.8s ease-in-out infinite;
+}
+
+/* ============================================
+   Heartbeat Animation System
+   Period: 2.8s (synced with FlowBackground)
+   Shape: double-pulse "lub-dub" at 12%/22%,
+   long rest from 30-100%. Everything on the
+   landing page shares this rhythm.
+   ============================================ */
+
+/* --- Heartbeat on icon containers --- */
+@keyframes heartbeat-icon-glow {
+  0%, 30%, 100% {
+    border-color: rgba(168, 85, 247, 0.1);
+    box-shadow: none;
+  }
+  12% {
+    border-color: rgba(168, 85, 247, 0.35);
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.12);
+  }
+  18% {
+    border-color: rgba(168, 85, 247, 0.15);
+    box-shadow: none;
+  }
+  22% {
+    border-color: rgba(168, 85, 247, 0.25);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.08);
+  }
+}
+
+.anim-icon {
+  overflow: visible;
+}
+
+/* --- Threads: flowing data streams --- */
+/* Dashes surge fast during the beat (0-12%), coast during rest */
+.anim-stream {
+  stroke-dasharray: 8 4;
+  animation: stream-flow 2.8s ease-in-out infinite;
+}
+.anim-stream.s1 { stroke: var(--aurora-purple); }
+.anim-stream.s2 { stroke: var(--aurora-pink); animation-delay: -0.9s; }
+.anim-stream.s3 { stroke: var(--aurora-cyan); animation-delay: -1.8s; }
+
+@keyframes stream-flow {
+  0%   { stroke-dashoffset: 0; }
+  12%  { stroke-dashoffset: -10; }
+  30%  { stroke-dashoffset: -14; }
+  100% { stroke-dashoffset: -24; }
+}
+
+.anim-node {
+  fill: var(--aurora-pink);
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: node-heartbeat 2.8s ease-in-out infinite;
+}
+@keyframes node-heartbeat {
+  0%, 30%, 100% { opacity: 0.5; transform: scale(0.8); }
+  12% { opacity: 1; transform: scale(1.3); }
+  18% { opacity: 0.7; transform: scale(0.95); }
+  22% { opacity: 0.9; transform: scale(1.15); }
+}
+
+/* --- Link: orbiting arcs --- */
+.anim-arc {
+  stroke-dasharray: 6 3;
+  animation: arc-flow 2.8s ease-in-out infinite;
+}
+.anim-arc.a1 { stroke: var(--aurora-purple); }
+.anim-arc.a2 { stroke: var(--aurora-cyan); animation-delay: -1.4s; }
+
+@keyframes arc-flow {
+  0%   { stroke-dashoffset: 0; }
+  12%  { stroke-dashoffset: -8; }
+  30%  { stroke-dashoffset: -11; }
+  100% { stroke-dashoffset: -18; }
+}
+
+/* --- Inject: gravity drop --- */
+.anim-drop-shaft {
+  stroke: var(--aurora-cyan);
+  stroke-dasharray: 4 3;
+  animation: drop-flow 2.8s ease-in-out infinite;
+}
+@keyframes drop-flow {
+  0%   { stroke-dashoffset: 0; }
+  12%  { stroke-dashoffset: -6; }
+  30%  { stroke-dashoffset: -8; }
+  100% { stroke-dashoffset: -14; }
+}
+
+.anim-drop-head {
+  stroke: var(--aurora-cyan);
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: drop-bob 2.8s ease-in-out infinite;
+}
+@keyframes drop-bob {
+  0%, 30%, 100% { transform: translateY(0); }
+  12% { transform: translateY(3px); }
+  18% { transform: translateY(0.5px); }
+  22% { transform: translateY(2px); }
+}
+
+.anim-ripple {
+  fill: none;
+  stroke: var(--aurora-pink);
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: ripple-expand 2.8s ease-out infinite;
+}
+@keyframes ripple-expand {
+  0% { transform: scale(0.5); opacity: 0; }
+  10% { transform: scale(0.6); opacity: 0.8; }
+  30% { transform: scale(2); opacity: 0.2; }
+  50%, 100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* --- Brain: neural network --- */
+.anim-neuron {
+  fill-opacity: 0;
+  animation: neuron-heartbeat 2.8s ease-in-out infinite;
+}
+.anim-neuron.n1 { fill: var(--aurora-purple); stroke: var(--aurora-purple); }
+.anim-neuron.n2 { fill: var(--aurora-cyan); stroke: var(--aurora-cyan); animation-delay: -0.7s; }
+.anim-neuron.n3 { fill: var(--aurora-pink); stroke: var(--aurora-pink); animation-delay: -1.4s; }
+.anim-neuron.n4 { fill: var(--aurora-green); stroke: var(--aurora-green); animation-delay: -2.1s; }
+
+@keyframes neuron-heartbeat {
+  0%, 30%, 100% { fill-opacity: 0; }
+  12% { fill-opacity: 0.45; }
+  18% { fill-opacity: 0.1; }
+  22% { fill-opacity: 0.3; }
+}
+
+.anim-synapse {
+  stroke: rgba(168, 85, 247, 0.3);
+  stroke-dasharray: 4 3;
+  animation: synapse-fire 2.8s ease-in-out infinite;
+}
+.anim-synapse.sy2 { animation-delay: -0.7s; }
+.anim-synapse.sy3 { animation-delay: -1.4s; }
+.anim-synapse.sy4 { animation-delay: -2.1s; }
+
+@keyframes synapse-fire {
+  0%   { stroke-dashoffset: 0; }
+  12%  { stroke-dashoffset: -6; }
+  30%  { stroke-dashoffset: -8; }
+  100% { stroke-dashoffset: -14; }
+}
+
+/* --- Code: breathing brackets --- */
+.anim-bracket {
+  transform-box: fill-box;
+}
+.anim-bracket.bl {
+  stroke: var(--aurora-purple);
+  transform-origin: left center;
+  animation: bracket-left 2.8s ease-in-out infinite;
+}
+.anim-bracket.br {
+  stroke: var(--aurora-cyan);
+  transform-origin: right center;
+  animation: bracket-right 2.8s ease-in-out infinite;
+}
+@keyframes bracket-left {
+  0%, 30%, 100% { transform: translateX(0); }
+  12% { transform: translateX(-3px); }
+  18% { transform: translateX(-0.5px); }
+  22% { transform: translateX(-2px); }
+}
+@keyframes bracket-right {
+  0%, 30%, 100% { transform: translateX(0); }
+  12% { transform: translateX(3px); }
+  18% { transform: translateX(0.5px); }
+  22% { transform: translateX(2px); }
+}
+
+.anim-cursor-line {
+  stroke: var(--aurora-pink);
+  animation: cursor-blink 2.8s steps(2) infinite;
+}
+@keyframes cursor-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* --- Chat: bubble with typing dots --- */
+.anim-bubble {
+  stroke: var(--aurora-purple);
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: bubble-heartbeat 2.8s ease-in-out infinite;
+}
+@keyframes bubble-heartbeat {
+  0%, 30%, 100% { transform: scale(1); }
+  12% { transform: scale(1.05); }
+  18% { transform: scale(1.01); }
+  22% { transform: scale(1.04); }
+}
+
+.anim-typing {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: typing-heartbeat 2.8s ease-in-out infinite;
+}
+.anim-typing.d1 { fill: var(--aurora-cyan); }
+.anim-typing.d2 { fill: var(--aurora-pink); animation-delay: 0.12s; }
+.anim-typing.d3 { fill: var(--aurora-purple); animation-delay: 0.24s; }
+
+@keyframes typing-heartbeat {
+  0%, 30%, 100% { transform: translateY(0); }
+  12% { transform: translateY(-4px); }
+  18% { transform: translateY(-0.5px); }
+  22% { transform: translateY(-3px); }
+}
+
+/* ============================================
+   Landing Page Global Heartbeat
+   Subtle synchronized pulse on key elements
+   ============================================ */
+
+/* Hero gradient text: subtle brightness throb */
+.landing-dark .landing-hero-gradient {
+  animation: heartbeat-brightness 2.8s ease-in-out infinite;
+}
+@keyframes heartbeat-brightness {
+  0%, 30%, 100% { filter: brightness(1); }
+  12% { filter: brightness(1.2); }
+  22% { filter: brightness(1.12); }
+}
+
+/* Solution line: subtle brightness pulse */
+.landing-dark .landing-hero-solution {
+  animation: heartbeat-brightness 2.8s ease-in-out infinite;
+  animation-delay: -0.1s;
+}
+
+/* Step numbers: glow pulse */
+.landing-dark .landing-step-number {
+  animation: heartbeat-step 2.8s ease-in-out infinite;
+}
+@keyframes heartbeat-step {
+  0%, 30%, 100% { box-shadow: none; }
+  12% { box-shadow: 0 0 16px rgba(140, 169, 255, 0.4); }
+  22% { box-shadow: 0 0 10px rgba(140, 169, 255, 0.25); }
+}
+
+/* Problem card icons: opacity pulse */
+.landing-dark .landing-card-icon svg {
+  animation: heartbeat-card-icon 2.8s ease-in-out infinite;
+}
+@keyframes heartbeat-card-icon {
+  0%, 30%, 100% { opacity: 0.6; }
+  12% { opacity: 1; }
+  22% { opacity: 0.85; }
+}
+
+/* Primary CTA button: glow pulse */
+.landing-dark .btn-landing-primary {
+  animation: heartbeat-cta 2.8s ease-in-out infinite;
+}
+.landing-dark .btn-landing-primary:hover {
+  animation: none;
+}
+@keyframes heartbeat-cta {
+  0%, 30%, 100% { box-shadow: none; }
+  12% { box-shadow: 0 0 20px rgba(107, 140, 255, 0.3); }
+  22% { box-shadow: 0 0 14px rgba(107, 140, 255, 0.2); }
 }
 
 .landing-feature h3 {
@@ -1615,7 +1888,7 @@ body {
 }
 
 /* Primary Remix button */
-.agent-chip.remix-primary {
+.agent-chip.eywa-primary {
   background: linear-gradient(135deg, rgba(68, 136, 255, 0.15), rgba(68, 255, 136, 0.1));
   border: 1px solid rgba(68, 136, 255, 0.3);
   color: #6bb4ff;
@@ -1623,11 +1896,11 @@ body {
   font-size: 1.05rem;
   margin-bottom: 0.5rem;
 }
-.agent-chip.remix-primary:hover {
+.agent-chip.eywa-primary:hover {
   background: linear-gradient(135deg, rgba(68, 136, 255, 0.25), rgba(68, 255, 136, 0.15));
   border-color: rgba(68, 136, 255, 0.5);
 }
-.agent-chip.remix-primary.active {
+.agent-chip.eywa-primary.active {
   background: linear-gradient(135deg, rgba(68, 136, 255, 0.3), rgba(68, 255, 136, 0.2));
   border-color: #4488ff;
 }
@@ -4248,6 +4521,88 @@ body {
   background: var(--color-card);
 }
 
+.connect-config-actions {
+  display: flex;
+  gap: 0.5rem;
+  position: absolute;
+  top: 1.6rem;
+  right: 0.5rem;
+}
+
+.connect-config-actions .connect-agent-copy {
+  position: static;
+}
+
+.connect-agent-download,
+.connect-agent-script {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-fill);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.connect-agent-download:hover,
+.connect-agent-script:hover {
+  background: var(--color-card);
+}
+
+.connect-agent-script {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.connect-setup-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--color-fill);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.connect-setup-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.connect-step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--color-accent);
+  color: white;
+  border-radius: 50%;
+}
+
+.connect-config-path {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.connect-config-path code {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  background: var(--color-card);
+  border-radius: 4px;
+  color: var(--color-accent);
+}
+
 .connect-agent-dropdown {
   flex-basis: 100%;
   padding: 0.75rem 0;
@@ -6110,4 +6465,175 @@ body {
   color: var(--color-text-muted);
   font-size: 0.62rem;
   margin-top: 0.2rem;
+}
+
+/* MCP Compatibility Section */
+.landing-compatibility-section {
+  padding: 5rem 2rem;
+  background: linear-gradient(180deg, var(--color-bg) 0%, rgba(78, 234, 255, 0.03) 50%, var(--color-bg) 100%);
+  text-align: center;
+}
+
+.landing-compatibility-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(78, 234, 255, 0.1);
+  border: 1px solid rgba(78, 234, 255, 0.3);
+  border-radius: 2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--aurora-cyan);
+  margin-bottom: 1.5rem;
+}
+
+.landing-compatibility-badge svg {
+  width: 18px;
+  height: 18px;
+}
+
+.landing-compatibility-section h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.landing-compatibility-section > p {
+  font-size: 1.15rem;
+  color: var(--color-text-secondary);
+  max-width: 600px;
+  margin: 0 auto 3rem auto;
+  line-height: 1.6;
+}
+
+.landing-agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  max-width: 900px;
+  margin: 0 auto 3rem auto;
+}
+
+.landing-agent-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.landing-agent-card:hover {
+  border-color: var(--aurora-cyan);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(78, 234, 255, 0.1);
+}
+
+.landing-agent-card svg {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.landing-agent-card span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.landing-agent-card.landing-agent-more {
+  border-style: dashed;
+  background: transparent;
+}
+
+.landing-agent-card.landing-agent-more svg {
+  opacity: 0.5;
+}
+
+.landing-agent-card.landing-agent-more span {
+  color: var(--color-text-secondary);
+}
+
+.landing-compatibility-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.landing-compatibility-highlight {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  text-align: left;
+  max-width: 280px;
+}
+
+.landing-compatibility-highlight svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--aurora-green);
+}
+
+.landing-compatibility-highlight div strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.landing-compatibility-highlight div span {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .landing-compatibility-section {
+    padding: 3rem 1.5rem;
+  }
+
+  .landing-compatibility-section h2 {
+    font-size: 1.75rem;
+  }
+
+  .landing-agents-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .landing-agent-card {
+    padding: 1rem 0.75rem;
+  }
+
+  .landing-agent-card svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .landing-agent-card span {
+    font-size: 0.8rem;
+  }
+
+  .landing-compatibility-highlights {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .landing-compatibility-highlight {
+    max-width: 100%;
+  }
 }
