@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import { useNavigate, useParams } from "react-router-dom";
-import { supabase, type Memory, type Link } from "../lib/supabase";
+import { supabase, type Memory } from "../lib/supabase";
 import {
   summarizeThread,
   type ThreadSummary,
