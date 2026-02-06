@@ -1,5 +1,5 @@
 const presentation = {
-  title: "Remix",
+  title: "Eywa",
   subtitle: "The coordination layer for human+AI teams",
   summary: [
     "1. The Problem",
@@ -447,7 +447,7 @@ const presentation = {
   ],
 
   closing: {
-    title: "Remix",
+    title: "Eywa",
     subtitle: "The coordination layer for human+AI teams"
   }
 };

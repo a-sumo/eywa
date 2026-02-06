@@ -123,7 +123,7 @@ export function Landing() {
             Work gets <span className="pain-word pain-duplicated">duplicated</span>.
           </p>
           <p className="landing-hero-solution">
-            Eywa connects every human-AI partnership on your team, so the whole is greater than the sum of its parts.
+            Eywa <span className="highlight">connects</span> every human-AI partnership on your team, so the <span className="highlight">whole</span> is greater than the sum of its parts.
           </p>
           <div className="landing-hero-actions">
             <a href="/r/demo" className="btn-landing-primary btn-large">
@@ -529,7 +529,10 @@ export function Landing() {
       <footer className="landing-footer-dark">
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
-            <span className="landing-logo">Eywa</span>
+            <div className="landing-logo">
+              <EywaLogo size={32} />
+              <span>Eywa</span>
+            </div>
             <p>The coordination layer for human + AI teams</p>
           </div>
           <div className="landing-footer-links">

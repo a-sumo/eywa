@@ -49,7 +49,7 @@ export const slidesData: SlidesData = {
     "2. The Market",
     "3. The Insight",
     "4. The Product",
-    "5. VS Code Extension",
+    "5. Integrations",
     "6. Architecture",
     "7. Live Demo",
     "Appendix: Labs",
@@ -76,10 +76,13 @@ export const slidesData: SlidesData = {
       "Divergence detection",
       "Context Injection",
       "Web Inject UI",
+      "Knowledge Base",
     ],
-    "VS Code Extension": [
+    Integrations: [
+      "MCP Native",
       "VS Code Extension",
-      "VS Code Extension screenshot",
+      "Discord Bot",
+      "Docs Portal",
     ],
     Architecture: [
       "System overview",
@@ -90,7 +93,7 @@ export const slidesData: SlidesData = {
     "Live Demo": ["See it live"],
     "Appendix: Labs": [
       "Ambient Displays",
-      "Knowledge Base",
+      "Timeline Features",
       "Physical Displays",
     ],
   },
@@ -167,7 +170,7 @@ export const slidesData: SlidesData = {
     {
       type: "quote",
       title: "No centaurs",
-      subtitle: "The centaur model — human + AI as a stable pair — is already breaking down",
+      subtitle: "The centaur model, human + AI as a stable pair, is already breaking down",
       quote: "it's just so clear humans are the bottleneck to writing software. number of agents we can manage, information flow, state management. there will just be no centaurs soon as it is not a stable state",
       attribution: "@tszzl (roon)",
     },
@@ -178,7 +181,7 @@ export const slidesData: SlidesData = {
       title: "Threads, not tools",
       subtitle: "Every AI conversation is a thread. Like git branches for context.",
       items: [
-        "Each terminal session — Claude Code, Cursor, Gemini — is a <strong>thread</strong>.",
+        "Each terminal session, Claude Code, Cursor, Gemini, is a <strong>thread</strong>.",
         "Threads capture everything: decisions, code, blockers, reasoning.",
         "You can <strong>see</strong> any teammate's threads, <strong>pull</strong> specific context, or <strong>combine</strong> threads together.",
         'No copy-paste. No "hey what did your agent figure out?" No re-doing work.',
@@ -192,7 +195,7 @@ export const slidesData: SlidesData = {
     {
       type: "image",
       title: "Thread Tree",
-      subtitle: "Live view — every agent's threads, filterable by status, type, and agent",
+      subtitle: "3-pane layout: thread list, inline detail, session graph",
       src: "/slides/thread-tree.png",
     },
     {
@@ -211,8 +214,8 @@ export const slidesData: SlidesData = {
       title: "Cross-Session Links",
       subtitle: "Connect memories across agent boundaries",
       items: [
-        "<strong>Reference</strong>: read-only pointer — \"see also\" without pushing context.",
-        "<strong>Inject</strong>: push context to target agent — they see it in their inbox.",
+        "<strong>Reference</strong>: read-only pointer, \"see also\" without pushing context.",
+        "<strong>Inject</strong>: push context to target agent, they see it in their inbox.",
         "<strong>Fork</strong>: mark where a session branched from another's work.",
         "Search for memories with <strong>remix_search</strong>, fetch with <strong>remix_fetch</strong>.",
         "Links persist and show in the Session Graph as curved connection edges.",
@@ -221,7 +224,7 @@ export const slidesData: SlidesData = {
     {
       type: "diagram",
       title: "The Workspace",
-      subtitle: "3-panel workspace: Browse \u2192 Context \u2192 Gemini Terminal",
+      subtitle: "3-panel workspace: Browse → Context → Gemini Terminal",
       diagramKey: "the-workspace",
     },
     {
@@ -233,13 +236,13 @@ export const slidesData: SlidesData = {
     {
       type: "bullets",
       title: "Gemini Terminal",
-      subtitle: "A live AI agent that understands all the context you've assembled",
+      subtitle: "Orchestration powered by Google Gemini",
       items: [
-        "The right panel isn't just a preview — it's a <strong>Gemini-powered chat</strong>.",
+        "The right panel isn't just a preview, it's a <strong>Gemini-powered chat</strong>.",
         "System context auto-updates as you drag memories into the context panel.",
         'Ask questions across threads: "What did Sarah and Marco decide about latency?"',
-        "Generate integration plans, find conflicts, surface shared decisions.",
-        "Every terminal session becomes a new thread — shareable with the whole team.",
+        "Gemini synthesizes information, resolves conflicts, and generates coherent responses.",
+        "Every terminal session becomes a new thread, shareable with the whole team.",
       ],
     },
     {
@@ -251,39 +254,79 @@ export const slidesData: SlidesData = {
     {
       type: "diagram",
       title: "Context Injection",
-      subtitle: "Push context to any agent — they see it on their next tool call",
+      subtitle: "Push context to any agent, they see it on their next tool call",
       diagramKey: "injection-pipeline",
     },
     {
       type: "bullets",
       title: "Web Inject UI",
-      subtitle: "Inline inject panel in the thread tree — no separate page",
+      subtitle: "Inline inject panel in the thread tree, no separate page",
       items: [
         "Target any agent or broadcast to all.",
         "Priority levels: normal, high, <strong>urgent</strong> (triggers native VS Code popup).",
-        "Per-agent inject button (<strong>\u21e8</strong>) for quick targeted sends.",
+        "Per-agent inject button (<strong>⇨</strong>) for quick targeted sends.",
         "Content flows through Supabase → piggybacks on the agent's next MCP tool response.",
       ],
     },
+    {
+      type: "bullets",
+      title: "Knowledge Base",
+      subtitle: "Persistent project memory that survives across sessions",
+      items: [
+        "<strong>remix_learn</strong>: Store architecture decisions, conventions, gotchas, API patterns.",
+        "<strong>remix_knowledge</strong>: Retrieve and search the knowledge base by tags or content.",
+        "<strong>remix_forget</strong>: Remove outdated or incorrect knowledge entries.",
+        "Knowledge persists across all sessions and agents, new teammates inherit the full context automatically.",
+      ],
+    },
 
-    // ── VS CODE EXTENSION ──────────────────────────────────
+    // ── INTEGRATIONS ──────────────────────────────────
+    {
+      type: "bullets",
+      title: "MCP Native",
+      subtitle: "Works with every AI coding agent via the Model Context Protocol",
+      items: [
+        "<strong>8 agents documented</strong>: Claude Code, Cursor, Windsurf, Gemini CLI, Codex, Cline, Mistral, Cohere.",
+        "One URL connects any MCP-compatible agent to the mesh.",
+        "<strong>Local-first privacy</strong>: Your code never leaves your machine. Eywa syncs metadata only.",
+        "<strong>Zero config</strong>: Add one MCP server. That's it. Works with your existing setup.",
+        "Team-wide visibility regardless of which tool runs the agent.",
+      ],
+    },
     {
       type: "bullets",
       title: "VS Code Extension",
       subtitle: "Full team awareness without leaving your editor",
       items: [
-        "Realtime sidebar: hierarchical <strong>User \u2192 Session</strong> tree with live status indicators.",
-        "Activity feed: session starts, completions, injections, knowledge stored — all in real-time.",
-        "<strong>Cmd+Shift+I</strong>: select code, pick agent, inject — 3 steps.",
+        "Realtime sidebar: hierarchical <strong>User → Session</strong> tree with live status indicators.",
+        "Activity feed: session starts, completions, injections, knowledge stored, all in real-time.",
+        "<strong>Cmd+Shift+I</strong>: select code, pick agent, inject, 3 steps.",
         "Knowledge <strong>CodeLens</strong>: see relevant team knowledge inline in your editor.",
         "No context switching. No web dashboard needed.",
       ],
     },
     {
-      type: "image",
-      title: "VS Code Extension screenshot",
-      subtitle: "Hierarchical sessions, live activity feed, one-key injection",
-      src: "/slides/vscode-extension.png",
+      type: "bullets",
+      title: "Discord Bot",
+      subtitle: "Observe and interact with your agent swarm from Discord",
+      items: [
+        "<strong>12 slash commands</strong> for full agent control.",
+        "<strong>/status</strong>: See what all agents are working on.",
+        "<strong>/inject</strong>: Push context to any agent from Discord.",
+        "<strong>/knowledge</strong>: Search and add to the team knowledge base.",
+        "Messages from Discord show as <code>discord/&lt;username&gt;</code> in the web dashboard.",
+      ],
+    },
+    {
+      type: "bullets",
+      title: "Docs Portal",
+      subtitle: "Step-by-step integration guides for every supported agent",
+      items: [
+        "Dedicated setup page for each agent: config path, JSON example, notes.",
+        "Available tools reference with descriptions.",
+        "Quick start prompts to get agents logging immediately.",
+        "Live at <strong>/docs</strong> with sidebar navigation.",
+      ],
     },
 
     // ── ARCHITECTURE ──────────────────────────────────
@@ -308,7 +351,7 @@ export const slidesData: SlidesData = {
     {
       type: "diagram",
       title: "Tool reference",
-      subtitle: "20 tools organized in 5 categories",
+      subtitle: "20+ tools organized in 5 categories",
       diagramKey: "tool-reference",
     },
 
@@ -317,13 +360,14 @@ export const slidesData: SlidesData = {
       type: "bullets",
       title: "See it live",
       items: [
-        "1. Open two Claude Code terminals \u2192 both connect to the same room via one URL.",
+        "1. Open two Claude Code terminals → both connect to the same room via one URL.",
         "2. Agent alpha starts working on auth. Agent beta starts on the database.",
-        "3. Open the web dashboard \u2192 see both threads in real-time.",
-        "4. Spot the <strong>divergence indicator</strong> — alpha and beta are solving the same problem differently.",
-        "5. Open Eywa \u2192 browse memories \u2192 drag both threads into context \u2192 ask Gemini to integrate.",
+        "3. Open the web dashboard → see both threads in real-time.",
+        "4. Spot the <strong>divergence indicator</strong>, alpha and beta are solving the same problem differently.",
+        "5. Open Eywa → browse memories → drag both threads into context → ask Gemini to integrate.",
       ],
     },
+
     // ── APPENDIX: LABS ──────────────────────────────────
     {
       type: "bullets",
@@ -337,12 +381,14 @@ export const slidesData: SlidesData = {
     },
     {
       type: "bullets",
-      title: "Knowledge Base",
-      subtitle: "Persistent project memory that survives across sessions",
+      title: "Timeline Features",
+      subtitle: "Git-like history for your agent sessions",
       items: [
-        "<strong>remix_learn</strong>: Store architecture decisions, conventions, gotchas, API patterns.",
-        "<strong>remix_knowledge</strong>: Retrieve and search the knowledge base by tags or content.",
-        "Knowledge persists across all sessions and agents — new teammates inherit the full context automatically.",
+        "<strong>Rewind</strong>: Jump back to any point in session history.",
+        "<strong>Fork</strong>: Branch from a historical moment to explore alternatives.",
+        "<strong>Bookmark</strong>: Mark important memories for quick reference.",
+        "<strong>Compare</strong>: Diff two sessions to find divergence points.",
+        "Available in Pro tier with 90-day history retention.",
       ],
     },
     {
@@ -353,7 +399,7 @@ export const slidesData: SlidesData = {
         "<strong>E-ink</strong>: 7-color Waveshare display (600x448). Pastel palette, tracking marker for AR.",
         "<strong>TFT Touch</strong>: 3.5\" ILI9341 with pygame. Tap agents, send injections, view details.",
         "<strong>Spectacles</strong>: Image tracking anchors AR panel to physical e-ink display.",
-        "All three share the same Supabase backend — unified team awareness across form factors.",
+        "All three share the same Supabase backend, unified team awareness across form factors.",
       ],
     },
   ],

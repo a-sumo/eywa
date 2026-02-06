@@ -8,18 +8,12 @@
  * 1. Create a Quad mesh (or use Image component)
  * 2. Add this script to the quad's SceneObject
  * 3. Set the serverUrl to your Eywa instance
- * 4. Optionally add a ColliderComponent for precise raycasting
+ * 4. Add a ColliderComponent for raycasting
  */
 
-// SIK interaction event type (varies by SIK version)
-interface InteractionEvent {
-  interactor: {
-    targetHitInfo: {
-      hit: boolean;
-      position: vec3;
-    } | null;
-  };
-}
+import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
+import { InteractorEvent } from "SpectaclesInteractionKit.lspkg/Core/Interactor/InteractorEvent";
+import { Interactor } from "SpectaclesInteractionKit.lspkg/Core/Interactor/Interactor";
 
 @component
 export class RemoteUI extends BaseScriptComponent {
@@ -41,7 +35,6 @@ export class RemoteUI extends BaseScriptComponent {
   @input
   panelHeight: number = 40; // cm
 
-  private texture: Texture;
   private material: Material;
   private remoteService: RemoteServiceModule;
   private lastRefresh: number = 0;
@@ -50,9 +43,10 @@ export class RemoteUI extends BaseScriptComponent {
   private dragStartUV: vec2 | null = null;
   private lastPointerUV: vec2 | null = null;
 
-  // Interaction component for pinch detection
-  private interaction: InteractionComponent;
+  // SIK Interactable for pinch/hover detection
+  private interactable: Interactable;
   private collider: ColliderComponent;
+  private transform: Transform;
 
   onAwake(): void {
     this.createEvent("OnStartEvent").bind(() => this.init());
@@ -60,6 +54,7 @@ export class RemoteUI extends BaseScriptComponent {
 
   private init(): void {
     this.remoteService = require("LensStudio:RemoteServiceModule");
+    this.transform = this.sceneObject.getTransform();
 
     // Create or get the render mesh visual
     this.setupQuad();
@@ -95,8 +90,7 @@ export class RemoteUI extends BaseScriptComponent {
     }
 
     // Set the quad size
-    const transform = this.sceneObject.getTransform();
-    transform.setLocalScale(new vec3(this.panelWidth, this.panelHeight, 1));
+    this.transform.setLocalScale(new vec3(this.panelWidth, this.panelHeight, 1));
   }
 
   private setupInteraction(): void {
@@ -109,35 +103,35 @@ export class RemoteUI extends BaseScriptComponent {
       this.collider.shape = shape;
     }
 
-    // Get or create interaction component
-    this.interaction = this.sceneObject.getComponent("Component.InteractionComponent") as InteractionComponent;
-    if (!this.interaction) {
-      this.interaction = this.sceneObject.createComponent("Component.InteractionComponent") as InteractionComponent;
+    // Get or create Interactable (SIK component)
+    this.interactable = this.sceneObject.getComponent(Interactable.getTypeName()) as Interactable;
+    if (!this.interactable) {
+      this.interactable = this.sceneObject.createComponent(Interactable.getTypeName()) as Interactable;
     }
 
-    // Set up event handlers
-    this.interaction.onHoverEnter.add((event) => {
+    // Set up event handlers using SIK patterns
+    this.interactable.onHoverEnter((event: InteractorEvent) => {
       this.onPointerEnter(event);
     });
 
-    this.interaction.onHoverUpdate.add((event) => {
+    this.interactable.onHoverUpdate((event: InteractorEvent) => {
       this.onPointerMove(event);
     });
 
-    this.interaction.onHoverExit.add((event) => {
-      this.onPointerExit(event);
+    this.interactable.onHoverExit(() => {
+      this.onPointerExit();
     });
 
-    this.interaction.onTap.add((event) => {
-      this.onTap(event);
-    });
-
-    // For drag, we use the trigger events
-    this.interaction.onTriggerStart.add((event) => {
+    // For drag, use SIK drag events
+    this.interactable.onDragStart((event: InteractorEvent) => {
       this.onDragStart(event);
     });
 
-    this.interaction.onTriggerEnd.add((event) => {
+    this.interactable.onDragUpdate((event: InteractorEvent) => {
+      this.onDragUpdate(event);
+    });
+
+    this.interactable.onDragEnd((event: InteractorEvent) => {
       this.onDragEnd(event);
     });
   }
@@ -148,15 +142,10 @@ export class RemoteUI extends BaseScriptComponent {
       this.refreshTexture();
       this.lastRefresh = now;
     }
-
-    // If dragging, continuously send pointer updates
-    if (this.isDragging && this.lastPointerUV) {
-      this.sendInteraction("drag", this.lastPointerUV);
-    }
   }
 
   private refreshTexture(): void {
-    const url = `${this.serverUrl}/api/spectacles/frame?room=${this.roomSlug}&t=${Date.now()}`;
+    const url = `${this.serverUrl}/api/spectacles/frame?room=${this.roomSlug}&t=${Date.now()}&format=base64`;
 
     const request = RemoteServiceHttpRequest.create();
     request.url = url;
@@ -164,31 +153,40 @@ export class RemoteUI extends BaseScriptComponent {
 
     this.remoteService.performHttpRequest(request, (response) => {
       if (response.statusCode === 200) {
-        // Create texture from response body
+        // Server returns JSON with base64 image
         try {
-          const texture = ProceduralTextureProvider.createFromBuffer(
-            response.asArrayBuffer(),
-            response.headers["content-type"] || "image/jpeg"
-          );
-          if (texture && this.material) {
-            this.material.mainPass.baseTex = texture;
+          const result = JSON.parse(response.body);
+          if (result.image) {
+            Base64.decodeTextureAsync(
+              result.image,
+              (texture: Texture) => {
+                if (this.material) {
+                  this.material.mainPass.baseTex = texture;
+                }
+              },
+              () => {
+                print("RemoteUI: Failed to decode base64 texture");
+              }
+            );
           }
         } catch (e) {
-          print(`RemoteUI: Failed to create texture: ${e}`);
+          print(`RemoteUI: Failed to parse response: ${e}`);
         }
       }
     });
   }
 
-  private getUVFromEvent(event: InteractionEvent): vec2 | null {
+  private getUVFromEvent(event: InteractorEvent): vec2 | null {
     // Get the hit point in local space and convert to UV
     // UV coords are 0-1, with (0,0) at bottom-left
-    const hitPoint = event.interactor.targetHitInfo;
-    if (!hitPoint || !hitPoint.hit) return null;
-
-    const localPos = this.sceneObject.getTransform()
+    const interactor = event.interactor;
+    const hitPosition = interactor?.targetHitInfo?.hit?.position;
+    if (!hitPosition) {
+      return null;
+    }
+    const localPos = this.transform
       .getInvertedWorldTransform()
-      .multiplyPoint(hitPoint.position);
+      .multiplyPoint(hitPosition);
 
     // Convert local position to UV (assuming quad is centered at origin)
     const u = (localPos.x / this.panelWidth) + 0.5;
@@ -201,7 +199,7 @@ export class RemoteUI extends BaseScriptComponent {
     );
   }
 
-  private onPointerEnter(event: InteractionEvent): void {
+  private onPointerEnter(event: InteractorEvent): void {
     const uv = this.getUVFromEvent(event);
     if (uv) {
       this.lastPointerUV = uv;
@@ -209,7 +207,7 @@ export class RemoteUI extends BaseScriptComponent {
     }
   }
 
-  private onPointerMove(event: InteractionEvent): void {
+  private onPointerMove(event: InteractorEvent): void {
     const uv = this.getUVFromEvent(event);
     if (uv) {
       this.lastPointerUV = uv;
@@ -219,26 +217,11 @@ export class RemoteUI extends BaseScriptComponent {
     }
   }
 
-  private onPointerExit(event: InteractionEvent): void {
+  private onPointerExit(): void {
     this.lastPointerUV = null;
   }
 
-  private onTap(event: InteractionEvent): void {
-    const uv = this.getUVFromEvent(event);
-    if (uv) {
-      // Send both down and up for a tap
-      this.sendInteraction("pointer_down", uv);
-
-      // Delayed pointer up
-      const delayedEvent = this.createEvent("DelayedCallbackEvent") as DelayedCallbackEvent;
-      delayedEvent.bind(() => {
-        this.sendInteraction("pointer_up", uv);
-      });
-      delayedEvent.reset(0.1);
-    }
-  }
-
-  private onDragStart(event: InteractionEvent): void {
+  private onDragStart(event: InteractorEvent): void {
     const uv = this.getUVFromEvent(event);
     if (uv) {
       this.isDragging = true;
@@ -248,7 +231,15 @@ export class RemoteUI extends BaseScriptComponent {
     }
   }
 
-  private onDragEnd(event: InteractionEvent): void {
+  private onDragUpdate(event: InteractorEvent): void {
+    const uv = this.getUVFromEvent(event);
+    if (uv && this.isDragging) {
+      this.lastPointerUV = uv;
+      this.sendInteraction("drag", uv);
+    }
+  }
+
+  private onDragEnd(event: InteractorEvent): void {
     const uv = this.getUVFromEvent(event) || this.lastPointerUV;
     if (uv && this.isDragging) {
       this.sendInteraction("pointer_up", uv);
