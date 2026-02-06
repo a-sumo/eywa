@@ -284,7 +284,7 @@ function buildGraphData(memories: Memory[]): GraphData {
 
   const graphRight = TRACK_LEFT + (tracks.length - 1) * TRACK_GAP;
   const labelX = graphRight + LABEL_GAP;
-  const LABEL_MAX = 380;
+  const LABEL_MAX = 600;
   const svgWidth = labelX + LABEL_MAX + 16;
   const svgHeight = TOP_PAD + totalRows * ROW_HEIGHT + BOTTOM_PAD;
 
@@ -405,8 +405,8 @@ function renderGraph(
 ): d3.ZoomBehavior<SVGSVGElement, unknown> {
   const svg = d3.select(svgEl);
 
-  // Width controlled by CSS (100%). Height from data so container sizes correctly.
-  svg.attr("width", null).attr("height", graph.svgHeight);
+  // Set SVG to natural data-driven size - container scrolls if needed
+  svg.attr("width", graph.svgWidth).attr("height", graph.svgHeight);
 
   // Get or create zoom group
   let zoomGroup = svg.select<SVGGElement>("g.zoom-group");
@@ -618,8 +618,7 @@ function renderGraph(
     .attr("opacity", 0.7)
     .attr("shape-rendering", "geometricPrecision");
 
-  // Event labels
-  const MAX_LABEL = 50;
+  // Event labels - no truncation, let them extend
   nodeGs.append("text")
     .attr("x", graph.labelX)
     .attr("y", d => rowY(d.row) + 4)
@@ -627,11 +626,9 @@ function renderGraph(
     .attr("fill", "var(--color-text-primary)")
     .attr("class", "graph-event-label")
     .text(d => {
-      let raw = "";
-      if (d.type === "start") raw = d.label;
-      else if (d.type === "end") raw = d.label || d.status || "done";
-      else raw = d.label;
-      return raw.length > MAX_LABEL ? raw.slice(0, MAX_LABEL) + "\u2026" : raw;
+      if (d.type === "start") return d.label;
+      if (d.type === "end") return d.label || d.status || "done";
+      return d.label;
     });
 
   // --- Layer 7: Track hit areas (transparent wide rects for hover detection) ---
@@ -677,15 +674,8 @@ function renderGraph(
 
   svg.call(zoom);
 
-  // Initial fit: scale to fill container width, cap at 1x
-  const container = svgEl.parentElement;
-  if (container) {
-    const containerW = container.clientWidth;
-    const scaleX = containerW / graph.svgWidth;
-    const scale = Math.min(scaleX, 1);
-    const tx = (containerW - graph.svgWidth * scale) / 2;
-    svg.call(zoom.transform, d3.zoomIdentity.translate(tx, 0).scale(scale));
-  }
+  // Start at 1:1 scale - container scrolls for overflow, user can zoom out for overview
+  svg.call(zoom.transform, d3.zoomIdentity);
 
   return zoom;
 }
@@ -841,13 +831,23 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
     const container = svgRef.current.parentElement;
     if (!container) return;
     const containerW = container.clientWidth;
+    const containerH = container.clientHeight;
     const scaleX = containerW / graph.svgWidth;
-    const scale = Math.min(scaleX, 1);
+    const scaleY = containerH / graph.svgHeight;
+    const scale = Math.min(scaleX, scaleY, 1);
     const tx = (containerW - graph.svgWidth * scale) / 2;
+    const ty = (containerH - graph.svgHeight * scale) / 2;
     d3.select(svgRef.current)
       .transition().duration(300)
-      .call(zoomRef.current.transform, d3.zoomIdentity.translate(tx, 0).scale(scale));
-  }, [graph.svgWidth]);
+      .call(zoomRef.current.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+  }, [graph.svgWidth, graph.svgHeight]);
+
+  const handleZoomReset = useCallback(() => {
+    if (!svgRef.current || !zoomRef.current) return;
+    d3.select(svgRef.current)
+      .transition().duration(300)
+      .call(zoomRef.current.transform, d3.zoomIdentity);
+  }, []);
 
   if (loading) {
     return (
@@ -894,6 +894,7 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
         <div className="graph-zoom-controls">
           <button onClick={handleZoomIn} title="Zoom in">+</button>
           <button onClick={handleZoomOut} title="Zoom out">-</button>
+          <button onClick={handleZoomReset} title="Reset to 1:1">1:1</button>
           <button onClick={handleZoomFit} title="Fit to view">Fit</button>
         </div>
 
