@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, DragEvent } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, type DragEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
