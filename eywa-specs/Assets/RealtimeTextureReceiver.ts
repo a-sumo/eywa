@@ -96,12 +96,25 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
   }
 
   private start(): void {
-    // In single-quad mode, find material on this object
-    if (this.gridCols === 0 || this.gridRows === 0) {
+    const hasCallbacks = this.onTexCallback !== null || this.onSceneCallback !== null;
+    const hasGrid = this.gridCols > 0 && this.gridRows > 0;
+
+    this.log("start() - channel: " + this.channelName
+      + " | grid: " + this.gridCols + "x" + this.gridRows
+      + " | callbacks: " + hasCallbacks
+      + " | snapCloud: " + (this.snapCloudRequirements ? "yes" : "no"));
+
+    if (hasCallbacks) {
+      // Relay mode: MicroTilePanel manages quads and materials. Just connect.
+      this.log("Relay mode (forwarding to callbacks)");
+    } else if (hasGrid) {
+      // Grid mode: RealtimePanel set the materials grid.
+      this.log("Grid mode (" + this.gridCols + "x" + this.gridRows + ")");
+    } else {
+      // Single-quad mode: need a material on this object.
       this.singleMaterial = this.findAndCloneMaterial();
       if (!this.singleMaterial) {
-        this.log("No Image or RenderMeshVisual found. Cannot display texture.");
-        return;
+        this.log("Single-quad mode but no material found. Will still connect.");
       }
     }
 
