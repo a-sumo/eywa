@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { RoomProvider } from "./context/RoomContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Landing } from "./components/Landing";
 import { RoomLayout } from "./components/RoomLayout";
 import { ThreadTree } from "./components/ThreadTree";
@@ -16,15 +17,17 @@ import "./App.css";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/slides" element={<SlidePresentation />} />
-        <Route path="/cli-auth" element={<CLIAuth />} />
-        <Route path="/r/:slug/eink" element={<RoomProvider><MiniRemixEink /></RoomProvider>} />
-        <Route path="/r/:slug/*" element={<RoomRoutes />} />
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/slides" element={<SlidePresentation />} />
+          <Route path="/cli-auth" element={<CLIAuth />} />
+          <Route path="/r/:slug/eink" element={<RoomProvider><MiniRemixEink /></RoomProvider>} />
+          <Route path="/r/:slug/*" element={<RoomRoutes />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
@@ -35,7 +38,7 @@ function RoomRoutes() {
         <Routes>
           <Route index element={<ThreadTree />} />
           <Route path="thread/:agent/:sessionId" element={<ThreadView />} />
-          <Route path="remix/new" element={<RemixView />} />
+          <Route path="workspace" element={<RemixView />} />
           <Route path="agent/:name" element={<AgentDetail />} />
           <Route path="chat" element={<Chat />} />
           <Route path="mini" element={<MiniRemix />} />

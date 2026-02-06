@@ -6,6 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 [alias]
 ai = "./src/shims/ai.ts"
 
+# TODO: Move to Cloudflare secrets before going live
+# wrangler secret put SUPABASE_URL
+# wrangler secret put SUPABASE_KEY
 [vars]
 SUPABASE_URL = "https://beknjtxysmznenkotjvv.snapcloud.dev"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjEzNjM1NiwiZXhwIjoyMDgxNzEyMzU2fQ.Pp6DrVfZs2_XvbobCm0hLSCxpfxoK-SvVzgduFIcp_Q"
