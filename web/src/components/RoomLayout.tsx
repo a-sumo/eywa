@@ -53,6 +53,9 @@ export function RoomLayout({ children }: RoomLayoutProps) {
         <Link to={`/r/${slug}/workspace`}>Workspace</Link>
         <Link to={`/r/${slug}/chat`}>Chat</Link>
         <Link to={`/r/${slug}/graph`}>Graph</Link>
+        <Link to={`/r/${slug}/mini`}>Mini</Link>
+        <Link to={`/r/${slug}/eink`}>E-ink</Link>
+        <Link to={`/r/${slug}/spectacles`}>Spectacles</Link>
       </nav>
     </div>
   );
