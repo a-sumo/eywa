@@ -1,13 +1,14 @@
-/* ── Slide Presentation ─────────────────────────────── */
+/* ── Slide Presentation - Nightly Aurora Theme ────── */
 
 .slides-app {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #f8f9fa 0%, #f0f4ff 100%);
-  font-family: "Mulish", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #08090f;
+  font-family: var(--font-sans, "Inter", -apple-system, BlinkMacSystemFont, sans-serif);
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
+  color: #f0f2f8;
 }
 
 /* ── Viewport & transitions ────────────────────────── */
@@ -43,10 +44,10 @@
   width: 100%;
   max-width: 1100px;
   min-height: 500px;
-  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  background: #10121c;
   border-radius: 16px;
-  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.1));
-  border: 1px solid rgba(140, 169, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 48px 64px;
   display: flex;
   flex-direction: column;
@@ -64,24 +65,28 @@
 /* ── Typography ────────────────────────────────────── */
 
 .slide-h1 {
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-size: 2.6em;
   font-weight: 800;
-  background: var(--gradient-primary, linear-gradient(135deg, #8CA9FF 0%, #667eea 100%));
+  background: linear-gradient(135deg, #a855f7 0%, #f472b6 50%, #4eeaff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0 0 12px;
   line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 .slide-h2 {
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-size: 1.6em;
   font-weight: 700;
-  color: var(--color-text, #282728);
+  color: #f0f2f8;
   margin: 0 0 6px;
   padding-bottom: 10px;
   position: relative;
   width: 100%;
+  letter-spacing: -0.01em;
 }
 
 .slide-h2::after {
@@ -89,21 +94,21 @@
   display: block;
   width: 120px;
   height: 2.5px;
-  background: var(--gradient-primary, linear-gradient(135deg, #8CA9FF 0%, #667eea 100%));
+  background: linear-gradient(135deg, #a855f7 0%, #f472b6 50%, #4eeaff 100%);
   margin: 10px auto 0;
   border-radius: 2px;
 }
 
 .slide-subtitle-main {
   font-size: 1.15em;
-  color: var(--color-text-secondary, rgba(40, 39, 40, 0.6));
+  color: rgba(240, 242, 248, 0.5);
   margin: 0 0 24px;
   font-weight: 400;
 }
 
 .slide-subtitle {
   font-size: 0.85em;
-  color: var(--color-text-secondary, rgba(40, 39, 40, 0.6));
+  color: rgba(240, 242, 248, 0.5);
   margin: 0 0 16px;
 }
 
@@ -111,7 +116,7 @@
   margin-top: auto;
   padding-top: 24px;
   font-size: 0.7em;
-  color: var(--color-text-muted, rgba(40, 39, 40, 0.35));
+  color: rgba(240, 242, 248, 0.25);
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -129,12 +134,12 @@
 }
 
 .slide-summary-item {
-  background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
-  border: 1px solid rgba(140, 169, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 10px 18px;
   font-size: 0.85em;
-  color: var(--color-text, #282728);
+  color: rgba(240, 242, 248, 0.7);
   font-weight: 500;
 }
 
@@ -153,7 +158,7 @@
   margin-bottom: 10px;
   line-height: 1.55;
   font-size: 0.9em;
-  color: var(--color-text, #333);
+  color: rgba(240, 242, 248, 0.7);
   padding-left: 20px;
   position: relative;
 }
@@ -162,12 +167,12 @@
   content: "\2022";
   position: absolute;
   left: 0;
-  color: var(--color-accent, #8CA9FF);
+  color: #4eeaff;
   font-weight: 700;
 }
 
 .slide-bullets li strong {
-  color: var(--color-accent-secondary, #667eea);
+  color: #a855f7;
 }
 
 /* ── Bar chart ─────────────────────────────────────── */
@@ -190,14 +195,14 @@
 
 .slide-bar-label {
   font-size: 0.78em;
-  color: var(--color-text-secondary, #444);
+  color: rgba(240, 242, 248, 0.6);
   font-weight: 500;
 }
 
 .slide-bar-track {
   position: relative;
   height: 34px;
-  background: #f0f0f0;
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -215,12 +220,12 @@
   transform: translateY(-50%);
   font-size: 0.82em;
   font-weight: 800;
-  color: var(--color-text, #1a1a2e);
+  color: #f0f2f8;
 }
 
 .slide-bar-source {
   font-size: 0.7em;
-  color: var(--color-text-muted, #aaa);
+  color: rgba(240, 242, 248, 0.3);
   margin-top: 14px;
   text-align: right;
 }
@@ -237,17 +242,18 @@
 
 .slide-bigstat-card {
   flex: 1;
-  background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
-  border: 1px solid rgba(140, 169, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 28px 20px;
   text-align: center;
 }
 
 .slide-bigstat-value {
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-size: 2.4em;
   font-weight: 800;
-  background: var(--gradient-primary, linear-gradient(135deg, #8CA9FF 0%, #667eea 100%));
+  background: linear-gradient(135deg, #a855f7 0%, #f472b6 50%, #4eeaff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -257,13 +263,13 @@
 
 .slide-bigstat-label {
   font-size: 0.78em;
-  color: var(--color-text-secondary, #555);
+  color: rgba(240, 242, 248, 0.5);
   line-height: 1.4;
 }
 
 .slide-bigstat-footnote {
   font-size: 0.78em;
-  color: var(--color-text-muted, #888);
+  color: rgba(240, 242, 248, 0.3);
   margin-top: 20px;
   font-style: italic;
 }
@@ -279,8 +285,8 @@
 }
 
 .slide-logo-card {
-  background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
-  border: 1px solid rgba(140, 169, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 16px 14px;
   text-align: center;
@@ -289,14 +295,14 @@
 .slide-logo-name {
   font-size: 0.85em;
   font-weight: 700;
-  color: var(--color-text, #1a1a2e);
+  color: #f0f2f8;
   margin-bottom: 4px;
 }
 
 .slide-logo-stat {
   font-size: 1em;
   font-weight: 800;
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #a855f7 0%, #4eeaff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -304,7 +310,7 @@
 
 .slide-logo-detail {
   font-size: 0.7em;
-  color: var(--color-text-muted, #888);
+  color: rgba(240, 242, 248, 0.35);
   margin-top: 4px;
   line-height: 1.3;
 }
@@ -327,7 +333,7 @@
 }
 
 .slide-timeline-marker {
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #a855f7 0%, #4eeaff 100%);
   color: white;
   font-weight: 700;
   font-size: 0.8em;
@@ -341,21 +347,21 @@
 .slide-timeline-content {
   flex: 1;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
-  border-left: 3px solid var(--color-accent, #8CA9FF);
+  border-left: 3px solid #4eeaff;
 }
 
 .slide-timeline-title {
   font-weight: 600;
   font-size: 0.85em;
-  color: var(--color-text, #1a1a2e);
+  color: #f0f2f8;
   margin-bottom: 2px;
 }
 
 .slide-timeline-desc {
   font-size: 0.78em;
-  color: var(--color-text-secondary, #666);
+  color: rgba(240, 242, 248, 0.5);
   line-height: 1.4;
 }
 
@@ -365,7 +371,7 @@
   width: 100%;
   max-width: 900px;
   font-size: 0.85em;
-  color: var(--color-text, #333);
+  color: rgba(240, 242, 248, 0.7);
   line-height: 1.6;
   margin-top: 8px;
 }
@@ -381,13 +387,13 @@
 .slide-image img {
   width: 100%;
   border-radius: 12px;
-  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.1));
-  border: 1px solid rgba(140, 169, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .slide-image-caption {
   font-size: 0.72em;
-  color: var(--color-text-muted, #888);
+  color: rgba(240, 242, 248, 0.3);
   margin-top: 10px;
 }
 
@@ -402,11 +408,11 @@
   font-size: 1.1em;
   font-style: italic;
   line-height: 1.6;
-  color: var(--color-text, #282728);
-  border-left: 4px solid var(--color-accent-secondary, #667eea);
+  color: rgba(240, 242, 248, 0.8);
+  border-left: 4px solid #a855f7;
   padding: 16px 24px;
   margin: 0;
-  background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+  background: rgba(168, 85, 247, 0.06);
   border-radius: 0 12px 12px 0;
   text-align: left;
 }
@@ -414,16 +420,16 @@
 .slide-quote-attr {
   margin-top: 12px;
   font-size: 0.82em;
-  color: var(--color-text-secondary, #666);
+  color: rgba(240, 242, 248, 0.4);
   text-align: right;
 }
 
 /* ── Utility text classes ──────────────────────────── */
 
-.text-error { color: var(--error, #B45050); }
-.text-success { color: var(--success, #489664); }
-.text-accent { color: var(--color-accent-secondary, #667eea); }
-.text-muted { color: var(--color-text-muted, rgba(40, 39, 40, 0.35)); }
+.text-error { color: #f87171; }
+.text-success { color: #4ade80; }
+.text-accent { color: #6b8cff; }
+.text-muted { color: rgba(240, 242, 248, 0.35); }
 
 /* ── Diagram: cards layout ─────────────────────────── */
 
@@ -438,10 +444,11 @@
 .dia-card {
   flex: 1;
   min-width: 200px;
-  border: 1px solid;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 22px;
   text-align: left;
+  background: rgba(255, 255, 255, 0.03) !important;
 }
 
 .dia-card-icon {
@@ -450,6 +457,7 @@
 }
 
 .dia-card-title {
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-weight: 700;
   font-size: 1.05em;
   margin-bottom: 6px;
@@ -457,7 +465,7 @@
 
 .dia-card-body {
   font-size: 0.82em;
-  color: var(--color-text-secondary, #555);
+  color: rgba(240, 242, 248, 0.5);
   line-height: 1.55;
 }
 
@@ -472,28 +480,27 @@
 }
 
 .dia-remix-panel {
-  background: #fff;
-  border: 2px solid var(--color-border, #aac4f5);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 16px;
 }
 
 .dia-remix-context {
   border-style: dashed;
-  border-color: var(--color-accent, #8CA9FF);
-  position: relative;
+  border-color: #4eeaff;
 }
 
 .dia-remix-agent {
-  background: #f8f9fc;
-  border-color: var(--color-accent-secondary, #667eea);
+  background: rgba(168, 85, 247, 0.06);
+  border-color: #a855f7;
 }
 
 .dia-panel-label {
   font-size: 0.7em;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-muted, #999);
+  color: rgba(240, 242, 248, 0.35);
   margin-bottom: 10px;
   font-weight: 600;
 }
@@ -507,7 +514,7 @@
 
 .dia-live-badge {
   font-size: 0.65em;
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #a855f7 0%, #4eeaff 100%);
   color: white;
   padding: 2px 10px;
   border-radius: 10px;
@@ -522,7 +529,7 @@
 
 .dia-agent-row {
   padding: 6px 8px;
-  background: #f8f9fc;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 6px;
   border-left: 3px solid;
   font-size: 0.82em;
@@ -531,19 +538,19 @@
 
 .dia-agent-meta {
   font-size: 0.8em;
-  color: var(--color-text-muted, #999);
+  color: rgba(240, 242, 248, 0.35);
   margin-left: 6px;
 }
 
 .dia-agent-detail {
   font-size: 0.85em;
-  color: var(--color-text-secondary, #666);
+  color: rgba(240, 242, 248, 0.5);
 }
 
 .dia-context-placeholder {
   text-align: center;
   padding: 20px 0;
-  color: var(--color-border, #aac4f5);
+  color: rgba(78, 234, 255, 0.4);
   font-size: 0.9em;
 }
 
@@ -552,14 +559,14 @@
   bottom: 8px;
   right: 10px;
   font-size: 0.65em;
-  color: var(--color-text-muted, #ccc);
+  color: rgba(240, 242, 248, 0.2);
 }
 
 .dia-chat-preview {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
   padding: 10px;
-  border: 1px solid #eee;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 0.82em;
   line-height: 1.5;
   text-align: left;
@@ -567,7 +574,7 @@
 
 .dia-chat-role {
   font-size: 0.8em;
-  color: var(--color-text-muted, #999);
+  color: rgba(240, 242, 248, 0.35);
   font-weight: 600;
   margin-bottom: 2px;
 }
@@ -587,8 +594,8 @@
 
 .dia-thread-card {
   flex: 1;
-  background: #fff;
-  border: 1px solid var(--color-border, #aac4f5);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 16px;
   text-align: left;
@@ -610,7 +617,7 @@
 
 .dia-thread-body {
   font-size: 0.82em;
-  color: var(--color-text-secondary, #555);
+  color: rgba(240, 242, 248, 0.5);
   line-height: 1.5;
 }
 
@@ -619,8 +626,8 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: rgba(180, 80, 80, 0.06);
-  border: 1px solid rgba(180, 80, 80, 0.2);
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
   border-radius: 8px;
   padding: 10px 18px;
   margin-bottom: 16px;
@@ -630,18 +637,18 @@
   width: 60px;
   height: 6px;
   border-radius: 3px;
-  background: #eee;
+  background: rgba(255, 255, 255, 0.1);
   overflow: hidden;
 }
 
 .dia-divergence-fill {
   height: 100%;
-  background: var(--error, #B45050);
+  background: #f87171;
   border-radius: 3px;
 }
 
 .dia-divergence-label {
-  color: var(--error, #B45050);
+  color: #f87171;
   font-weight: 600;
   font-size: 0.9em;
 }
@@ -649,14 +656,14 @@
 .dia-divergence-legend {
   text-align: center;
   font-size: 0.82em;
-  color: var(--color-text-secondary, #555);
+  color: rgba(240, 242, 248, 0.5);
   line-height: 1.6;
 }
 
 /* ── Diagram: Architecture ─────────────────────────── */
 
 .dia-arch {
-  font-family: "SF Mono", "Fira Code", "Roboto Mono", monospace;
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
   max-width: 850px;
   margin: 12px auto 0;
   font-size: 0.85em;
@@ -675,15 +682,16 @@
 }
 
 .dia-arch-label {
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-weight: 600;
-  color: var(--color-accent-secondary, #667eea);
+  color: #6b8cff;
   margin-bottom: 10px;
   font-size: 0.78em;
   text-transform: uppercase;
 }
 
 .dia-arch-label-green {
-  color: var(--success, #489664);
+  color: #4ade80;
 }
 
 .dia-arch-stack {
@@ -699,15 +707,15 @@
 }
 
 .dia-arch-agent {
-  background: #f0f4ff;
-  border: 1px solid var(--color-border, #aac4f5);
+  background: rgba(107, 140, 255, 0.08);
+  border: 1px solid rgba(107, 140, 255, 0.2);
 }
 
 .dia-arch-arrow {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  color: var(--color-text-muted, #999);
+  color: rgba(240, 242, 248, 0.3);
   font-size: 1em;
   text-align: center;
   white-space: pre-line;
@@ -722,26 +730,27 @@
 }
 
 .dia-arch-worker {
-  background: #fff;
-  border: 2px solid var(--color-accent-secondary, #667eea);
+  background: rgba(107, 140, 255, 0.06);
+  border: 2px solid rgba(107, 140, 255, 0.3);
 }
 
 .dia-arch-db {
-  background: #f0fff4;
-  border: 2px solid var(--success, #489664);
+  background: rgba(74, 222, 128, 0.06);
+  border: 2px solid rgba(74, 222, 128, 0.3);
 }
 
 .dia-arch-box-title {
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-weight: 700;
   margin-bottom: 6px;
 }
 
-.dia-arch-worker .dia-arch-box-title { color: var(--color-accent-secondary, #667eea); }
-.dia-arch-db .dia-arch-box-title { color: var(--success, #489664); }
+.dia-arch-worker .dia-arch-box-title { color: #6b8cff; }
+.dia-arch-db .dia-arch-box-title { color: #4ade80; }
 
 .dia-arch-box-detail {
   font-size: 0.82em;
-  color: var(--color-text-secondary, #666);
+  color: rgba(240, 242, 248, 0.5);
 }
 
 .dia-arch-footer {
@@ -750,21 +759,21 @@
 }
 
 .dia-arch-footer > span {
-  color: var(--color-text-muted, #999);
+  color: rgba(240, 242, 248, 0.35);
   font-size: 0.9em;
 }
 
 .dia-arch-dashboard {
   display: inline-block;
-  background: var(--color-card, #fff8de);
-  border: 2px solid var(--warning, #B48C50);
+  background: rgba(251, 191, 36, 0.06);
+  border: 2px solid rgba(251, 191, 36, 0.3);
   border-radius: 12px;
   padding: 12px 24px;
   margin-top: 10px;
 }
 
 .dia-arch-dashboard .dia-arch-box-title {
-  color: var(--warning, #B48C50);
+  color: #fbbf24;
 }
 
 /* ── Diagram: Data Flow Steps ──────────────────────── */
@@ -781,10 +790,11 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  border: 1px solid;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 12px 16px;
   text-align: left;
+  background: rgba(255, 255, 255, 0.02) !important;
 }
 
 .dia-step-num {
@@ -806,16 +816,17 @@
 }
 
 .dia-step-code {
-  background: rgba(140, 169, 255, 0.12);
+  background: rgba(78, 234, 255, 0.1);
   padding: 2px 7px;
   border-radius: 4px;
-  font-family: "SF Mono", "Fira Code", monospace;
+  font-family: var(--font-mono, monospace);
   font-size: 0.88em;
   margin-left: 6px;
+  color: #4eeaff;
 }
 
 .dia-step-detail {
-  color: var(--color-text-muted, #888);
+  color: rgba(240, 242, 248, 0.4);
   font-size: 0.88em;
   margin-top: 2px;
 }
@@ -825,13 +836,13 @@
 .dia-mcp {
   max-width: 750px;
   margin: 8px auto 0;
-  font-family: "SF Mono", "Fira Code", "Roboto Mono", monospace;
+  font-family: var(--font-mono, monospace);
   font-size: 0.82em;
 }
 
 .dia-mcp-config {
-  background: #fff;
-  border: 2px solid var(--color-border, #aac4f5);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 18px 20px;
   margin-bottom: 16px;
@@ -839,14 +850,14 @@
 }
 
 .dia-mcp-config-title {
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-weight: 700;
-  color: var(--color-accent-secondary, #667eea);
+  color: #6b8cff;
   margin-bottom: 12px;
-  font-family: "Mulish", sans-serif;
 }
 
 .dia-mcp-config-block {
-  background: #f8f9fc;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
   padding: 12px 14px;
   font-size: 0.88em;
@@ -860,22 +871,23 @@
 }
 
 .dia-mcp-category {
-  border: 1px solid;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 14px;
   text-align: left;
+  background: rgba(255, 255, 255, 0.02) !important;
 }
 
 .dia-mcp-cat-title {
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-weight: 600;
   font-size: 0.85em;
   margin-bottom: 8px;
-  font-family: "Mulish", sans-serif;
 }
 
 .dia-mcp-tools {
   font-size: 0.85em;
-  color: var(--color-text-secondary, #555);
+  color: rgba(240, 242, 248, 0.5);
   line-height: 1.6;
 }
 
@@ -891,27 +903,28 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.78em;
-  font-family: "Mulish", sans-serif;
   text-align: left;
 }
 
 .dia-table th {
   padding: 8px 12px;
-  background: #f0f4ff;
-  border-bottom: 2px solid var(--color-border, #aac4f5);
-  color: var(--color-accent-secondary, #667eea);
+  background: rgba(107, 140, 255, 0.08);
+  border-bottom: 2px solid rgba(107, 140, 255, 0.2);
+  color: #6b8cff;
   font-weight: 600;
 }
 
 .dia-table td {
   padding: 5px 12px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(240, 242, 248, 0.7);
 }
 
 .dia-tool-name {
   font-weight: 600;
-  font-family: "SF Mono", "Fira Code", monospace;
+  font-family: var(--font-mono, monospace);
   font-size: 0.95em;
+  color: #4eeaff;
 }
 
 /* ── Navigation controls ───────────────────────────── */
@@ -929,13 +942,13 @@
 .slides-nav-btn {
   width: 42px;
   height: 42px;
-  border: none;
-  background: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 50%;
   cursor: pointer;
   font-size: 20px;
-  color: var(--color-text-secondary, #666);
-  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
+  color: rgba(240, 242, 248, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -943,8 +956,9 @@
 }
 
 .slides-nav-btn:hover {
-  background: var(--gradient-primary, linear-gradient(135deg, #8CA9FF 0%, #667eea 100%));
+  background: linear-gradient(135deg, #a855f7 0%, #4eeaff 100%);
   color: white;
+  border-color: transparent;
 }
 
 /* ── Arrow buttons ─────────────────────────────────── */
@@ -956,13 +970,13 @@
   z-index: 100;
   width: 48px;
   height: 48px;
-  border: none;
-  background: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 50%;
   cursor: pointer;
   font-size: 28px;
-  color: var(--color-accent, #8CA9FF);
-  box-shadow: var(--shadow-md);
+  color: #4eeaff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -970,12 +984,13 @@
 }
 
 .slides-arrow:hover:not(:disabled) {
-  color: var(--color-accent-secondary, #667eea);
-  box-shadow: var(--shadow-lg);
+  color: #a855f7;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .slides-arrow:disabled {
-  opacity: 0.2;
+  opacity: 0.15;
   cursor: default;
 }
 
@@ -989,13 +1004,13 @@
   bottom: 24px;
   left: 24px;
   z-index: 100;
-  background: var(--gradient-primary, linear-gradient(135deg, #8CA9FF 0%, #667eea 100%));
+  background: linear-gradient(135deg, #a855f7 0%, #4eeaff 100%);
   color: white;
   font-weight: 600;
   font-size: 14px;
   padding: 8px 16px;
   border-radius: 20px;
-  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 10px rgba(168, 85, 247, 0.3);
 }
 
 /* ── Chapter menu ──────────────────────────────────── */
@@ -1005,9 +1020,10 @@
   top: 72px;
   right: 20px;
   z-index: 200;
-  background: white;
+  background: #151824;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.1));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   padding: 10px 0;
   min-width: 240px;
   animation: menu-fade-in 0.15s ease-out;
@@ -1022,19 +1038,19 @@
   padding: 11px 22px;
   cursor: pointer;
   font-size: 14px;
-  color: var(--color-text, #333);
+  color: rgba(240, 242, 248, 0.6);
   transition: all 0.15s ease;
   border-left: 3px solid transparent;
 }
 
 .slides-menu-item:hover {
-  background: #f0f4ff;
-  border-left-color: var(--color-accent, #8CA9FF);
-  color: var(--color-accent-secondary, #667eea);
+  background: rgba(78, 234, 255, 0.06);
+  border-left-color: #4eeaff;
+  color: #4eeaff;
 }
 
 .slides-menu-item-active {
-  color: var(--color-accent-secondary, #667eea);
+  color: #a855f7;
   font-weight: 600;
 }
 
@@ -1072,6 +1088,7 @@
   .slides-app {
     position: static;
     background: white;
+    color: #1a1a2e;
   }
 
   .slides-nav,
@@ -1091,6 +1108,7 @@
     max-height: none;
     break-after: page;
     box-shadow: none;
+    background: white;
     border: 1px solid #ddd;
     margin-bottom: 20px;
   }

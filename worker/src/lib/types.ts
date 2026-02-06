@@ -30,10 +30,20 @@ export interface MemoryRow {
   room_id: string | null;
   agent: string;
   session_id: string | null;
+  parent_id: string | null;  // Git: points to previous commit in chain
   message_type: string | null;
   content: string | null;
   token_count: number;
   metadata: Record<string, unknown>;
+  ts: string;
+}
+
+/** Git-like refs: branches, bookmarks, HEADs */
+export interface RefRow {
+  room_id: string;
+  name: string;           // e.g. "heads/armand/quiet-oak", "bookmarks/auth-decision"
+  commit_id: string;      // points to a memory
+  created_by: string;
   ts: string;
 }
 
