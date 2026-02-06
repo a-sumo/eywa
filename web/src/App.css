@@ -98,41 +98,63 @@ html {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 2rem;
+  padding: 3rem 2rem;
   background: radial-gradient(ellipse at top, rgba(140, 169, 255, 0.08) 0%, transparent 50%);
 }
 
+.landing section {
+  width: 100%;
+  max-width: 1000px;
+  margin-bottom: 4rem;
+}
+
+.landing h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0 0 2rem;
+  text-align: center;
+  color: var(--color-text);
+}
+
+/* Hero */
 .landing-hero {
   text-align: center;
-  margin-bottom: 3rem;
+  padding-top: 2rem;
 }
 
 .landing-title {
-  font-size: 3.5rem;
+  font-size: 4rem;
   font-weight: 700;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.75rem;
   color: var(--color-accent-secondary);
 }
 
-.landing-subtitle {
-  font-size: 1.25rem;
-  color: var(--color-text-secondary);
+.landing-tagline {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-text);
   margin: 0 0 1rem;
 }
 
-.landing-desc {
-  font-size: 1rem;
-  color: var(--color-text-muted);
-  max-width: 400px;
-  margin: 0;
-  line-height: 1.6;
+.landing-subtitle {
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.7;
+}
+
+.landing-subtitle strong {
+  color: var(--color-accent-secondary);
 }
 
 .landing-actions {
   display: flex;
   gap: 1rem;
-  margin-bottom: 4rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .btn-primary {
@@ -144,12 +166,18 @@ html {
   cursor: pointer;
   background: var(--gradient-primary);
   color: white;
+  text-decoration: none;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(140, 169, 255, 0.35);
+}
+
+.btn-primary.btn-large {
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
 }
 
 .btn-primary:disabled {
@@ -180,8 +208,203 @@ html {
 .landing-error {
   color: var(--error);
   margin-top: 1rem;
+  text-align: center;
 }
 
+/* Screenshot */
+.landing-screenshot {
+  text-align: center;
+}
+
+.landing-screenshot-img {
+  max-width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.landing-screenshot-caption {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+/* Problem section */
+.landing-problem {
+  text-align: center;
+}
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.problem-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.problem-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.problem-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: var(--color-text);
+}
+
+.problem-card p {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Solution section */
+.landing-solution {
+  text-align: center;
+}
+
+.solution-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.solution-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  text-align: left;
+  position: relative;
+}
+
+.solution-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.solution-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: var(--color-text);
+}
+
+.solution-card p {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.solution-code {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  background: rgba(140, 169, 255, 0.1);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--color-accent-secondary);
+  overflow-x: auto;
+}
+
+/* Features section */
+.landing-features-section {
+  text-align: center;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.feature-icon-small {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.feature-item strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.feature-item p {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* CTA section */
+.landing-cta {
+  text-align: center;
+  padding: 3rem 2rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(140, 169, 255, 0.1) 0%, rgba(242, 165, 200, 0.1) 100%);
+  border: 1px solid var(--color-border);
+}
+
+.landing-cta h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.landing-cta .landing-actions {
+  margin-bottom: 0;
+}
+
+/* Footer */
+.landing-footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 1000px;
+}
+
+.landing-footer a {
+  color: var(--color-accent-secondary);
+  text-decoration: none;
+}
+
+.landing-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Legacy feature cards (kept for compatibility) */
 .landing-features {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3321,11 +3544,26 @@ html {
   }
 
   .landing {
-    padding: 1.5rem;
+    padding: 1.5rem 1rem;
   }
 
   .landing-title {
     font-size: 2.5rem;
+  }
+
+  .landing-tagline {
+    font-size: 1.2rem;
+  }
+
+  .landing-subtitle {
+    font-size: 1rem;
+  }
+
+  .problem-grid,
+  .solution-grid,
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .landing-features {
@@ -3336,13 +3574,21 @@ html {
   .landing-actions {
     flex-direction: column;
     width: 100%;
-    max-width: 280px;
+    max-width: 320px;
   }
 
   .btn-primary,
   .btn-secondary {
     width: 100%;
     text-align: center;
+  }
+
+  .landing-cta {
+    padding: 2rem 1rem;
+  }
+
+  .landing-cta h2 {
+    font-size: 1.2rem;
   }
 
   .agent-grid {
