@@ -307,7 +307,17 @@ export function Landing() {
         </p>
 
         <div className="landing-agents-grid">
-          <Link to="/docs/integrations/claude-code" className="landing-agent-card landing-agent-featured">
+          <Link to="/docs/integrations/gemini-cli" className="landing-agent-card landing-agent-featured">
+            <div className="landing-agent-logo">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                <path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z"/>
+              </svg>
+            </div>
+            <span className="landing-agent-name">Gemini CLI</span>
+            <span className="landing-agent-tag">CLI</span>
+          </Link>
+
+          <Link to="/docs/integrations/claude-code" className="landing-agent-card">
             <div className="landing-agent-logo">
               <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
                 <path d="M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-7.258 0h3.767L16.906 20h-3.674l-1.343-3.461H5.017l-1.344 3.46H0L6.57 3.522zm4.132 9.959L8.453 7.687 6.205 13.48H10.7z"/>
@@ -335,16 +345,6 @@ export function Landing() {
             </div>
             <span className="landing-agent-name">Windsurf</span>
             <span className="landing-agent-tag">IDE</span>
-          </Link>
-
-          <Link to="/docs/integrations/gemini-cli" className="landing-agent-card">
-            <div className="landing-agent-logo">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
-                <path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z"/>
-              </svg>
-            </div>
-            <span className="landing-agent-name">Gemini CLI</span>
-            <span className="landing-agent-tag">CLI</span>
           </Link>
 
           <Link to="/docs/integrations/codex" className="landing-agent-card">

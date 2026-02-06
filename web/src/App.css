@@ -725,6 +725,7 @@ body {
 .landing-hero-content {
   text-align: center;
   max-width: 800px;
+  transform: translateY(-24px);
 }
 
 .landing-hero-title {
@@ -733,7 +734,7 @@ body {
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
-  margin: 0 0 1.5rem;
+  margin: 0 0 2.25rem;
   color: #f0f0f5;
 }
 
@@ -745,7 +746,7 @@ body {
   font-size: 1.2rem;
   line-height: 1.8;
   color: rgba(240, 240, 245, 0.5);
-  margin: 0 0 2rem;
+  margin: 0 0 2.25rem;
 }
 
 .landing-hero-solution {
@@ -754,7 +755,7 @@ body {
   line-height: 1.3;
   font-weight: 700;
   letter-spacing: -0.01em;
-  margin: 0 0 2.5rem;
+  margin: 0 0 2.75rem;
   color: rgba(240, 240, 245, 0.7);
 }
 
@@ -1978,6 +1979,10 @@ body {
     font-size: 2.5rem;
   }
 
+  .landing-hero-content {
+    transform: translateY(-16px);
+  }
+
   .landing-hero-solution {
     font-size: 1.6rem;
   }
@@ -2014,6 +2019,10 @@ body {
 
   .landing-hero-title {
     font-size: 2rem;
+  }
+
+  .landing-hero-content {
+    transform: translateY(-8px);
   }
 
   .landing-hero-subtitle {

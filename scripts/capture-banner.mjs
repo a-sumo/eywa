@@ -13,7 +13,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { mkdirSync, existsSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
+import { mkdirSync, existsSync, readFileSync, writeFileSync, unlinkSync, copyFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,7 +38,7 @@ async function main() {
   const puppeteer = await import("puppeteer");
   const browser = await puppeteer.default.launch({
     headless: true,
-    args: [`--window-size=${WIDTH},${HEIGHT}`],
+    args: ["--no-sandbox", `--window-size=${WIDTH},${HEIGHT}`],
   });
 
   const page = await browser.newPage();
@@ -69,11 +69,10 @@ async function main() {
       .landing-footer,
       footer { display: none !important; }
 
-      body { margin: 0; overflow: hidden; }
-      .landing-page { overflow: hidden; padding-top: 0; }
+      body, #root, .landing-dark { margin: 0; overflow: hidden; }
 
       /* Center the title vertically in the banner */
-      .landing-hero {
+      .landing-hero-dark {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -81,6 +80,9 @@ async function main() {
         min-height: 340px !important;
         padding: 0 !important;
         margin: 0 !important;
+      }
+      .landing-hero-content {
+        transform: translateY(0) !important;
       }
       .landing-hero-title {
         font-size: 3.4rem !important;
@@ -110,6 +112,14 @@ async function main() {
   console.log(`  ${TOTAL_FRAMES}/${TOTAL_FRAMES} - done`);
 
   await browser.close();
+
+  // Export static images (start + mid frame)
+  const startFrame = join(FRAMES_DIR, "frame-0000.png");
+  const midFrame = join(FRAMES_DIR, `frame-${String(Math.floor(TOTAL_FRAMES / 2)).padStart(4, "0")}.png`);
+  const staticStartPath = join(OUT_DIR, "banner-start.png");
+  const staticMidPath = join(OUT_DIR, "banner.png");
+  try { copyFileSync(startFrame, staticStartPath); } catch {}
+  try { copyFileSync(midFrame, staticMidPath); } catch {}
 
   // Convert frames to GIF using ffmpeg if available, otherwise ImageMagick
   const gifPath = join(OUT_DIR, "banner.gif");
@@ -145,6 +155,7 @@ async function main() {
   const stat = readFileSync(gifPath);
   console.log(`\nBanner saved: ${gifPath} (${(stat.length / 1024).toFixed(0)}KB)`);
   console.log("Add to README with: ![Eywa](docs/banner.gif)");
+  console.log(`Static banner saved: ${staticMidPath}`);
 }
 
 main().catch((e) => {

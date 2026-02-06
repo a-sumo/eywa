@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { RoomProvider } from "./context/RoomContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Landing } from "./components/Landing";
@@ -24,6 +25,7 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/slides" element={<SlidePresentation />} />
@@ -41,6 +43,16 @@ function App() {
       </BrowserRouter>
     </ErrorBoundary>
   );
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
+  return null;
 }
 
 function RoomRoutes() {
