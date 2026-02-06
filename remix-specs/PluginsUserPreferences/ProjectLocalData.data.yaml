@@ -1,3 +1,4 @@
 data:
   externalSources:
-    []
+    - 2dfcdb81-e528-4739-92b6-1c96af3a08fa: /Users/armand/Library/Preferences/Snap/Lens Studio/LibraryComponents/SupabaseClient@0.0.10/SupabaseClient.lspkg
+    - ae01faeb-993f-428f-baef-3b8e5fa5129f: /Users/armand/Documents/Spectacles-Sample/Snap Cloud/Assets/Examples/SnapCloudRequirements.ts

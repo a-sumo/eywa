@@ -1,0 +1,59 @@
+- !<AssetImportMetadata/7c798097-f8ec-4cdf-b3f5-c198ba45a5b4>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 24d7fe02-451b-4beb-9b1c-d2e0d3103abd
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 24d7fe02-451b-4beb-9b1c-d2e0d3103abd
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 6bcb40ba-0837-4852-a2cb-c19dd2a0eee5
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/6bcb40ba-0837-4852-a2cb-c19dd2a0eee5>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  ComponentUid: 943da798-62d3-4f17-9bb9-c1a5253b957d
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    channelName: false
+    panelHeight: false
+    panelWidth: false
+    positionOffset: false
+    showStatus: false
+    snapCloudRequirements: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - snapCloudRequirements: !<MappingBased.AssignableType> 00000000-0000-0000-0000-000000000000
+      channelName: demo
+      panelWidth: !<float> 40.000000
+      panelHeight: !<float> 40.000000
+      positionOffset: !<Vec3> {x: 0.000000, y: 0.000000, z: 0.000000}
+      showStatus: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input AssignableType snapCloudRequirements {"hint":"SnapCloudRequirements reference for Supabase config"}'
+    - '// @input string channelName = "demo" {"hint":"Channel name - use your room slug"}'
+    - '// @input float panelWidth = 40 {"hint":"Panel width in cm"}'
+    - '// @input float panelHeight = 40 {"hint":"Panel height in cm"}'
+    - '// @input vec3 positionOffset {"hint":"Position offset from parent"}'
+    - '// @input bool showStatus = true {"hint":"Show debug status text"}'

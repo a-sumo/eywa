@@ -22,11 +22,16 @@
   VersionMajor: 0
   VersionMinor: 0
   VersionPatch: 0
-  ComponentUid: 00000000-0000-0000-0000-000000000000
+  ComponentUid: 856ca67d-ddc5-4954-9d1c-ad96582cc896
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    {}
+    offsetX: false
+    offsetY: false
+    offsetZ: false
+    panelObject: false
+    panelScale: false
+    smoothing: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -36,10 +41,19 @@
   Attachments:
     []
   DefaultScriptInputs:
-    -
-      {}
+    - panelObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      offsetX: !<float> 0.000000
+      offsetY: !<float> 15.000000
+      offsetZ: !<float> 0.000000
+      panelScale: !<float> 1.000000
+      smoothing: 0.800000
   ScriptTypes:
     -
       {}
   InputLines:
-    []
+    - // @input SceneObject panelObject
+    - // @input float offsetX
+    - // @input float offsetY = 15
+    - // @input float offsetZ
+    - // @input float panelScale = 1
+    - // @input float smoothing = 0.8

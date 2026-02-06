@@ -666,6 +666,10 @@ body {
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0 0 2.5rem;
+  color: rgba(240, 240, 245, 0.7);
+}
+
+.landing-hero-solution .highlight {
   background: var(--gradient-aurora);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -3134,10 +3138,10 @@ body {
 .remix-terminal-panel {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   overflow: hidden;
-  background: #f8f9fc;
+  background: var(--bg-elevated);
 }
 
 .remix-terminal-header {
@@ -3145,10 +3149,10 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--border-subtle);
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
 }
 
 .remix-copy-btn {
@@ -3169,7 +3173,7 @@ body {
   justify-content: center;
   height: 100%;
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 .remix-terminal-empty p {
@@ -3183,8 +3187,8 @@ body {
   word-break: break-word;
   font-size: 0.85rem;
   line-height: 1.6;
-  font-family: 'Roboto Mono', 'SF Mono', 'Fira Code', monospace;
-  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
 }
 
 /* ============================================
@@ -3203,8 +3207,8 @@ body {
 }
 
 .remix-chat-model {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
 }
 
 .remix-chat-msg-role {
@@ -3213,19 +3217,19 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.35rem;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 .remix-chat-msg-content {
   font-size: 0.9rem;
   line-height: 1.6;
-  color: var(--color-text);
+  color: var(--text-primary);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .remix-chat-typing {
-  color: var(--color-text-muted);
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -3243,23 +3247,28 @@ body {
   display: flex;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .remix-chat-input input {
   flex: 1;
-  background: var(--color-fill);
-  border: 1px solid var(--color-border);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 0.6rem 1rem;
-  color: var(--color-text);
+  color: var(--text-primary);
   font-size: 16px;
   outline: none;
   transition: border-color 0.15s;
 }
 
+.remix-chat-input input::placeholder {
+  color: var(--text-muted);
+}
+
 .remix-chat-input input:focus {
-  border-color: var(--color-accent);
+  border-color: var(--aurora-cyan);
+  box-shadow: 0 0 0 3px var(--aurora-cyan-glow);
 }
 
 .remix-chat-input button {
@@ -3276,7 +3285,7 @@ body {
 
 .remix-chat-input button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(140, 169, 255, 0.3);
+  box-shadow: 0 4px 12px var(--aurora-purple-glow);
 }
 
 .remix-chat-input button:disabled {
@@ -6483,7 +6492,7 @@ body {
 /* MCP Compatibility Section */
 .landing-compatibility-section {
   padding: 5rem 2rem;
-  background: linear-gradient(180deg, var(--color-bg) 0%, rgba(78, 234, 255, 0.03) 50%, var(--color-bg) 100%);
+  background: linear-gradient(180deg, var(--bg-base) 0%, rgba(78, 234, 255, 0.03) 50%, var(--bg-base) 100%);
   text-align: center;
 }
 
@@ -6509,14 +6518,15 @@ body {
 .landing-compatibility-section h2 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  color: var(--text-primary);
   margin-bottom: 1rem;
   line-height: 1.2;
 }
 
 .landing-compatibility-section > p {
   font-size: 1.15rem;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
   max-width: 600px;
   margin: 0 auto 3rem auto;
   line-height: 1.6;
@@ -6524,12 +6534,13 @@ body {
 
 .landing-agents-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
   max-width: 900px;
   margin: 0 auto 3rem auto;
 }
 
+/* Agent cards - override link defaults */
 .landing-agent-card {
   display: flex;
   flex-direction: column;
@@ -6537,10 +6548,12 @@ body {
   justify-content: center;
   gap: 0.75rem;
   padding: 1.5rem 1rem;
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   transition: all 0.2s ease;
+  text-decoration: none;
+  color: var(--text-primary);
 }
 
 .landing-agent-card:hover {
@@ -6549,67 +6562,97 @@ body {
   box-shadow: 0 8px 24px rgba(78, 234, 255, 0.1);
 }
 
+.landing-agent-card:visited {
+  color: var(--text-primary);
+}
+
+.landing-agent-logo {
+  color: var(--text-primary);
+}
+
 .landing-agent-card svg {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
 }
 
-.landing-agent-card span {
+.landing-agent-name {
   font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: var(--text-primary);
   text-align: center;
+}
+
+.landing-agent-tag {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.landing-agent-card.landing-agent-featured {
+  border-color: var(--aurora-purple-dim);
+  background: rgba(168, 85, 247, 0.06);
 }
 
 .landing-agent-card.landing-agent-more {
   border-style: dashed;
+  border-color: var(--border-subtle);
   background: transparent;
 }
 
 .landing-agent-card.landing-agent-more svg {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
-.landing-agent-card.landing-agent-more span {
-  color: var(--color-text-secondary);
+.landing-agent-card.landing-agent-more .landing-agent-name {
+  color: var(--text-secondary);
 }
 
-.landing-compatibility-highlights {
+.landing-agent-card.landing-agent-more .landing-agent-tag {
+  color: var(--text-muted);
+}
+
+/* Bottom highlights row */
+.landing-compatibility-highlight {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 2rem;
+  gap: 2.5rem;
   max-width: 900px;
   margin: 0 auto;
 }
 
-.landing-compatibility-highlight {
+.landing-highlight-item {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
   text-align: left;
+  flex: 1;
+  min-width: 200px;
   max-width: 280px;
 }
 
-.landing-compatibility-highlight svg {
+.landing-highlight-item svg {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  color: var(--aurora-green);
+  margin-top: 2px;
 }
 
-.landing-compatibility-highlight div strong {
+.landing-highlight-item strong {
   display: block;
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
-.landing-compatibility-highlight div span {
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
+.landing-highlight-item span {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -6636,17 +6679,17 @@ body {
     height: 32px;
   }
 
-  .landing-agent-card span {
+  .landing-agent-name {
     font-size: 0.8rem;
   }
 
-  .landing-compatibility-highlights {
+  .landing-compatibility-highlight {
     flex-direction: column;
     align-items: center;
     gap: 1.5rem;
   }
 
-  .landing-compatibility-highlight {
+  .landing-highlight-item {
     max-width: 100%;
   }
 }

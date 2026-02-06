@@ -1,20 +1,20 @@
-- !<AssetImportMetadata/f5d7a8b1-c987-4f62-9616-7de2f35e0422>
+- !<AssetImportMetadata/bb65ca81-5393-4436-ae67-963c2b46062d>
   ImportedAssetIds:
-    TypeScriptAsset: !<reference> 961471fe-592e-4c8e-a94c-3789342c5426
+    TypeScriptAsset: !<reference> bd77e147-4570-497d-89bd-61ba55c111ec
   ImporterName: TypeScriptAssetImporter
-  PrimaryAsset: !<reference> 961471fe-592e-4c8e-a94c-3789342c5426
+  PrimaryAsset: !<reference> bd77e147-4570-497d-89bd-61ba55c111ec
   PackageType: NotAPackage
   LegacyPackagePolicy: ~
   ExtraData:
     {}
   AssetDataMap:
-    TypeScriptAsset: !<own> a9b80e3b-7295-4d05-b2c5-295007d9ecef
+    TypeScriptAsset: !<own> 1889cf95-82b7-4578-9dd2-56be5ee637e5
   DependentFiles:
     []
   ImporterSettings: !<AssetImporterSettings>
     {}
   CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
-- !<TypeScriptAssetData/a9b80e3b-7295-4d05-b2c5-295007d9ecef>
+- !<TypeScriptAssetData/1889cf95-82b7-4578-9dd2-56be5ee637e5>
   SvgIcon: ""
   SetupScript:
     code: ""
@@ -22,11 +22,15 @@
   VersionMajor: 0
   VersionMinor: 0
   VersionPatch: 0
-  ComponentUid: 00000000-0000-0000-0000-000000000000
+  ComponentUid: 56a5ef67-7830-4b56-a2ad-4330fa7258b0
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
-    {}
+    panelHeight: false
+    panelWidth: false
+    refreshInterval: false
+    roomSlug: false
+    serverUrl: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -36,10 +40,17 @@
   Attachments:
     []
   DefaultScriptInputs:
-    -
-      {}
+    - serverUrl: "https://eywa.example.com"
+      roomSlug: demo
+      refreshInterval: 0.100000
+      panelWidth: !<float> 40.000000
+      panelHeight: !<float> 40.000000
   ScriptTypes:
     -
       {}
   InputLines:
-    []
+    - '// @input string serverUrl = "https://eywa.example.com"'
+    - '// @input string roomSlug = "demo"'
+    - // @input float refreshInterval = 0.1
+    - // @input float panelWidth = 40
+    - // @input float panelHeight = 40

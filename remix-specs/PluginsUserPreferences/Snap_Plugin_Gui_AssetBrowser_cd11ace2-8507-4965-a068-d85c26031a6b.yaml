@@ -1,14 +1,19 @@
 CollapsedEntities:
   type: stringset
   value:
-    size: 429
+    size: 452
     values:
       - AgentTab.ts
       - ContextTab.ts
+      - Echopark.hdr
       - MemoriesTab.ts
       - MockData.ts
+      - RealtimePanel.ts
+      - RealtimeTextureReceiver.ts
       - RemixPanel.ts
       - RemixTypes.ts
+      - RemoteUI.ts
+      - SnapCloudRequirements.ts
       - SpectaclesInteractionKit.lspkg
       - SpectaclesInteractionKit.lspkg/Assets
       - SpectaclesInteractionKit.lspkg/Assets/Audio
@@ -431,5 +436,23 @@ CollapsedEntities:
       - SpectaclesInteractionKit.lspkg/VersionNumber.ts
       - SpectaclesInteractionKit.lspkg/package.native
       - SpectaclesInteractionKit.lspkg/tsconfig.json
+      - SupabaseClient.lspkg
+      - SupabaseClient.lspkg/package.native
+      - SupabaseClient.lspkg/polyfills
+      - SupabaseClient.lspkg/polyfills/FormData.d.ts
+      - SupabaseClient.lspkg/polyfills/Headers.d.ts
+      - SupabaseClient.lspkg/polyfills/Request.d.ts
+      - SupabaseClient.lspkg/polyfills/Response.d.ts
+      - SupabaseClient.lspkg/polyfills/WebSocket.d.ts
+      - SupabaseClient.lspkg/polyfills/btoa.d.ts
+      - SupabaseClient.lspkg/polyfills/fetch.d.ts
+      - SupabaseClient.lspkg/polyfills/object.d.ts
+      - SupabaseClient.lspkg/polyfills/textdecoder.d.ts
+      - SupabaseClient.lspkg/polyfills/timers.d.ts
+      - SupabaseClient.lspkg/polyfills/url.d.ts
+      - SupabaseClient.lspkg/polyfills/urlsearchparams.d.ts
+      - SupabaseClient.lspkg/supabase-snapcloud.d.ts
+      - SupabaseClient.lspkg/supabase-snapcloud.js
+      - SupabaseProject main.supabaseProject
       - TabContent.ts
   options: 4

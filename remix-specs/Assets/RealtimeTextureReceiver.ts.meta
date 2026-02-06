@@ -1,0 +1,62 @@
+- !<AssetImportMetadata/15e85b86-e7bc-4735-a653-4cc8c6f63d2f>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 01c4900d-1c43-455e-91ec-6644830e17ec
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 01c4900d-1c43-455e-91ec-6644830e17ec
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> f0511216-79d2-46ff-bf7f-e2542254db98
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/f0511216-79d2-46ff-bf7f-e2542254db98>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  ComponentUid: 9b511be2-38f4-4540-8f51-f5190cf3d679
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    channelName: false
+    enableDebugLogs: false
+    logFrequency: false
+    panelHeight: false
+    panelWidth: false
+    snapCloudRequirements: false
+    statusText: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - snapCloudRequirements: !<MappingBased.AssignableType> 00000000-0000-0000-0000-000000000000
+      channelName: demo
+      panelWidth: !<float> 40.000000
+      panelHeight: !<float> 40.000000
+      statusText: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      enableDebugLogs: true
+      logFrequency: !<float> 10.000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input AssignableType snapCloudRequirements {"hint":"Reference to SnapCloudRequirements for centralized Supabase configuration"}'
+    - '// @input string channelName = "demo" {"hint":"Channel name - typically your room slug"}'
+    - '// @input float panelWidth = 40 {"hint":"Width of the panel in world units (cm)"}'
+    - '// @input float panelHeight = 40 {"hint":"Height of the panel in world units (cm)"}'
+    - '// @input Component.Text statusText {"hint":"Optional Text component to display connection status"}'
+    - '// @input bool enableDebugLogs = true {"hint":"Show debug information in console"}'
+    - '// @input float logFrequency = 10 {"hint":"Log frame reception frequency (every N frames)", "widget":"slider", "min":1, "max":50, "step":1}'
