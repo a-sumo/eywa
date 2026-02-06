@@ -4404,6 +4404,7 @@ html {
 }
 
 .eink-container {
+  position: relative;
   width: 600px;
   height: 448px;
   background: var(--eink-white);
@@ -4683,6 +4684,66 @@ html {
 .eink-pixel-creature {
   image-rendering: pixelated;
   flex-shrink: 0;
+}
+
+/* ── Tracking marker ── */
+
+.eink-tracking-marker {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+/* ── Footer with tracking marker ── */
+
+.eink-footer {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eink-footer-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--eink-black);
+  opacity: 0.6;
+}
+
+/* ── Expanded feed items ── */
+
+.eink-feed-row {
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--eink-black);
+  opacity: 0.15;
+}
+
+.eink-feed-row:last-child {
+  border-bottom: none;
+}
+
+.eink-feed-expanded {
+  border-bottom-width: 1px;
+  opacity: 0.3;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+}
+
+.eink-feed-expanded .eink-feed-content {
+  margin-top: 2px;
+  line-height: 1.3;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.eink-feed-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* ── Kill all interactive states ── */

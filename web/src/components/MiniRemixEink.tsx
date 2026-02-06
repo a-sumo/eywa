@@ -201,6 +201,57 @@ function buildAgents(memories: Memory[]): AgentInfo[] {
   return agents;
 }
 
+/* ── Tracking Marker for Spectacles ── */
+// Asymmetric high-contrast pattern for reliable image tracking
+// Placed bottom-left of e-ink display
+
+function TrackingMarker({ size = 64 }: { size?: number }) {
+  // Asymmetric pattern - unique orientation, high contrast
+  // Grid: 8x8, 1=filled, 0=empty
+  const pattern = [
+    [1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,1],
+    [1,0,1,1,0,1,0,1],
+    [1,0,1,0,0,1,0,1],
+    [1,0,0,0,1,1,0,1],
+    [1,0,1,0,0,0,0,1],
+    [1,0,0,1,0,1,0,1],
+    [1,1,1,1,1,1,1,1],
+  ];
+
+  const cellSize = size / 8;
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 8 8"
+      className="eink-tracking-marker"
+      shapeRendering="crispEdges"
+    >
+      {/* White background */}
+      <rect x={0} y={0} width={8} height={8} fill={EINK.white} />
+      {/* Pattern cells */}
+      {pattern.flatMap((row, y) =>
+        row.map((cell, x) =>
+          cell === 1 ? (
+            <rect
+              key={`${y}-${x}`}
+              x={x}
+              y={y}
+              width={1}
+              height={1}
+              fill={EINK.black}
+            />
+          ) : null
+        )
+      )}
+      {/* Corner marker for orientation (asymmetric) */}
+      <rect x={1} y={1} width={2} height={2} fill={EINK.black} />
+    </svg>
+  );
+}
+
 /* ── Pixel Animal (E-Ink variant) ── */
 
 function getAnimalSprite(name: string) {
@@ -415,25 +466,35 @@ export function MiniRemixEink() {
           {feed.length === 0 && (
             <div className="eink-empty">no activity</div>
           )}
-          {feed.map((m) => {
+          {feed.map((m, idx) => {
             const cat = typeToCategory(m.message_type);
+            const isRecent = idx < 3; // First 3 items get expanded view
             return (
-              <div key={m.id} className="eink-feed-row">
-                <span className="eink-feed-time">{timeAgo(m.ts)}</span>
-                <span className="eink-feed-agent">{getShort(m.agent).slice(0, 8)}</span>
-                <span
-                  className="eink-feed-badge"
-                  style={{ background: cat ? EINK_CATEGORY_COLORS[cat] : EINK.white }}
-                >
-                  {typeLabel(m.message_type)}
-                </span>
-                <span className="eink-feed-content">
-                  {m.content.slice(0, 50)}
-                </span>
+              <div key={m.id} className={`eink-feed-row ${isRecent ? "eink-feed-expanded" : ""}`}>
+                <div className="eink-feed-header">
+                  <span className="eink-feed-time">{timeAgo(m.ts)}</span>
+                  <span className="eink-feed-agent">{getShort(m.agent).slice(0, 10)}</span>
+                  <span
+                    className="eink-feed-badge"
+                    style={{ background: cat ? EINK_CATEGORY_COLORS[cat] : EINK.white }}
+                  >
+                    {typeLabel(m.message_type)}
+                  </span>
+                </div>
+                <div className="eink-feed-content">
+                  {isRecent ? m.content.slice(0, 200) : m.content.slice(0, 50)}
+                  {m.content.length > (isRecent ? 200 : 50) ? "..." : ""}
+                </div>
               </div>
             );
           })}
         </div>
+      </div>
+
+      {/* Bottom: Tracking marker for Spectacles */}
+      <div className="eink-footer">
+        <TrackingMarker size={48} />
+        <span className="eink-footer-label">remix</span>
       </div>
     </div>
   );
