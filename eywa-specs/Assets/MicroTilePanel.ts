@@ -476,17 +476,17 @@ export class MicroTilePanel extends BaseScriptComponent {
     if (!payload || !payload.id || !payload.image) return;
 
     const id = payload.id as string;
-    const entry = this.quads.get(id);
+    let entry = this.quads.get(id);
 
     if (!entry) {
-      // Quad not created yet. Buffer the texture for when it arrives.
-      if (this.bufferedTextures.size >= MAX_TEXTURE_BUFFER) {
-        // Drop oldest entries to prevent memory leak
-        const firstKey = this.bufferedTextures.keys().next().value;
-        if (firstKey) this.bufferedTextures.delete(firstKey);
-      }
-      this.bufferedTextures.set(id, payload.image);
-      return;
+      // Auto-create quad if tex arrives before create op (race condition).
+      // Use payload dimensions if available, otherwise use defaults.
+      const w = (payload.w as number) || 220;
+      const h = (payload.h as number) || 48;
+      print("[MicroTilePanel] Auto-creating quad for tex: " + id + " (" + w + "x" + h + ")");
+      this.createQuad({ op: "create", id: id, w: w, h: h, x: 0, y: 0, layer: 0 });
+      entry = this.quads.get(id);
+      if (!entry) return;
     }
 
     this.applyTexture(entry, payload.image);

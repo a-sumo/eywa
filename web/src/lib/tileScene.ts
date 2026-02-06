@@ -30,6 +30,8 @@ export interface SceneOp {
 export interface TexPayload {
   id: string;
   image: string; // base64 JPEG
+  w: number;     // pixel width (for auto-create on Spectacles if create op was missed)
+  h: number;     // pixel height
 }
 
 export class TileScene {
@@ -127,6 +129,8 @@ export class TileScene {
         this.pendingTextures.push({
           id: tile.id,
           image: tile.getBase64(quality),
+          w: tile.w,
+          h: tile.h,
         });
 
         // If this is a new tile, also queue create op
@@ -218,6 +222,40 @@ export class TileScene {
     const tile = this.tiles.get(id);
     if (tile) tile.visible = visible;
     this.pendingOps.push({ op: "visibility", id, visible });
+  }
+
+  /**
+   * Force re-send create ops and textures for all existing tiles.
+   * Call when a new subscriber connects (they missed the initial burst).
+   */
+  resync() {
+    for (const tile of this.tiles.values()) {
+      if (!tile.visible) continue;
+      // Re-queue create op
+      const createOp: SceneOp = {
+        op: "create",
+        id: tile.id,
+        x: tile.x,
+        y: tile.y,
+        w: tile.w,
+        h: tile.h,
+        s: tile.scale,
+        layer: tile.layer,
+        interactive: tile.interactive,
+        draggable: tile.draggable,
+      };
+      if (tile.z !== undefined) createOp.z = tile.z;
+      this.pendingOps.push(createOp);
+
+      // Re-queue texture
+      const quality = this.qualityMap[tile.type] ?? 0.6;
+      this.pendingTextures.push({
+        id: tile.id,
+        image: tile.getBase64(quality),
+        w: tile.w,
+        h: tile.h,
+      });
+    }
   }
 
   /**
