@@ -103,7 +103,14 @@ export class MicroTilePanel extends BaseScriptComponent {
   private init() {
     this.resolvedDeviceId = this.deviceId || this.generateDeviceId();
 
+    // Fallback if channelName is empty (not set in Inspector)
+    if (!this.channelName || this.channelName.trim() === "") {
+      this.channelName = "demo";
+      print("[MicroTilePanel] WARNING: channelName empty, defaulting to 'demo'");
+    }
+
     print("[MicroTilePanel] Initializing, device: " + this.resolvedDeviceId);
+    print("[MicroTilePanel] Channel: " + this.channelName);
     print("[MicroTilePanel] Material template: " + (this.material ? "set" : "MISSING"));
     print("[MicroTilePanel] pixelsPerCm: " + this.pixelsPerCm);
 
