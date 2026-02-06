@@ -284,23 +284,9 @@
   border-color: var(--border-default);
 }
 
-.eywa-card-glow {
-  position: relative;
-}
-
-.eywa-card-glow::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  background: var(--gradient-aurora);
-  opacity: 0;
-  z-index: -1;
-  transition: opacity var(--transition-normal);
-}
-
-.eywa-card-glow:hover::before {
-  opacity: 0.15;
+/* Card glow variant - use sparingly */
+.eywa-card-glow:hover {
+  border-color: var(--border-strong);
 }
 
 /* Button - Primary */
@@ -319,13 +305,14 @@
 }
 
 .eywa-btn-primary {
-  background: var(--gradient-aurora);
-  color: var(--bg-base);
+  background: rgba(107, 140, 255, 0.15);
+  border: 1px solid var(--aurora-blue-dim);
+  color: var(--text-primary);
 }
 
 .eywa-btn-primary:hover {
-  box-shadow: var(--glow-purple);
-  transform: translateY(-1px);
+  background: rgba(107, 140, 255, 0.25);
+  border-color: var(--aurora-blue);
 }
 
 .eywa-btn-secondary {
@@ -336,7 +323,7 @@
 
 .eywa-btn-secondary:hover {
   background: var(--bg-surface-hover);
-  border-color: var(--aurora-purple);
+  border-color: var(--border-strong);
 }
 
 .eywa-btn-ghost {

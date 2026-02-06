@@ -563,18 +563,19 @@ body {
   padding: 0.75rem 1.5rem;
   font-size: 0.9rem;
   font-weight: 600;
-  border: none;
+  border: 1px solid var(--aurora-blue);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  background: var(--gradient-aurora);
-  color: var(--bg-base);
+  background: rgba(107, 140, 255, 0.15);
+  color: var(--text-primary);
   text-decoration: none;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
 }
 
 .btn-landing-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--glow-purple), var(--glow-pink);
+  background: rgba(107, 140, 255, 0.25);
+  border-color: var(--aurora-cyan);
+  box-shadow: 0 0 20px rgba(107, 140, 255, 0.2);
 }
 
 .btn-landing-primary.btn-large {
@@ -793,8 +794,7 @@ body {
 
 .landing-card:hover {
   background: var(--bg-surface-hover);
-  border-color: var(--aurora-purple);
-  box-shadow: 0 0 30px var(--aurora-purple-glow);
+  border-color: var(--border-default);
 }
 
 .landing-card-icon {
@@ -804,7 +804,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 1rem;
-  color: var(--aurora-pink);
+  color: var(--text-secondary);
 }
 
 .landing-card h3 {
@@ -891,8 +891,8 @@ body {
 }
 
 .landing-feature:hover {
-  border-color: var(--aurora-cyan);
-  box-shadow: 0 0 25px var(--aurora-cyan-glow);
+  border-color: var(--border-default);
+  background: var(--bg-surface-hover);
 }
 
 .landing-feature-icon {
@@ -902,7 +902,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 1rem;
-  color: var(--aurora-cyan);
+  color: var(--text-secondary);
 }
 
 .landing-feature h3 {
@@ -942,8 +942,8 @@ body {
 }
 
 .landing-pricing-featured {
-  background: linear-gradient(180deg, var(--aurora-purple-glow) 0%, var(--bg-surface) 100%);
-  border-color: var(--aurora-purple-dim);
+  background: var(--bg-surface-hover);
+  border-color: var(--aurora-blue-dim);
 }
 
 .landing-pricing-badge {
@@ -951,7 +951,7 @@ body {
   top: -10px;
   right: 20px;
   padding: 0.25rem 0.75rem;
-  background: var(--gradient-aurora);
+  background: var(--aurora-blue);
   border-radius: var(--radius-full);
   font-size: 0.75rem;
   font-weight: 600;
