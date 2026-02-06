@@ -27,11 +27,15 @@
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
     channelName: false
-    panelHeight: false
-    panelWidth: false
+    deviceId: false
+    gridCols: false
+    gridRows: false
+    material: false
     positionOffset: false
     showStatus: false
     snapCloudRequirements: false
+    tileGap: false
+    tileSize: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -43,9 +47,13 @@
   DefaultScriptInputs:
     - snapCloudRequirements: !<MappingBased.AssignableType> 00000000-0000-0000-0000-000000000000
       channelName: demo
-      panelWidth: !<float> 40.000000
-      panelHeight: !<float> 40.000000
+      deviceId: ""
+      gridCols: !<float> 3.000000
+      gridRows: !<float> 2.000000
+      tileSize: !<float> 16.000000
+      tileGap: !<float> 1.000000
       positionOffset: !<Vec3> {x: 0.000000, y: 0.000000, z: 0.000000}
+      material: !<reference.Material> 00000000-0000-0000-0000-000000000000
       showStatus: true
   ScriptTypes:
     -
@@ -53,7 +61,11 @@
   InputLines:
     - '// @input AssignableType snapCloudRequirements {"hint":"SnapCloudRequirements reference for Supabase config"}'
     - '// @input string channelName = "demo" {"hint":"Channel name - use your room slug"}'
-    - '// @input float panelWidth = 40 {"hint":"Panel width in cm"}'
-    - '// @input float panelHeight = 40 {"hint":"Panel height in cm"}'
-    - '// @input vec3 positionOffset {"hint":"Position offset from parent"}'
+    - "// @input string deviceId = \"editor\" {\"hint\":\"Device ID - leave empty to auto-generate. Set to 'editor' for Lens Studio preview.\"}"
+    - '// @input float gridCols = 3 {"hint":"Grid columns"}'
+    - '// @input float gridRows = 2 {"hint":"Grid rows"}'
+    - '// @input float tileSize = 14 {"hint":"Individual tile size in cm (14 recommended, see SPECTACLES_ERGONOMICS.md)"}'
+    - '// @input float tileGap = 1.5 {"hint":"Gap between tiles in cm"}'
+    - '// @input vec3 positionOffset {"hint":"Position offset from parent (center of grid)"}'
+    - '// @input Asset.Material material {"hint":"Material for the quads. Create an Unlit material in Asset Browser."}'
     - '// @input bool showStatus = true {"hint":"Show debug status text"}'

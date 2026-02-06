@@ -4,23 +4,10 @@ import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import type { Memory, Link } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
-import { ANIMAL_SPRITES, CUTE_COUNT } from "./animalSprites";
+import { getAvatarDataUri } from "./avatars";
 
 function agentColorHex(name: string): string {
   return agentColor(name);
-}
-
-function getAnimalSprite(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = ((hash << 7) - hash + name.charCodeAt(i)) | 0;
-  }
-  // 75% chance of a cute animal (first CUTE_COUNT), 25% from the rest
-  const roll = Math.abs(hash >> 4) % 4;
-  if (roll > 0) {
-    return ANIMAL_SPRITES[Math.abs(hash) % CUTE_COUNT];
-  }
-  return ANIMAL_SPRITES[CUTE_COUNT + (Math.abs(hash) % (ANIMAL_SPRITES.length - CUTE_COUNT))];
 }
 
 // --- Layout constants ---
@@ -306,40 +293,14 @@ function statusColor(status: string): string {
   }
 }
 
-// --- Pixel creature rendered as SVG <image> via data URI ---
-
-function creatureSvgMarkup(name: string, color: string): string {
-  const sprite = getAnimalSprite(name);
-  const r = parseInt(color.slice(1, 3), 16);
-  const g = parseInt(color.slice(3, 5), 16);
-  const b = parseInt(color.slice(5, 7), 16);
-  // All tones stay bright - the base color is the darkest, body is near-white
-  const mix = (v: number, t: number) => Math.round(v + (255 - v) * t);
-  const dark = color;
-  const mid = `rgb(${mix(r, 0.45)},${mix(g, 0.45)},${mix(b, 0.45)})`;
-  const light = `rgb(${mix(r, 0.8)},${mix(g, 0.8)},${mix(b, 0.8)})`;
-  const fills = ["none", dark, mid, light];
-
-  const ROWS = sprite.grid.length;
-  const COLS = sprite.grid[0].length;
-  let rects = "";
-  for (let ry = 0; ry < ROWS; ry++) {
-    for (let cx = 0; cx < COLS; cx++) {
-      const cell = sprite.grid[ry][cx];
-      if (cell === 0) continue;
-      rects += `<rect x="${cx}" y="${ry}" width="1" height="1" fill="${fills[cell]}"/>`;
-    }
-  }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${COLS} ${ROWS}" shape-rendering="crispEdges">${rects}</svg>`;
-}
+// --- Avatar data URI (kurzgesagt-style SVGs with hue rotation) ---
 
 const creatureCache = new Map<string, string>();
-function creatureDataUri(name: string, color: string): string {
-  const key = `${name}:${color}`;
-  let uri = creatureCache.get(key);
+function creatureDataUri(name: string, _color: string): string {
+  let uri = creatureCache.get(name);
   if (!uri) {
-    uri = `data:image/svg+xml;base64,${btoa(creatureSvgMarkup(name, color))}`;
-    creatureCache.set(key, uri);
+    uri = getAvatarDataUri(name);
+    creatureCache.set(name, uri);
   }
   return uri;
 }

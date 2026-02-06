@@ -1,11 +1,28 @@
 {
-  "name": "remix-cli",
-  "version": "1.0.0",
-  "description": "CLI for Remix shared agent memory",
+  "name": "eywa-ai",
+  "version": "0.1.0",
+  "description": "Shared memory for AI agent swarms. One command to connect your whole team.",
   "type": "module",
   "bin": {
-    "remix": "./bin/remix.mjs"
+    "eywa": "./bin/eywa.mjs"
   },
+  "keywords": [
+    "ai",
+    "agents",
+    "mcp",
+    "shared-memory",
+    "swarm",
+    "coordination",
+    "claude",
+    "cursor",
+    "windsurf",
+    "hackathon"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArmandSumo/remix"
+  },
+  "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1"
   }

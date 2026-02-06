@@ -1,547 +1,385 @@
-# Remix
+<p align="center">
+  <img src="docs/banner.gif" alt="Eywa - Shared memory for AI agent teams" width="100%" />
+</p>
 
-Multi-agent shared memory. When multiple coding agents (Claude Code, Cursor, Gemini CLI, etc.) work on the same project, Remix lets them see what each other are doing, pull context across sessions, and detect when threads diverge.
+<p align="center">
+  <img src="web/public/eywa-logo-no-bg.svg" width="40" alt="Eywa logo" />
+</p>
 
-```
-                         ┌─────────────────────────┐
-  [Claude Code] ──MCP──▶ │                         │
-  [Cursor]      ──MCP──▶ │   Cloudflare Worker     │──REST──▶ [Supabase]
-  [Gemini CLI]  ──MCP──▶ │   remix-mcp.workers.dev  │              ▲
-                         └─────────────────────────┘              │
-                                                        ┌────────┴────────┐
-                                                        │  Web Dashboard  │
-                                                        │  Thread Tree    │
-                                                        │  Remix Studio   │
-                                                        │  Gemini Chat    │
-                                                        └─────────────────┘
-```
+<h1 align="center">Eywa</h1>
+
+<p align="center">
+  <strong>Shared memory for AI agent swarms</strong><br/>
+  <em>Your agents are powerful. Make them a team.</em>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/eywa-ai"><img src="https://img.shields.io/npm/v/eywa-ai?color=6417EC&label=npx%20eywa-ai" alt="npm"></a>
+  <a href="https://remix-memory.vercel.app"><img src="https://img.shields.io/badge/dashboard-live-15D1FF" alt="Dashboard"></a>
+  <a href="https://discord.gg/eywa-ai"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://github.com/ArmandSumo/remix/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#how-it-works">How It Works</a> ·
+  <a href="#integrations">Integrations</a> ·
+  <a href="#contributing">Contributing</a> ·
+  <a href="https://remix-memory.vercel.app">Live Demo</a>
+</p>
 
 ---
 
-## Architecture
+## The Problem
 
-There are three pieces:
+AI coding agents are incredibly productive individually. But when you run multiple agents on a team, they're blind to each other. Agent A picks a REST API. Agent B builds GraphQL. Nobody finds out until review time.
 
-### 1. MCP Server (Cloudflare Worker)
-**`worker/`** - A hosted server that any AI agent connects to over HTTP. No local install needed.
+The more agents you run, the more time you spend re-syncing them manually.
 
-- Lives at `https://remix-mcp.<account>.workers.dev/mcp`
-- Speaks the MCP protocol (Streamable HTTP + SSE)
-- Room + agent identity come from URL params (`?room=demo&agent=alpha`)
-- Stateless - all data stored in Supabase
-- Built with `@modelcontextprotocol/sdk` + Cloudflare `agents` package
+## The Solution
 
-### 2. Supabase (Database)
-**`schema.sql`** - Four tables:
+Eywa gives every agent on your team a shared memory. Sessions, decisions, artifacts, and context flow between agents automatically. Think of it as git, but for AI context.
 
-| Table | Purpose |
-|-------|---------|
-| `rooms` | Isolated workspaces (each room has a slug like `demo`) |
-| `memories` | Everything agents log - session starts/stops, messages, file snapshots |
-| `messages` | Team chat between humans and agents |
-| `links` | Cross-session memory links (reference, inject, fork) |
-
-Realtime subscriptions enabled so the web dashboard updates live.
-
-### 3. Web Dashboard (React)
-**`web/`** - Shows all agent activity, team chat, remix studio, and Gemini-powered analysis in real time.
-
-- Reads directly from Supabase (same database the worker writes to)
-- Vite + React + TypeScript
-- Light theme with Mulish font, cream cards, periwinkle accent
-
-Key views:
-
-| View | Route | What it does |
-|------|-------|-------------|
-| **Thread Tree** | `/r/:slug` | All agent sessions as expandable threads with divergence indicators |
-| **Thread View** | `/r/:slug/thread/:agent/:session` | Single thread timeline with memory cards |
-| **Remix Studio** | `/r/:slug/remix/new` | 3-panel workspace: browse → context → Gemini chat |
-| **Remix 3D** | `/r/:slug/remix3d` | Spatial workspace using React Three Fiber with glass panels |
-| **Mini Remix** | `/r/:slug/mini` | Compact 320x480 view with pixel creatures, session blocks, drag-to-context |
-| **Team Chat** | `/r/:slug/chat` | Real-time messaging between humans and agents |
-| **Layout Agent** | `/r/:slug/layout-agent` | Interactive demo with Gemini-powered layout + gesture recognition |
-| **Agent List** | `/r/:slug` (sidebar) | Active/idle agents with last-seen timestamps |
-| **Notifications** | (header bell) | Real-time alerts for session completions, injections, connections, knowledge |
-
-### Legacy: Local MCP Server (Python)
-**`remix_mcp.py`** - The original stdio-based server. Still works for local/offline use, but the Cloudflare Worker is the primary way to connect now.
+- Every agent session becomes a **shared thread** with memories, artifacts, and decisions
+- Any team member can browse, search, or inject context into any agent's session
+- One MCP endpoint. Zero config. Works with 8+ AI coding agents today.
 
 ---
 
 ## Quick Start
 
-### 1. Supabase (one-time)
+One command. No auth. No signup.
+
+```bash
+npx eywa-ai init my-team
+```
+
+That's it. This creates a room, opens the dashboard, and prints MCP configs for every major agent.
+
+To join an existing room:
+
+```bash
+npx eywa-ai join my-team
+```
+
+### Connect Your Agent
+
+After running `init` or `join`, you'll see configs for each agent. Here's what they look like:
+
+<details>
+<summary><img src="https://cdn.simpleicons.org/anthropic/white" width="16" height="16" /> <strong>Claude Code</strong></summary>
+
+```bash
+claude mcp add --transport http eywa "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=claude/alice"
+```
+</details>
+
+<details>
+<summary><img src="https://cdn.simpleicons.org/cursor/white" width="16" height="16" /> <strong>Cursor</strong></summary>
+
+Add to `.cursor/mcp.json`:
+```json
+{
+  "mcpServers": {
+    "eywa": {
+      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=cursor/alice"
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><img src="https://cdn.simpleicons.org/google/white" width="16" height="16" /> <strong>Gemini CLI</strong></summary>
+
+Add to `~/.gemini/settings.json`:
+```json
+{
+  "mcpServers": {
+    "eywa": {
+      "httpUrl": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=gemini/alice"
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><img src="https://cdn.simpleicons.org/codeium/white" width="16" height="16" /> <strong>Windsurf</strong></summary>
+
+Add to `~/.codeium/windsurf/mcp_config.json`:
+```json
+{
+  "mcpServers": {
+    "eywa": {
+      "serverUrl": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=windsurf/alice"
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><img src="https://cdn.simpleicons.org/openai/white" width="16" height="16" /> <strong>Codex / OpenAI CLI</strong></summary>
+
+Add to `~/.codex/config.json`:
+```json
+{
+  "mcpServers": {
+    "eywa": {
+      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=codex/alice"
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><strong>Cline (VS Code)</strong></summary>
+
+Add to VS Code MCP settings:
+```json
+{
+  "mcpServers": {
+    "eywa": {
+      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=cline/alice"
+    }
+  }
+}
+```
+</details>
+
+Replace `alice` with your name. Each person uses their own name so Eywa can tell agents apart.
+
+---
+
+## How It Works
+
+```
+                     ┌───────────────────────┐
+  Claude Code ──MCP──▶                       │
+  Cursor      ──MCP──▶  Cloudflare Worker    │──▶ Supabase
+  Gemini CLI  ──MCP──▶  (MCP Server)         │     (memories, rooms, links)
+  Windsurf    ──MCP──▶                       │
+  Codex       ──MCP──▶                       │        ▲
+                     └───────────────────────┘        │
+                                                ┌─────┴──────────┐
+                                                │ Web Dashboard  │
+                                                │ Thread Tree    │
+                                                │ Gemini Chat    │
+                                                │ CLI            │
+                                                │ Discord Bot    │
+                                                │ VS Code Ext    │
+                                                │ Spectacles AR  │
+                                                └────────────────┘
+```
+
+Agents connect via [MCP](https://modelcontextprotocol.io) (Model Context Protocol). The server is a stateless Cloudflare Worker that writes to Supabase. The dashboard, CLI, Discord bot, and other interfaces all read from the same database.
+
+### What agents can do once connected
+
+| Category | Tools | What they do |
+|----------|-------|-------------|
+| **Session** | `remix_start`, `remix_stop`, `remix_done` | Track what each agent is working on |
+| **Memory** | `remix_log`, `remix_file`, `remix_search` | Log decisions, store files, search history |
+| **Context** | `remix_context`, `remix_pull`, `remix_sync` | See what other agents are doing, pull their context |
+| **Injection** | `remix_inject`, `remix_inbox` | Push context to any agent. They see it on their next action. |
+| **Knowledge** | `remix_learn`, `remix_knowledge` | Persistent project knowledge across all sessions |
+| **Messaging** | `remix_msg` | Team chat between agents and humans |
+| **Linking** | `remix_link`, `remix_fetch` | Connect memories across sessions |
+
+### Common workflows
+
+**Start a session:**
+```
+remix_start("Implementing user authentication")
+```
+
+**Check what the team is doing:**
+```
+remix_status()   # overview of all agents
+remix_pull("bob")  # get bob's recent context
+```
+
+**Share a decision:**
+```
+remix_learn("API uses /api/v1 prefix, JWT for auth", title="API conventions", tags=["api"])
+```
+
+**Push context to another agent:**
+```
+remix_inject(target="bob", content="Schema changed: user_id is UUID not integer", priority="high")
+```
+
+**End a session:**
+```
+remix_done("Added JWT auth", status="completed", artifacts=["src/auth.ts"])
+```
+
+---
+
+## Integrations
+
+Eywa meets your team where they already work.
+
+| Integration | Description | Path |
+|------------|-------------|------|
+| <img src="https://cdn.simpleicons.org/react/61DAFB" width="16" /> **Web Dashboard** | Thread tree, Gemini chat, remix studio, notifications | [`web/`](web/) |
+| <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" /> **CLI** | `npx eywa-ai init`, status, inject, log | [`cli/`](cli/) |
+| <img src="https://cdn.simpleicons.org/discord/5865F2" width="16" /> **Discord Bot** | 12 slash commands for full agent control from chat | [`discord-bot/`](discord-bot/) |
+| <img src="https://cdn.simpleicons.org/visualstudiocode/007ACC" width="16" /> **VS Code Extension** | Sidebar with activity feed and injection | [`vscode-extension/`](vscode-extension/) |
+| <img src="https://cdn.simpleicons.org/snapchat/FFFC00" width="16" /> **Snap Spectacles** | AR panel anchored to physical displays | [`remix-specs/`](remix-specs/) |
+| <img src="https://cdn.simpleicons.org/raspberrypi/A22846" width="16" /> **E-ink Display** | 7-color Waveshare ambient agent status | [`web/` (MiniRemixEink)](web/src/components/MiniRemixEink.tsx) |
+
+---
+
+## CLI
+
+```bash
+npx eywa-ai init [name]            # Create a room and get MCP configs
+npx eywa-ai join <slug>            # Join an existing room
+npx eywa-ai status [room]          # Show all agent status
+npx eywa-ai log [room] [limit]     # Activity feed
+npx eywa-ai inject <agent> <msg>   # Push context to an agent
+npx eywa-ai dashboard [room]       # Open web dashboard
+```
+
+---
+
+## Project Structure
+
+```
+eywa/
+├── worker/           # Cloudflare Worker MCP server (Streamable HTTP)
+│   └── src/
+│       ├── index.ts          # Entry: routing, room lookup, MCP handler
+│       └── tools/            # session, memory, context, collaboration, inject, link, knowledge
+│
+├── web/              # React/Vite dashboard
+│   └── src/
+│       ├── components/       # ThreadTree, ThreadView, RemixView, MiniRemix, Landing, ...
+│       ├── hooks/            # useRealtimeMemories, useNotifications, useGeminiChat, ...
+│       └── lib/              # Supabase client, thread similarity
+│
+├── cli/              # npx eywa-ai (zero-auth CLI)
+│   └── bin/eywa.mjs
+│
+├── discord-bot/      # Discord bot (12 slash commands, direct Supabase)
+├── vscode-extension/ # VS Code sidebar extension
+├── remix-specs/      # Snap Spectacles AR (Lens Studio project)
+├── presentation/     # Pitch deck (Reveal.js)
+├── schema.sql        # Supabase schema
+└── scripts/          # Utilities (db migration, banner capture, etc.)
+```
+
+---
+
+## Self-Hosting
+
+Eywa is fully open source. You can run your own instance:
+
+### 1. Database (Supabase)
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. SQL Editor → paste and run `schema.sql`
-3. Database → Replication → enable Realtime for `memories` and `messages`
-4. Copy Project URL and service role key from Settings → API
+2. Run `schema.sql` in the SQL Editor
+3. Enable Realtime for `memories` and `messages` tables
+4. Copy the URL and service role key
 
-### 2. Connect an AI agent
-
-**Claude Code** (one command):
-```bash
-claude mcp add remix --url "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha"
-```
-
-**Cursor / Windsurf** (add to MCP config):
-```json
-{ "mcpServers": { "remix": { "url": "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha" } } }
-```
-
-**Gemini CLI** (uses `httpUrl`):
-```json
-{ "mcpServers": { "remix": { "httpUrl": "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha" } } }
-```
-
-**Older stdio-only clients** (mcp-remote bridge):
-```json
-{ "mcpServers": { "remix": { "command": "npx", "args": ["mcp-remote", "https://remix-mcp.<account>.workers.dev/mcp?room=demo&agent=alpha"] } } }
-```
-
-Change `?room=` and `?agent=` to match your workspace and agent name.
-
-### 3. Web Dashboard
-
-```bash
-cd web
-cp .env.example .env   # add your Supabase URL + anon key + Gemini API key
-npm install
-npm run dev            # opens localhost:5173
-```
-
-Environment variables:
-```
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_GEMINI_API_KEY=your-gemini-api-key   # for Remix Studio chat
-```
-
-### 4. Deploy the Worker (if self-hosting)
+### 2. MCP Server (Cloudflare Worker)
 
 ```bash
 cd worker
 npm install
-npx wrangler secret put SUPABASE_URL
-npx wrangler secret put SUPABASE_KEY
+npx wrangler secret put SUPABASE_URL    # paste your Supabase URL
+npx wrangler secret put SUPABASE_KEY    # paste your service role key
 npx wrangler deploy
 ```
 
-### 5. Presentation
+### 3. Dashboard
 
 ```bash
-cd presentation
-# Open index.html in a browser - uses reveal.js CDN
-# Or serve locally:
-npx serve .
+cd web
+cp .env.example .env    # add Supabase URL, key, and Gemini API key
+npm install && npm run dev
 ```
 
-Hosted at: [neural-mesh-public.vercel.app](https://neural-mesh-public.vercel.app)
-
-### 6. Web Dashboard (hosted)
-
-Live demo: [remix-memory.vercel.app](https://remix-memory.vercel.app)
-
----
-
-## How to use it
-
-### The minimum flow
-
-**Start of session** - tell the system what you're working on:
-```
-remix_start("Implementing user authentication with JWT")
-```
-
-**End of session** - structured completion with status, artifacts, tags, and next steps:
-```
-remix_done("Added JWT middleware, login/register endpoints, token refresh",
-           status="completed",
-           artifacts=["src/middleware/auth.ts", "src/routes/login.ts"],
-           tags=["feature", "auth"],
-           next_steps="Add token refresh endpoint and rate limiting")
-```
-
-Or simple stop: `remix_stop("summary")`.
-
-Between those, optionally log key moments with `remix_log()`.
-
-### See what other agents are doing (the main feature)
-
-```
-remix_status()
-```
-```
-=== Remix Agent Status ===
-  alpha [active] - Implementing user authentication with JWT
-    Last seen: 2025-01-15T14:32:00Z
-  beta [completed] - Setting up database migrations
-    Last seen: 2025-01-15T14:30:00Z
-```
-
-### Pull another agent's context into your session
-
-```
-remix_pull("alpha")
-```
-Returns their recent activity so you can see what they did and continue from there.
-
-```
-remix_sync("alpha")
-```
-Returns the full timeline of their current session.
-
-### Push context to another agent
-
-```
-remix_inject(target="beta", content="The auth schema changed — use UUID for user_id, not integer", priority="high", label="schema change")
-```
-
-The target agent sees it when they check:
-```
-remix_inbox()
-```
-```
-Inbox (1 injection):
-From alpha [HIGH] (schema change):
-  The auth schema changed — use UUID for user_id, not integer
-```
-
-### Store project knowledge (persists across sessions)
-
-```
-remix_learn("API routes use /api/v1 prefix. Auth middleware is applied via app.use(), not per-route.",
-            title="API conventions",
-            tags=["architecture", "api"])
-```
-
-Any agent in any session can query:
-```
-remix_knowledge(tag="api")
-```
-```
-Knowledge base (1 entry):
-**API conventions**
-API routes use /api/v1 prefix. Auth middleware is applied via app.use()... {architecture, api}
-  — alpha, 2025-01-15T14:32:00Z
-```
-
-### Team chat
-
-```
-remix_msg("Auth system is done, beta can start on protected routes now")
-```
-
-### CLI (terminal access)
+### 4. Discord Bot (optional)
 
 ```bash
-remix status my-project          # see all agent status
-remix pull my-project alpha 10   # pull agent context
-remix log my-project             # activity feed
-remix inject my-project user beta "Focus on the auth module"
-remix knowledge my-project       # browse knowledge base
-remix learn my-project user "We use camelCase" --title "Naming" --tags convention
+cd discord-bot
+cp .env.example .env    # add Discord token + Supabase creds
+npm install && npm start
 ```
 
 ---
 
-## Web Dashboard Features
+## Contributing
 
-### Thread Tree
-The main view groups all memories by agent and session. Each thread shows the agent name, task description, memory count, and time range. Threads are expandable - click to see the full memory timeline, or click through to the dedicated thread view.
+We welcome contributions from both humans and AI agents.
 
-### Thread Divergence Detection
-When multiple agents work on related tasks, threads can diverge - one agent heads in a different direction from others. The dashboard detects this automatically using **Jaccard similarity** on tokenized thread content:
+### For humans
 
-1. Each thread's content is tokenized (lowercased, split into words)
-2. Pairwise comparison across different agents using set intersection/union
-3. Divergence = 1 - similarity
-4. Classified as: **low** (<40%), **medium** (40–70%), **high** (>70%)
+1. Fork the repo
+2. Create a feature branch
+3. Make your changes
+4. Open a PR
 
-Threads with >30% cross-agent divergence show a colored indicator bar:
-- Green bar = low divergence (threads still aligned)
-- Amber bar = medium divergence (starting to bifurcate)
-- Red bar = high divergence (significantly different directions)
+### For AI agents
 
-This helps teams catch when an agent has gone off-track before the gap becomes too large.
+We have an [`llms.txt`](https://remix-memory.vercel.app/llms.txt) that describes the full API surface, available tools, and integration guides. Point your agent at it for context.
 
-### Remix Studio
-A 3-panel workspace for curating and analyzing memories across threads:
+Key files to know:
+- **MCP tools**: `worker/src/tools/` - each file is a tool category
+- **Dashboard components**: `web/src/components/` - React components
+- **Hooks**: `web/src/hooks/` - Supabase subscriptions and Gemini integration
+- **Schema**: `schema.sql` - the data model
 
-```
-┌──────────────┬──────────────┬──────────────────────┐
-│  Browse      │  Context     │  Gemini Terminal     │
-│  Memories    │  (drop zone) │                      │
-│              │              │  Ask questions about │
-│  Search...   │  Drag here   │  the assembled       │
-│              │              │  context              │
-│  ▶ alpha     │  alpha (3)   │                      │
-│    mem 1  +  │    mem 1  ×  │  > What patterns do  │
-│    mem 2  +  │    mem 2  ×  │    you see?          │
-│    mem 3  +  │    mem 3  ×  │                      │
-│  ▶ beta      │              │  The threads show... │
-│              │  History     │                      │
-│              │  v0 - Start  │  [input] [Send]      │
-│              │  v1 - +3 mem │                      │
-└──────────────┴──────────────┴──────────────────────┘
-```
+### Development
 
-- **Left panel**: Browse all memories organized by thread. Search, expand threads, drag individual memories or click "+" to add, or "Add entire thread" to pull a whole conversation.
-- **Middle panel**: The assembled context. Drop zone accepts dragged memories/threads. Shows memories grouped by agent with remove buttons. Version history lets you rewind to any previous state.
-- **Right panel**: Gemini 2.0 Flash chat terminal. The assembled context is injected as a system prompt. Ask questions, compare threads, get summaries - Gemini sees everything in the context panel.
-
-### Team Chat
-Real-time messaging powered by Supabase Realtime subscriptions. Messages from agents (via `remix_msg`) and humans appear in the same stream.
-
----
-
-## Tool Reference
-
-### Session Lifecycle
-| Tool | What it does |
-|------|-------------|
-| `remix_whoami()` | Check your agent name, session, and room |
-| `remix_start(task)` | Start a session — others see your current task |
-| `remix_stop(summary)` | End session with a summary |
-| `remix_done(summary, status, artifacts?, tags?, next_steps?)` | **Structured completion** — status: completed/blocked/failed/partial, with artifacts, tags, and follow-up suggestions |
-
-### Memory & Logging
-| Tool | What it does |
-|------|-------------|
-| `remix_log(role, content)` | Log a key moment (role: user/assistant/resource/tool_call/tool_result) |
-| `remix_file(path, content, desc)` | Store a file snapshot — returns a reference ID |
-| `remix_get_file(file_id)` | Retrieve a stored file |
-| `remix_import(messages, task?)` | Bulk-import a conversation transcript |
-| `remix_search(query, limit)` | Search all messages by content |
-
-### Context & Collaboration
-| Tool | What it does |
-|------|-------------|
-| `remix_status()` | All agents, what they're working on, active/idle |
-| `remix_pull(agent, limit)` | Another agent's recent memories |
-| `remix_sync(agent)` | Full timeline of another agent's current session |
-| `remix_context(limit)` | Raw feed of all recent activity |
-| `remix_recall(agent, limit)` | Messages from a specific agent |
-| `remix_agents()` | List all agents and when last active |
-
-### Context Injection (Push-back)
-| Tool | What it does |
-|------|-------------|
-| `remix_inject(target, content, priority?, label?)` | Push context/instructions to another agent (target: name or "all", priority: normal/high/urgent) |
-| `remix_inbox(limit?)` | Check for injections sent to you — call periodically to stay in sync |
-
-### Cross-Session Links
-| Tool | What it does |
-|------|-------------|
-| `remix_link(source_memory_id, target_agent, target_session_id, ...)` | Create a link between a memory and another session (types: reference, inject, fork) |
-| `remix_links(limit?, target_agent?, link_type?)` | List links in this room |
-| `remix_unlink(link_id)` | Delete a link |
-| `remix_fetch(memory_id)` | Fetch a specific memory by ID to pull into your context |
-
-### Project Knowledge (Persistent)
-| Tool | What it does |
-|------|-------------|
-| `remix_learn(content, tags?, title?)` | Store persistent knowledge that survives across sessions |
-| `remix_knowledge(tag?, search?, limit?)` | Query the knowledge base — filter by tag, search by content |
-| `remix_forget(knowledge_id)` | Remove an outdated knowledge entry |
-
-### Messaging
-| Tool | What it does |
-|------|-------------|
-| `remix_msg(content, channel)` | Send a message to team chat |
-
-## CLI Reference
-
-```
-remix status <room>                              Show agent status
-remix pull <room> <agent> [limit]                Pull agent context
-remix log <room> [limit]                         Recent activity feed
-remix inject <room> <from> <target> <message>    Inject context to another agent
-remix knowledge <room> [search]                  Browse knowledge base
-remix learn <room> <agent> <content> [--title T] [--tags t1,t2]
-```
-
-**Setup:**
 ```bash
-cd cli && npm install
-export REMIX_SUPABASE_URL="https://your-project.supabase.co"
-export REMIX_SUPABASE_KEY="your-key"
-node bin/remix.mjs status my-room
+# Web dashboard
+cd web && npm install && npm run dev
+
+# Worker (local)
+cd worker && npm install && npx wrangler dev
+
+# Discord bot
+cd discord-bot && npm install && npm start
 ```
 
 ---
 
-## Data Model
+## Community
 
-### `rooms`
-```sql
-id          uuid PRIMARY KEY
-slug        text UNIQUE         -- human-readable name ("demo", "project-x")
-created_at  timestamptz
-```
-
-### `memories`
-```sql
-id           uuid PRIMARY KEY
-room_id      uuid → rooms(id)
-agent        text              -- agent name ("alpha", "cursor-1")
-session_id   text              -- groups memories into sessions
-message_type text              -- user, assistant, tool_call, tool_result, resource, injection, knowledge
-content      text              -- the actual content
-metadata     jsonb             -- flexible: file paths, descriptions, IDs
-ts           timestamptz       -- when it happened
-```
-
-### `messages`
-```sql
-id         uuid PRIMARY KEY
-room_id    uuid → rooms(id)
-sender     text              -- agent name or "human"
-content    text
-channel    text DEFAULT 'general'
-ts         timestamptz
-```
-
-### `links`
-```sql
-id                uuid PRIMARY KEY
-room_id           uuid → rooms(id)
-source_memory_id  uuid → memories(id)  -- memory being linked from
-target_agent      text                  -- agent receiving the link
-target_session_id text                  -- session to link into
-target_position   text DEFAULT 'head'   -- where in session: head, start, or after:<memory_id>
-link_type         text DEFAULT 'reference' -- reference, inject, or fork
-created_by        text                  -- who created the link
-label             text                  -- optional short description
-metadata          jsonb
-ts                timestamptz
-```
+- **Discord**: [discord.gg/eywa-ai](https://discord.gg/eywa-ai) - get help, share what you're building
+- **GitHub Issues**: [Bug reports and feature requests](https://github.com/ArmandSumo/remix/issues)
+- **Live Dashboard**: [remix-memory.vercel.app](https://remix-memory.vercel.app)
 
 ---
 
-## File Structure
-
-```
-remix/
-├── README.md
-├── schema.sql                  # Supabase schema (rooms, memories, messages)
-│
-├── worker/                     # Cloudflare Worker — hosted MCP server
-│   ├── wrangler.toml
-│   ├── package.json
-│   └── src/
-│       ├── index.ts            # Entry: routing, room lookup, MCP handler
-│       ├── lib/
-│       │   ├── supabase.ts     # PostgREST fetch wrapper (select, insert, delete)
-│       │   └── types.ts        # TypeScript interfaces
-│       └── tools/
-│           ├── session.ts      # whoami, start, stop, done
-│           ├── memory.ts       # log, file, get_file, import, search
-│           ├── context.ts      # context, agents, recall
-│           ├── collaboration.ts # status, pull, sync, msg
-│           ├── inject.ts       # inject, inbox
-│           ├── link.ts         # link, links, unlink, fetch
-│           └── knowledge.ts    # learn, knowledge, forget
-│
-├── web/                        # React dashboard
-│   ├── .env                    # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GEMINI_API_KEY
-│   ├── package.json
-│   ├── vercel.json
-│   └── src/
-│       ├── main.tsx            # Entry point
-│       ├── App.tsx             # Router setup
-│       ├── App.css             # All component styles (light theme)
-│       ├── index.css           # Base styles, CSS variables
-│       ├── components/
-│       │   ├── RoomLayout.tsx      # Layout shell with sidebar
-│       │   ├── RoomHeader.tsx      # Room name, connect agent, notifications
-│       │   ├── NotificationBell.tsx # Bell icon with real-time dropdown
-│       │   ├── ThreadTree.tsx      # Thread list with divergence indicators
-│       │   ├── ThreadView.tsx      # Single thread timeline
-│       │   ├── RemixView.tsx       # 3-panel remix studio with Gemini chat
-│       │   ├── RemixView3D.tsx     # Spatial 3D workspace (React Three Fiber)
-│       │   ├── SpatialScene.tsx    # R3F scene with glass panels on arc
-│       │   ├── GlassPanel3D.tsx    # Glass-material 3D panel (drei)
-│       │   ├── MiniRemix.tsx       # 320x480 compact view with pixel creatures
-│       │   ├── MemoryCard.tsx      # Individual memory display
-│       │   ├── AgentList.tsx       # Sidebar agent roster + nav
-│       │   ├── AgentDetail.tsx     # Agent history deep dive
-│       │   ├── Chat.tsx            # Team chat interface
-│       │   ├── ConnectAgent.tsx    # MCP connection onboarding
-│       │   ├── LayoutAgentDemo.tsx # Gemini layout + gesture demo
-│       │   └── Landing.tsx         # Home page
-│       ├── hooks/
-│       │   ├── useRealtimeMemories.ts  # Realtime subscription for memories
-│       │   ├── useRealtimeLinks.ts     # Realtime subscription for links
-│       │   ├── useNotifications.ts     # Realtime notification events
-│       │   ├── useLayoutAgent.ts       # Gemini layout validation
-│       │   └── useGestureAgent.ts      # Gemini gesture recognition
-│       ├── context/
-│       │   └── RoomContext.tsx
-│       └── lib/
-│           └── supabase.ts             # Supabase client + types
-│
-├── cli/                        # Terminal CLI
-│   ├── package.json
-│   └── bin/
-│       └── remix.mjs           # status, pull, log, inject, knowledge, learn
-│
-└── presentation/               # Reveal.js slides (optional)
-```
-
-## Data Flow
-
-```
-1. Agent connects      MCP Client → POST /mcp?room=demo&agent=alpha → Worker
-2. Worker resolves     Room slug "demo" → room_id via Supabase lookup
-3. Tool calls          remix_start("task") → Worker inserts into memories table
-4. Dashboard reads     Web app subscribes to Supabase Realtime → shows activity live
-5. Notifications       session_done/injection/connection events → bell icon updates
-6. Cross-agent sync    remix_pull("alpha") → Worker queries memories → returns context
-7. Context injection   remix_inject("beta", "use UUID") → beta sees it via remix_inbox()
-8. Knowledge           remix_learn("pattern") → persists across sessions → remix_knowledge()
-9. Remix analysis      User drags memories into context → Gemini analyzes combined threads
-10. CLI access         remix status demo → Supabase query → terminal output
-```
-
-Every query is scoped to the room, so different teams/projects stay isolated.
-
-## Thread Similarity Algorithm
-
-The divergence detection in `web/src/lib/threadSimilarity.ts` works as follows:
-
-```
-tokenize(text)
-  → lowercase, split on non-alphanumeric, filter short words
-  → Set<string> of unique tokens
-
-jaccard(setA, setB)
-  → |A ∩ B| / |A ∪ B|
-  → 1.0 = identical, 0.0 = completely different
-
-threadSimilarity(threadA, threadB)
-  → concatenate all memory content per thread
-  → tokenize each → jaccard
-
-divergenceLevel(score)
-  → < 0.4  = "low"    (green)
-  → 0.4–0.7 = "medium" (amber)
-  → > 0.7  = "high"   (red)
-
-findDivergentThreads(allThreads, threshold=0.3)
-  → pairwise comparison across different agents only
-  → returns pairs exceeding threshold
-```
-
-## Technology Stack
+## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
-| MCP Server | Cloudflare Workers, `@modelcontextprotocol/sdk`, `agents` |
-| Database | Supabase (PostgreSQL + Realtime + PostgREST) |
-| Web Dashboard | React 18, TypeScript, Vite, React Router |
-| AI Chat | Gemini 2.0 Flash (REST API) |
-| Presentation | Reveal.js |
-| Styling | Custom CSS, Mulish font, light theme |
-| AR (optional) | Snap Spectacles / Lens Studio |
+| MCP Server | Cloudflare Workers, `@modelcontextprotocol/sdk` |
+| Database | Supabase (PostgreSQL + Realtime) |
+| Dashboard | React 18, TypeScript, Vite |
+| AI Chat | Gemini (gemini-2.5-flash) |
+| CLI | Node.js, `@supabase/supabase-js` |
+| Discord Bot | discord.js, direct Supabase |
+| AR | Snap Spectacles / Lens Studio |
+| E-ink | Waveshare 7-color display |
+
+---
+
+## License
+
+MIT
+
+---
+
+<p align="center">
+  <img src="web/public/eywa-logo-no-bg.svg" width="32" alt="Eywa" />
+  <br/>
+  <strong>Built for hackathons. Designed for teams.</strong>
+</p>

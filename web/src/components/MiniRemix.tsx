@@ -3,7 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import type { Memory } from "../lib/supabase";
-import { ANIMAL_SPRITES, CUTE_COUNT } from "./animalSprites";
+import { getAvatar } from "./avatars";
 
 /* ── Palette ── */
 
@@ -203,60 +203,23 @@ function buildAgents(memories: Memory[]): AgentInfo[] {
   return agents;
 }
 
-/* ── Pixel Animal ── */
-
-function getAnimalSprite(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = ((hash << 7) - hash + name.charCodeAt(i)) | 0;
-  }
-  const roll = Math.abs(hash >> 4) % 4;
-  if (roll > 0) {
-    return ANIMAL_SPRITES[Math.abs(hash) % CUTE_COUNT];
-  }
-  return ANIMAL_SPRITES[CUTE_COUNT + (Math.abs(hash) % (ANIMAL_SPRITES.length - CUTE_COUNT))];
-}
+/* ── Agent Avatar ── */
 
 function PixelCreature({ name, size = 16 }: { name: string; size?: number }) {
-  const sprite = useMemo(() => getAnimalSprite(name), [name]);
-  const color = agentColor(name);
-  const ROWS = sprite.grid.length;
-  const COLS = sprite.grid[0].length;
-
-  const r = parseInt(color.slice(1, 3), 16);
-  const g = parseInt(color.slice(3, 5), 16);
-  const b = parseInt(color.slice(5, 7), 16);
-
-  const dark = `rgb(${Math.round(r * 0.25)},${Math.round(g * 0.25)},${Math.round(b * 0.25)})`;
-  const mid = color;
-  const light = `rgb(${Math.min(255, Math.round(r * 1.3 + 40))},${Math.min(255, Math.round(g * 1.3 + 40))},${Math.min(255, Math.round(b * 1.3 + 40))})`;
-
-  const fills = ["", dark, mid, light];
-
+  const { avatar, hueRotate, saturate } = useMemo(() => getAvatar(name), [name]);
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${COLS} ${ROWS}`}
-      preserveAspectRatio="xMidYMid meet"
+    <div
+      style={{
+        width: size,
+        height: size,
+        flexShrink: 0,
+        borderRadius: "50%",
+        overflow: "hidden",
+        filter: `hue-rotate(${hueRotate}deg) saturate(${saturate}%)`,
+      }}
       className="mini-pixel-creature"
-    >
-      {sprite.grid.flatMap((row, ry) =>
-        row.map((cell, cx) => {
-          if (cell === 0) return null;
-          return (
-            <rect
-              key={`${ry}-${cx}`}
-              x={cx}
-              y={ry}
-              width={1}
-              height={1}
-              fill={fills[cell]}
-            />
-          );
-        })
-      )}
-    </svg>
+      dangerouslySetInnerHTML={{ __html: avatar.svg }}
+    />
   );
 }
 

@@ -32,6 +32,13 @@ remix-specs/BackUp/
 # Vercel
 .vercel/
 
+# Claude Code local settings
+.claude/settings.local.json
+
+# Generated assets
+web/scripts/avatar-pipeline/out/
+docs/frames/
+
 # Editors
 *.sw?
 *.local

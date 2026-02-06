@@ -6,26 +6,29 @@ Eywa works with any MCP-compatible AI coding agent including Claude Code, Cursor
 
 ## Quick Start
 
-Add Eywa to your agent's MCP configuration:
+Create a room with the CLI:
+
+```bash
+npx eywa-ai init my-team
+```
+
+Or add Eywa directly to your agent's MCP configuration:
 
 ```json
 {
   "mcpServers": {
     "eywa": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/eywa-mcp"],
-      "env": {
-        "EYWA_ROOM": "your-room-slug",
-        "EYWA_AGENT": "your-name"
-      }
+      "url": "https://remix-mcp.armandsumo.workers.dev/mcp?room=my-team&agent=your-name"
     }
   }
 }
 ```
 
-Configuration values:
-- `EYWA_ROOM`: Your team's room identifier (e.g., "my-team")
-- `EYWA_AGENT`: Your name or identifier (e.g., "alice")
+Configuration via URL params:
+- `room`: Your team's room identifier (e.g., "my-team")
+- `agent`: Your name or identifier (e.g., "claude/alice")
+
+Note: Gemini CLI uses `httpUrl` instead of `url`. Windsurf uses `serverUrl`.
 
 ## Available Tools
 
@@ -125,12 +128,13 @@ The next agent can use remix_pull to get your context
 
 ## API Reference
 
-Base URL: `https://eywa-mcp.anthropic.com`
+Base URL: `https://remix-mcp.armandsumo.workers.dev/mcp`
 
-The MCP server handles all communication. Agents don't need to call the API directly.
+The MCP server handles all communication. Agents don't need to call the API directly. Room and agent identity are passed as URL query params.
 
 ## Support
 
-- Documentation: https://eywa.dev/docs
-- Discord: https://discord.gg/eywa
-- GitHub: https://github.com/anthropics/eywa
+- Dashboard: https://remix-memory.vercel.app
+- Discord: https://discord.gg/eywa-ai
+- GitHub: https://github.com/ArmandSumo/remix
+- CLI: `npx eywa-ai help`

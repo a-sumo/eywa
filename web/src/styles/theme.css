@@ -51,24 +51,24 @@
      ========================================== */
 
   /* Cyan - Fresh, energetic, data flowing */
-  --aurora-cyan: #4eeaff;
-  --aurora-cyan-dim: #3cb8c9;
-  --aurora-cyan-glow: rgba(78, 234, 255, 0.15);
+  --aurora-cyan: #15D1FF;
+  --aurora-cyan-dim: #10a8cc;
+  --aurora-cyan-glow: rgba(21, 209, 255, 0.15);
 
   /* Blue - Primary brand, trust, stability */
-  --aurora-blue: #6b8cff;
-  --aurora-blue-dim: #5570cc;
-  --aurora-blue-glow: rgba(107, 140, 255, 0.15);
+  --aurora-blue: #2543FF;
+  --aurora-blue-dim: #1d35cc;
+  --aurora-blue-glow: rgba(37, 67, 255, 0.15);
 
   /* Purple - Creative, AI, intelligence */
-  --aurora-purple: #a855f7;
-  --aurora-purple-dim: #8644c9;
-  --aurora-purple-glow: rgba(168, 85, 247, 0.15);
+  --aurora-purple: #6417EC;
+  --aurora-purple-dim: #5012bd;
+  --aurora-purple-glow: rgba(100, 23, 236, 0.15);
 
   /* Pink - Human, warmth, connection */
-  --aurora-pink: #f472b6;
-  --aurora-pink-dim: #c95a92;
-  --aurora-pink-glow: rgba(244, 114, 182, 0.15);
+  --aurora-pink: #E72B76;
+  --aurora-pink-dim: #b9225e;
+  --aurora-pink-glow: rgba(231, 43, 118, 0.15);
 
   /* Green - Success, growth, harmony */
   --aurora-green: #4ade80;
@@ -239,19 +239,13 @@
    UTILITY CLASSES
    ============================================ */
 
-/* Aurora text gradient */
+/* Aurora text - flat cyan */
 .text-aurora {
-  background: var(--gradient-aurora);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--aurora-cyan);
 }
 
 .text-aurora-reverse {
-  background: var(--gradient-aurora-reverse);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--aurora-cyan);
 }
 
 /* Glow effects */

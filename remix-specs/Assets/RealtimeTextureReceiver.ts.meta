@@ -27,10 +27,12 @@
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
     channelName: false
+    deviceId: false
     enableDebugLogs: false
+    gridCols: false
+    gridRows: false
+    lobbyChannelName: false
     logFrequency: false
-    panelHeight: false
-    panelWidth: false
     snapCloudRequirements: false
     statusText: false
   ScriptTypesHidden:
@@ -44,19 +46,23 @@
   DefaultScriptInputs:
     - snapCloudRequirements: !<MappingBased.AssignableType> 00000000-0000-0000-0000-000000000000
       channelName: demo
-      panelWidth: !<float> 40.000000
-      panelHeight: !<float> 40.000000
       statusText: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      gridCols: !<float> 0.000000
+      gridRows: !<float> 0.000000
+      lobbyChannelName: ""
+      deviceId: ""
       enableDebugLogs: true
       logFrequency: !<float> 10.000000
   ScriptTypes:
     -
       {}
   InputLines:
-    - '// @input AssignableType snapCloudRequirements {"hint":"Reference to SnapCloudRequirements for centralized Supabase configuration"}'
+    - '// @input AssignableType snapCloudRequirements {"hint":"Reference to SnapCloudRequirements for Supabase config"}'
     - '// @input string channelName = "demo" {"hint":"Channel name - typically your room slug"}'
-    - '// @input float panelWidth = 40 {"hint":"Width of the panel in world units (cm)"}'
-    - '// @input float panelHeight = 40 {"hint":"Height of the panel in world units (cm)"}'
     - '// @input Component.Text statusText {"hint":"Optional Text component to display connection status"}'
-    - '// @input bool enableDebugLogs = true {"hint":"Show debug information in console"}'
-    - '// @input float logFrequency = 10 {"hint":"Log frame reception frequency (every N frames)", "widget":"slider", "min":1, "max":50, "step":1}'
+    - '// @input float gridCols {"hint":"Grid columns (set by RealtimePanel, 0 = single-quad mode)"}'
+    - '// @input float gridRows {"hint":"Grid rows (set by RealtimePanel)"}'
+    - '// @input string lobbyChannelName {"hint":"Lobby channel name for auto-discovery (set by RealtimePanel)"}'
+    - '// @input string deviceId {"hint":"Device ID for lobby announcements (set by RealtimePanel)"}'
+    - '// @input bool enableDebugLogs = true {"hint":"Show debug info in console"}'
+    - '// @input float logFrequency = 10 {"hint":"Log frame reception every N frames", "widget":"slider", "min":1, "max":50, "step":1}'
