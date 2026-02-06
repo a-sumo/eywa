@@ -5,6 +5,10 @@
   "version": "0.2.1",
   "publisher": "armandsumo",
   "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/a-sumo/eywa"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -141,13 +145,13 @@
       "properties": {
         "eywa.supabaseUrl": {
           "type": "string",
-          "default": "",
-          "description": "Supabase project URL"
+          "default": "https://beknjtxysmznenkotjvv.snapcloud.dev",
+          "description": "Supabase project URL (default: Eywa hosted instance)"
         },
         "eywa.supabaseKey": {
           "type": "string",
-          "default": "",
-          "description": "Supabase anon key"
+          "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjEzNjM1NiwiZXhwIjoyMDgxNzEyMzU2fQ.Pp6DrVfZs2_XvbobCm0hLSCxpfxoK-SvVzgduFIcp_Q",
+          "description": "Supabase anon key (default: Eywa hosted instance)"
         },
         "eywa.room": {
           "type": "string",
