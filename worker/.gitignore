@@ -1,4 +1,1 @@
-node_modules/
-dist/
-.dev.vars
-.wrangler/
+# Covered by root .gitignore
