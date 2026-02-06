@@ -13,12 +13,12 @@ function getConfig(client: Client, slug: string, agent: string): string {
 
   switch (client) {
     case "claude":
-      return `claude mcp add --transport http remix "${url}"`;
+      return `claude mcp add --transport http eywa "${url}"`;
     case "cursor":
       return JSON.stringify(
         {
           mcpServers: {
-            remix: { url },
+            eywa: { url },
           },
         },
         null,
@@ -28,7 +28,7 @@ function getConfig(client: Client, slug: string, agent: string): string {
       return JSON.stringify(
         {
           mcpServers: {
-            remix: { httpUrl: url },
+            eywa: { httpUrl: url },
           },
         },
         null,
