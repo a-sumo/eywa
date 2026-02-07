@@ -231,6 +231,14 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
       if (status === "SUBSCRIBED") {
         this.updateStatus("connected");
         this.log("SUCCESS: Subscribed to " + channelKey + ". Waiting for events...");
+        // Ask the web to resync all tiles. Handles the case where the web
+        // was already broadcasting before we connected.
+        this.realtimeChannel.send({
+          type: "broadcast",
+          event: "sync_request",
+          payload: { deviceId: this.deviceId, timestamp: Date.now() },
+        });
+        this.log("Sent sync_request to web");
       } else if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         this.updateStatus("error: " + status.toLowerCase());
         this.log("FAILED: Channel " + channelKey + " status: " + status);

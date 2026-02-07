@@ -2,15 +2,9 @@
 """
 Generate the Eywa tracking marker for Spectacles image tracking.
 
-Creates a high-contrast, asymmetric pattern optimized for reliable detection:
-- Dark space background with white tracking cells
-- Aurora color accents (cyan, purple, pink, blue) for visual identity
-- Asymmetric corner markers (different shape per corner) to prevent ambiguity
-- Multi-scale features (grid cells + small dots) for detection at various distances
-- Aurora gradient border
-
-The same marker image is used across all rooms. Room identity comes from a
-separate QR code, not from the tracking pattern.
+White background, Eywa logo at center, scattered aurora particles,
+elegant corner accents. Designed to look good on e-ink and be
+reliably detectable by image tracking.
 
 Output: tracking-marker.png (512x512)
 Also copies to web/public/ and eywa-specs/Assets/ if those directories exist.
@@ -22,141 +16,158 @@ import random
 from PIL import Image, ImageDraw
 
 # Eywa aurora palette
-BG = (13, 15, 20)          # space background #0D0F14
-WHITE = (255, 255, 255)
-CYAN = (21, 209, 255)      # #15D1FF
-PURPLE = (130, 61, 252)    # #823DFC
-PINK = (231, 43, 118)      # #E72B76
-BLUE = (37, 67, 255)       # #2543FF
-GREEN = (52, 211, 153)     # #34D399
+BG = (255, 255, 255)
+BLACK = (0, 0, 0)
+CYAN = (21, 209, 255)
+PURPLE = (130, 61, 252)
+PINK = (231, 43, 118)
+BLUE = (37, 67, 255)
+GREEN = (52, 211, 153)
 
-ACCENT_COLORS = [CYAN, PURPLE, PINK, BLUE, GREEN]
+AURORA = [CYAN, PURPLE, PINK, BLUE, GREEN]
+
+
+def load_logo(size: int) -> Image.Image:
+    """Load the Eywa logo PNG."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    paths = [
+        os.path.join(script_dir, "eywalogo.png"),
+        os.path.join(script_dir, "..", "eywalogo.png"),
+        os.path.join(script_dir, "..", "web", "public", "logo-512.png"),
+    ]
+    for p in paths:
+        if os.path.exists(p):
+            img = Image.open(p).convert("RGBA")
+            img.thumbnail((size, size), Image.LANCZOS)
+            return img
+    return None
+
+
+def draw_arc(draw, cx, cy, r, start_deg, end_deg, color, width=3):
+    """Draw an arc (portion of ellipse outline)."""
+    bbox = [cx - r, cy - r, cx + r, cy + r]
+    draw.arc(bbox, start_deg, end_deg, fill=color, width=width)
 
 
 def generate_marker(size=512, output_path="tracking-marker.png"):
     """Generate the Eywa tracking marker."""
     img = Image.new("RGB", (size, size), BG)
     draw = ImageDraw.Draw(img)
-
-    # Seed for reproducibility
     rng = random.Random(42)
 
-    border = 8
-    inner = size - border * 2
-    cell_count = 10
-    cell_size = inner // cell_count
+    margin = 20
+    center = size // 2
 
-    # Aurora gradient border (4px)
-    for i in range(4):
-        t = i / 4
-        # Cycle through aurora colors around the border
-        for x in range(size):
-            for edge in [(x, i), (x, size - 1 - i)]:
-                frac = x / size
-                r = int(CYAN[0] * (1 - frac) + PURPLE[0] * frac)
-                g = int(CYAN[1] * (1 - frac) + PURPLE[1] * frac)
-                b = int(CYAN[2] * (1 - frac) + PURPLE[2] * frac)
-                img.putpixel(edge, (r, g, b))
-        for y in range(size):
-            for edge in [(i, y), (size - 1 - i, y)]:
-                frac = y / size
-                r = int(PINK[0] * (1 - frac) + BLUE[0] * frac)
-                g = int(PINK[1] * (1 - frac) + BLUE[1] * frac)
-                b = int(PINK[2] * (1 - frac) + BLUE[2] * frac)
-                img.putpixel(edge, (r, g, b))
+    # --- Bold outer border ---
+    draw.rectangle([margin, margin, size - margin, size - margin], outline=BLACK, width=5)
 
-    # Grid of tracking cells (asymmetric pattern)
-    # Use a fixed seed pattern that's asymmetric and feature-rich
-    pattern = [
-        [1,1,0,1,0,1,1,0,1,0],
-        [0,0,1,0,1,0,0,1,0,1],
-        [1,0,1,1,0,0,1,0,1,0],
-        [0,1,0,0,1,1,0,1,0,1],
-        [1,0,0,1,0,1,1,0,0,1],
-        [0,1,1,0,1,0,0,1,1,0],
-        [1,0,1,0,0,1,0,0,1,0],
-        [0,1,0,1,1,0,1,0,0,1],
-        [1,1,0,0,1,0,0,1,0,1],
-        [0,0,1,1,0,1,1,0,1,0],
+    # --- Corner accents: curved arcs in aurora colors ---
+    # Each corner gets a different arc configuration for asymmetry.
+    # Thick lines so they survive e-ink speckle/dithering.
+    corner_inset = 55
+    arc_r = 50
+
+    # Top-left: two nested cyan arcs (quarter circle, opening toward center)
+    draw_arc(draw, margin + corner_inset, margin + corner_inset, arc_r, 0, 90, CYAN, 8)
+    draw_arc(draw, margin + corner_inset, margin + corner_inset, arc_r - 16, 0, 90, CYAN, 6)
+
+    # Top-right: single purple arc + dot
+    draw_arc(draw, size - margin - corner_inset, margin + corner_inset, arc_r, 90, 180, PURPLE, 8)
+    draw.ellipse([
+        size - margin - corner_inset - 10, margin + corner_inset - 10,
+        size - margin - corner_inset + 10, margin + corner_inset + 10,
+    ], fill=PURPLE)
+
+    # Bottom-left: pink arc, larger sweep
+    draw_arc(draw, margin + corner_inset, size - margin - corner_inset, arc_r, 270, 360, PINK, 8)
+    draw_arc(draw, margin + corner_inset, size - margin - corner_inset, arc_r + 14, 300, 350, PINK, 6)
+
+    # Bottom-right: blue arc pair, offset
+    draw_arc(draw, size - margin - corner_inset, size - margin - corner_inset, arc_r, 180, 270, BLUE, 8)
+    draw_arc(draw, size - margin - corner_inset + 10, size - margin - corner_inset - 10, arc_r - 12, 200, 260, BLUE, 6)
+
+    # --- Particles: scattered aurora dots of varying sizes ---
+    # These give multi-scale features for tracking detection.
+    # Distributed in a ring around the center, avoiding the logo area.
+    particles = []
+    logo_radius = 80  # keep clear for logo
+    border_keep = margin + 60  # keep clear of corners
+
+    for _ in range(300):
+        angle = rng.uniform(0, 2 * math.pi)
+        dist = rng.uniform(logo_radius + 20, center - border_keep)
+        x = center + dist * math.cos(angle)
+        y = center + dist * math.sin(angle)
+        r = rng.uniform(5, 16)
+
+        # Check bounds
+        if x - r < margin + 30 or x + r > size - margin - 30:
+            continue
+        if y - r < margin + 30 or y + r > size - margin - 30:
+            continue
+
+        # Check overlap with existing particles
+        overlap = False
+        for px, py, pr in particles:
+            if math.sqrt((x - px) ** 2 + (y - py) ** 2) < r + pr + 4:
+                overlap = True
+                break
+        if overlap:
+            continue
+
+        particles.append((x, y, r))
+        if len(particles) >= 30:
+            break
+
+    # Draw particles. Mostly black for contrast, some in aurora colors.
+    for i, (x, y, r) in enumerate(particles):
+        if rng.random() < 0.25:
+            color = rng.choice(AURORA)
+        else:
+            color = BLACK
+        draw.ellipse([x - r, y - r, x + r, y + r], fill=color)
+
+    # --- A few larger accent circles for visual rhythm ---
+    accents = [
+        (center - 120, center - 100, 7, CYAN),
+        (center + 140, center - 80, 6, PURPLE),
+        (center - 90, center + 130, 6, PINK),
+        (center + 110, center + 110, 8, BLUE),
+        (center + 30, center - 150, 5, GREEN),
+        (center - 150, center + 40, 5, GREEN),
     ]
+    for ax, ay, ar, color in accents:
+        if margin + 30 < ax < size - margin - 30 and margin + 30 < ay < size - margin - 30:
+            # Ring instead of filled, adds lightness. Thick stroke.
+            draw.ellipse([ax - ar * 3, ay - ar * 3, ax + ar * 3, ay + ar * 3], outline=color, width=4)
 
-    for row in range(cell_count):
-        for col in range(cell_count):
-            x0 = border + col * cell_size
-            y0 = border + row * cell_size
-            x1 = x0 + cell_size - 2  # 2px gap between cells
-            y1 = y0 + cell_size - 2
-
-            if pattern[row][col] == 1:
-                # Most cells are white for high contrast
-                color = WHITE
-                # ~15% of filled cells get an aurora accent
-                if rng.random() < 0.15:
-                    color = rng.choice(ACCENT_COLORS)
-                draw.rectangle([x0, y0, x1, y1], fill=color)
-
-    # Asymmetric corner markers (different shape per corner)
-    corner_size = cell_size * 2
-    margin = border + 4
-
-    # Top-left: filled purple square
-    draw.rectangle(
-        [margin, margin, margin + corner_size, margin + corner_size],
-        fill=PURPLE
-    )
-
-    # Top-right: cyan circle
-    tr_x = size - margin - corner_size
-    draw.ellipse(
-        [tr_x, margin, tr_x + corner_size, margin + corner_size],
-        fill=CYAN
-    )
-
-    # Bottom-left: pink triangle
-    bl_y = size - margin - corner_size
-    draw.polygon(
-        [(margin + corner_size // 2, bl_y),
-         (margin, bl_y + corner_size),
-         (margin + corner_size, bl_y + corner_size)],
-        fill=PINK
-    )
-
-    # Bottom-right: blue diamond
-    br_x = size - margin - corner_size
-    br_y = size - margin - corner_size
-    mid_x = br_x + corner_size // 2
-    mid_y = br_y + corner_size // 2
-    draw.polygon(
-        [(mid_x, br_y),
-         (br_x + corner_size, mid_y),
-         (mid_x, br_y + corner_size),
-         (br_x, mid_y)],
-        fill=BLUE
-    )
-
-    # Small feature dots between cells (multi-scale features)
-    for _ in range(30):
-        dx = rng.randint(border + corner_size + 10, size - border - corner_size - 10)
-        dy = rng.randint(border + corner_size + 10, size - border - corner_size - 10)
-        radius = rng.randint(2, 4)
-        color = rng.choice([WHITE] + ACCENT_COLORS)
-        draw.ellipse([dx - radius, dy - radius, dx + radius, dy + radius], fill=color)
+    # --- Center: Eywa logo ---
+    logo_size = 160
+    logo = load_logo(logo_size)
+    if logo:
+        # Composite onto white background
+        logo_bg = Image.new("RGB", logo.size, BG)
+        logo_bg.paste(logo, mask=logo.split()[3])
+        lx = center - logo.width // 2
+        ly = center - logo.height // 2
+        img.paste(logo_bg, (lx, ly))
+    else:
+        # Fallback: draw a simple cross
+        draw.line([(center - 40, center), (center + 40, center)], fill=BLACK, width=8)
+        draw.line([(center, center - 40), (center, center + 40)], fill=BLACK, width=8)
 
     img.save(output_path)
     print(f"Generated {output_path} ({size}x{size}px)")
 
-    # Copy to other locations if they exist
+    # Copy to other locations
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
 
-    copy_targets = [
+    for target in [
         os.path.join(project_root, "web", "public", "tracking-marker.png"),
         os.path.join(project_root, "eywa-specs", "Assets", "tracking-marker.png"),
-    ]
-
-    for target in copy_targets:
-        target_dir = os.path.dirname(target)
-        if os.path.isdir(target_dir):
+    ]:
+        if os.path.isdir(os.path.dirname(target)):
             img.save(target)
             print(f"  Copied to {target}")
 

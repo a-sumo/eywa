@@ -65,7 +65,7 @@ export function SpectaclesView() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [contextItems, setContextItems] = useState<ContextItem[]>([]);
   const [memoryPage, setMemoryPage] = useState(0);
-  const [broadcasting, setBroadcasting] = useState(false);
+  const [broadcasting, setBroadcasting] = useState(true);
   const [channelReady, setChannelReady] = useState(false);
   const [hoveredTileId, setHoveredTileId] = useState<string | null>(null);
 
@@ -130,6 +130,12 @@ export function SpectaclesView() {
         });
         setActiveDeviceId(prev => prev || dev.deviceId);
         setBroadcasting(true);
+
+        // If channel is already live, resync so the new device gets all tiles.
+        // Without this, restarting the Lens requires reloading the web page.
+        if (event === "device_connect" && channelRef.current && sceneRef.current) {
+          sceneRef.current.resync();
+        }
       }
     };
 
@@ -373,7 +379,16 @@ export function SpectaclesView() {
       }
     });
 
+    // Spectacles can request a full resync after connecting
+    channel.on("broadcast", { event: "sync_request" }, () => {
+      console.log("[SpectaclesView] sync_request received, resyncing");
+      if (sceneRef.current) {
+        sceneRef.current.resync();
+      }
+    });
+
     channel.subscribe((status) => {
+      console.log("[SpectaclesView] channel status:", status, "key:", channelKey);
       if (status === "SUBSCRIBED") {
         setChannelReady(true);
         // Resync: re-send all create ops + textures for tiles that already exist.
@@ -507,6 +522,7 @@ export function SpectaclesView() {
       lastSceneBroadcast.current = now;
 
       const ops = scene.takeOps(MAX_OPS_PER_FRAME);
+      console.log("[SpectaclesView] sending", ops.length, "ops,", scene.pendingTexCount, "tex pending");
       if (ops.length === 1) {
         channel.send({
           type: "broadcast",

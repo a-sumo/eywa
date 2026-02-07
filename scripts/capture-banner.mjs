@@ -7,6 +7,7 @@
  *   1. Start the dev server: cd web && npm run dev
  *   2. Run this script: node scripts/capture-banner.mjs
  *   3. Optionally: node scripts/capture-banner.mjs --social-only
+ *   4. Tracking marker: node scripts/capture-banner.mjs --marker
  *
  * Output:
  *   docs/banner.gif          - 1200x340 animated (4s loop)
@@ -16,6 +17,7 @@
  *   docs/social-banner.png   - 1600x900  (general social/presentation)
  *   docs/twitter-banner.png  - 1500x500  (Twitter/X header)
  *   docs/linkedin-banner.png - 1584x396  (LinkedIn banner)
+ *   pi-display/tracking-marker.png - 512x512 (AR tracking, white bg)
  */
 
 import { execSync } from "node:child_process";
@@ -116,8 +118,115 @@ async function injectCSS(page, css) {
   }, css);
 }
 
+// CSS overrides for the tracking marker: hide text, keep particles + logo
+const MARKER_CSS = `
+  .landing-nav, nav, header,
+  .landing-hero-actions,
+  .landing-hero-subtitle,
+  .landing-hero-solution,
+  .landing-hero-title,
+  .landing-features,
+  .landing-footer,
+  .landing-fade-overlay,
+  .landing-section,
+  .landing-pricing,
+  .landing-cta,
+  .landing-agents-orbit,
+  .landing-error,
+  .landing-hero-content,
+  footer { display: none !important; }
+
+  html, body, #root, .landing-dark {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+`;
+
+async function captureMarker(browser) {
+  const size = 512;
+  console.log("Capturing tracking marker (512x512, ACeP 7-color)...");
+
+  // Large viewport, crop a region around the centered logo.
+  // Marker mode centers the convergence point and uses ACeP-safe colors.
+  const vpW = 1600;
+  const vpH = 1600;
+  const page = await browser.newPage();
+
+  // Set marker mode BEFORE the page loads so FlowBackground picks it up
+  await page.evaluateOnNewDocument(() => {
+    window.__eywaMarkerMode = true;
+  });
+
+  await page.setViewport({ width: vpW, height: vpH });
+  await page.goto(DEV_URL, { waitUntil: "networkidle0", timeout: 10000 });
+
+  // Hide text, keep particles + logo
+  await page.evaluate((css) => {
+    const style = document.createElement("style");
+    style.textContent = css;
+    document.head.appendChild(style);
+  }, MARKER_CSS);
+
+  // Let particles settle for 2 full pulse cycles (2.8s each = 5.6s),
+  // then capture ~1s into the next pulse when particles are pulled inward.
+  console.log("  Letting particles settle and pull inward (7s)...");
+  await new Promise((r) => setTimeout(r, 7000));
+
+  // Find the logo position to center our crop
+  const logoPos = await page.evaluate(() => {
+    const img = document.querySelector('img[src*="eywa-logo"]');
+    if (!img) return null;
+    const r = img.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+
+  // Crop a small region centered on the logo for big zoom.
+  // 300px crop from 1600 viewport = 5.3x zoom. Logo at 200px becomes ~341px in final 512.
+  const cropSize = 300;
+  const cx = logoPos ? logoPos.x : vpW / 2;
+  const cy = logoPos ? logoPos.y : vpH / 2;
+  const clipX = Math.max(0, Math.round(cx - cropSize / 2));
+  const clipY = Math.max(0, Math.round(cy - cropSize / 2));
+
+  const darkPath = join(ROOT, "pi-display", "tracking-marker-dark.png");
+  await page.screenshot({
+    path: darkPath,
+    type: "png",
+    clip: { x: clipX, y: clipY, width: cropSize, height: cropSize },
+  });
+  console.log(`  tracking-marker-dark.png captured (${cropSize}x${cropSize} crop at ${clipX},${clipY})`);
+  await page.close();
+
+  // Post-process: HSV-based color mapping to ACeP 7-color palette.
+  // Uses hue ranges so the logo's 4 aurora arms each get a distinct ACeP color:
+  // cyan->green, blue->blue, purple->orange, pink->red.
+  const markerPath = join(ROOT, "pi-display", "tracking-marker.png");
+  const postScript = join(ROOT, "scripts", "marker_postprocess.py");
+  console.log("  Post-processing: HSV mapping to ACeP 7-color...");
+  try {
+    execSync(`python3 "${postScript}" "${darkPath}" "${markerPath}"`, { stdio: "inherit" });
+  } catch {
+    console.error("  Python/Pillow post-processing failed, using dark version");
+    copyFileSync(darkPath, markerPath);
+  }
+
+  // Copy to other locations
+  const copies = [
+    join(ROOT, "web", "public", "tracking-marker.png"),
+    join(ROOT, "eywa-specs", "Assets", "tracking-marker.png"),
+  ];
+  for (const dest of copies) {
+    try {
+      copyFileSync(markerPath, dest);
+      console.log(`  Copied to ${dest.replace(ROOT + "/", "")}`);
+    } catch {}
+  }
+}
+
 async function main() {
   const socialOnly = process.argv.includes("--social-only");
+  const markerOnly = process.argv.includes("--marker");
 
   mkdirSync(FRAMES_DIR, { recursive: true });
   console.log("Launching browser...");
@@ -138,6 +247,14 @@ async function main() {
     process.exit(1);
   }
   await testPage.close();
+
+  // ---- Marker only mode ----
+  if (markerOnly) {
+    await captureMarker(browser);
+    await browser.close();
+    console.log("\nDone. Marker in pi-display/");
+    return;
+  }
 
   // ---- GIF Banner ----
   let framePaths = [];
