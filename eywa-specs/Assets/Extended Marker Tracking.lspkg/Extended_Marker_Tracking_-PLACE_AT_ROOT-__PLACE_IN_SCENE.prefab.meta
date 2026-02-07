@@ -1,0 +1,55 @@
+- !<AssetImportMetadata/086b92a4-65fa-52dd-d1dd-b906d0615b81>
+  ImportedAssetIds:
+    ObjectPrefab: !<reference> 6f221d79-42c3-4278-88ec-38924d5de330
+  ImporterName: ObjectPrefabImporter
+  PrimaryAsset: !<reference> 6f221d79-42c3-4278-88ec-38924d5de330
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    ObjectPrefab: !<own> 917bb931-b5e3-4884-bf9e-5f1586d827b6
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<ScriptComponent/619f46a9-930a-44aa-4462-8df6f7d90117>
+  PrefabRemaps:
+    []
+  Name: ExtendedMarkerTracking_OnStartEvent
+  Enabled: true
+  ScriptAsset: !<reference> 5b88e9ca-dfd7-45f1-9a9c-5f9660706735
+  ScriptInputsDefault:
+    trackMarkerOnce: true
+    detachOnFound: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      markerComponent: !<reference.MarkerTrackingComponent> 0005753c-121c-e9ac-0000-000000012934
+      trackMarkerOnce: true
+      detachOnFound: true
+  ScriptTypes:
+    "":
+      {}
+- !<ObjectPrefabAssetData/917bb931-b5e3-4884-bf9e-5f1586d827b6>
+  Prototype: !<ObjectOwner/fe777056-5569-461c-a1de-8ff4d4f29480>
+    PackagePath: ""
+    objects:
+      - !<own> c89b4cc9-d57f-4bfa-5a10-e6a78dfe43c6
+- !<SceneObject/c89b4cc9-d57f-4bfa-5a10-e6a78dfe43c6>
+  PrefabRemaps:
+    []
+  Name: Extended_Marker_Tracking_-PLACE_AT_ROOT-__PLACE_IN_SCENE
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 619f46a9-930a-44aa-4462-8df6f7d90117

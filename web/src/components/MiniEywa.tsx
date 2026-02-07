@@ -6,15 +6,15 @@ import { useRoomContext } from "../context/RoomContext";
 import { supabase } from "../lib/supabase";
 import type { Memory, Room } from "../lib/supabase";
 import { getAvatar } from "./avatars";
-import { EywaLogoMono } from "./EywaLogo";
+import { EywaLogoWarm } from "./EywaLogo";
 import { GrainTexture } from "./GrainTexture";
 
-/* ── Palette (aurora-derived, vivid on dark) ── */
+/* ── Palette (earthy, readable on clay) ── */
 
 const AGENT_PALETTE = [
-  "#15D1FF", "#6417EC", "#E72B76", "#4ade80",
-  "#2543FF", "#ff6b9d", "#8b5cf6", "#06b6d4",
-  "#a78bfa", "#f472b6", "#34d399", "#60a5fa",
+  "#1A7A6E", "#3B5998", "#B8443A", "#3D7A3A",
+  "#8B6347", "#7A5C8F", "#B85C38", "#2E6B5A",
+  "#6B5D8F", "#A0584E", "#4A7A5A", "#4A6B8A",
 ];
 
 function agentColor(name: string): string {
@@ -26,11 +26,11 @@ function agentColor(name: string): string {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  user: "#4ade80",
-  assistant: "#15D1FF",
-  tool_call: "#a78bfa",
-  tool_result: "#8b5cf6",
-  injection: "#E72B76",
+  user: "#3D7A3A",
+  assistant: "#1A7A6E",
+  tool_call: "#B85C38",
+  tool_result: "#8B6347",
+  injection: "#B8443A",
 };
 
 type TypeCategory = "user" | "assistant" | "tool";
@@ -320,7 +320,7 @@ function MiniGraph({
           id: m.id,
           x: trackX(ai),
           y: svgTop + i * yStep,
-          color: TYPE_COLORS[m.message_type] ?? "#B8B8C8",
+          color: TYPE_COLORS[m.message_type] ?? "#9C8E7E",
         };
       });
 
@@ -381,7 +381,7 @@ function MiniGraph({
         <div
           key={`av-${t.name}`}
           className="mini-graph-avatar"
-          style={{ left: t.x - 8 }}
+          style={{ left: `calc(${(t.x / WIDTH) * 100}% - 8px)` }}
           title={getShort(t.name)}
         >
           <PixelCreature name={t.name} size={16} />
@@ -389,9 +389,10 @@ function MiniGraph({
       ))}
 
       <svg
-        width={WIDTH}
+        width="100%"
         height={HEIGHT}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        preserveAspectRatio="xMidYMid meet"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Track lines */}
@@ -518,7 +519,7 @@ function MiniActivityFeed({
             >
               <span
                 className="mini-feed-dot"
-                style={{ background: TYPE_COLORS[m.message_type] ?? "#B8B8C8" }}
+                style={{ background: TYPE_COLORS[m.message_type] ?? "#9C8E7E" }}
               />
               <span className="mini-feed-agent">{getShort(m.agent)}</span>
               {!isExpanded && (
@@ -530,7 +531,7 @@ function MiniActivityFeed({
               {isExpanded && (
                 <div className="mini-feed-expanded">
                   <div className="mini-feed-expanded-meta">
-                    <span className="mini-feed-expanded-type" style={{ color: TYPE_COLORS[m.message_type] ?? "#999" }}>
+                    <span className="mini-feed-expanded-type" style={{ color: TYPE_COLORS[m.message_type] ?? "#7A6E5E" }}>
                       {typeLabel(m.message_type)}
                     </span>
                     <span className="mini-feed-expanded-time">{timeAgo(m.ts)}</span>
@@ -633,16 +634,24 @@ export function MiniEywa() {
   return (
     <div className="mini-container">
       <GrainTexture
-        width={320}
-        height={480}
-        density={0.005}
+        width={420}
+        height={920}
+        baseColor={[245, 240, 232]}
+        palette={[
+          [180, 100, 60],   // terracotta
+          [100, 140, 90],   // sage
+          [100, 120, 160],  // dusty blue
+          [180, 150, 80],   // golden
+        ]}
+        density={0.0008}
         seed={31}
-        noiseIntensity={12}
+        noiseIntensity={5}
+        brightnessRange={[0.6, 0.85]}
       />
 
       {/* Title bar */}
       <div className="mini-titlebar">
-        <EywaLogoMono size={14} className="mini-logo" />
+        <EywaLogoWarm size={14} className="mini-logo" />
         <button
           className="mini-titlebar-name mini-titlebar-name-btn"
           onClick={() => setShowRoomPicker((p) => !p)}
@@ -679,8 +688,8 @@ export function MiniEywa() {
             <QRCodeSVG
               value={roomUrl}
               size={200}
-              bgColor="#0d1117"
-              fgColor="#e6edf3"
+              bgColor="#F5F0E8"
+              fgColor="#2C2418"
               level="L"
             />
             <span className="mini-qr-label">Scan to join</span>
@@ -711,7 +720,7 @@ export function MiniEywa() {
               <span className="mini-strip-status">
                 <span
                   className="mini-strip-dot"
-                  style={{ background: info.isActive ? "#4ade80" : "#334155" }}
+                  style={{ background: info.isActive ? "#3D7A3A" : "#C4BAA8" }}
                 />
                 {timeAgo(info.lastTs)}
               </span>
@@ -738,7 +747,7 @@ export function MiniEywa() {
             <span className="mini-dot-info-agent" style={{ color: agentColor(dotInfo.memory.agent) }}>
               {getShort(dotInfo.memory.agent)}
             </span>
-            <span className="mini-dot-info-type" style={{ color: TYPE_COLORS[dotInfo.memory.message_type] ?? "#999" }}>
+            <span className="mini-dot-info-type" style={{ color: TYPE_COLORS[dotInfo.memory.message_type] ?? "#7A6E5E" }}>
               {typeLabel(dotInfo.memory.message_type)}
             </span>
             <span className="mini-dot-info-time">{timeAgo(dotInfo.memory.ts)}</span>
@@ -756,6 +765,24 @@ export function MiniEywa() {
           expandedId={expandedRow}
           onTapRow={handleRowTap}
         />
+      </div>
+
+      {/* Footer with AR tracking marker */}
+      <div className="mini-footer">
+        <div className="mini-footer-left">
+          <EywaLogoWarm size={12} />
+          <span className="mini-footer-slug">{room?.slug ?? ""}</span>
+        </div>
+        <div className="mini-marker">
+          <QRCodeSVG
+            value={`eywa:${room?.slug ?? "demo"}`}
+            size={56}
+            bgColor="#F5F0E8"
+            fgColor="#2C2418"
+            level="M"
+            marginSize={1}
+          />
+        </div>
       </div>
 
       {/* Toast */}
