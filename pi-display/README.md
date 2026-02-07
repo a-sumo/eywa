@@ -93,11 +93,42 @@ sudo ./fbcp-ili9341 &
 python tft_touch.py --room demo
 ```
 
-## Spectacles Tracking
+## Display Strategy
 
-The e-ink display includes a tracking marker in the top-right corner. This marker is designed for Snap Spectacles image tracking. When viewed through Spectacles, the EywaPanel AR interface appears anchored to the physical display.
+The two displays serve different roles:
 
-See `remix-specs/` for the Lens Studio project.
+**E-ink (matte surface) - AR anchor + ambient status**
+- Matte e-ink has zero reflections, making it reliable for Spectacles image tracking
+- A fixed tracking marker in the top-right corner anchors the AR UI to the physical display
+- No touch input. Spectacles provide interaction via hand tracking and pinch gestures
+- Refreshes every 60s with agent status, activity feed, and room QR code
+- Low power. Runs for hours on a battery pack.
+
+**TFT touch (glossy LCD) - interactive control surface**
+- No tracking marker. Glossy screens cause reflections that break image tracking
+- Direct touch interaction: tap agents, send injections, browse memories
+- Higher refresh rate (30fps) for responsive UI
+- Used when you want to interact with agents without Spectacles
+
+The marker handles positioning. Spectacles' IMU handles orientation. Extended Marker Tracking detects the marker once, detaches the AR panel to world space, then disables marker tracking to save performance.
+
+See [`eywa-specs/`](../eywa-specs/) for the Lens Studio project and [`eywa-specs/README.md`](../eywa-specs/README.md) for the streaming protocol.
+
+## Mini Display (Phone/Tablet/Web)
+
+If you don't have a Raspberry Pi, you can use any device with a browser as a display. The web dashboard includes two display-optimized views:
+
+### MiniEywaEink (ambient mode)
+Navigate to `/r/{room-slug}` and select the e-ink view. Renders a static layout with:
+- Room name and agent count
+- Agent avatars and status
+- Activity feed
+- Room QR code (for joining from another device)
+
+Useful for: phone propped on desk, old tablet mounted on wall, Raspberry Pi with Chromium in kiosk mode.
+
+### SpectaclesView (AR streaming)
+Navigate to `/r/{room-slug}/spectacles` and click "Broadcast". This renders tile textures and streams them to connected Spectacles via Supabase Realtime. See [`eywa-specs/README.md`](../eywa-specs/README.md) for the full protocol.
 
 ## Wiring
 

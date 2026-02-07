@@ -20,7 +20,6 @@ import { SpectaclesReceiver } from "./components/SpectaclesReceiver";
 import { BroadcastTest } from "./components/BroadcastTest";
 import { DocsLayout, DocsOverview } from "./components/DocsLayout";
 import { IntegrationGuide } from "./components/IntegrationGuide";
-import { GlyphLab } from "./components/GlyphLab";
 import "./App.css";
 
 function App() {
@@ -32,7 +31,6 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/slides" element={<SlidePresentation />} />
           <Route path="/cli-auth" element={<CLIAuth />} />
-          <Route path="/glyphs" element={<GlyphLab />} />
           <Route path="/docs" element={<DocsLayout />}>
             <Route index element={<DocsOverview />} />
             <Route path="integrations/:provider" element={<IntegrationGuide />} />
