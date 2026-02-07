@@ -29,6 +29,21 @@
     []
   Components:
     - !<own> d57879c5-26fa-4f84-8373-bcad34f19d76
+- !<SceneObject/58c83423-0cef-4151-81b4-8eef471b92bc>
+  PrefabRemaps:
+    []
+  Name: Object 1
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 88d7aed3-d6a9-4359-bcfd-22e92f0a3c17
 - !<ScriptComponent/619f46a9-930a-44aa-4462-8df6f7d90117>
   PrefabRemaps:
     []
@@ -42,12 +57,18 @@
     {}
   ScriptInputs:
     "":
-      markerComponent: !<reference.MarkerTrackingComponent> 0005753c-121c-e9ac-0000-000000012934
+      markerComponent: !<reference.MarkerTrackingComponent> 88d7aed3-d6a9-4359-bcfd-22e92f0a3c17
       trackMarkerOnce: true
       detachOnFound: true
   ScriptTypes:
     "":
       {}
+- !<MarkerTrackingComponent/88d7aed3-d6a9-4359-bcfd-22e92f0a3c17>
+  PrefabRemaps:
+    []
+  Name: Marker Tracking
+  Enabled: true
+  Marker: !<reference> f3ed3b7b-bbf0-482e-b98b-c877a0d21801
 - !<ObjectPrefabAssetData/917bb931-b5e3-4884-bf9e-5f1586d827b6>
   Prototype: !<ObjectOwner/fe777056-5569-461c-a1de-8ff4d4f29480>
     PackagePath: ""
@@ -66,6 +87,7 @@
     HasSegmentScaleCompensation: false
   Children:
     - !<own> 228b3859-c92d-406c-9cf6-08734347fae1
+    - !<own> 58c83423-0cef-4151-81b4-8eef471b92bc
   Components:
     - !<own> 619f46a9-930a-44aa-4462-8df6f7d90117
 - !<RenderMeshVisual/d57879c5-26fa-4f84-8373-bcad34f19d76>

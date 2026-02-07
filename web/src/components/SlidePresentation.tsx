@@ -5,19 +5,68 @@ import { FlowBackground } from "./FlowBackground";
 
 import "./SlidePresentation.css";
 
+// -- Animated icons (same visual language as landing page) --
+
+const SlideIconThreads = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path className="anim-stream s1" d="M4 8c6-3 18 3 24 0" strokeWidth="2.5" strokeLinecap="round"/>
+    <path className="anim-stream s2" d="M4 16c6-3 18 3 24 0" strokeWidth="2.5" strokeLinecap="round"/>
+    <path className="anim-stream s3" d="M4 24c4-2 12 2 18 0" strokeWidth="2.5" strokeLinecap="round"/>
+    <circle className="anim-node" cx="26" cy="24" r="3"/>
+  </svg>
+);
+
+const SlideIconChat = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path className="anim-bubble" d="M27 20.5a2.5 2.5 0 0 1-2.5 2.5H9.5L5 27.5V7.5A2.5 2.5 0 0 1 7.5 5h17A2.5 2.5 0 0 1 27 7.5z" strokeWidth="2.5" strokeLinejoin="round"/>
+    <circle className="anim-typing d1" cx="11" cy="14" r="1.8"/>
+    <circle className="anim-typing d2" cx="16" cy="14" r="1.8"/>
+    <circle className="anim-typing d3" cx="21" cy="14" r="1.8"/>
+  </svg>
+);
+
+const SlideIconBrain = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <line className="anim-synapse sy1" x1="16" y1="9" x2="9" y2="14" strokeWidth="2"/>
+    <line className="anim-synapse sy2" x1="16" y1="9" x2="23" y2="14" strokeWidth="2"/>
+    <line className="anim-synapse sy3" x1="9" y1="19" x2="16" y2="24" strokeWidth="2"/>
+    <line className="anim-synapse sy4" x1="23" y1="19" x2="16" y2="24" strokeWidth="2"/>
+    <circle className="anim-neuron n1" cx="16" cy="6" r="3" strokeWidth="2"/>
+    <circle className="anim-neuron n2" cx="7" cy="16" r="3" strokeWidth="2"/>
+    <circle className="anim-neuron n3" cx="25" cy="16" r="3" strokeWidth="2"/>
+    <circle className="anim-neuron n4" cx="16" cy="26" r="3" strokeWidth="2"/>
+  </svg>
+);
+
+const SlideIconInject = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <line className="anim-drop-shaft" x1="16" y1="4" x2="16" y2="22" strokeWidth="2.5" strokeLinecap="round"/>
+    <polyline className="anim-drop-head" points="10,18 16,24 22,18" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle className="anim-ripple" cx="16" cy="28" r="2" strokeWidth="1.5"/>
+  </svg>
+);
+
+const SlideIconLink = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path className="anim-arc a1" d="M13.5 18.5a6.5 6.5 0 0 0 9.2.6l3.5-3.5a6.5 6.5 0 0 0-9.2-9.2l-2 2" strokeWidth="2.5" strokeLinecap="round"/>
+    <path className="anim-arc a2" d="M18.5 13.5a6.5 6.5 0 0 0-9.2-.6l-3.5 3.5a6.5 6.5 0 0 0 9.2 9.2l2-2" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+
+const SlideIconCode = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <polyline className="anim-bracket bl" points="13,6 5,16 13,26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <polyline className="anim-bracket br" points="19,6 27,16 19,26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <line className="anim-cursor-line" x1="16" y1="10" x2="16" y2="22" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+
 // -- Diagram renderers --
 
 function ThreeViewsDiagram() {
   const views = [
     {
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <line x1="4" y1="6" x2="20" y2="6" />
-          <line x1="4" y1="10" x2="20" y2="10" />
-          <line x1="4" y1="14" x2="20" y2="14" />
-          <line x1="4" y1="18" x2="16" y2="18" />
-        </svg>
-      ),
+      icon: <SlideIconThreads />,
       title: "Overview",
       color: "var(--color-accent-secondary)",
       body: (
@@ -31,14 +80,7 @@ function ThreeViewsDiagram() {
       ),
     },
     {
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <rect x="4" y="2" width="16" height="20" rx="2" />
-          <line x1="8" y1="7" x2="16" y2="7" />
-          <line x1="8" y1="11" x2="16" y2="11" />
-          <line x1="8" y1="15" x2="13" y2="15" />
-        </svg>
-      ),
+      icon: <SlideIconChat />,
       title: "Thread View",
       color: "var(--success)",
       body: (
@@ -52,15 +94,7 @@ function ThreeViewsDiagram() {
       ),
     },
     {
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M6 3v6" />
-          <path d="M18 3v6" />
-          <path d="M6 9c0 4 6 4 6 8" />
-          <path d="M18 9c0 4-6 4-6 8" />
-          <path d="M12 17v4" />
-        </svg>
-      ),
+      icon: <SlideIconBrain />,
       title: "Workspace",
       color: "var(--color-accent)",
       body: (
@@ -79,7 +113,7 @@ function ThreeViewsDiagram() {
     <div className="dia-cards">
       {views.map((v) => (
         <div key={v.title} className="dia-card">
-          <div className="dia-card-icon" style={{ color: v.color }}>{v.icon}</div>
+          <div className="dia-card-icon">{v.icon}</div>
           <div className="dia-card-title" style={{ color: v.color }}>
             {v.title}
           </div>
@@ -146,11 +180,17 @@ function ArchitectureDiagram() {
           <div className="dia-arch-label">AI Agents</div>
           <div className="dia-arch-stack">
             {["Claude Code", "Gemini CLI", "Cursor / Copilot"].map((a) => (
-              <div key={a} className="dia-arch-item dia-arch-agent">{a}</div>
+              <div key={a} className="dia-arch-item dia-arch-agent">
+                <span className="dia-arch-agent-icon"><SlideIconCode /></span>
+                {a}
+              </div>
             ))}
           </div>
         </div>
-        <div className="dia-arch-arrow">{"\u2192"}<br />MCP<br />{"\u2192"}</div>
+        <div className="dia-arch-arrow">
+          <SlideIconLink />
+          <span>MCP</span>
+        </div>
         <div className="dia-arch-col">
           <div className="dia-arch-label">Cloudflare Worker</div>
           <div className="dia-arch-box dia-arch-worker">
@@ -160,7 +200,10 @@ function ArchitectureDiagram() {
             <div className="dia-arch-box-detail">Stateless</div>
           </div>
         </div>
-        <div className="dia-arch-arrow">{"\u2192"}<br />REST<br />{"\u2192"}</div>
+        <div className="dia-arch-arrow">
+          <SlideIconInject />
+          <span>REST</span>
+        </div>
         <div className="dia-arch-col">
           <div className="dia-arch-label dia-arch-label-green">Supabase</div>
           <div className="dia-arch-box dia-arch-db">

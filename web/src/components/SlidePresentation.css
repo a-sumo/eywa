@@ -18,7 +18,7 @@
   inset: -10%;
   z-index: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(100, 23, 236, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(130, 61, 252, 0.2) 0%, transparent 70%),
     radial-gradient(ellipse 60% 80% at 80% 60%, rgba(21, 209, 255, 0.12) 0%, transparent 70%),
     radial-gradient(ellipse 70% 60% at 50% 90%, rgba(231, 43, 118, 0.1) 0%, transparent 70%),
     radial-gradient(ellipse 50% 50% at 70% 20%, rgba(37, 67, 255, 0.1) 0%, transparent 70%);
@@ -144,24 +144,24 @@
 
 .slide-h1 {
   font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
-  font-size: 2.6em;
+  font-size: 3em;
   font-weight: 800;
-  background: linear-gradient(135deg, #6417EC 0%, #E72B76 50%, #15D1FF 100%);
+  background: linear-gradient(135deg, #823DFC 0%, #E72B76 50%, #15D1FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
 
 .slide-h2 {
   font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
-  font-size: 1.8em;
+  font-size: 2.1em;
   font-weight: 700;
   color: #f0f2f8;
-  margin: 0 0 6px;
-  padding-bottom: 10px;
+  margin: 0 0 8px;
+  padding-bottom: 12px;
   position: relative;
   width: 100%;
   letter-spacing: -0.01em;
@@ -170,32 +170,32 @@
 .slide-h2::after {
   content: "";
   display: block;
-  width: 120px;
-  height: 2.5px;
-  background: linear-gradient(135deg, #6417EC 0%, #E72B76 50%, #15D1FF 100%);
-  margin: 10px auto 0;
+  width: 140px;
+  height: 3px;
+  background: linear-gradient(135deg, #823DFC 0%, #E72B76 50%, #15D1FF 100%);
+  margin: 12px auto 0;
   border-radius: 2px;
 }
 
 .slide-subtitle-main {
-  font-size: 1.15em;
-  color: rgba(240, 242, 248, 0.5);
-  margin: 0 0 24px;
+  font-size: 1.35em;
+  color: rgba(240, 242, 248, 0.82);
+  margin: 0 0 28px;
   font-weight: 400;
 }
 
 .slide-subtitle {
-  font-size: 0.95em;
-  color: rgba(240, 242, 248, 0.5);
-  margin: 0 0 18px;
+  font-size: 1.15em;
+  color: rgba(240, 242, 248, 0.8);
+  margin: 0 0 20px;
 }
 
 .slide-section-indicator {
   margin-top: auto;
   padding-top: 24px;
-  font-size: 0.7em;
-  color: rgba(240, 242, 248, 0.25);
-  font-weight: 500;
+  font-size: 0.8em;
+  color: rgba(240, 242, 248, 0.5);
+  font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -212,12 +212,12 @@
 }
 
 .slide-summary-item {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  padding: 10px 18px;
-  font-size: 0.85em;
-  color: rgba(240, 242, 248, 0.7);
+  padding: 12px 20px;
+  font-size: 0.95em;
+  color: rgba(240, 242, 248, 0.88);
   font-weight: 500;
 }
 
@@ -233,11 +233,11 @@
 }
 
 .slide-bullets li {
-  margin-bottom: 14px;
-  line-height: 1.55;
-  font-size: 1.05em;
-  color: rgba(240, 242, 248, 0.7);
-  padding-left: 24px;
+  margin-bottom: 16px;
+  line-height: 1.6;
+  font-size: 1.2em;
+  color: rgba(240, 242, 248, 0.9);
+  padding-left: 28px;
   position: relative;
 }
 
@@ -247,10 +247,12 @@
   left: 0;
   color: #15D1FF;
   font-weight: 700;
+  font-size: 1.1em;
 }
 
 .slide-bullets li strong {
-  color: #6417EC;
+  color: #15D1FF;
+  font-weight: 700;
 }
 
 /* ── Bar chart ─────────────────────────────────────── */
@@ -272,8 +274,8 @@
 }
 
 .slide-bar-label {
-  font-size: 0.88em;
-  color: rgba(240, 242, 248, 0.6);
+  font-size: 1em;
+  color: rgba(240, 242, 248, 0.85);
   font-weight: 500;
 }
 
@@ -302,8 +304,8 @@
 }
 
 .slide-bar-source {
-  font-size: 0.7em;
-  color: rgba(240, 242, 248, 0.3);
+  font-size: 0.82em;
+  color: rgba(240, 242, 248, 0.55);
   margin-top: 14px;
   text-align: right;
 }
@@ -329,26 +331,27 @@
 
 .slide-bigstat-value {
   font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
-  font-size: 2.4em;
+  font-size: 2.8em;
   font-weight: 800;
-  background: linear-gradient(135deg, #6417EC 0%, #E72B76 50%, #15D1FF 100%);
+  background: linear-gradient(135deg, #823DFC 0%, #E72B76 50%, #15D1FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1.1;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .slide-bigstat-label {
-  font-size: 0.78em;
-  color: rgba(240, 242, 248, 0.5);
-  line-height: 1.4;
+  font-size: 0.95em;
+  color: rgba(240, 242, 248, 0.82);
+  line-height: 1.45;
+  font-weight: 500;
 }
 
 .slide-bigstat-footnote {
-  font-size: 0.78em;
-  color: rgba(240, 242, 248, 0.3);
-  margin-top: 20px;
+  font-size: 0.92em;
+  color: rgba(240, 242, 248, 0.65);
+  margin-top: 22px;
   font-style: italic;
 }
 
@@ -371,26 +374,26 @@
 }
 
 .slide-logo-name {
-  font-size: 0.85em;
+  font-size: 0.95em;
   font-weight: 700;
   color: #f0f2f8;
   margin-bottom: 4px;
 }
 
 .slide-logo-stat {
-  font-size: 1em;
+  font-size: 1.1em;
   font-weight: 800;
-  background: linear-gradient(135deg, #6417EC 0%, #15D1FF 100%);
+  background: linear-gradient(135deg, #823DFC 0%, #15D1FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .slide-logo-detail {
-  font-size: 0.7em;
-  color: rgba(240, 242, 248, 0.35);
+  font-size: 0.85em;
+  color: rgba(240, 242, 248, 0.65);
   margin-top: 4px;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 
 /* ── Timeline ──────────────────────────────────────── */
@@ -411,20 +414,20 @@
 }
 
 .slide-timeline-marker {
-  background: linear-gradient(135deg, #6417EC 0%, #15D1FF 100%);
+  background: linear-gradient(135deg, #823DFC 0%, #15D1FF 100%);
   color: white;
   font-weight: 700;
-  font-size: 0.8em;
-  padding: 6px 14px;
+  font-size: 0.88em;
+  padding: 7px 16px;
   border-radius: 20px;
-  min-width: 36px;
+  min-width: 40px;
   text-align: center;
   flex-shrink: 0;
 }
 
 .slide-timeline-content {
   flex: 1;
-  padding: 8px 16px;
+  padding: 10px 18px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
   border-left: 3px solid #15D1FF;
@@ -432,15 +435,15 @@
 
 .slide-timeline-title {
   font-weight: 600;
-  font-size: 0.85em;
+  font-size: 1em;
   color: #f0f2f8;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .slide-timeline-desc {
-  font-size: 0.78em;
-  color: rgba(240, 242, 248, 0.5);
-  line-height: 1.4;
+  font-size: 0.92em;
+  color: rgba(240, 242, 248, 0.75);
+  line-height: 1.5;
 }
 
 /* ── Diagram shared ────────────────────────────────── */
@@ -448,10 +451,10 @@
 .slide-diagram {
   width: 100%;
   max-width: 900px;
-  font-size: 0.85em;
-  color: rgba(240, 242, 248, 0.7);
+  font-size: 0.95em;
+  color: rgba(240, 242, 248, 0.85);
   line-height: 1.6;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 /* ── Image slide ───────────────────────────────────── */
@@ -470,8 +473,8 @@
 }
 
 .slide-image-caption {
-  font-size: 0.72em;
-  color: rgba(240, 242, 248, 0.3);
+  font-size: 0.88em;
+  color: rgba(240, 242, 248, 0.6);
   margin-top: 10px;
 }
 
@@ -483,22 +486,22 @@
 }
 
 .slide-quote blockquote {
-  font-size: 1.1em;
+  font-size: 1.2em;
   font-style: italic;
-  line-height: 1.6;
-  color: rgba(240, 242, 248, 0.8);
-  border-left: 4px solid #6417EC;
-  padding: 16px 24px;
+  line-height: 1.65;
+  color: rgba(240, 242, 248, 0.9);
+  border-left: 4px solid #823DFC;
+  padding: 20px 28px;
   margin: 0;
-  background: rgba(168, 85, 247, 0.06);
+  background: rgba(130, 61, 252, 0.08);
   border-radius: 0 12px 12px 0;
   text-align: left;
 }
 
 .slide-quote-attr {
-  margin-top: 12px;
-  font-size: 0.82em;
-  color: rgba(240, 242, 248, 0.4);
+  margin-top: 14px;
+  font-size: 0.95em;
+  color: rgba(240, 242, 248, 0.65);
   text-align: right;
 }
 
@@ -507,7 +510,7 @@
 .text-error { color: #f87171; }
 .text-success { color: #4ade80; }
 .text-accent { color: #2543FF; }
-.text-muted { color: rgba(240, 242, 248, 0.35); }
+.text-muted { color: rgba(240, 242, 248, 0.6); }
 
 /* ── Diagram: cards layout ─────────────────────────── */
 
@@ -530,28 +533,28 @@
 }
 
 .dia-card-icon {
-  width: 24px;
-  height: 24px;
-  margin-bottom: 8px;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 10px;
 }
 
 .dia-card-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   display: block;
 }
 
 .dia-card-title {
   font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-weight: 700;
-  font-size: 1.05em;
-  margin-bottom: 6px;
+  font-size: 1.1em;
+  margin-bottom: 8px;
 }
 
 .dia-card-body {
-  font-size: 0.92em;
-  color: rgba(240, 242, 248, 0.5);
-  line-height: 1.55;
+  font-size: 1em;
+  color: rgba(240, 242, 248, 0.78);
+  line-height: 1.6;
 }
 
 /* ── Diagram: Eywa 3-panel ────────────────────────── */
@@ -577,15 +580,15 @@
 }
 
 .dia-eywa-agent {
-  background: rgba(168, 85, 247, 0.06);
-  border-color: #6417EC;
+  background: rgba(130, 61, 252, 0.08);
+  border-color: #823DFC;
 }
 
 .dia-panel-label {
-  font-size: 0.7em;
+  font-size: 0.82em;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(240, 242, 248, 0.35);
+  color: rgba(240, 242, 248, 0.6);
   margin-bottom: 10px;
   font-weight: 600;
 }
@@ -598,8 +601,8 @@
 }
 
 .dia-live-badge {
-  font-size: 0.65em;
-  background: linear-gradient(135deg, #6417EC 0%, #15D1FF 100%);
+  font-size: 0.72em;
+  background: linear-gradient(135deg, #823DFC 0%, #15D1FF 100%);
   color: white;
   padding: 2px 10px;
   border-radius: 10px;
@@ -613,55 +616,55 @@
 }
 
 .dia-agent-row {
-  padding: 6px 8px;
+  padding: 7px 10px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 6px;
   border-left: 3px solid;
-  font-size: 0.82em;
+  font-size: 0.92em;
   line-height: 1.5;
 }
 
 .dia-agent-meta {
-  font-size: 0.8em;
-  color: rgba(240, 242, 248, 0.35);
+  font-size: 0.88em;
+  color: rgba(240, 242, 248, 0.6);
   margin-left: 6px;
 }
 
 .dia-agent-detail {
-  font-size: 0.85em;
-  color: rgba(240, 242, 248, 0.5);
+  font-size: 0.92em;
+  color: rgba(240, 242, 248, 0.75);
 }
 
 .dia-context-placeholder {
   text-align: center;
   padding: 20px 0;
-  color: rgba(78, 234, 255, 0.4);
-  font-size: 0.9em;
+  color: rgba(78, 234, 255, 0.65);
+  font-size: 0.95em;
 }
 
 .dia-context-version {
   position: absolute;
   bottom: 8px;
   right: 10px;
-  font-size: 0.65em;
-  color: rgba(240, 242, 248, 0.2);
+  font-size: 0.72em;
+  color: rgba(240, 242, 248, 0.4);
 }
 
 .dia-chat-preview {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.82em;
+  font-size: 0.92em;
   line-height: 1.5;
   text-align: left;
 }
 
 .dia-chat-role {
-  font-size: 0.8em;
-  color: rgba(240, 242, 248, 0.35);
+  font-size: 0.88em;
+  color: rgba(240, 242, 248, 0.6);
   font-weight: 600;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 /* ── Diagram: Divergence ───────────────────────────── */
@@ -701,9 +704,9 @@
 }
 
 .dia-thread-body {
-  font-size: 0.82em;
-  color: rgba(240, 242, 248, 0.5);
-  line-height: 1.5;
+  font-size: 0.95em;
+  color: rgba(240, 242, 248, 0.78);
+  line-height: 1.55;
 }
 
 .dia-divergence-alert {
@@ -740,8 +743,8 @@
 
 .dia-divergence-legend {
   text-align: center;
-  font-size: 0.82em;
-  color: rgba(240, 242, 248, 0.5);
+  font-size: 0.95em;
+  color: rgba(240, 242, 248, 0.75);
   line-height: 1.6;
 }
 
@@ -751,7 +754,7 @@
   font-family: var(--font-mono, "JetBrains Mono", monospace);
   max-width: 850px;
   margin: 12px auto 0;
-  font-size: 0.85em;
+  font-size: 0.95em;
 }
 
 .dia-arch-row {
@@ -771,7 +774,7 @@
   font-weight: 600;
   color: #2543FF;
   margin-bottom: 10px;
-  font-size: 0.78em;
+  font-size: 0.88em;
   text-transform: uppercase;
 }
 
@@ -794,18 +797,37 @@
 .dia-arch-agent {
   background: rgba(107, 140, 255, 0.08);
   border: 1px solid rgba(107, 140, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dia-arch-agent-icon {
+  flex-shrink: 0;
+  display: flex;
+}
+
+.dia-arch-agent-icon .anim-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .dia-arch-arrow {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  color: rgba(240, 242, 248, 0.3);
-  font-size: 1em;
+  gap: 4px;
+  color: rgba(240, 242, 248, 0.6);
+  font-size: 0.85em;
   text-align: center;
-  white-space: pre-line;
   flex-shrink: 0;
-  padding: 0 4px;
+  padding: 0 6px;
+}
+
+.dia-arch-arrow .anim-icon {
+  width: 28px;
+  height: 28px;
 }
 
 .dia-arch-box {
@@ -834,8 +856,8 @@
 .dia-arch-db .dia-arch-box-title { color: #4ade80; }
 
 .dia-arch-box-detail {
-  font-size: 0.82em;
-  color: rgba(240, 242, 248, 0.5);
+  font-size: 0.92em;
+  color: rgba(240, 242, 248, 0.75);
 }
 
 .dia-arch-footer {
@@ -844,8 +866,8 @@
 }
 
 .dia-arch-footer > span {
-  color: rgba(240, 242, 248, 0.35);
-  font-size: 0.9em;
+  color: rgba(240, 242, 248, 0.6);
+  font-size: 0.95em;
 }
 
 .dia-arch-dashboard {
@@ -897,23 +919,23 @@
 
 .dia-step-content {
   flex: 1;
-  font-size: 0.85em;
+  font-size: 0.95em;
 }
 
 .dia-step-code {
-  background: rgba(78, 234, 255, 0.1);
-  padding: 2px 7px;
+  background: rgba(78, 234, 255, 0.12);
+  padding: 2px 8px;
   border-radius: 4px;
   font-family: var(--font-mono, monospace);
-  font-size: 0.88em;
+  font-size: 0.9em;
   margin-left: 6px;
   color: #15D1FF;
 }
 
 .dia-step-detail {
-  color: rgba(240, 242, 248, 0.4);
-  font-size: 0.88em;
-  margin-top: 2px;
+  color: rgba(240, 242, 248, 0.65);
+  font-size: 0.92em;
+  margin-top: 3px;
 }
 
 /* ── Diagram: MCP Bridge ───────────────────────────── */
@@ -922,7 +944,7 @@
   max-width: 750px;
   margin: 8px auto 0;
   font-family: var(--font-mono, monospace);
-  font-size: 0.82em;
+  font-size: 0.92em;
 }
 
 .dia-mcp-config {
@@ -966,13 +988,13 @@
 .dia-mcp-cat-title {
   font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
   font-weight: 600;
-  font-size: 0.85em;
+  font-size: 0.95em;
   margin-bottom: 8px;
 }
 
 .dia-mcp-tools {
-  font-size: 0.85em;
-  color: rgba(240, 242, 248, 0.5);
+  font-size: 0.95em;
+  color: rgba(240, 242, 248, 0.75);
   line-height: 1.6;
 }
 
@@ -987,7 +1009,7 @@
 .dia-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78em;
+  font-size: 0.88em;
   text-align: left;
 }
 
@@ -1000,9 +1022,9 @@
 }
 
 .dia-table td {
-  padding: 5px 12px;
+  padding: 6px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(240, 242, 248, 0.7);
+  color: rgba(240, 242, 248, 0.85);
 }
 
 .dia-tool-name {
@@ -1118,7 +1140,7 @@
 
 .slides-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #6417EC, #E72B76, #15D1FF);
+  background: linear-gradient(90deg, #823DFC, #E72B76, #15D1FF);
   border-radius: 2px;
   transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1150,7 +1172,7 @@
   padding: 11px 22px;
   cursor: pointer;
   font-size: 14px;
-  color: rgba(240, 242, 248, 0.6);
+  color: rgba(240, 242, 248, 0.78);
   transition: all 0.15s ease;
   border-left: 3px solid transparent;
 }
@@ -1162,7 +1184,7 @@
 }
 
 .slides-menu-item-active {
-  color: #6417EC;
+  color: #823DFC;
   font-weight: 600;
 }
 
@@ -1176,9 +1198,9 @@
     max-height: calc(100vh - 40px);
   }
 
-  .slide-h1 { font-size: 1.8em; }
-  .slide-h2 { font-size: 1.2em; }
-  .slide-bullets li { font-size: 0.82em; }
+  .slide-h1 { font-size: 2.1em; }
+  .slide-h2 { font-size: 1.5em; }
+  .slide-bullets li { font-size: 1em; }
 
   .dia-eywa-grid { grid-template-columns: 1fr; }
   .dia-cards { flex-direction: column; }
