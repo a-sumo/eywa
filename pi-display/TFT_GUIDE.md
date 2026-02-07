@@ -397,7 +397,7 @@ Paste the output from the calibrator.
 
 ```bash
 sudo apt-get install -y python3-pip python3-pygame python3-pil
-pip3 install requests
+pip3 install requests evdev
 ```
 
 If `python3-pygame` isn't available via apt:
@@ -405,6 +405,50 @@ If `python3-pygame` isn't available via apt:
 ```bash
 pip3 install pygame
 ```
+
+---
+
+## Test your wiring
+
+Before running the full Eywa app, run the test scripts to confirm everything works.
+
+### Display test
+
+```bash
+cd ~/eywa/pi-display
+python3 test_tft.py
+```
+
+This runs through three phases:
+1. **Color bars** (5 seconds) - eight colored horizontal bars fill the screen. If colors look wrong (e.g. red and blue swapped), your MOSI or MISO wires may be crossed.
+2. **Text rendering** (5 seconds) - shows resolution, FPS, and some shapes. If the text is readable, your display driver and framebuffer are working.
+3. **Touch test** (interactive) - tap anywhere on the screen. Cyan dots appear where you touch. If dots appear in the wrong spot, you need touch calibration. Tap the green PASS button to exit.
+
+You can also run it on your laptop to preview the UI (no Pi needed):
+
+```bash
+python3 test_tft.py --window
+```
+
+### Touch-only test
+
+If the display works but touch seems off, run the low-level touch diagnostic:
+
+```bash
+python3 test_touch.py
+```
+
+This reads raw events from the Linux input subsystem. No display needed. It prints:
+- The touchscreen's X/Y coordinate ranges
+- TOUCH DOWN / TOUCH UP events with raw coordinates
+
+Use `--list` to see all detected input devices:
+
+```bash
+python3 test_touch.py --list
+```
+
+If no touchscreen is detected, check the T_CS, T_CLK, T_DIN, T_DO, and T_IRQ wires, and verify the touch overlay is in `/boot/config.txt`.
 
 ---
 

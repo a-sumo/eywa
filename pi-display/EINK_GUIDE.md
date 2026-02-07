@@ -237,16 +237,23 @@ This installs Pillow (image rendering) and requests (HTTP client for Supabase).
 
 ## Test the display
 
-### Quick hardware test
+Run the Eywa test script first. It exercises all 7 colors, text rendering, shapes, and a pixel grid in a single image.
 
-Waveshare ships example scripts. Run one to confirm your wiring works:
+### Eywa test pattern
 
 ```bash
-cd ~/e-Paper/RaspberryPi_JetsonNano/python/examples
-python3 epd_5in65f_test.py
+cd ~/eywa/pi-display
+python3 test_eink.py
 ```
 
-This cycles through solid colors and test patterns. A full cycle takes a few minutes because each refresh is ~25 seconds. If you see colors appearing on the display, your wiring is correct.
+This renders a test image and pushes it to the display. You'll see:
+- **Color swatches** - all 7 colors labeled (black, white, red, green, blue, yellow, orange). If any color is wrong or missing, it's a hardware issue.
+- **Shapes** - filled circles, outlined rectangles, diagonal lines. Verifies drawing primitives work.
+- **Text at multiple sizes** - 8px through 24px. Checks font rendering and pixel clarity.
+- **Checkerboard grid** - alternating black/white squares. Shows stuck or dead pixels.
+- **Dither test** - gray and color gradients. These will look banded on 7-color e-ink (that's normal, it only has 7 colors to work with).
+
+Each refresh takes about 25 seconds. The script clears the display first (another 25 seconds), so expect about a minute total.
 
 If nothing happens:
 - Check VCC and GND
@@ -256,20 +263,42 @@ If nothing happens:
 
 ### Preview mode (no hardware)
 
-The Eywa script works without the display connected. It renders to a PNG file instead:
+Both test and Eywa scripts work without the display connected. They save a PNG instead:
 
 ```bash
-cd ~/eywa/pi-display
+# Test pattern preview
+python3 test_eink.py --preview
+# Saved to /tmp/eywa_eink_test.png
+
+# Eywa display preview
 python3 eink_display.py --room demo --once
+# Saved to /tmp/eywa_eink_preview.png
 ```
 
-This saves a preview image to `/tmp/eywa_eink_preview.png`. Copy it to your computer to inspect:
+Copy to your computer to inspect:
 
 ```bash
-scp pi@raspberrypi.local:/tmp/eywa_eink_preview.png .
+scp pi@raspberrypi.local:/tmp/eywa_eink_test.png .
 ```
 
-You'll see a white background with the Eywa header, agent cards (pixel creature sprites, names, tasks, memory bars), and the tracking marker in the top-right.
+### Clear the display
+
+To reset the display to blank white:
+
+```bash
+python3 test_eink.py --clear
+```
+
+### Waveshare's own test (alternative)
+
+Waveshare ships example scripts too. These are useful if the Eywa test fails, to isolate wiring from code issues:
+
+```bash
+cd ~/e-Paper/RaspberryPi_JetsonNano/python/examples
+python3 epd_5in65f_test.py
+```
+
+This cycles through solid colors and patterns. Takes a few minutes.
 
 ---
 
