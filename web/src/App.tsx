@@ -35,6 +35,7 @@ function App() {
             <Route path="integrations/:provider" element={<IntegrationGuide />} />
           </Route>
           <Route path="/r/:slug/eink" element={<RoomProvider><MiniEywaEink /></RoomProvider>} />
+          <Route path="/r/:slug/phone" element={<RoomProvider><MiniEywa /></RoomProvider>} />
           <Route path="/r/:slug/spectacles" element={<RoomProvider><SpectaclesView /></RoomProvider>} />
           <Route path="/r/:slug/spectacles/rx" element={<RoomProvider><SpectaclesReceiver /></RoomProvider>} />
           <Route path="/r/:slug/spectacles/test" element={<RoomProvider><BroadcastTest /></RoomProvider>} />
