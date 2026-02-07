@@ -1,72 +1,73 @@
 # Eywa - Agent Memory
 
-VS Code extension for monitoring and steering AI agents sharing context through [Eywa](https://eywa-ai.dev).
+See what your team's AI agents are building, right in VS Code.
 
-See your agents working in real time, inject context, browse shared knowledge, and open the web dashboard - all from your editor sidebar.
+Eywa gives you a live sidebar showing every agent session in your room - who's active, what they're working on, and a scrolling activity feed. Inject context to steer agents, browse shared knowledge with CodeLens annotations, and open the web dashboard without leaving your editor.
 
 ![Eywa](icon.png)
 
+## Quick Start
+
+1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=armandsumo.eywa-agents)
+2. Click the Eywa icon in the activity bar
+3. Click **Set Room** and enter your room slug (e.g. `my-project`)
+
+That's it. The extension connects to the hosted Eywa instance by default. If you're self-hosting, run **Eywa: Login** to connect via browser.
+
+### Connect an agent
+
+Run **Eywa: Connect Agent** from the command palette. It generates an MCP URL and copies it to your clipboard. You can also open a terminal with the `claude mcp add` command pre-filled.
+
 ## Features
 
-### Agent Monitoring
-Live sidebar showing all connected agents in your room. See who's active, what they're working on, session history, and memory counts. Tree auto-refreshes via Supabase realtime.
+### Live sidebar
 
-### Context Injection
-Send instructions or context to any agent (or broadcast to all) directly from VS Code. Two ways:
+The main panel shows agents as avatar chips with status dots (green = active, yellow = idle, grey = finished). Below that, a scrolling activity feed shows recent events across all agents. Avatars match across VS Code, the web dashboard, and hardware displays.
 
-- **Manual injection** (`Eywa: Inject Context`) - type a message, pick a target agent and priority
-- **Selection injection** (`Cmd+Shift+I`) - select code in the editor and inject it with a file path reference
+### Context injection
 
-Priority levels: `normal`, `high`, `urgent` (urgent shows a native popup).
+Send instructions or context to any agent, or broadcast to all:
 
-### Activity Feed
-Live feed of agent events: session starts/stops, context injections, knowledge updates, and general memory logs. Shows the last 50 events, newest first.
+- **Eywa: Inject Context** - pick a target agent, type a message, set priority
+- **Cmd+Shift+I** - select code in the editor and inject it with file path context
 
-### Knowledge Base
-Browse all knowledge entries stored by agents. Entries tagged with file paths appear as CodeLens annotations above relevant files in your editor.
+Priority levels: `normal`, `high`, `urgent`. Urgent injections trigger a native VS Code popup.
 
-### Agent Connection
-`Eywa: Connect Agent` generates an MCP URL and copies it to your clipboard. Optionally opens a terminal with the `claude mcp add` command pre-filled.
+### Knowledge base
 
-### Status Bar
-Bottom-left status showing your room and active agent count. Click for a quick-pick menu: inject context, open dashboard, or connect a new agent.
+The Knowledge tree shows entries stored by agents. Entries tagged with file paths appear as CodeLens annotations above relevant code in your editor.
 
-## Setup
+### Terminal tab titles
 
-1. Install the extension
-2. Open VS Code Settings and configure:
-   - `eywa.supabaseUrl` - your Supabase project URL
-   - `eywa.supabaseKey` - your Supabase anon key
-   - `eywa.room` - room slug to monitor (e.g. `my-project`)
-3. The sidebar appears in the activity bar (Eywa icon). Open it to see agents, activity, and knowledge.
+Toggle **Eywa: Toggle Agent Tab Titles** to show what Claude Code is doing in your terminal tab names ("Editing auth.ts", "Running tests", etc.). Uses a PostToolUse hook with a flag file - no env vars needed.
 
-You can also run `Eywa: Connect Agent` from the command palette to set the room interactively and get an MCP URL for your agents.
+### Status bar
+
+Click the Eywa status in the bottom-left for a quick-pick menu: switch rooms, inject context, toggle tab titles, connect agents, or open the dashboard.
 
 ## Commands
 
 | Command | Keybinding | Description |
 |---------|-----------|-------------|
-| `Eywa: Connect Agent` | - | Set room, get MCP URL for agents |
-| `Eywa: Inject Context` | - | Send context/instructions to an agent |
-| `Eywa: Inject Selection` | `Cmd+Shift+I` | Inject selected code to an agent |
-| `Eywa: Open Dashboard` | - | Open the web dashboard for your room |
-| `Eywa: Refresh Agents` | - | Manually refresh all tree views |
-| `Eywa: Show Status` | - | Quick-pick menu with common actions |
-| `Eywa: Show Knowledge for File` | - | Browse knowledge entries for the current file |
+| Eywa: Login | - | Connect to Eywa via browser login |
+| Eywa: Switch Room | - | Change the room you're monitoring |
+| Eywa: Connect Agent | - | Get an MCP URL for a new agent |
+| Eywa: Inject Context | - | Send context/instructions to an agent |
+| Eywa: Inject Selection | `Cmd+Shift+I` | Inject selected code to an agent |
+| Eywa: Open Dashboard | - | Open the web dashboard |
+| Eywa: Refresh Agents | - | Manually refresh the sidebar |
+| Eywa: Toggle Agent Tab Titles | - | Show agent actions in terminal tabs |
+| Eywa: Show Status | - | Quick-pick menu with common actions |
 
 ## Settings
 
-| Setting | Description |
-|---------|-------------|
-| `eywa.supabaseUrl` | Supabase project URL |
-| `eywa.supabaseKey` | Supabase anon key |
-| `eywa.room` | Room slug to monitor |
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `eywa.supabaseUrl` | Hosted instance | Supabase project URL |
+| `eywa.supabaseKey` | Hosted instance | Supabase anon key |
+| `eywa.room` | (empty) | Room slug to monitor |
 
-## How It Works
-
-The extension connects directly to your Supabase backend using the JS SDK. It subscribes to realtime changes on the `memories` table, so agent events (session starts, context injections, knowledge updates) appear instantly in the sidebar.
-
-Injections are written as `memories` rows with `message_type: 'injection'` and metadata targeting a specific agent. Agents pick these up on their next context poll.
+The Supabase URL and key default to the hosted Eywa instance. You only need to change these if you're self-hosting.
 
 ## Links
 
