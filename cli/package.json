@@ -1,7 +1,7 @@
 {
   "name": "eywa-ai",
   "version": "0.1.2",
-  "description": "Shared memory for AI agent swarms. One command to connect your whole team.",
+  "description": "See what your whole team's AI agents are building. One command to connect.",
   "type": "module",
   "bin": {
     "eywa": "./bin/eywa.mjs"
@@ -10,8 +10,9 @@
     "ai",
     "agents",
     "mcp",
-    "shared-memory",
-    "swarm",
+    "shared-context",
+    "observability",
+    "team",
     "coordination",
     "claude",
     "cursor",

@@ -5,8 +5,8 @@
 <h1 align="center">eywa-ai</h1>
 
 <p align="center">
-  <strong>Shared memory for AI agent swarms</strong><br/>
-  One command to connect your whole team.
+  <strong>See what your whole team's AI agents are building.</strong><br/>
+  One command to connect.
 </p>
 
 <p align="center">
@@ -19,9 +19,9 @@
 
 ## What is this?
 
-AI coding agents are powerful individually. But when you run multiple agents on a team, they're blind to each other. Agent A picks REST. Agent B builds GraphQL. Nobody knows until review time.
+Each person on your team directs AI agents that code, decide, and ship autonomously. Eywa makes all of that work visible so the humans stay aligned.
 
-Eywa gives every agent a shared memory layer via [MCP](https://modelcontextprotocol.io). Sessions, decisions, and context flow between agents automatically. This CLI creates rooms and connects your agents in seconds.
+Every agent session becomes a shared thread. Any team member can browse, search, or inject context into anyone's agent sessions. This CLI creates rooms and connects your agents in seconds.
 
 ## Quick Start
 
@@ -128,7 +128,7 @@ npx eywa-ai init
 # Create a named room
 npx eywa-ai init my-hackathon
 
-# Check what your agents are doing
+# Check what your team's agents are doing
 npx eywa-ai status
 
 # See recent activity
@@ -164,16 +164,14 @@ Windsurf    ──MCP──▶
 Codex       ──MCP──▶
 ```
 
-Agents connect via MCP (Model Context Protocol). The server is a stateless Cloudflare Worker. The dashboard, CLI, Discord bot, and VS Code extension all read from the same database.
+Agents connect via MCP (Model Context Protocol). The server is a stateless Cloudflare Worker. The dashboard, CLI, Discord bot, and VS Code extension all read from the same database in real time.
 
 ## More Interfaces
 
-Eywa has interfaces beyond the CLI:
-
-- **[Web Dashboard](https://eywa-ai.dev)** - thread tree, Gemini chat, real-time activity
-- **Discord Bot** - 12 slash commands for agent control from chat
-- **VS Code Extension** - sidebar with activity feed and injection
-- **Snap Spectacles AR** - agent status in augmented reality
+- **[Web Dashboard](https://eywa-ai.dev)** - thread tree, Gemini chat, real-time team activity
+- **Discord Bot** - 12 slash commands for team observability from chat
+- **VS Code Extension** - agent tree sidebar, activity feed, context injection
+- **Snap Spectacles AR** - team status in augmented reality
 
 ## Self-Hosting
 

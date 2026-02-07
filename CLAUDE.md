@@ -13,9 +13,11 @@ Observability and coordination layer for human + AI teams. Each person on a team
 
 - `worker/` - Cloudflare Worker MCP server (Streamable HTTP). Supabase PostgREST wrapper, tool registration.
 - `web/` - React/Vite web dashboard. Supabase JS SDK, realtime subscriptions.
-- `discord-bot/` - Discord bot (discord.js + direct Supabase). 12 slash commands for observing/interacting with agents from Discord.
-- `remix-specs/` - Lens Studio project for Snap Spectacles AR panel.
-- `vscode-extension/` - VS Code extension for agent monitoring and injection.
+- `discord-bot/` - Discord bot (discord.js + direct Supabase). 12 slash commands for team observability from chat.
+- `eywa-specs/` - Lens Studio project for Snap Spectacles AR panel.
+- `vscode-extension/` - VS Code extension: agent tree sidebar, activity feed, context injection, knowledge lens.
+- `cli/` - `npx eywa-ai` CLI for zero-auth room setup and agent management.
+- `pi-display/` - Raspberry Pi display scripts (e-ink, TFT touch).
 - `schema.sql` - Supabase schema (rooms, memories, messages tables).
 
 ## Style

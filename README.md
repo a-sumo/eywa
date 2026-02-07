@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.gif" alt="Eywa - Shared memory for AI agent teams" width="100%" />
+  <img src="docs/banner.gif" alt="Eywa" width="100%" />
 </p>
 
 <p align="center">
@@ -9,8 +9,8 @@
 <h1 align="center">Eywa</h1>
 
 <p align="center">
-  <strong>Shared memory for AI agent swarms</strong><br/>
-  <em>Your agents are powerful. Make them a team.</em>
+  <strong>See what your whole team's AI agents are building.</strong><br/>
+  <em>Shared context and observability for human + AI teams.</em>
 </p>
 
 <p align="center">
@@ -30,19 +30,15 @@
 
 ---
 
-## The Problem
+## What Eywa Does
 
-AI coding agents are incredibly productive individually. But when you run multiple agents on a team, they're blind to each other. Agent A picks a REST API. Agent B builds GraphQL. Nobody finds out until review time.
-
-The more agents you run, the more time you spend re-syncing them manually.
-
-## The Solution
-
-Eywa gives every agent on your team a shared memory. Sessions, decisions, artifacts, and context flow between agents automatically. Think of it as git, but for AI context.
+Each person on your team directs AI agents that code, decide, and ship autonomously. Eywa makes all of that work visible so the humans stay aligned.
 
 - Every agent session becomes a **shared thread** with memories, artifacts, and decisions
 - Any team member can browse, search, or inject context into any agent's session
 - One MCP endpoint. Zero config. Works with 8+ AI coding agents today.
+
+When everyone runs AI, small misalignments between people compound at machine speed. Eywa gives your team one shared view of what all agents are building, so you know what to sync on.
 
 ---
 
@@ -174,7 +170,7 @@ Replace `alice` with your name. Each person uses their own name so Eywa can tell
                                                 └────────────────┘
 ```
 
-Agents connect via [MCP](https://modelcontextprotocol.io) (Model Context Protocol). The server is a stateless Cloudflare Worker that writes to Supabase. The dashboard, CLI, Discord bot, and other interfaces all read from the same database.
+Agents connect via [MCP](https://modelcontextprotocol.io) (Model Context Protocol). The server is a stateless Cloudflare Worker that writes to Supabase. The dashboard, CLI, Discord bot, and other interfaces all read from the same database in real time.
 
 ### What agents can do once connected
 
@@ -206,7 +202,7 @@ eywa_pull("bob")  # get bob's recent context
 eywa_learn("API uses /api/v1 prefix, JWT for auth", title="API conventions", tags=["api"])
 ```
 
-**Push context to another agent:**
+**Push context to another team member's agent:**
 ```
 eywa_inject(target="bob", content="Schema changed: user_id is UUID not integer", priority="high")
 ```
@@ -224,16 +220,12 @@ Eywa meets your team where they already work.
 
 | Integration | Description | Path |
 |------------|-------------|------|
-| <img src="https://cdn.simpleicons.org/react/61DAFB" width="16" /> **Web Dashboard** | Thread tree, Gemini chat, workspace, notifications | [`web/`](web/) |
-| <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" /> **CLI** | `npx eywa-ai init`, status, inject, log | [`cli/`](cli/) |
-| <img src="https://cdn.simpleicons.org/discord/5865F2" width="16" /> **Discord Bot** | 12 slash commands for full agent control from chat | [`discord-bot/`](discord-bot/) |
-| <img src="https://cdn.simpleicons.org/visualstudiocode/007ACC" width="16" /> **VS Code Extension** | Sidebar with activity feed and injection | [`vscode-extension/`](vscode-extension/) |
-| <img src="https://cdn.simpleicons.org/snapchat/FFFC00" width="16" /> **Snap Spectacles** | AR panel anchored to physical displays | [`remix-specs/`](remix-specs/) |
-| <img src="https://cdn.simpleicons.org/raspberrypi/A22846" width="16" /> **E-ink Display** | 7-color Waveshare ambient agent status | [`web/` (MiniEywaEink)](web/src/components/MiniEywaEink.tsx) |
-
-### Spectacles Deployment
-
-For production deployment (auto‑join via display tracker marker and dynamic UI root), see `eywa-specs/DEPLOYMENT.md`.
+| <img src="https://cdn.simpleicons.org/react/61DAFB" width="16" /> **Web Dashboard** | Thread tree, Gemini chat, workspace, real-time activity | [`web/`](web/) |
+| <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" /> **CLI** | `npx eywa-ai init`, status, inject, log - zero-auth setup | [`cli/`](cli/) |
+| <img src="https://cdn.simpleicons.org/discord/5865F2" width="16" /> **Discord Bot** | 12 slash commands for team observability from chat | [`discord-bot/`](discord-bot/) |
+| <img src="https://cdn.simpleicons.org/visualstudiocode/007ACC" width="16" /> **VS Code Extension** | Agent tree sidebar, activity feed, context injection, knowledge lens | [`vscode-extension/`](vscode-extension/) |
+| <img src="https://cdn.simpleicons.org/snapchat/FFFC00" width="16" /> **Snap Spectacles** | AR panel anchored to physical displays | [`eywa-specs/`](eywa-specs/) |
+| <img src="https://cdn.simpleicons.org/raspberrypi/A22846" width="16" /> **E-ink Display** | 7-color Waveshare ambient team status | [`web/` (MiniEywaEink)](web/src/components/MiniEywaEink.tsx) |
 
 ---
 
@@ -259,9 +251,9 @@ eywa/
 │       ├── index.ts          # Entry: routing, room lookup, MCP handler
 │       └── tools/            # session, memory, context, collaboration, inject, link, knowledge
 │
-├── web/              # React/Vite dashboard
+├── web/              # React/Vite dashboard + landing page + presentation
 │   └── src/
-│       ├── components/       # ThreadTree, ThreadView, WorkspaceView, MiniEywa, Landing, ...
+│       ├── components/       # ThreadTree, ThreadView, WorkspaceView, Landing, SlidePresentation, ...
 │       ├── hooks/            # useRealtimeMemories, useNotifications, useGeminiChat, ...
 │       └── lib/              # Supabase client, thread similarity
 │
@@ -269,11 +261,11 @@ eywa/
 │   └── bin/eywa.mjs
 │
 ├── discord-bot/      # Discord bot (12 slash commands, direct Supabase)
-├── vscode-extension/ # VS Code sidebar extension
-├── remix-specs/      # Snap Spectacles AR (Lens Studio project)
-├── presentation/     # Pitch deck (Reveal.js)
+├── vscode-extension/ # VS Code sidebar: agent tree, activity feed, injection, knowledge lens
+├── eywa-specs/       # Snap Spectacles AR (Lens Studio project)
+├── pi-display/       # Raspberry Pi display scripts (e-ink, TFT touch)
 ├── schema.sql        # Supabase schema
-└── scripts/          # Utilities (db migration, banner capture, etc.)
+└── scripts/          # Utilities (db migration, banner capture, slide capture)
 ```
 
 ---
@@ -367,12 +359,13 @@ cd discord-bot && npm install && npm start
 |-----------|-----------|
 | MCP Server | Cloudflare Workers, `@modelcontextprotocol/sdk` |
 | Database | Supabase (PostgreSQL + Realtime) |
-| Dashboard | React 18, TypeScript, Vite |
+| Dashboard | React 19, TypeScript, Vite |
 | AI Chat | Gemini (gemini-2.5-flash) |
 | CLI | Node.js, `@supabase/supabase-js` |
 | Discord Bot | discord.js, direct Supabase |
+| VS Code | Extension API, Supabase realtime |
 | AR | Snap Spectacles / Lens Studio |
-| E-ink | Waveshare 7-color display |
+| Ambient | Waveshare 7-color e-ink, Raspberry Pi TFT |
 
 ---
 
@@ -385,5 +378,5 @@ MIT
 <p align="center">
   <img src="web/public/eywa-logo-no-bg.svg" width="32" alt="Eywa" />
   <br/>
-  <strong>Built for hackathons. Designed for teams.</strong>
+  <strong>Coordination layer for human + AI teams.</strong>
 </p>

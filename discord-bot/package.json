@@ -1,7 +1,7 @@
 {
   "name": "eywa-discord",
   "version": "1.0.0",
-  "description": "Discord bot for Eywa multi-agent coordination",
+  "description": "Discord bot for Eywa - team observability for human + AI teams",
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",

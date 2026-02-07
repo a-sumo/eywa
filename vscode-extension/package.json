@@ -1,7 +1,7 @@
 {
   "name": "eywa-agents",
   "displayName": "Eywa - Agent Memory",
-  "description": "Monitor and steer AI agents sharing context through Eywa",
+  "description": "See what your team's AI agents are building, right in VS Code",
   "version": "0.2.1",
   "publisher": "armandsumo",
   "icon": "icon.png",
@@ -95,6 +95,11 @@
       {
         "command": "eywa.showKnowledgeForFile",
         "title": "Eywa: Show Knowledge for File"
+      },
+      {
+        "command": "eywa.toggleTabTitles",
+        "title": "Eywa: Toggle Agent Tab Titles",
+        "icon": "$(terminal)"
       }
     ],
     "viewsWelcome": [
@@ -109,6 +114,11 @@
         {
           "command": "eywa.login",
           "when": "view == eywaAgents && config.eywa.room == ''",
+          "group": "navigation"
+        },
+        {
+          "command": "eywa.toggleTabTitles",
+          "when": "view == eywaAgents",
           "group": "navigation"
         },
         {

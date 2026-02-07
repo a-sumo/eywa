@@ -5,6 +5,9 @@
  * Configuration is read from `eywa.*` settings; changes trigger re-init.
  */
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 import { AgentTreeProvider, SessionItem } from "./agentTree";
 import { KnowledgeTreeProvider } from "./knowledgeTree";
 import { ActivityTreeProvider } from "./activityTree";
@@ -13,6 +16,8 @@ import { RealtimeManager, type MemoryPayload } from "./realtime";
 import { injectSelection } from "./injectCommand";
 import { KnowledgeCodeLensProvider, registerKnowledgeForFileCommand } from "./knowledgeLens";
 import { startLoginFlow } from "./authServer";
+
+const TAB_TITLE_FLAG = path.join(os.homedir(), ".config", "eywa", "tab-title");
 
 let client: EywaClient | undefined;
 let statusBarItem: vscode.StatusBarItem;
@@ -315,6 +320,21 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand("eywa.openDashboard");
       } else if (pick.label.includes("Connect new agent")) {
         vscode.commands.executeCommand("eywa.connectAgent");
+      }
+    }),
+  );
+
+  // Tab title toggle (controls the PostToolUse hook via flag file)
+  context.subscriptions.push(
+    vscode.commands.registerCommand("eywa.toggleTabTitles", () => {
+      const dir = path.dirname(TAB_TITLE_FLAG);
+      if (fs.existsSync(TAB_TITLE_FLAG)) {
+        fs.unlinkSync(TAB_TITLE_FLAG);
+        vscode.window.showInformationMessage("Agent tab titles disabled");
+      } else {
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(TAB_TITLE_FLAG, "1");
+        vscode.window.showInformationMessage("Agent tab titles enabled - terminal tabs will show what Claude is doing");
       }
     }),
   );
