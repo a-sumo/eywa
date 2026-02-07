@@ -26,12 +26,14 @@
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
+    cameraObject: false
     channelName: false
     deviceId: false
     material: false
     pixelsPerCm: false
     positionOffset: false
     showStatus: false
+    showTestQuads: false
     snapCloudRequirements: false
   ScriptTypesHidden:
     {}
@@ -48,7 +50,9 @@
       positionOffset: !<Vec3> {x: 0.000000, y: 0.000000, z: 0.000000}
       material: !<reference.Material> 00000000-0000-0000-0000-000000000000
       pixelsPerCm: !<float> 16.000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
       showStatus: true
+      showTestQuads: false
   ScriptTypes:
     -
       {}
@@ -59,4 +63,6 @@
     - '// @input vec3 positionOffset {"hint":"Position offset from parent (center of panel)"}'
     - '// @input Asset.Material material {"hint":"Material template for quads. Create an Unlit material in Asset Browser."}'
     - '// @input float pixelsPerCm = 16 {"hint":"Pixels-to-cm scale factor. 1 cm per N pixels of tile width."}'
+    - '// @input SceneObject cameraObject {"hint":"Optional camera SceneObject override (for pose broadcasts)"}'
     - '// @input bool showStatus = true {"hint":"Show debug status text"}'
+    - '// @input bool showTestQuads {"hint":"Spawn colored test quads to verify mesh/material pipeline"}'

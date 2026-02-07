@@ -43,26 +43,25 @@ export interface SlidesData {
 
 export const slidesData: SlidesData = {
   title: "Eywa",
-  subtitle: "Shared memory for AI agent swarms",
+  subtitle: "See what your whole team's AI agents are building.",
   summary: [
-    "1. The Problem",
-    "2. The Solution",
+    "1. What Eywa Does",
+    "2. Why It Matters",
     "3. How It Works",
     "4. Live Demo",
     "Appendix: Labs",
   ],
 
   sections: {
-    "The Problem": [
-      "The coordination gap",
-      "Faster agents, slower teams",
-      "It's only accelerating",
-    ],
-    "The Solution": [
-      "Eywa",
+    "What Eywa Does": [
+      "One shared view",
       "Thread Tree",
       "Workspace + Gemini",
-      "Coordination primitives",
+      "Coordination tools",
+    ],
+    "Why It Matters": [
+      "The coordination gap",
+      "It's only accelerating",
     ],
     "How It Works": [
       "Works with your agents",
@@ -78,54 +77,24 @@ export const slidesData: SlidesData = {
   },
 
   slides: [
-    // -- THE PROBLEM --
+    // -- WHAT EYWA DOES --
     {
       type: "bullets",
-      title: "The coordination gap",
-      subtitle: "AI agents are powerful alone. On a team, they're blind.",
+      title: "One shared view",
+      subtitle:
+        "Every agent session, decision, and insight, visible to your whole team.",
       items: [
-        "92% of developers use AI coding agents daily. Each runs in <strong>complete isolation</strong>.",
-        "Agent A decides on an API format. Agent B never finds out. Work diverges silently.",
-        "The more agents you run, the more time you spend re-syncing them manually.",
-      ],
-    },
-    {
-      type: "bigstat",
-      title: "Faster agents, slower teams",
-      subtitle: "Individual productivity is up. Team coordination is down.",
-      stats: [
-        { value: "4.6x", label: "Longer review wait for AI-generated PRs" },
-        { value: "+41%", label: "Higher code churn from AI vs human code" },
-        { value: "+47%", label: "More context switching with AI tools" },
-        { value: "17%", label: "Say AI improved team collaboration" },
-      ],
-      footnote: "$34B AI coding tools market. Coordination is the bottleneck.",
-    },
-    {
-      type: "quote",
-      title: "It's only accelerating",
-      subtitle: "The number of agents per developer is only going up",
-      quote: "it's just so clear humans are the bottleneck to writing software. number of agents we can manage, information flow, state management. there will just be no centaurs soon as it is not a stable state",
-      attribution: "@tszzl (roon)",
-    },
-
-    // -- THE SOLUTION --
-    {
-      type: "bullets",
-      title: "Eywa",
-      subtitle: "Shared memory that keeps every agent in sync. Like git, but for AI context.",
-      items: [
-        "Every agent session becomes a <strong>shared thread</strong> with memories, artifacts, and decisions.",
-        "Any team member can browse, search, or inject context into any agent's session.",
-        "One MCP endpoint. Zero config. Works with 8+ AI coding agents today.",
+        "Each person on your team directs AI agents that code, decide, and ship autonomously. Eywa makes all of it <strong>visible</strong>.",
+        "Every session becomes a <strong>shared thread</strong> with memories, artifacts, and decisions.",
+        "Browse, search, or inject context into any team member's agent sessions.",
       ],
     },
     {
       type: "bullets",
       title: "Thread Tree",
-      subtitle: "See every agent's work in real-time.",
+      subtitle: "See every agent session across your team in real time.",
       items: [
-        "Live tree of all agent sessions across your team.",
+        "Live tree of all agent sessions, organized by team member.",
         "Click into any thread for the full conversation, artifacts, and status.",
         "Filter by agent, owner, status, or search across all threads.",
       ],
@@ -133,22 +102,47 @@ export const slidesData: SlidesData = {
     {
       type: "bullets",
       title: "Workspace + Gemini",
-      subtitle: "Build context from threads. Ask questions across all of it.",
+      subtitle:
+        "Build shared context from any thread. Ask questions across all of it.",
       items: [
         "Drag memories from any thread into a shared workspace.",
-        "Context auto-compiles. Ask Gemini questions grounded in your agents' actual work.",
+        "Context auto-compiles. Ask Gemini questions grounded in your team's actual work.",
         "Output becomes a new shareable thread.",
       ],
     },
     {
       type: "bullets",
-      title: "Coordination primitives",
-      subtitle: "Built-in mechanisms so agents don't drift apart",
+      title: "Coordination tools",
+      subtitle: "Keep humans aligned while their agents move fast.",
       items: [
-        "<strong>Divergence alerts</strong>: warnings when two agents solve the same problem differently.",
-        "<strong>Context injection</strong>: push a decision to any agent. They see it on their next action.",
+        "<strong>Divergence alerts</strong>: surface when two people's agents solve the same problem differently.",
+        "<strong>Context injection</strong>: push a decision to any team member's agent. They see it on their next action.",
         "<strong>Knowledge base</strong>: architecture decisions and conventions persist across all sessions.",
       ],
+    },
+
+    // -- WHY IT MATTERS --
+    {
+      type: "bigstat",
+      title: "The coordination gap",
+      subtitle:
+        "AI makes individuals faster. Teams need to stay in sync.",
+      stats: [
+        { value: "4.6x", label: "Longer review wait for AI-generated PRs" },
+        { value: "+41%", label: "Higher code churn from AI vs human code" },
+        { value: "+47%", label: "More context switching with AI tools" },
+        { value: "17%", label: "Say AI improved team collaboration" },
+      ],
+      footnote:
+        "When everyone runs AI, small misalignments between people compound at machine speed.",
+    },
+    {
+      type: "quote",
+      title: "It's only accelerating",
+      subtitle: "The number of agents per developer is only going up.",
+      quote:
+        "it's just so clear humans are the bottleneck to writing software. number of agents we can manage, information flow, state management. there will just be no centaurs soon as it is not a stable state",
+      attribution: "@tszzl (roon)",
     },
 
     // -- HOW IT WORKS --
@@ -165,10 +159,10 @@ export const slidesData: SlidesData = {
     {
       type: "bullets",
       title: "Ecosystem",
-      subtitle: "Meet your team where they already work",
+      subtitle: "Meet your team where they already work.",
       items: [
-        "<strong>VS Code</strong>: Realtime sidebar, activity feed, one-click code injection.",
-        "<strong>Discord</strong>: 12 slash commands for full agent control from chat.",
+        "<strong>VS Code</strong>: Realtime sidebar, activity feed, one-click context injection.",
+        "<strong>Discord</strong>: 12 slash commands for full agent observability from chat.",
         "<strong>Docs portal</strong>: Step-by-step setup for every supported agent.",
       ],
     },
@@ -183,11 +177,11 @@ export const slidesData: SlidesData = {
     {
       type: "bullets",
       title: "See it live",
-      subtitle: "Two agents. One room. Real-time shared context.",
+      subtitle: "Two people. Multiple agents. One shared room.",
       items: [
-        "Agent alpha works on auth. Agent beta works on the database.",
-        "Both threads appear in the dashboard as they work.",
-        "Drag both into Eywa. Ask Gemini to integrate.",
+        "Alice's agents work on auth. Bob's agents work on the database.",
+        "Both sets of threads appear in the dashboard as they work.",
+        "Alice spots a conflict, drags context into Bob's session. Aligned in seconds.",
       ],
     },
 
@@ -195,7 +189,7 @@ export const slidesData: SlidesData = {
     {
       type: "bullets",
       title: "Ambient Displays",
-      subtitle: "Always-on team awareness with pixel creatures",
+      subtitle: "Always-on team awareness with pixel creatures.",
       items: [
         "<strong>MiniEywa</strong>: Compact dashboard with deterministic pixel-art creatures per agent.",
         "Activity sparklines show recent work patterns at a glance.",
@@ -205,7 +199,7 @@ export const slidesData: SlidesData = {
     {
       type: "bullets",
       title: "Timeline Features",
-      subtitle: "Git-like history for your agent sessions",
+      subtitle: "Git-like history for your agent sessions.",
       items: [
         "<strong>Rewind</strong>: Jump back to any point in session history.",
         "<strong>Fork</strong>: Branch from a historical moment to explore alternatives.",
@@ -215,7 +209,7 @@ export const slidesData: SlidesData = {
     {
       type: "bullets",
       title: "Physical Displays",
-      subtitle: "E-ink, TFT touch, and Spectacles AR",
+      subtitle: "E-ink, TFT touch, and Spectacles AR.",
       items: [
         "<strong>E-ink</strong>: 7-color Waveshare display. Pastel palette, AR tracking marker.",
         "<strong>TFT Touch</strong>: 3.5\" ILI9341 with pygame. Tap agents, send injections.",
@@ -226,6 +220,6 @@ export const slidesData: SlidesData = {
 
   closing: {
     title: "Eywa",
-    subtitle: "Your agents are powerful. Make them a team.",
+    subtitle: "See what your whole team is building.",
   },
 };

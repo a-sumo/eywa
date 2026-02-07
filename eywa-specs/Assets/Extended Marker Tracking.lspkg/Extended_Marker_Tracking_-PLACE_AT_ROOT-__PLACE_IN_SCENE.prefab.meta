@@ -6,7 +6,7 @@
   PackageType: NotAPackage
   LegacyPackagePolicy: ~
   ExtraData:
-    {}
+    AssetLibraryId: GaSs1QumpiOQ3rKM4aIQd
   AssetDataMap:
     ObjectPrefab: !<own> 917bb931-b5e3-4884-bf9e-5f1586d827b6
   DependentFiles:
@@ -14,6 +14,21 @@
   ImporterSettings: !<AssetImporterSettings>
     {}
   CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<SceneObject/228b3859-c92d-406c-9cf6-08734347fae1>
+  PrefabRemaps:
+    []
+  Name: Object 0
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 5.000000, y: 5.000000, z: 5.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> d57879c5-26fa-4f84-8373-bcad34f19d76
 - !<ScriptComponent/619f46a9-930a-44aa-4462-8df6f7d90117>
   PrefabRemaps:
     []
@@ -50,6 +65,26 @@
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
   Children:
-    []
+    - !<own> 228b3859-c92d-406c-9cf6-08734347fae1
   Components:
     - !<own> 619f46a9-930a-44aa-4462-8df6f7d90117
+- !<RenderMeshVisual/d57879c5-26fa-4f84-8373-bcad34f19d76>
+  PrefabRemaps:
+    []
+  Name: Render Mesh Visual
+  Enabled: true
+  RenderOrder: 0
+  StretchMode: Stretch
+  VerticalAlignment: Center
+  HorizontalAlignment: Center
+  MeshShadowMode: None
+  ShadowColor: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+  ShadowDensity: 1.000000
+  Materials:
+    - !<reference> c406c5cb-ca73-47e2-be4f-32f848c7e2ff
+  Mesh: !<reference> e542623c-1432-4bfa-881d-a28905bd9e57
+  Skin: !<reference> 00000000-0000-0000-0000-000000000000
+  BlendShapesEnabled: true
+  BlendNormals: false
+  BlendShapes:
+    {}

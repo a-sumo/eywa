@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { slidesData, type Slide } from "./slidesData";
 import { EywaLogoStatic } from "./EywaLogo";
+import { FlowBackground } from "./FlowBackground";
 
 import "./SlidePresentation.css";
 
@@ -403,28 +404,37 @@ export function SlidePresentation() {
   // Render the current slide content
   const renderCurrentSlide = () => {
     if (current === 0) {
-      // Title slide
+      // Title slide with particle animation backdrop
       return (
         <div className="slide slide-title">
-          <div className="slide-logo"><EywaLogoStatic size={80} /></div>
-          <h1 className="slide-h1">{slidesData.title}</h1>
-          <p className="slide-subtitle-main">{slidesData.subtitle}</p>
-          <div className="slide-summary">
-            {slidesData.summary.map((item, i) => (
-              <div key={i} className="slide-summary-item">{item}</div>
-            ))}
+          <div className="slide-flow-backdrop" aria-hidden="true">
+            <FlowBackground />
+          </div>
+          <div className="slide-title-content">
+            <h1 className="slide-h1">{slidesData.title}</h1>
+            <p className="slide-subtitle-main">{slidesData.subtitle}</p>
+            <div className="slide-summary">
+              {slidesData.summary.map((item, i) => (
+                <div key={i} className="slide-summary-item">{item}</div>
+              ))}
+            </div>
           </div>
         </div>
       );
     }
 
     if (current === totalSlides - 1) {
-      // Closing slide
+      // Closing slide with particle animation backdrop
       return (
         <div className="slide slide-closing">
-          <div className="slide-logo"><EywaLogoStatic size={80} /></div>
-          <h1 className="slide-h1">{slidesData.closing.title}</h1>
-          <p className="slide-subtitle-main">{slidesData.closing.subtitle}</p>
+          <div className="slide-flow-backdrop" aria-hidden="true">
+            <FlowBackground />
+          </div>
+          <div className="slide-title-content">
+            <div className="slide-logo"><EywaLogoStatic size={80} /></div>
+            <h1 className="slide-h1">{slidesData.closing.title}</h1>
+            <p className="slide-subtitle-main">{slidesData.closing.subtitle}</p>
+          </div>
         </div>
       );
     }

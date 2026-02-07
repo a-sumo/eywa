@@ -19,6 +19,7 @@
 import { SnapCloudRequirements } from './SnapCloudRequirements';
 import { RealtimeTextureReceiver } from './RealtimeTextureReceiver';
 import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
+import { InteractorEvent } from "SpectaclesInteractionKit.lspkg/Core/Interactor/InteractorEvent";
 
 interface QuadEntry {
   id: string;
@@ -30,6 +31,8 @@ interface QuadEntry {
   layer: number;
   w: number; // canvas pixel width (for aspect ratio)
   h: number; // canvas pixel height
+  groupId: string | null;
+  interactive: boolean;
   unsubscribes: (() => void)[];
 }
 
@@ -71,6 +74,10 @@ export class MicroTilePanel extends BaseScriptComponent {
   public pixelsPerCm: number = 16;
 
   @input
+  @hint("Optional camera SceneObject override (for pose broadcasts)")
+  public cameraObject: SceneObject;
+
+  @input
   @hint("Show debug status text")
   public showStatus: boolean = true;
 
@@ -80,9 +87,18 @@ export class MicroTilePanel extends BaseScriptComponent {
 
   // Live quads
   private quads: Map<string, QuadEntry> = new Map();
+  private groups: Map<string, SceneObject> = new Map();
   private quadParent: SceneObject;
   private receiver: RealtimeTextureReceiver;
   private resolvedDeviceId: string = "";
+  private cursorObj: SceneObject;
+  private cursorVisible: boolean = false;
+  private panelColliderObj: SceneObject;
+  private panelInteractable: Interactable;
+  private panelUnsubscribes: (() => void)[] = [];
+  private cameraObj: SceneObject;
+  private lastCameraSend = 0;
+  private lastHitId: string | null = null;
 
   // Texture buffer: holds textures that arrived before their quad was created.
   // When a quad is created, we check this buffer and apply immediately.
@@ -125,6 +141,10 @@ export class MicroTilePanel extends BaseScriptComponent {
     this.quadParent.getTransform().setLocalPosition(this.positionOffset);
 
     this.sharedMesh = this.buildUnitQuadMesh();
+
+    this.buildCursor();
+    this.buildPanelInteractor();
+    this.cameraObj = this.findCameraObject();
 
     // Log parent transform for debugging
     const worldPos = this.sceneObject.getTransform().getWorldPosition();
@@ -228,12 +248,221 @@ export class MicroTilePanel extends BaseScriptComponent {
     return mesh;
   }
 
+  private buildCursor() {
+    this.cursorObj = global.scene.createSceneObject("Cursor");
+    this.cursorObj.setParent(this.quadParent);
+
+    const cursorSize = 1.0; // 1cm diameter
+    const transform = this.cursorObj.getTransform();
+    transform.setLocalScale(new vec3(cursorSize, cursorSize, 1));
+    transform.setLocalPosition(new vec3(0, 0, 0.5));
+
+    const rmv = this.cursorObj.createComponent("Component.RenderMeshVisual") as RenderMeshVisual;
+    rmv.mesh = this.sharedMesh;
+
+    if (this.material) {
+      const mat = this.material.clone();
+      mat.mainPass["baseColor"] = new vec4(0.08, 0.82, 1.0, 0.8);
+      rmv.mainMaterial = mat;
+      Base64.decodeTextureAsync(
+        MicroTilePanel.TEST_TEX_WHITE,
+        (texture: Texture) => {
+          mat.mainPass["baseTex"] = texture;
+        },
+        () => {
+          print("[MicroTilePanel] Cursor texture FAILED to decode!");
+        }
+      );
+    }
+
+    this.cursorObj.enabled = false;
+    this.cursorVisible = false;
+  }
+
+  private buildPanelInteractor() {
+    this.panelColliderObj = global.scene.createSceneObject("PanelCollider");
+    this.panelColliderObj.setParent(this.quadParent);
+    this.panelColliderObj.getTransform().setLocalPosition(vec3.zero());
+    this.panelColliderObj.getTransform().setLocalScale(new vec3(1, 1, 1));
+    this.panelColliderObj.layer = this.sceneObject.layer;
+
+    const rmv = this.panelColliderObj.createComponent("Component.RenderMeshVisual") as RenderMeshVisual;
+    rmv.mesh = this.sharedMesh;
+    rmv.enabled = false;
+
+    const collider = this.panelColliderObj.createComponent("Physics.ColliderComponent") as ColliderComponent;
+    const shape = Shape.createBoxShape();
+    shape.size = new vec3(1, 1, 0.01);
+    collider.shape = shape;
+
+    this.panelInteractable = this.panelColliderObj.getComponent(Interactable.getTypeName()) as Interactable;
+    if (!this.panelInteractable) {
+      this.panelInteractable = this.panelColliderObj.createComponent(Interactable.getTypeName()) as Interactable;
+    }
+
+    this.panelUnsubscribes.push(
+      this.panelInteractable.onHoverEnter((e: InteractorEvent) => {
+        this.handlePanelHover(e, "hover");
+      })
+    );
+
+    this.panelUnsubscribes.push(
+      this.panelInteractable.onHoverUpdate((e: InteractorEvent) => {
+        this.handlePanelHover(e, "hover_move");
+      })
+    );
+
+    this.panelUnsubscribes.push(
+      this.panelInteractable.onHoverExit(() => {
+        this.sendInteraction("", "hover_exit", null);
+        this.lastHitId = null;
+      })
+    );
+
+    this.panelUnsubscribes.push(
+      this.panelInteractable.onTriggerStart((e: InteractorEvent) => {
+        this.handlePanelHover(e, "tap");
+      })
+    );
+  }
+
+  private findCameraObject(): SceneObject {
+    if (this.cameraObject) return this.cameraObject;
+    const byName = this.findSceneObjectByName("Camera");
+    if (byName) return byName;
+    const byAlt = this.findSceneObjectByName("Camera Object");
+    if (byAlt) return byAlt;
+    const sceneAny = global.scene as any;
+    if (sceneAny.getRootObject) {
+      return sceneAny.getRootObject(0) as SceneObject;
+    }
+    return this.sceneObject;
+  }
+
+  private findSceneObjectByName(name: string): SceneObject | null {
+    const sceneAny = global.scene as any;
+    const roots: SceneObject[] = [];
+    if (sceneAny.getRootObjectCount && sceneAny.getRootObject) {
+      const count = sceneAny.getRootObjectCount();
+      for (let i = 0; i < count; i++) {
+        const root = sceneAny.getRootObject(i) as SceneObject;
+        if (root) roots.push(root);
+      }
+    } else if (sceneAny.getRootObject) {
+      const root = sceneAny.getRootObject(0) as SceneObject;
+      if (root) roots.push(root);
+    }
+
+    const queue: SceneObject[] = roots;
+    while (queue.length > 0) {
+      const obj = queue.shift() as SceneObject;
+      const objAny = obj as any;
+      const objName = objAny.name || (objAny.getName ? objAny.getName() : "");
+      if (objName === name) return obj;
+
+      const childCount = objAny.getChildrenCount ? objAny.getChildrenCount() : 0;
+      for (let i = 0; i < childCount; i++) {
+        const child = objAny.getChild(i) as SceneObject;
+        if (child) queue.push(child);
+      }
+    }
+
+    return null;
+  }
+
+  private handlePanelHover(e: InteractorEvent, type: string) {
+    const worldPos = e.interactor?.targetHitInfo?.hit?.position;
+    if (!worldPos) return;
+    const localPanel = this.quadParent.getTransform().getInvertedWorldTransform().multiplyPoint(worldPos);
+    const hit = this.hitTestTiles(localPanel);
+    if (!hit) return;
+    this.lastHitId = hit.id;
+    this.sendInteraction(hit.id, type, { x: localPanel.x, y: localPanel.y, u: hit.u, v: hit.v });
+  }
+
+  private hitTestTiles(localPos: vec3): { id: string; u: number; v: number } | null {
+    let bestId: string | null = null;
+    let bestZ = -999;
+    let bestU = 0;
+    let bestV = 0;
+
+    for (const entry of this.quads.values()) {
+      if (!entry.obj.enabled || !entry.interactive) continue;
+      const worldCenter = entry.obj.getTransform().getWorldPosition();
+      const localCenter = this.quadParent.getTransform().getInvertedWorldTransform().multiplyPoint(worldCenter);
+      const worldScale = entry.obj.getTransform().getWorldScale();
+      const w = worldScale.x;
+      const h = worldScale.y;
+
+      if (localPos.x < localCenter.x - w / 2 || localPos.x > localCenter.x + w / 2) continue;
+      if (localPos.y < localCenter.y - h / 2 || localPos.y > localCenter.y + h / 2) continue;
+
+      const u = (localPos.x - (localCenter.x - w / 2)) / w;
+      const v = 1.0 - (localPos.y - (localCenter.y - h / 2)) / h;
+
+      if (localCenter.z > bestZ) {
+        bestZ = localCenter.z;
+        bestId = entry.id;
+        bestU = u;
+        bestV = v;
+      }
+    }
+
+    if (!bestId) return null;
+    return { id: bestId, u: bestU, v: bestV };
+  }
+
+  private updatePanelColliderBounds() {
+    if (!this.panelColliderObj) return;
+    let minX = 9999;
+    let maxX = -9999;
+    let minY = 9999;
+    let maxY = -9999;
+    let hasAny = false;
+
+    for (const entry of this.quads.values()) {
+      if (!entry.obj.enabled) continue;
+      const worldCenter = entry.obj.getTransform().getWorldPosition();
+      const localCenter = this.quadParent.getTransform().getInvertedWorldTransform().multiplyPoint(worldCenter);
+      const worldScale = entry.obj.getTransform().getWorldScale();
+      const w = worldScale.x;
+      const h = worldScale.y;
+      minX = Math.min(minX, localCenter.x - w / 2);
+      maxX = Math.max(maxX, localCenter.x + w / 2);
+      minY = Math.min(minY, localCenter.y - h / 2);
+      maxY = Math.max(maxY, localCenter.y + h / 2);
+      hasAny = true;
+    }
+
+    if (!hasAny) {
+      this.panelColliderObj.enabled = false;
+      return;
+    }
+
+    this.panelColliderObj.enabled = true;
+    const width = Math.max(1, maxX - minX);
+    const height = Math.max(1, maxY - minY);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    this.panelColliderObj.getTransform().setLocalPosition(new vec3(cx, cy, 0));
+    this.panelColliderObj.getTransform().setLocalScale(new vec3(width, height, 1));
+  }
+
   // ---- Scene op dispatch ----
 
   private handleSceneOp(op: any) {
     if (!op || !op.op) return;
 
     switch (op.op) {
+      case "group":
+        this.createGroup(op);
+        break;
+      case "group-move":
+        this.moveGroup(op);
+        break;
+      case "group-destroy":
+        this.destroyGroup(op.id);
+        break;
       case "create":
         this.createQuad(op);
         break;
@@ -284,10 +513,23 @@ export class MicroTilePanel extends BaseScriptComponent {
       entry.w = op.w || 220;
       entry.h = op.h || 48;
       entry.layer = op.layer !== undefined ? op.layer : 0;
+      entry.interactive = !!op.interactive;
       entry.obj.enabled = true;
       entry.obj.name = "MT_" + id;
     } else {
       entry = this.buildNewQuad(id, op.w || 220, op.h || 48, op.layer !== undefined ? op.layer : 0);
+      entry.interactive = !!op.interactive;
+    }
+
+    // Parent to group if provided
+    const groupId = (op.group as string) || null;
+    if (groupId) {
+      const groupObj = this.ensureGroup(groupId);
+      entry.obj.setParent(groupObj);
+      entry.groupId = groupId;
+    } else {
+      entry.obj.setParent(this.quadParent);
+      entry.groupId = null;
     }
 
     // Position - use explicit z if provided, else derive from layer
@@ -302,11 +544,6 @@ export class MicroTilePanel extends BaseScriptComponent {
     const s = (op.s !== undefined ? op.s : 1) as number;
     entry.obj.getTransform().setLocalScale(new vec3(widthCm * s, heightCm * s, 1));
 
-    // Set up interaction if requested
-    if (op.interactive) {
-      this.setupInteraction(entry);
-    }
-
     this.quads.set(id, entry);
 
     print("[MicroTilePanel] + " + id + " at (" + x.toFixed(1) + "," + y.toFixed(1) + "," + z.toFixed(2) + ") " + widthCm.toFixed(1) + "x" + heightCm.toFixed(1) + "cm");
@@ -318,6 +555,8 @@ export class MicroTilePanel extends BaseScriptComponent {
       this.applyTexture(entry, buffered);
       print("[MicroTilePanel]   -> applied buffered texture for " + id);
     }
+
+    this.updatePanelColliderBounds();
   }
 
   private buildNewQuad(id: string, w: number, h: number, layer: number): QuadEntry {
@@ -354,6 +593,8 @@ export class MicroTilePanel extends BaseScriptComponent {
       layer,
       w,
       h,
+      groupId: null,
+      interactive: false,
       unsubscribes: [],
     };
   }
@@ -369,22 +610,46 @@ export class MicroTilePanel extends BaseScriptComponent {
     const id = entry.id;
 
     entry.unsubscribes.push(
-      entry.interactable.onHoverEnter(() => {
-        this.sendInteraction(id, "hover");
+      entry.interactable.onHoverEnter((e: InteractorEvent) => {
+        const hit = this.hitToLocal(entry, e);
+        this.sendInteraction(id, "hover", hit);
+      })
+    );
+
+    entry.unsubscribes.push(
+      entry.interactable.onHoverUpdate((e: InteractorEvent) => {
+        const hit = this.hitToLocal(entry, e);
+        this.sendInteraction(id, "hover_move", hit);
       })
     );
 
     entry.unsubscribes.push(
       entry.interactable.onHoverExit(() => {
-        this.sendInteraction(id, "hover_exit");
+        this.sendInteraction(id, "hover_exit", null);
       })
     );
 
     entry.unsubscribes.push(
-      entry.interactable.onTriggerStart(() => {
-        this.sendInteraction(id, "tap");
+      entry.interactable.onTriggerStart((e: InteractorEvent) => {
+        const hit = this.hitToLocal(entry, e);
+        this.sendInteraction(id, "tap", hit);
       })
     );
+  }
+
+  private hitToLocal(entry: QuadEntry, e: InteractorEvent): { x: number; y: number; u: number; v: number } | null {
+    const worldPos = e.interactor?.targetHitInfo?.hit?.position;
+    if (!worldPos) return null;
+
+    // Cursor position in panel-local coordinates (cm)
+    const localPanel = this.quadParent.getTransform().getInvertedWorldTransform().multiplyPoint(worldPos);
+
+    // UV within the quad collider (0..1)
+    const localQuad = entry.colliderObj.getTransform().getInvertedWorldTransform().multiplyPoint(worldPos);
+    const u = Math.max(0, Math.min(1, localQuad.x + 0.5));
+    const v = Math.max(0, Math.min(1, 1.0 - (localQuad.y + 0.5)));
+
+    return { x: localPanel.x, y: localPanel.y, u, v };
   }
 
   private moveQuad(op: any) {
@@ -396,6 +661,21 @@ export class MicroTilePanel extends BaseScriptComponent {
     const y = (op.y !== undefined ? op.y : entry.obj.getTransform().getLocalPosition().y) as number;
     const layer = op.layer !== undefined ? op.layer : entry.layer;
     const z = op.z !== undefined ? (op.z as number) : (LAYER_Z[layer] !== undefined ? LAYER_Z[layer] : 0.05);
+    const groupId = (op.group as string) || null;
+    if (op.interactive !== undefined) {
+      entry.interactive = !!op.interactive;
+    }
+
+    if (groupId !== entry.groupId) {
+      if (groupId) {
+        const groupObj = this.ensureGroup(groupId);
+        entry.obj.setParent(groupObj);
+        entry.groupId = groupId;
+      } else {
+        entry.obj.setParent(this.quadParent);
+        entry.groupId = null;
+      }
+    }
 
     if (op.s !== undefined) {
       const widthCm = entry.w / this.pixelsPerCm;
@@ -414,6 +694,7 @@ export class MicroTilePanel extends BaseScriptComponent {
     }
 
     entry.layer = layer;
+    this.updatePanelColliderBounds();
   }
 
   private animatePosition(obj: SceneObject, target: vec3, durationMs: number) {
@@ -457,6 +738,64 @@ export class MicroTilePanel extends BaseScriptComponent {
 
     this.quads.delete(id);
     print("[MicroTilePanel] - " + id + " (live:" + this.quads.size + " pool:" + this.quadPool.length + ")");
+    this.updatePanelColliderBounds();
+  }
+
+  // ---- Group CRUD ----
+
+  private ensureGroup(id: string): SceneObject {
+    const existing = this.groups.get(id);
+    if (existing) return existing;
+    const groupObj = global.scene.createSceneObject("MTG_" + id);
+    groupObj.setParent(this.quadParent);
+    groupObj.layer = this.sceneObject.layer;
+    groupObj.getTransform().setLocalPosition(vec3.zero());
+    this.groups.set(id, groupObj);
+    return groupObj;
+  }
+
+  private createGroup(op: any) {
+    const id = op.id as string;
+    if (!id) return;
+    const groupObj = this.ensureGroup(id);
+    const x = (op.x !== undefined ? op.x : 0) as number;
+    const y = (op.y !== undefined ? op.y : 0) as number;
+    const z = (op.z !== undefined ? op.z : 0) as number;
+    groupObj.getTransform().setLocalPosition(new vec3(x, y, z));
+    groupObj.enabled = op.visible !== false;
+    this.updatePanelColliderBounds();
+  }
+
+  private moveGroup(op: any) {
+    const id = op.id as string;
+    if (!id) return;
+    const groupObj = this.ensureGroup(id);
+    const x = (op.x !== undefined ? op.x : groupObj.getTransform().getLocalPosition().x) as number;
+    const y = (op.y !== undefined ? op.y : groupObj.getTransform().getLocalPosition().y) as number;
+    const z = (op.z !== undefined ? op.z : groupObj.getTransform().getLocalPosition().z) as number;
+    const duration = (op.duration || 0) as number;
+    groupObj.enabled = op.visible !== false;
+
+    const target = new vec3(x, y, z);
+    if (duration > 0) {
+      this.animatePosition(groupObj, target, duration);
+    } else {
+      groupObj.getTransform().setLocalPosition(target);
+    }
+    this.updatePanelColliderBounds();
+  }
+
+  private destroyGroup(id: string) {
+    const groupObj = this.groups.get(id);
+    if (!groupObj) return;
+    for (const [qid, entry] of this.quads) {
+      if (entry.groupId === id) {
+        this.destroyQuad(qid);
+      }
+    }
+    groupObj.destroy();
+    this.groups.delete(id);
+    this.updatePanelColliderBounds();
   }
 
   private setVisibility(id: string, visible: boolean) {
@@ -509,11 +848,15 @@ export class MicroTilePanel extends BaseScriptComponent {
 
   // ---- Interaction ----
 
-  private sendInteraction(id: string, type: string) {
+  private sendInteraction(id: string, type: string, hit: { x: number; y: number; u: number; v: number } | null) {
     if (!this.receiver) return;
     this.receiver.sendEvent("interact", {
       id: id,
       type: type,
+      x: hit ? hit.x : undefined,
+      y: hit ? hit.y : undefined,
+      u: hit ? hit.u : undefined,
+      v: hit ? hit.v : undefined,
       timestamp: Date.now(),
     });
   }
@@ -559,6 +902,11 @@ export class MicroTilePanel extends BaseScriptComponent {
       this.handleTexEvent(payload);
     });
 
+    receiver.onCursor((_payload: any) => {
+      // Cursor rendering disabled (avoid white square). We still use cursor data on web.
+      return;
+    });
+
     // Status display
     if (this.showStatus && statusText) {
       const statusEvent = this.createEvent("UpdateEvent");
@@ -576,6 +924,29 @@ export class MicroTilePanel extends BaseScriptComponent {
       });
     }
 
+    // Camera pose broadcast (to web)
+    const camEvent = this.createEvent("UpdateEvent");
+    camEvent.bind(() => {
+      const now = Date.now();
+      if (now - this.lastCameraSend < 100) return; // 10fps
+      this.lastCameraSend = now;
+      if (!this.cameraObj || !this.receiver) return;
+
+      const camT = this.cameraObj.getTransform();
+      const worldPos = camT.getWorldPosition();
+      const localPos = this.quadParent.getTransform().getInvertedWorldTransform().multiplyPoint(worldPos);
+
+      this.receiver.sendEvent("camera", {
+        x: localPos.x,
+        y: localPos.y,
+        z: localPos.z,
+        wx: worldPos.x,
+        wy: worldPos.y,
+        wz: worldPos.z,
+        ts: now,
+      });
+    });
+
     print("[MicroTilePanel] Receiver attached");
     return receiver;
   }
@@ -586,12 +957,27 @@ export class MicroTilePanel extends BaseScriptComponent {
     for (const [id] of this.quads) {
       this.destroyQuad(id);
     }
+    for (const [id] of this.groups) {
+      this.destroyGroup(id);
+    }
+    for (const unsub of this.panelUnsubscribes) {
+      unsub();
+    }
+    this.panelUnsubscribes = [];
     for (const entry of this.quadPool) {
       entry.obj.destroy();
     }
     this.quadPool = [];
     this.bufferedTextures.clear();
     print("[MicroTilePanel] Cleaned up");
+  }
+
+  private hideCursor() {
+    if (!this.cursorObj) return;
+    if (this.cursorVisible) {
+      this.cursorObj.enabled = false;
+      this.cursorVisible = false;
+    }
   }
 
   // ---- Public API ----
@@ -606,5 +992,9 @@ export class MicroTilePanel extends BaseScriptComponent {
 
   public isConnected(): boolean {
     return this.receiver ? this.receiver.isConnected() : false;
+  }
+
+  public getLastHitId(): string | null {
+    return this.lastHitId;
   }
 }

@@ -1,0 +1,71 @@
+- !<AssetImportMetadata/9562a3c7-cc54-4347-8def-17fa19a424cb>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> eb192ed8-5785-4560-832d-3dc34592b410
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> eb192ed8-5785-4560-832d-3dc34592b410
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> b329ab8f-4f0a-47e8-b72c-0a1e71592a24
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/b329ab8f-4f0a-47e8-b72c-0a1e71592a24>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  ComponentUid: 23aad3bf-b7b5-43f4-beca-68ea5e32dcec
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    clapCloseDist: false
+    clapOpenDist: false
+    clapWindowMs: false
+    fingerUpThreshold: false
+    foldedMaxExtension: false
+    panel: false
+    receiver: false
+    snapCloseDist: false
+    snapOpenDist: false
+    snapWindowMs: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - panel: !<MappingBased.AssignableType> 00000000-0000-0000-0000-000000000000
+      receiver: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      clapCloseDist: !<float> 6.000000
+      clapOpenDist: !<float> 12.000000
+      clapWindowMs: !<float> 250.000000
+      snapCloseDist: 1.500000
+      snapOpenDist: !<float> 5.000000
+      snapWindowMs: !<float> 200.000000
+      fingerUpThreshold: 0.700000
+      foldedMaxExtension: !<float> 9.000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input AssignableType panel {"hint":"MicroTilePanel for hover context + receiver"}'
+    - '// @input AssignableType_1 receiver {"hint":"Receiver (optional override). If unset, uses panel.getReceiver()."}'
+    - // @input float clapCloseDist = 6
+    - // @input float clapOpenDist = 12
+    - // @input float clapWindowMs = 250
+    - // @input float snapCloseDist = 1.5
+    - // @input float snapOpenDist = 5
+    - // @input float snapWindowMs = 200
+    - // @input float fingerUpThreshold = 0.7
+    - // @input float foldedMaxExtension = 9

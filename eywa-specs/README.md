@@ -73,6 +73,9 @@ EywaPanel             <- MicroTilePanel script
 ### 4. Web broadcaster
 Navigate to `/r/{room-slug}/spectacles` in the Eywa web app. Click "Broadcast". The page renders tiles and streams them to any connected Spectacles device.
 
+### 4b. Production deployment (auto‑join)
+See `DEPLOYMENT.md` for the tracker‑based auto‑join flow. This replaces the manual “Broadcast” step for end users by encoding the room in the display’s tracking marker and anchoring the UI to the marker pose.
+
 ### 5. Test in editor
 Push to device or use Lens Studio preview. Check the Logger panel for:
 ```
