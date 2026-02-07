@@ -1,13 +1,11 @@
 /**
- * Eywa VS Code Extension — entry point.
- * Live webview panel (agents + activity), knowledge tree, CodeLens,
- * status bar, and all commands (inject, connect, dashboard, etc.).
+ * Eywa VS Code Extension - entry point.
+ * Live webview panel, CodeLens, status bar, and commands.
  */
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { KnowledgeTreeProvider } from "./knowledgeTree";
 import { EywaClient } from "./client";
 import { RealtimeManager, type MemoryPayload } from "./realtime";
 import { injectSelection } from "./injectCommand";
@@ -31,7 +29,6 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(statusBarItem);
 
   // Providers
-  const knowledgeProvider = new KnowledgeTreeProvider(() => client);
   const codeLensProvider = new KnowledgeCodeLensProvider(() => client);
   const liveProvider = new LiveViewProvider(() => client, getConfig("room"));
 
@@ -69,15 +66,15 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(LiveViewProvider.viewType, liveProvider),
-    vscode.window.registerTreeDataProvider("eywaKnowledge", knowledgeProvider),
+    vscode.window.registerWebviewViewProvider(LiveViewProvider.viewType, liveProvider, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
     vscode.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider),
   );
 
   // Commands
   context.subscriptions.push(
     vscode.commands.registerCommand("eywa.refreshAgents", () => {
-      knowledgeProvider.refresh();
       codeLensProvider.refreshCache();
       liveProvider.loadInitial();
     }),
@@ -209,7 +206,6 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
         initClient(codeLensProvider, handleRealtimeEvent, context);
-        knowledgeProvider.refresh();
         liveProvider.setRoom(getConfig("room"));
         updateStatusBar();
       }

@@ -34,11 +34,7 @@
         {
           "type": "webview",
           "id": "eywaLive",
-          "name": "Live"
-        },
-        {
-          "id": "eywaKnowledge",
-          "name": "Knowledge"
+          "name": "Eywa"
         }
       ]
     },
