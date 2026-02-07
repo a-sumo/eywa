@@ -16,6 +16,7 @@ CREATE INDEX IF NOT EXISTS idx_rooms_slug ON rooms(slug);
 CREATE TABLE IF NOT EXISTS memories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   room_id UUID REFERENCES rooms(id),
+  parent_id UUID REFERENCES memories(id),
   agent TEXT NOT NULL,
   session_id TEXT,
   message_type TEXT,
