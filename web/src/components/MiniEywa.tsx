@@ -770,13 +770,13 @@ export function MiniEywa() {
       {/* Footer with AR tracking marker */}
       <div className="mini-footer">
         <div className="mini-footer-left">
-          <EywaLogoWarm size={12} />
+          <EywaLogoWarm size={40} />
           <span className="mini-footer-slug">{room?.slug ?? ""}</span>
         </div>
         <div className="mini-marker">
           <QRCodeSVG
             value={`eywa:${room?.slug ?? "demo"}`}
-            size={56}
+            size={200}
             bgColor="#F5F0E8"
             fgColor="#2C2418"
             level="M"

@@ -6129,7 +6129,7 @@ body {
 
 .mini-toast {
   position: absolute;
-  bottom: 66px;
+  bottom: 136px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(26, 122, 110, 0.12);
@@ -6148,15 +6148,16 @@ body {
 /* ── Footer with AR marker ── */
 .mini-footer {
   flex-shrink: 0;
-  height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px;
+  padding: 8px 12px;
   border-top: 1px solid var(--mini-divider);
   background: rgba(44,36,24,0.02);
   position: relative;
   z-index: 1;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .mini-footer-left {
@@ -6173,10 +6174,19 @@ body {
 
 .mini-marker {
   flex-shrink: 0;
-  padding: 2px;
+  padding: 5px;
   background: var(--mini-bg);
-  border: 1.5px solid rgba(44,36,24,0.15);
-  border-radius: 3px;
+  border: 2px solid rgba(44,36,24,0.15);
+  border-radius: 4px;
+  box-sizing: border-box;
+  height: calc(100% - 4px);
+  aspect-ratio: 1;
+}
+
+.mini-marker svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* ── Dot info bar (graph tooltip, between graph and feed) ── */
