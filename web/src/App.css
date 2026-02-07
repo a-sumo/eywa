@@ -5800,18 +5800,18 @@ body {
 
 /* ── Tokens ── */
 .mini-container {
-  --mini-bg: #08090f;
-  --mini-surface: rgba(255,255,255,0.03);
-  --mini-border: rgba(255,255,255,0.08);
-  --mini-text: #f0f2f8;
-  --mini-text-muted: rgba(240,242,248,0.5);
-  --mini-text-light: rgba(240,242,248,0.35);
-  --mini-blue: #15D1FF;
-  --mini-green: #4ade80;
-  --mini-red: #E72B76;
-  --mini-yellow: #a78bfa;
-  --mini-gray: #334155;
-  --mini-divider: rgba(255,255,255,0.06);
+  --mini-bg: #F5F0E8;
+  --mini-surface: rgba(44,36,24,0.04);
+  --mini-border: rgba(44,36,24,0.12);
+  --mini-text: #2C2418;
+  --mini-text-muted: rgba(44,36,24,0.60);
+  --mini-text-light: rgba(44,36,24,0.45);
+  --mini-blue: #1A7A6E;
+  --mini-green: #3D7A3A;
+  --mini-red: #B8443A;
+  --mini-yellow: #B85C38;
+  --mini-gray: #C4BAA8;
+  --mini-divider: rgba(44,36,24,0.08);
 }
 
 /* ── Global reset ── */
@@ -5852,21 +5852,28 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Container: 320x480 portrait ── */
+/* ── Container: fills viewport on mobile, fixed box on desktop ── */
 .mini-container {
-  width: 320px;
-  height: 480px;
-  margin: 2rem auto;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--mini-bg);
-  border: 1px solid var(--mini-border);
-  border-radius: 0;
   font-family: "Inter", -apple-system, sans-serif;
   font-size: 10px;
   color: var(--mini-text);
   position: relative;
+}
+
+@media (min-width: 480px) {
+  .mini-container {
+    width: 320px;
+    height: 480px;
+    margin: 2rem auto;
+    border: 1px solid var(--mini-border);
+  }
 }
 
 /* ── Title bar ── */
@@ -5877,14 +5884,14 @@ body {
   align-items: center;
   gap: 6px;
   padding: 0 10px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(44,36,24,0.04);
   border-bottom: 1px solid var(--mini-border);
   position: relative;
   z-index: 1;
 }
 
 .mini-logo {
-  color: rgba(240,242,248,0.5);
+  color: rgba(44,36,24,0.55);
   flex-shrink: 0;
 }
 
@@ -5908,7 +5915,7 @@ body {
 }
 
 .mini-titlebar-name-btn:hover {
-  background: rgba(255,255,255,0.06) !important;
+  background: rgba(44,36,24,0.06) !important;
 }
 
 .mini-room-arrow {
@@ -5925,9 +5932,9 @@ body {
   right: 0;
   max-height: 200px;
   overflow-y: auto;
-  background: #0c0e16;
+  background: #EDE8DD;
   border-bottom: 1px solid var(--mini-border);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 20px rgba(44, 36, 24, 0.12);
   z-index: 8;
   animation: mini-slide-down 0.12s ease-out;
 }
@@ -5943,11 +5950,11 @@ body {
 }
 
 .mini-room-picker-item:hover {
-  background: rgba(255,255,255,0.04);
+  background: rgba(44,36,24,0.05);
 }
 
 .mini-room-picker-item.active {
-  background: rgba(21, 209, 255, 0.06);
+  background: rgba(26, 122, 110, 0.08);
   border-left: 2px solid var(--mini-blue);
   padding-left: 8px;
 }
@@ -6008,11 +6015,11 @@ body {
 }
 
 .mini-strip-agent:active {
-  background: rgba(255,255,255,0.04);
+  background: rgba(44,36,24,0.05);
 }
 
 .mini-strip-agent-selected {
-  background: rgba(21, 209, 255, 0.08);
+  background: rgba(26, 122, 110, 0.08);
   outline: 1.5px solid var(--mini-blue);
 }
 
@@ -6076,7 +6083,7 @@ body {
   padding: 0 4px;
   border-bottom: 1px solid var(--mini-divider);
   position: relative;
-  background: rgba(255,255,255,0.02);
+  background: rgba(44,36,24,0.02);
 }
 
 .mini-graph svg {
@@ -6107,11 +6114,11 @@ body {
   outline: 2px solid var(--mini-blue);
   outline-offset: 2px;
   border-radius: 6px;
-  background: rgba(21, 209, 255, 0.08);
+  background: rgba(26, 122, 110, 0.10);
 }
 
 .mini-strip.drag-active {
-  background: rgba(21, 209, 255, 0.03);
+  background: rgba(26, 122, 110, 0.04);
 }
 
 /* ── Toast ── */
@@ -6122,20 +6129,54 @@ body {
 
 .mini-toast {
   position: absolute;
-  bottom: 8px;
+  bottom: 66px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(21, 209, 255, 0.12);
-  color: #15D1FF;
+  background: rgba(26, 122, 110, 0.12);
+  color: #1A7A6E;
   font-size: 9px;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 10px;
   pointer-events: none;
   white-space: nowrap;
-  border: 1px solid rgba(21, 209, 255, 0.2);
+  border: 1px solid rgba(26, 122, 110, 0.25);
   animation: mini-toast-in 0.2s ease-out;
   z-index: 5;
+}
+
+/* ── Footer with AR marker ── */
+.mini-footer {
+  flex-shrink: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  border-top: 1px solid var(--mini-divider);
+  background: rgba(44,36,24,0.02);
+  position: relative;
+  z-index: 1;
+}
+
+.mini-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mini-footer-slug {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 8px;
+  color: var(--mini-text-light);
+}
+
+.mini-marker {
+  flex-shrink: 0;
+  padding: 2px;
+  background: var(--mini-bg);
+  border: 1.5px solid rgba(44,36,24,0.15);
+  border-radius: 3px;
 }
 
 /* ── Dot info bar (graph tooltip, between graph and feed) ── */
@@ -6146,7 +6187,7 @@ body {
   align-items: center;
   gap: 5px;
   padding: 5px 8px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(44,36,24,0.04);
   border-bottom: 1px solid var(--mini-divider);
   animation: mini-slide-down 0.12s ease-out;
   cursor: pointer;
@@ -6228,13 +6269,13 @@ body {
 }
 
 .mini-feed-row:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(44, 36, 24, 0.03);
 }
 
 .mini-feed-row-latest {
-  border-left: 2px solid #6417EC;
+  border-left: 2px solid #3B5998;
   padding-left: 6px;
-  background: rgba(100, 23, 236, 0.06);
+  background: rgba(59, 89, 152, 0.06);
 }
 
 .mini-feed-dot {
@@ -6341,14 +6382,14 @@ body {
 }
 
 .mini-qr-btn:hover {
-  background: rgba(255,255,255,0.06);
+  background: rgba(44,36,24,0.08);
   color: var(--mini-text);
 }
 
 .mini-qr-overlay {
   position: absolute;
   inset: 0;
-  background: #0d1117;
+  background: #F5F0E8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6366,7 +6407,7 @@ body {
 .mini-qr-label {
   font-size: 16px;
   font-weight: 900;
-  color: #e6edf3;
+  color: #2C2418;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -6374,11 +6415,83 @@ body {
 .mini-qr-url {
   font-size: 11px;
   font-weight: 700;
-  color: #8b949e;
+  color: #7A6E5E;
   word-break: break-all;
   text-align: center;
   max-width: 260px;
   line-height: 1.4;
+}
+
+/* ── Mobile overrides for mini ── */
+@media (max-width: 479px) {
+  .mini-container {
+    font-size: 13px;
+  }
+  .mini-titlebar {
+    height: 40px;
+    padding: 0 14px;
+    gap: 8px;
+  }
+  .mini-titlebar-name {
+    font-size: 15px;
+  }
+  .mini-titlebar-stats {
+    font-size: 12px;
+  }
+  .mini-qr-btn {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .mini-strip {
+    gap: 6px;
+    padding: 8px 10px;
+  }
+  .mini-strip-agent {
+    width: 54px;
+  }
+  .mini-strip-name {
+    font-size: 10px;
+    max-width: 54px;
+  }
+  .mini-strip-status {
+    font-size: 9px;
+  }
+  .mini-feed-header {
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+  .mini-feed-row {
+    gap: 8px;
+    padding: 6px 10px;
+    min-height: 28px;
+  }
+  .mini-feed-dot {
+    width: 7px;
+    height: 7px;
+  }
+  .mini-feed-agent {
+    font-size: 11px;
+    min-width: 60px;
+  }
+  .mini-feed-content {
+    font-size: 11px;
+  }
+  .mini-feed-time {
+    font-size: 10px;
+  }
+  .mini-footer {
+    height: 72px;
+    padding: 0 12px;
+  }
+  .mini-footer-slug {
+    font-size: 10px;
+  }
+  .mini-marker {
+    padding: 3px;
+  }
+  .mini-marker svg {
+    display: block;
+  }
 }
 
 /* ============================================
@@ -6522,8 +6635,8 @@ body {
    E-Ink Dashboard - 600x448 7-Color Display
    ============================================
    Target: Waveshare 5.65" ACeP (600x448)
-   Dark theme with grain texture background.
-   Bright accents map to e-ink pigments.
+   Clay/parchment theme with subtle grain texture.
+   Earthy accents, high contrast dark text.
    No transparency, gradients, shadows, animations.
    ============================================ */
 
@@ -6531,8 +6644,8 @@ body {
   position: relative;
   width: 600px;
   height: 448px;
-  background: #000000;
-  color: #FFFFFF;
+  background: #F5F0E8;
+  color: #2C2418;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 11px;
   line-height: 1.4;
@@ -6559,9 +6672,9 @@ body {
   gap: 8px;
   height: 32px;
   padding: 0 16px;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  color: #FFFFFF;
+  background: rgba(44,36,24,0.04);
+  border-bottom: 1px solid rgba(44,36,24,0.10);
+  color: #2C2418;
   font-family: "Plus Jakarta Sans", "Inter", sans-serif;
   font-size: 11px;
   font-weight: 600;
@@ -6572,7 +6685,7 @@ body {
 }
 
 .ei-logo {
-  color: rgba(255,255,255,0.6);
+  color: rgba(44,36,24,0.55);
   flex-shrink: 0;
 }
 
@@ -6582,14 +6695,14 @@ body {
   font-weight: 800;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: #FFFFFF;
+  color: #2C2418;
 }
 
 .ei-header-room {
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 10px;
   font-weight: 500;
-  color: rgba(255,255,255,0.4);
+  color: rgba(44,36,24,0.50);
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 120px;
@@ -6603,19 +6716,19 @@ body {
   font-family: "JetBrains Mono", monospace;
   font-size: 13px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #2C2418;
 }
 
 .ei-header-stat-dim {
   font-weight: 400;
-  color: rgba(255,255,255,0.35);
+  color: rgba(44,36,24,0.40);
 }
 
 .ei-header-calls {
   font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 9px;
   font-weight: 500;
-  color: rgba(255,255,255,0.3);
+  color: rgba(44,36,24,0.40);
   text-transform: lowercase;
   letter-spacing: 0.3px;
   font-style: italic;
@@ -6626,7 +6739,7 @@ body {
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #FFFFFF;
+  color: #2C2418;
 }
 
 /* ── Body ── */
@@ -6634,7 +6747,7 @@ body {
 .ei-body {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 32px - 28px);
+  height: calc(100% - 32px - 88px);
   padding: 6px 16px;
   gap: 0;
   position: relative;
@@ -6644,7 +6757,7 @@ body {
 /* ── Avatar ── */
 
 .ei-avatar {
-  border: 1.5px solid rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(44,36,24,0.20);
   border-radius: 50% !important;
   flex-shrink: 0;
 }
@@ -6672,7 +6785,7 @@ body {
   font-family: "Inter", sans-serif;
   font-size: 9px;
   font-weight: 400;
-  color: rgba(255,255,255,0.35);
+  color: rgba(44,36,24,0.50);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -6682,7 +6795,7 @@ body {
 
 .ei-strip-name-active {
   font-weight: 600;
-  color: #FFFFFF;
+  color: #2C2418;
 }
 
 .ei-strip-status {
@@ -6691,21 +6804,21 @@ body {
   gap: 3px;
   font-family: "JetBrains Mono", monospace;
   font-size: 8px;
-  color: rgba(255,255,255,0.3);
+  color: rgba(44,36,24,0.40);
   font-variant-numeric: tabular-nums;
 }
 
 .ei-strip-overflow {
   font-family: "JetBrains Mono", monospace;
   font-size: 9px;
-  color: rgba(255,255,255,0.3);
+  color: rgba(44,36,24,0.40);
   font-weight: 500;
   flex-shrink: 0;
 }
 
 .ei-strip-divider {
   height: 1px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(44,36,24,0.08);
   flex-shrink: 0;
 }
 
@@ -6734,14 +6847,14 @@ body {
   align-items: center;
   gap: 6px;
   padding: 3px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(44,36,24,0.06);
   position: relative;
 }
 
 .ei-feed-item-latest {
-  border-left: 3px solid #3366FF;
+  border-left: 3px solid #3B5998;
   padding-left: 6px;
-  background: rgba(51,102,255,0.06);
+  background: rgba(59,89,152,0.06);
 }
 
 .ei-feed-dot {
@@ -6754,9 +6867,9 @@ body {
 
 .ei-feed-agent {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 9px;
-  color: #FFFFFF;
+  color: #2C2418;
   flex-shrink: 0;
   min-width: 70px;
   white-space: nowrap;
@@ -6768,7 +6881,7 @@ body {
   flex: 1;
   font-size: 9px;
   line-height: 1.3;
-  color: rgba(255,255,255,0.45);
+  color: rgba(44,36,24,0.55);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6779,7 +6892,7 @@ body {
   flex-shrink: 0;
   font-family: "JetBrains Mono", monospace;
   font-size: 8px;
-  color: rgba(255,255,255,0.25);
+  color: rgba(44,36,24,0.35);
   font-variant-numeric: tabular-nums;
 }
 
@@ -6787,7 +6900,7 @@ body {
 
 .ei-empty {
   font-size: 11px;
-  color: rgba(255,255,255,0.25);
+  color: rgba(44,36,24,0.35);
   padding: 16px 0;
   text-align: center;
   letter-spacing: 1px;
@@ -6800,30 +6913,43 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 28px;
+  height: 88px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   padding: 0 16px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(44,36,24,0.08);
+  background: rgba(44,36,24,0.02);
   z-index: 1;
+}
+
+.ei-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .ei-footer-brand {
   font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.15);
+  color: rgba(44,36,24,0.30);
 }
 
-.ei-footer-ver {
+.ei-footer-room {
   font-family: "JetBrains Mono", monospace;
-  font-size: 8px;
-  color: rgba(255,255,255,0.1);
-  margin-left: auto;
+  font-size: 9px;
+  color: rgba(44,36,24,0.25);
+}
+
+.ei-marker {
+  flex-shrink: 0;
+  padding: 4px;
+  background: #F5F0E8;
+  border: 2px solid rgba(44,36,24,0.15);
+  border-radius: 4px;
 }
 
 /* ── Kill all interactive states ── */

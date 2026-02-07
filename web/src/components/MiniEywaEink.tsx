@@ -1,23 +1,24 @@
 import { useMemo, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import type { Memory } from "../lib/supabase";
 import { getAvatar } from "./avatars";
-import { EywaLogoMono } from "./EywaLogo";
-import { GrainTexture, EINK_RGB } from "./GrainTexture";
+import { EywaLogoWarm } from "./EywaLogo";
+import { GrainTexture } from "./GrainTexture";
 
-/* ── Dark palette (optimized for 7-color e-ink dithering) ── */
+/* ── Clay palette (warm parchment, high-contrast dark text) ── */
 
 const EI = {
-  bg: "#000000",
-  fg: "#FFFFFF",
-  cyan: "#40AAFF",
-  blue: "#3366FF",
-  green: "#44DD88",
-  red: "#FF4466",
-  orange: "#FF9944",
-  dim: "#556677",
-  divider: "rgba(255,255,255,0.08)",
+  bg: "#F5F0E8",
+  fg: "#2C2418",
+  cyan: "#1A7A6E",
+  blue: "#3B5998",
+  green: "#3D7A3A",
+  red: "#B8443A",
+  orange: "#B85C38",
+  dim: "#9C8E7E",
+  divider: "rgba(44,36,24,0.10)",
 } as const;
 
 /* ── Type helpers ── */
@@ -35,6 +36,7 @@ function typeColor(t: string): string {
   if (t === "assistant") return EI.cyan;
   if (t === "user") return EI.green;
   if (t === "tool_call" || t === "tool_result") return EI.orange;
+  if (t === "injection") return EI.red;
   return EI.dim;
 }
 
@@ -207,16 +209,22 @@ export function MiniEywaEink() {
       <GrainTexture
         width={600}
         height={448}
-        baseColor={[0, 0, 0]}
-        palette={EINK_RGB}
-        density={0.003}
+        baseColor={[245, 240, 232]}
+        palette={[
+          [180, 100, 60],   // terracotta
+          [100, 140, 90],   // sage
+          [100, 120, 160],  // dusty blue
+          [180, 150, 80],   // golden
+        ]}
+        density={0.0008}
         seed={77}
-        noiseIntensity={10}
+        noiseIntensity={6}
+        brightnessRange={[0.6, 0.85]}
       />
 
       {/* Header bar */}
       <div className="ei-header">
-        <EywaLogoMono size={20} className="ei-logo" />
+        <EywaLogoWarm size={20} className="ei-logo" />
         <span className="ei-header-brand">EYWA</span>
         <span className="ei-header-room">
           {room?.name ?? room?.slug ?? ""}
@@ -283,10 +291,23 @@ export function MiniEywaEink() {
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer with AR tracking marker */}
       <div className="ei-footer">
-        <span className="ei-footer-brand">EYWA</span>
-        <span className="ei-footer-ver">v0.3</span>
+        <div className="ei-footer-left">
+          <EywaLogoWarm size={16} />
+          <span className="ei-footer-brand">EYWA</span>
+          <span className="ei-footer-room">{room?.slug ?? ""}</span>
+        </div>
+        <div className="ei-marker">
+          <QRCodeSVG
+            value={`eywa:${room?.slug ?? "demo"}`}
+            size={72}
+            bgColor="#F5F0E8"
+            fgColor="#2C2418"
+            level="M"
+            marginSize={1}
+          />
+        </div>
       </div>
     </div>
   );
