@@ -463,13 +463,13 @@ function __disposeResources(env2) {
   }
   return next();
 }
-function __rewriteRelativeImportExtension(path, preserveJsx) {
-  if (typeof path === "string" && /^\.\.?\//.test(path)) {
-    return path.replace(/\.(tsx)$|((?:\.d)?)((?:\.[^./]+?)?)\.([cm]?)ts$/i, function(m, tsx, d, ext, cm) {
+function __rewriteRelativeImportExtension(path2, preserveJsx) {
+  if (typeof path2 === "string" && /^\.\.?\//.test(path2)) {
+    return path2.replace(/\.(tsx)$|((?:\.d)?)((?:\.[^./]+?)?)\.([cm]?)ts$/i, function(m, tsx, d, ext, cm) {
       return tsx ? preserveJsx ? ".jsx" : ".js" : d && (!ext || !cm) ? m : d + ext + "." + cm.toLowerCase() + "js";
     });
   }
-  return path;
+  return path2;
 }
 var extendStatics, __assign, __createBinding, __setModuleDefault, ownKeys, _SuppressedError, tslib_es6_default;
 var init_tslib_es6 = __esm({
@@ -2137,8 +2137,8 @@ var require_RealtimeChannel = __commonJS({
       _trigger(type, payload, ref) {
         var _a, _b;
         const typeLower = type.toLocaleLowerCase();
-        const { close, error, leave, join } = constants_1.CHANNEL_EVENTS;
-        const events = [close, error, leave, join];
+        const { close, error, leave, join: join2 } = constants_1.CHANNEL_EVENTS;
+        const events = [close, error, leave, join2];
         if (ref && events.indexOf(typeLower) >= 0 && ref !== this._joinRef()) {
           return;
         }
@@ -8024,6 +8024,9 @@ __export(extension_exports, {
 });
 module.exports = __toCommonJS(extension_exports);
 var vscode6 = __toESM(require("vscode"));
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+var os = __toESM(require("os"));
 
 // src/agentTree.ts
 var vscode = __toESM(require("vscode"));
@@ -9626,8 +9629,8 @@ var IcebergError = class extends Error {
     return this.status === 419;
   }
 };
-function buildUrl(baseUrl, path, query) {
-  const url = new URL(path, baseUrl);
+function buildUrl(baseUrl, path2, query) {
+  const url = new URL(path2, baseUrl);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value !== void 0) {
@@ -9657,12 +9660,12 @@ function createFetchClient(options) {
   return {
     async request({
       method,
-      path,
+      path: path2,
       query,
       body,
       headers
     }) {
-      const url = buildUrl(options.baseUrl, path, query);
+      const url = buildUrl(options.baseUrl, path2, query);
       const authHeaders = await buildAuthHeaders(options.auth);
       const res = await fetchFn(url, {
         method,
@@ -10477,7 +10480,7 @@ var StorageFileApi = class extends BaseApiClient {
   * @param path The relative file path. Should be of the format `folder/subfolder/filename.png`. The bucket must already exist before attempting to upload.
   * @param fileBody The body of the file to be stored in the bucket.
   */
-  async uploadOrUpdate(method, path, fileBody, fileOptions) {
+  async uploadOrUpdate(method, path2, fileBody, fileOptions) {
     var _this = this;
     return _this.handleOperation(async () => {
       let body;
@@ -10501,7 +10504,7 @@ var StorageFileApi = class extends BaseApiClient {
         if ((typeof ReadableStream !== "undefined" && body instanceof ReadableStream || body && typeof body === "object" && "pipe" in body && typeof body.pipe === "function") && !options.duplex) options.duplex = "half";
       }
       if (fileOptions === null || fileOptions === void 0 ? void 0 : fileOptions.headers) headers = _objectSpread22(_objectSpread22({}, headers), fileOptions.headers);
-      const cleanPath = _this._removeEmptyFolders(path);
+      const cleanPath = _this._removeEmptyFolders(path2);
       const _path = _this._getFinalPath(cleanPath);
       const data = await (method == "PUT" ? put : post)(_this.fetch, `${_this.url}/object/${_path}`, body, _objectSpread22({ headers }, (options === null || options === void 0 ? void 0 : options.duplex) ? { duplex: options.duplex } : {}));
       return {
@@ -10555,8 +10558,8 @@ var StorageFileApi = class extends BaseApiClient {
   *   })
   * ```
   */
-  async upload(path, fileBody, fileOptions) {
-    return this.uploadOrUpdate("POST", path, fileBody, fileOptions);
+  async upload(path2, fileBody, fileOptions) {
+    return this.uploadOrUpdate("POST", path2, fileBody, fileOptions);
   }
   /**
   * Upload a file with a token generated from `createSignedUploadUrl`.
@@ -10589,9 +10592,9 @@ var StorageFileApi = class extends BaseApiClient {
   * }
   * ```
   */
-  async uploadToSignedUrl(path, token, fileBody, fileOptions) {
+  async uploadToSignedUrl(path2, token, fileBody, fileOptions) {
     var _this3 = this;
-    const cleanPath = _this3._removeEmptyFolders(path);
+    const cleanPath = _this3._removeEmptyFolders(path2);
     const _path = _this3._getFinalPath(cleanPath);
     const url = new URL(_this3.url + `/object/upload/sign/${_path}`);
     url.searchParams.set("token", token);
@@ -10647,10 +10650,10 @@ var StorageFileApi = class extends BaseApiClient {
   * }
   * ```
   */
-  async createSignedUploadUrl(path, options) {
+  async createSignedUploadUrl(path2, options) {
     var _this4 = this;
     return _this4.handleOperation(async () => {
-      let _path = _this4._getFinalPath(path);
+      let _path = _this4._getFinalPath(path2);
       const headers = _objectSpread22({}, _this4.headers);
       if (options === null || options === void 0 ? void 0 : options.upsert) headers["x-upsert"] = "true";
       const data = await post(_this4.fetch, `${_this4.url}/object/upload/sign/${_path}`, {}, { headers });
@@ -10659,7 +10662,7 @@ var StorageFileApi = class extends BaseApiClient {
       if (!token) throw new StorageError("No token returned by API");
       return {
         signedUrl: url.toString(),
-        path,
+        path: path2,
         token
       };
     });
@@ -10708,8 +10711,8 @@ var StorageFileApi = class extends BaseApiClient {
   *   })
   * ```
   */
-  async update(path, fileBody, fileOptions) {
-    return this.uploadOrUpdate("PUT", path, fileBody, fileOptions);
+  async update(path2, fileBody, fileOptions) {
+    return this.uploadOrUpdate("PUT", path2, fileBody, fileOptions);
   }
   /**
   * Moves an existing file to a new path in the same bucket.
@@ -10838,10 +10841,10 @@ var StorageFileApi = class extends BaseApiClient {
   *   })
   * ```
   */
-  async createSignedUrl(path, expiresIn, options) {
+  async createSignedUrl(path2, expiresIn, options) {
     var _this8 = this;
     return _this8.handleOperation(async () => {
-      let _path = _this8._getFinalPath(path);
+      let _path = _this8._getFinalPath(path2);
       let data = await post(_this8.fetch, `${_this8.url}/object/sign/${_path}`, _objectSpread22({ expiresIn }, (options === null || options === void 0 ? void 0 : options.transform) ? { transform: options.transform } : {}), { headers: _this8.headers });
       const downloadQueryParam = (options === null || options === void 0 ? void 0 : options.download) ? `&download=${options.download === true ? "" : options.download}` : "";
       return { signedUrl: encodeURI(`${_this8.url}${data.signedURL}${downloadQueryParam}`) };
@@ -10934,11 +10937,11 @@ var StorageFileApi = class extends BaseApiClient {
   *   })
   * ```
   */
-  download(path, options) {
+  download(path2, options) {
     const renderPath = typeof (options === null || options === void 0 ? void 0 : options.transform) !== "undefined" ? "render/image/authenticated" : "object";
     const transformationQuery = this.transformOptsToQueryString((options === null || options === void 0 ? void 0 : options.transform) || {});
     const queryString = transformationQuery ? `?${transformationQuery}` : "";
-    const _path = this._getFinalPath(path);
+    const _path = this._getFinalPath(path2);
     const downloadFn = () => get(this.fetch, `${this.url}/${renderPath}/${_path}${queryString}`, {
       headers: this.headers,
       noResolveJson: true
@@ -10960,9 +10963,9 @@ var StorageFileApi = class extends BaseApiClient {
   *   .info('folder/avatar1.png')
   * ```
   */
-  async info(path) {
+  async info(path2) {
     var _this10 = this;
-    const _path = _this10._getFinalPath(path);
+    const _path = _this10._getFinalPath(path2);
     return _this10.handleOperation(async () => {
       return recursiveToCamel(await get(_this10.fetch, `${_this10.url}/object/info/${_path}`, { headers: _this10.headers }));
     });
@@ -10982,9 +10985,9 @@ var StorageFileApi = class extends BaseApiClient {
   *   .exists('folder/avatar1.png')
   * ```
   */
-  async exists(path) {
+  async exists(path2) {
     var _this11 = this;
-    const _path = _this11._getFinalPath(path);
+    const _path = _this11._getFinalPath(path2);
     try {
       await head(_this11.fetch, `${_this11.url}/object/${_path}`, { headers: _this11.headers });
       return {
@@ -11053,8 +11056,8 @@ var StorageFileApi = class extends BaseApiClient {
   *   })
   * ```
   */
-  getPublicUrl(path, options) {
-    const _path = this._getFinalPath(path);
+  getPublicUrl(path2, options) {
+    const _path = this._getFinalPath(path2);
     const _queryString = [];
     const downloadQueryParam = (options === null || options === void 0 ? void 0 : options.download) ? `download=${options.download === true ? "" : options.download}` : "";
     if (downloadQueryParam !== "") _queryString.push(downloadQueryParam);
@@ -11162,10 +11165,10 @@ var StorageFileApi = class extends BaseApiClient {
   *   })
   * ```
   */
-  async list(path, options, parameters) {
+  async list(path2, options, parameters) {
     var _this13 = this;
     return _this13.handleOperation(async () => {
-      const body = _objectSpread22(_objectSpread22(_objectSpread22({}, DEFAULT_SEARCH_OPTIONS), options), {}, { prefix: path || "" });
+      const body = _objectSpread22(_objectSpread22(_objectSpread22({}, DEFAULT_SEARCH_OPTIONS), options), {}, { prefix: path2 || "" });
       return await post(_this13.fetch, `${_this13.url}/object/list/${_this13.bucketId}`, body, { headers: _this13.headers }, parameters);
     });
   }
@@ -11190,11 +11193,11 @@ var StorageFileApi = class extends BaseApiClient {
     if (typeof Buffer !== "undefined") return Buffer.from(data).toString("base64");
     return btoa(data);
   }
-  _getFinalPath(path) {
-    return `${this.bucketId}/${path.replace(/^\/+/, "")}`;
+  _getFinalPath(path2) {
+    return `${this.bucketId}/${path2.replace(/^\/+/, "")}`;
   }
-  _removeEmptyFolders(path) {
-    return path.replace(/^\/|\/$/g, "").replace(/\/+/g, "/");
+  _removeEmptyFolders(path2) {
+    return path2.replace(/^\/|\/$/g, "").replace(/\/+/g, "/");
   }
   transformOptsToQueryString(transform) {
     const params = [];
@@ -13177,6 +13180,7 @@ function startLoginFlow(openUrl) {
 }
 
 // src/extension.ts
+var TAB_TITLE_FLAG = path.join(os.homedir(), ".config", "eywa", "tab-title");
 var client;
 var statusBarItem;
 var realtime;
@@ -13434,6 +13438,19 @@ Memories: ${s.memoryCount} \xB7 Last seen: ${s.lastSeen}`;
         vscode6.commands.executeCommand("eywa.openDashboard");
       } else if (pick.label.includes("Connect new agent")) {
         vscode6.commands.executeCommand("eywa.connectAgent");
+      }
+    })
+  );
+  context.subscriptions.push(
+    vscode6.commands.registerCommand("eywa.toggleTabTitles", () => {
+      const dir = path.dirname(TAB_TITLE_FLAG);
+      if (fs.existsSync(TAB_TITLE_FLAG)) {
+        fs.unlinkSync(TAB_TITLE_FLAG);
+        vscode6.window.showInformationMessage("Agent tab titles disabled");
+      } else {
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(TAB_TITLE_FLAG, "1");
+        vscode6.window.showInformationMessage("Agent tab titles enabled - terminal tabs will show what Claude is doing");
       }
     })
   );
