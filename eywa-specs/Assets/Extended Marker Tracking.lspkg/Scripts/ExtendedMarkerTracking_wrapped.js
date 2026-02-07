@@ -32,12 +32,20 @@ function parentChildrenToParent(childrenParent) {
 }
 
 
+function enableChildren(objectContainer) {
+    for (var i = 0; i < objectContainer.getChildrenCount(); i++) {
+        objectContainer.getChild(i).enabled = true;
+    }
+    print("Enabled " + objectContainer.getChildrenCount() + " marker children");
+}
+
 function detachMarker(objectContainer, parent) {
     objectT = objectContainer.getTransform();
-    
+
     objectT.getWorldPosition();
     objectContainer.setParentPreserveWorldTransform(parent);
-    
+    enableChildren(objectContainer);
+
     print("Detached from Marker!");
 }
 
@@ -60,46 +68,74 @@ function disableMarkerTracking () {
 
 
 function init() {
-        
+
     // Parent for when object should be detached
     var freeParent = script.getSceneObject();
-    
+
     // Parent for when object should be attached to marker
-    var markerParent = script.markerComponent.getSceneObject();   
-    
+    var markerParent = script.markerComponent.getSceneObject();
+
     // Create a parent for everything under marker that we can parent to a free parent
     var objectContainer = parentChildrenToParent(markerParent);
-    
+
     // Keep information about the original transform that we can apply back later
     var objectT = objectContainer.getTransform();
-    originalPos = objectT.getLocalPosition(); 
-    originalRot = objectT.getLocalRotation(); 
-    originalScale = objectT.getLocalScale(); 
+    originalPos = objectT.getLocalPosition();
+    originalRot = objectT.getLocalRotation();
+    originalScale = objectT.getLocalScale();
 
     // Choose when we should detach object from marker
     var detachEvent = script.trackMarkerOnce && script.detachOnFound ?
         "onMarkerFound" : "onMarkerLost";
-    
-    // When we lose marker, set parent to the World, rather than Marker
-    script.markerComponent[detachEvent] = wrapFunction(
-        script.markerComponent[detachEvent], 
-        detachMarker.bind(this, objectContainer, freeParent)
+
+    // Guard against false positive on first frame - ignore detections in first 2s
+    var startTime = getTime();
+    var ready = false;
+
+    script.createEvent("UpdateEvent").bind(function() {
+        if (!ready && getTime() - startTime > 2.0) {
+            ready = true;
+            print("[Eywa] Marker tracking armed (2s warmup done)");
+        }
+    });
+
+    // Log marker found
+    script.markerComponent.onMarkerFound = wrapFunction(
+        script.markerComponent.onMarkerFound,
+        function() { print("[Eywa] Marker detected" + (ready ? " - ACCEPTED" : " - IGNORED (warmup)")); }
     );
-    
-    // If we only want to track the marker once then rely on World tracking, 
+
+    // Guarded detach - only fires after warmup
+    function guardedDetach() {
+        if (!ready) {
+            print("[Eywa] Skipping detach during warmup");
+            return;
+        }
+        detachMarker(objectContainer, freeParent);
+    }
+
+    // When marker found/lost, detach to world (guarded)
+    script.markerComponent[detachEvent] = wrapFunction(
+        script.markerComponent[detachEvent],
+        guardedDetach
+    );
+
+    // If we only want to track the marker once then rely on World tracking,
     // don't re-attach on marker found and disable marker component
     if (script.trackMarkerOnce) {
         script.markerComponent[detachEvent] = wrapFunction(
-            script.markerComponent[detachEvent], 
-            disableMarkerTracking.bind(this)
-        );      
+            script.markerComponent[detachEvent],
+            function() {
+                if (ready) disableMarkerTracking();
+            }
+        );
     } else {
         script.markerComponent.onMarkerFound = wrapFunction(
-            script.markerComponent.onMarkerFound, 
+            script.markerComponent.onMarkerFound,
             attachMarker.bind(this, objectContainer, markerParent)
-        );  
+        );
     }
-    
+
 
 }
 

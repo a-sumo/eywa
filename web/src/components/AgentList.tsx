@@ -62,6 +62,7 @@ export function AgentList() {
         <div className="nav-labs">
           {[
             { path: "graph", label: "Session Graph", icon: "◉" },
+            { path: "score", label: "Score", icon: "♪" },
             { path: "mini", label: "Mini", icon: "▪" },
             { path: "eink", label: "E-Ink", icon: "▫" },
             { path: "spectacles", label: "Spectacles", icon: "◎" },
