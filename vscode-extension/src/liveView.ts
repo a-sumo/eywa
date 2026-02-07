@@ -1,10 +1,11 @@
 /**
- * Live webview sidebar — unified agents + activity panel.
- * Matches the mini display design: pixel-art animal avatars, colored activity feed.
+ * Live webview sidebar - unified agents + activity panel.
+ * Uses Kurzgesagt-style SVG avatars matching the mini/eink displays.
  */
 import * as vscode from "vscode";
 import type { EywaClient } from "./client";
 import type { MemoryPayload } from "./realtime";
+import { getAvatarDataUri } from "./avatars";
 
 interface AgentState {
   name: string;
@@ -147,11 +148,22 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
       if (diff !== 0) return diff;
       return b.lastSeen.localeCompare(a.lastSeen);
     });
+
+    // Compute avatar data URIs on the extension host side
+    const avatarMap: Record<string, string> = {};
+    for (const a of sorted) {
+      if (!avatarMap[a.name]) avatarMap[a.name] = getAvatarDataUri(a.name);
+    }
+    for (const ev of this.activity) {
+      if (!avatarMap[ev.agent]) avatarMap[ev.agent] = getAvatarDataUri(ev.agent);
+    }
+
     this.postMessage({
       type: "state",
       agents: sorted,
       activity: this.activity,
       room: this.room,
+      avatars: avatarMap,
     });
   }
 
@@ -214,7 +226,9 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   .agent-chip .av-wrap {
     position: relative; width: 32px; height: 32px; margin-bottom: 3px;
   }
-  .agent-chip canvas { width: 32px; height: 32px; image-rendering: pixelated; border-radius: 50%; }
+  .agent-chip .av-img {
+    width: 32px; height: 32px; border-radius: 50%; overflow: hidden;
+  }
   .agent-chip .dot {
     position: absolute; bottom: 0; right: 0;
     width: 8px; height: 8px; border-radius: 50%;
@@ -242,12 +256,16 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     border-radius: 3px; align-items: flex-start;
   }
   .feed-item:hover { background: var(--vscode-list-hoverBackground); }
-  .feed-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    flex-shrink: 0; margin-top: 5px;
+  .feed-avatar {
+    width: 16px; height: 16px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 1px;
   }
   .feed-body { flex: 1; min-width: 0; }
   .feed-agent { font-size: 10px; font-weight: 600; opacity: 0.8; }
+  .feed-type {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    margin-left: 4px; vertical-align: middle;
+  }
   .feed-text {
     font-size: 11px; opacity: 0.65; margin-top: 1px;
     display: -webkit-box; -webkit-line-clamp: 2;
@@ -282,62 +300,12 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
 const vscode = acquireVsCodeApi();
 const root = document.getElementById('root');
 
-// ── Pixel-art animal sprites (12x12, 0=empty 1=dark 2=mid 3=light) ──
-const SPRITES = [
-  [[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,3,3,3,3,3,3,0,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,1,3,3,3,3,1,3,0,0],[0,0,3,3,3,2,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,3,0],[0,0,1,1,0,0,0,1,1,0,3,0],[0,0,1,1,0,0,0,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
-  [[0,0,0,3,3,3,3,3,3,0,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,1,3,3,3,3,1,3,0,0],[0,0,3,3,3,2,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,1,1,0,0,0,0,1,1,0,3],[0,0,0,0,0,0,0,0,0,0,0,0]],
-  [[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,3,3,3,3,3,3,3,3,3,3,0],[0,3,3,1,3,3,3,3,1,3,3,0],[0,3,3,3,3,2,3,3,3,3,3,0],[0,3,3,3,3,3,3,3,3,3,3,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
-  [[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,1,1,1,1,1,1,0,0,0],[0,0,1,1,1,1,1,1,1,1,0,0],[0,0,1,3,1,1,1,1,3,1,0,0],[0,0,1,1,1,1,1,1,1,1,0,0],[0,0,1,1,3,3,3,3,1,1,0,0],[0,0,1,3,3,3,3,3,3,1,0,0],[0,0,1,3,3,3,3,3,3,1,0,0],[0,0,1,1,3,3,3,3,1,1,0,0],[0,0,0,1,1,1,1,1,1,0,0,0],[0,0,0,2,2,0,0,2,2,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
-  [[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,3,3,3,3,3,3,3,3,3,3,0],[0,3,3,1,3,3,3,3,1,3,3,0],[0,0,3,3,3,2,2,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
-  [[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,3,3,3,3,3,3,0,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,1,3,3,3,3,1,3,0,0],[0,0,3,3,3,1,3,3,3,3,0,0],[0,0,3,3,2,2,2,2,3,3,0,0],[0,0,3,3,2,2,2,2,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
-  [[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,3,3,3,3,3,3,0,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,2,2,3,3,2,2,3,0,0],[0,0,3,2,1,3,3,1,2,3,0,0],[0,0,3,3,3,2,2,3,3,3,0,0],[0,2,3,3,3,3,3,3,3,3,2,0],[0,2,3,3,3,3,3,3,3,3,2,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,0,3,3,3,3,3,3,0,0,0],[0,0,0,1,1,0,0,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
-  [[0,2,2,2,2,2,2,2,2,2,2,0],[0,2,3,3,3,3,3,3,3,3,2,0],[0,2,3,3,3,3,3,3,3,3,2,0],[0,2,3,1,3,3,3,3,1,3,2,0],[0,2,3,3,3,2,3,3,3,3,2,0],[0,2,3,3,3,3,3,3,3,3,2,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
-  [[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,1,3,3,3,3,1,3,0,0],[0,0,3,3,3,2,3,3,3,3,0,0],[0,0,3,2,3,3,3,2,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,2,3,3,3,3,3,3,2,0,0],[0,0,3,3,2,3,3,2,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
-  [[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,3,3,3,3,3,3,0,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,3,3,2,3,3,3,2,3,3,3,0],[0,0,3,1,3,3,3,1,3,3,0,0],[0,0,3,3,3,2,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,3,3,3,3,3,3,3,3,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,1,1,0,0,0,0,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
-];
-const SPRITE_NAMES = ['cat','rabbit','hamster','penguin','bear','fox','owl','lion','tiger','monkey'];
-
-// Color palette (matching web dashboard)
-const PALETTE = [
-  '#E64980','#CC5DE8','#845EF7','#5C7CFA',
-  '#339AF0','#22B8CF','#20C997','#51CF66',
-  '#94D82D','#FCC419','#FF922B','#E8590C',
-];
 const TYPE_COLORS = {
   assistant:'#339AF0', user:'#51CF66', tool_call:'#FF922B', tool_result:'#FCC419',
   injection:'#E64980', knowledge:'#CC5DE8', resource:'#22B8CF',
 };
 
-function hash(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = s.charCodeAt(i) + ((h << 5) - h);
-  return h;
-}
-
-function drawSprite(canvas, name) {
-  const h = hash(name);
-  const sprite = SPRITES[Math.abs(h) % SPRITES.length];
-  const color = PALETTE[Math.abs(h) % PALETTE.length];
-  const ctx = canvas.getContext('2d');
-  canvas.width = 12; canvas.height = 12;
-
-  // Parse base color to RGB
-  const r = parseInt(color.slice(1,3),16), g = parseInt(color.slice(3,5),16), b = parseInt(color.slice(5,7),16);
-
-  for (let y = 0; y < 12; y++) {
-    for (let x = 0; x < 12; x++) {
-      const v = sprite[y][x];
-      if (v === 0) continue;
-      if (v === 1) ctx.fillStyle = '#1a1a2e';
-      else if (v === 2) ctx.fillStyle = 'rgba('+r+','+g+','+b+',0.6)';
-      else ctx.fillStyle = color;
-      ctx.fillRect(x, y, 1, 1);
-    }
-  }
-}
-
 function shortName(agent) {
-  // "armand/quiet-oak" -> "quiet-oak"
   const slash = agent.indexOf('/');
   return slash >= 0 ? agent.slice(slash + 1) : agent;
 }
@@ -365,7 +333,7 @@ function render(data) {
     return;
   }
 
-  const { agents, activity, room } = data;
+  const { agents, activity, room, avatars } = data;
   const active = agents.filter(a => a.status === 'active').length;
 
   // Header
@@ -382,8 +350,9 @@ function render(data) {
   if (agents.length > 0) {
     html += '<div class="strip">';
     for (const a of agents) {
+      const src = avatars[a.name] || '';
       html += '<div class="agent-chip ' + a.status + '" title="' + esc(a.name) + '\\n' + esc(a.task) + '">'
-        + '<div class="av-wrap"><canvas data-agent="' + esc(a.name) + '"></canvas><span class="dot"></span></div>'
+        + '<div class="av-wrap"><img class="av-img" src="' + src + '" alt="' + esc(shortName(a.name)) + '"/><span class="dot"></span></div>'
         + '<div class="name">' + esc(shortName(a.name)) + '</div></div>';
     }
     html += '</div>';
@@ -396,10 +365,12 @@ function render(data) {
   }
   for (const ev of activity) {
     const dotColor = TYPE_COLORS[ev.type] || '#888';
+    const src = avatars[ev.agent] || '';
     html += '<div class="feed-item">'
-      + '<span class="feed-dot" style="background:' + dotColor + '"></span>'
+      + '<img class="feed-avatar" src="' + src + '" alt=""/>'
       + '<div class="feed-body">'
       + '<span class="feed-agent">' + esc(shortName(ev.agent)) + '</span>'
+      + '<span class="feed-type" style="background:' + dotColor + '" title="' + esc(ev.type) + '"></span>'
       + (ev.content ? '<div class="feed-text">' + esc(ev.content) + '</div>' : '')
       + '<div class="feed-time">' + timeAgo(ev.ts) + '</div>'
       + '</div></div>';
@@ -407,9 +378,6 @@ function render(data) {
   html += '</div>';
 
   root.innerHTML = html;
-
-  // Draw pixel art avatars
-  root.querySelectorAll('canvas[data-agent]').forEach(c => drawSprite(c, c.dataset.agent));
 }
 
 window.addEventListener('message', e => {
