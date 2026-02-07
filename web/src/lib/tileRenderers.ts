@@ -19,7 +19,7 @@ const C = {
   green: "#4ade80",
   orange: "#fbbf24",
   text: "#e6edf3",
-  muted: "#8b949e",
+  muted: "#cfe8ff",
   border: "#30363d",
   dropActive: "#2a4a5a",
 };
@@ -71,6 +71,129 @@ function clearTile(ctx: OffscreenCanvasRenderingContext2D, w: number, h: number)
   ctx.fillStyle = C.panelBg;
   ctx.fillRect(0, 0, w, h);
 }
+
+// --- Text tile: crisp single-line text on solid background ---
+// data: { text, font, fontPx, color, bg, align, baseline, padX, padY }
+export const renderText: RenderFn = (ctx, w, h, data) => {
+  const text = (data.text as string) || "";
+  const font = (data.font as string) || "12px system-ui";
+  const fontPx = (data.fontPx as number) || 12;
+  const color = (data.color as string) || C.text;
+  const bg = (data.bg as string) || C.cardBg;
+  const align = (data.align as CanvasTextAlign) || "left";
+  const baseline = (data.baseline as CanvasTextBaseline) || "alphabetic";
+  const padX = (data.padX as number) || 0;
+  const padY = (data.padY as number) || 0;
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = color;
+  ctx.font = font;
+  ctx.textAlign = align;
+  ctx.textBaseline = baseline;
+
+  const x = align === "right" ? (w - padX) : align === "center" ? (w / 2) : padX;
+  const y = baseline === "middle" ? (h / 2) : padY + fontPx;
+  ctx.fillText(text, x, y);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+};
+
+// --- Memory card background ---
+// data: { inContext, bg, border }
+export const renderMemBg: RenderFn = (ctx, w, h, data) => {
+  const inContext = data.inContext as boolean;
+  const bg = (data.bg as string) || (inContext ? "#1a2a2a" : C.cardBg);
+  const border = (data.border as string) || (inContext ? C.green : C.border);
+
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.roundRect(2, 2, w - 4, h - 4, 4);
+  ctx.fill();
+
+  ctx.strokeStyle = border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(2, 2, w - 4, h - 4, 4);
+  ctx.stroke();
+};
+
+// --- Memory card accent bar ---
+// data: { color }
+export const renderMemBar: RenderFn = (ctx, w, h, data) => {
+  const color = (data.color as string) || C.accent;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, w, h, [4, 0, 0, 4]);
+  ctx.fill();
+};
+
+// --- Text block tile: multi-line wrapped text ---
+// data: { text, font, fontPx, color, bg, maxWidth, lineHeight, padX, padY, maxLines }
+export const renderTextBlock: RenderFn = (ctx, w, h, data) => {
+  const text = (data.text as string) || "";
+  const font = (data.font as string) || "12px system-ui";
+  const fontPx = (data.fontPx as number) || 12;
+  const color = (data.color as string) || C.text;
+  const bg = (data.bg as string) || C.cardBg;
+  const maxWidth = (data.maxWidth as number) || (w - 8);
+  const lineHeight = (data.lineHeight as number) || Math.ceil(fontPx * 1.3);
+  const padX = (data.padX as number) || 0;
+  const padY = (data.padY as number) || 0;
+  const maxLines = (data.maxLines as number) || 3;
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = color;
+  ctx.font = font;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+
+  const lines = wrapText(ctx, text, maxWidth);
+  const visible = lines.slice(0, maxLines);
+  for (let i = 0; i < visible.length; i++) {
+    const y = padY + fontPx + i * lineHeight;
+    ctx.fillText(visible[i], padX, y);
+  }
+};
+
+// --- Context card background ---
+// data: { bg, border }
+export const renderCtxBg: RenderFn = (ctx, w, h, data) => {
+  const bg = (data.bg as string) || C.cardBg;
+  const border = (data.border as string) || C.border;
+
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.roundRect(2, 2, w - 4, h - 4, 3);
+  ctx.fill();
+
+  ctx.strokeStyle = border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(2, 2, w - 4, h - 4, 3);
+  ctx.stroke();
+};
+
+// --- Context card accent bar ---
+// data: { color }
+export const renderCtxBar: RenderFn = (ctx, w, h, data) => {
+  const color = (data.color as string) || C.accent;
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, w, h);
+};
+
+// --- Chat bubble background ---
+// data: { isUser }
+export const renderChatBg: RenderFn = (ctx, w, h, data) => {
+  const isUser = data.isUser as boolean;
+  ctx.fillStyle = isUser ? "#1a2a3a" : "#1a1a2e";
+  ctx.beginPath();
+  ctx.roundRect(2, 2, w - 4, h - 4, 6);
+  ctx.fill();
+};
 
 // --- Panel background tile: dark container ---
 export const renderPanelBg: RenderFn = (ctx, w, h) => {
@@ -168,7 +291,7 @@ export const renderAgentDot: RenderFn = (ctx, w, h, data) => {
   }
 
   // Active dot
-  ctx.fillStyle = isActive ? C.green : "#333";
+  ctx.fillStyle = isActive ? C.green : "#93c5fd";
   ctx.beginPath();
   ctx.arc(8, h / 2, 3, 0, Math.PI * 2);
   ctx.fill();
@@ -302,19 +425,19 @@ export const renderPromptBtn: RenderFn = (ctx, w, h, data) => {
   const iconR = 10;
   const iconX = 18;
   const iconY = h / 2;
-  ctx.fillStyle = disabled ? "#333" : color;
+  ctx.fillStyle = disabled ? "#1f2937" : color;
   ctx.beginPath();
   ctx.arc(iconX, iconY, iconR, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = disabled ? "#555" : "#000";
+  ctx.fillStyle = disabled ? C.text : "#0b1220";
   ctx.font = "bold 12px system-ui";
   ctx.textAlign = "center";
   ctx.fillText(loading ? "..." : icon, iconX, iconY + 4);
   ctx.textAlign = "left";
 
   // Label
-  ctx.fillStyle = disabled ? C.muted : C.text;
+  ctx.fillStyle = disabled ? C.text : C.text;
   ctx.font = "bold 11px system-ui";
   ctx.fillText(label, 34, h / 2 + 4);
 
@@ -499,15 +622,33 @@ export const renderMemoriesHeader: RenderFn = (ctx, w, h) => {
   ctx.fillText("MEMORIES", 4, h / 2 + 3);
 };
 
-// --- Registry of all renderers ---
+// --- Hover glow tile: semi-transparent highlight ---
+export const renderHoverGlow: RenderFn = (ctx, w, h) => {
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "rgba(21, 209, 255, 0.08)";
+  ctx.beginPath();
+  ctx.roundRect(2, 2, w - 4, h - 4, 6);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(21, 209, 255, 0.3)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(2, 2, w - 4, h - 4, 6);
+  ctx.stroke();
+};
+
+// --- Registry of active renderers ---
+// Atomic primitives used by the new layout system
 export const RENDERERS: Record<string, RenderFn> = {
   "panel-bg": renderPanelBg,
-  "header": renderHeader,
-  "agent-dot": renderAgentDot,
-  "mem-card": renderMemoryCard,
-  "ctx-card": renderContextCard,
-  "prompt-btn": renderPromptBtn,
-  "chat-bubble": renderChatBubble,
+  "text": renderText,
+  "text-block": renderTextBlock,
+  "mem-bg": renderMemBg,
+  "mem-bar": renderMemBar,
+  "ctx-bg": renderCtxBg,
+  "ctx-bar": renderCtxBar,
+  "chat-bg": renderChatBg,
+  "hover-glow": renderHoverGlow,
+  // Composite tiles still used by layout (section headers, nav, indicators)
   "page-nav": renderPageNav,
   "mic-indicator": renderMic,
   "voice-transcript": renderTranscript,

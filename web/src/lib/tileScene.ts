@@ -9,9 +9,18 @@
 
 import { MicroTile, type TileDescriptor, type TileLayer, type RenderFn } from "./microTile";
 
+export interface GroupDescriptor {
+  id: string;
+  x: number;
+  y: number;
+  z?: number;
+  visible?: boolean;
+  duration?: number;
+}
+
 // Scene ops sent to Spectacles (JSON, no texture)
 export interface SceneOp {
-  op: "create" | "move" | "destroy" | "visibility";
+  op: "create" | "move" | "destroy" | "visibility" | "group" | "group-move" | "group-destroy";
   id: string;
   x?: number;
   y?: number;
@@ -20,6 +29,7 @@ export interface SceneOp {
   h?: number;
   s?: number;
   layer?: TileLayer;
+  group?: string;
   interactive?: boolean;
   draggable?: boolean;
   visible?: boolean;
@@ -37,12 +47,20 @@ export interface TexPayload {
 export class TileScene {
   private tiles = new Map<string, MicroTile>();
   private renderers = new Map<string, RenderFn>();
+  private groups = new Map<string, GroupDescriptor>();
   private pendingOps: SceneOp[] = [];
   private pendingTextures: TexPayload[] = [];
 
   // JPEG quality per tile type
   private qualityMap: Record<string, number> = {
     "panel-bg": 0.3, // solid color, minimal quality needed
+    "mem-bg": 0.3,
+    "mem-bar": 0.4,
+    "text": 0.85,
+    "text-block": 0.85,
+    "ctx-bg": 0.3,
+    "ctx-bar": 0.4,
+    "chat-bg": 0.3,
     "header": 0.6,
     "agent-dot": 0.55,
     "mem-card": 0.55,
@@ -52,6 +70,7 @@ export class TileScene {
     "page-nav": 0.55,
     "mic-indicator": 0.5,
     "voice-transcript": 0.5,
+    "hover-glow": 0.3,
   };
 
   /**
@@ -75,12 +94,63 @@ export class TileScene {
     return Array.from(this.tiles.values());
   }
 
+  getGroup(id: string): GroupDescriptor | undefined {
+    return this.groups.get(id);
+  }
+
+  getTileWorldPosition(id: string): { x: number; y: number; z?: number } | null {
+    const tile = this.tiles.get(id);
+    if (!tile) return null;
+    if (!tile.group) return { x: tile.x, y: tile.y, z: tile.z };
+    const group = this.groups.get(tile.group);
+    if (!group) return { x: tile.x, y: tile.y, z: tile.z };
+    return { x: group.x + tile.x, y: group.y + tile.y, z: tile.z ?? group.z };
+  }
+
   /**
    * Reconcile desired state with current state.
    * Creates new tiles, destroys removed ones, moves/updates existing ones.
    */
-  reconcile(desired: TileDescriptor[]) {
+  reconcile(desired: TileDescriptor[], groups: GroupDescriptor[] = []) {
     const desiredIds = new Set(desired.map(d => d.id));
+    const desiredGroupIds = new Set(groups.map(g => g.id));
+
+    // Destroy groups that are no longer desired
+    for (const [id] of this.groups) {
+      if (!desiredGroupIds.has(id)) {
+        this.pendingOps.push({ op: "group-destroy", id });
+        this.groups.delete(id);
+      }
+    }
+
+    // Create or update groups
+    for (const g of groups) {
+      const existing = this.groups.get(g.id);
+      if (!existing) {
+        this.pendingOps.push({
+          op: "group",
+          id: g.id,
+          x: g.x,
+          y: g.y,
+          z: g.z,
+          visible: g.visible,
+        });
+        this.groups.set(g.id, { ...g });
+      } else {
+        if (existing.x !== g.x || existing.y !== g.y || existing.z !== g.z || existing.visible !== g.visible) {
+          this.pendingOps.push({
+            op: "group-move",
+            id: g.id,
+            x: g.x,
+            y: g.y,
+            z: g.z,
+            visible: g.visible,
+            duration: g.duration ?? 0,
+          });
+          this.groups.set(g.id, { ...g });
+        }
+      }
+    }
 
     // Destroy tiles that are no longer desired
     for (const [id, tile] of this.tiles) {
@@ -145,6 +215,7 @@ export class TileScene {
             h: tile.h,
             s: tile.scale,
             layer: tile.layer,
+            group: tile.group,
             interactive: tile.interactive,
             draggable: tile.draggable,
           };
@@ -163,6 +234,7 @@ export class TileScene {
           y: tile.y,
           s: tile.scale,
           layer: tile.layer,
+          group: tile.group,
           duration: 0,
         });
         tile.positionDirty = false;
@@ -229,6 +301,16 @@ export class TileScene {
    * Call when a new subscriber connects (they missed the initial burst).
    */
   resync() {
+    for (const group of this.groups.values()) {
+      this.pendingOps.push({
+        op: "group",
+        id: group.id,
+        x: group.x,
+        y: group.y,
+        z: group.z,
+        visible: group.visible,
+      });
+    }
     for (const tile of this.tiles.values()) {
       if (!tile.visible) continue;
       // Re-queue create op
@@ -241,6 +323,7 @@ export class TileScene {
         h: tile.h,
         s: tile.scale,
         layer: tile.layer,
+        group: tile.group,
         interactive: tile.interactive,
         draggable: tile.draggable,
       };
@@ -268,6 +351,10 @@ export class TileScene {
       }
     }
     this.tiles.clear();
+    for (const group of this.groups.values()) {
+      this.pendingOps.push({ op: "group-destroy", id: group.id });
+    }
+    this.groups.clear();
   }
 
   /**

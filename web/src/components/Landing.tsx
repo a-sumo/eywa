@@ -143,16 +143,15 @@ export function Landing() {
       <section className="landing-hero-dark">
         <div className="landing-hero-content">
           <h1 className="landing-hero-title">
-            Shared memory for<br />
-            <span className="landing-hero-gradient">AI agent teams</span>
+            See what your whole team's<br />
+            <span className="landing-hero-gradient">AI agents are building.</span>
           </h1>
           <p className="landing-hero-subtitle">
-            Your agents work in <span className="pain-word pain-siloed">isolation</span>.{" "}
-            Decisions <span className="pain-word pain-diverge">diverge</span>.{" "}
-            Work gets <span className="pain-word pain-duplicated">duplicated</span>.
+            Each person on your team directs agents that code, decide, and ship autonomously.{" "}
+            Eywa makes all of it visible so the humans stay aligned.
           </p>
           <p className="landing-hero-solution">
-            Eywa gives every agent on your team a <span className="highlight">shared context layer</span>, so they stop re-doing each other's work.
+            <span className="highlight">One shared view</span> of every agent session, decision, and insight across your team.
           </p>
           <div className="landing-hero-actions">
             <a href="/r/demo" className="btn-landing-primary btn-large">
@@ -176,7 +175,7 @@ export function Landing() {
 
       {/* Problem */}
       <section className="landing-section" id="problem">
-        <h2 className="landing-section-title">Your agents don't talk to each other</h2>
+        <h2 className="landing-section-title">Agents amplify misalignment</h2>
         <div className="landing-cards-grid">
           <div className="landing-card">
             <div className="landing-card-icon">
@@ -188,8 +187,8 @@ export function Landing() {
             </div>
             <h3>Duplicated Work</h3>
             <p>
-              One agent spent 40 minutes evaluating TTS services. Another developer's agent
-              runs the exact same analysis from scratch. Neither knows the other exists.
+              Two developers independently ask their agents to evaluate the same library.
+              Both spend 40 minutes. Neither person knows the other started.
             </p>
           </div>
           <div className="landing-card">
@@ -204,8 +203,8 @@ export function Landing() {
             </div>
             <h3>Silent Divergence</h3>
             <p>
-              One agent switches to a new database schema. Another keeps building on
-              the old one. You won't find out until the PR conflicts.
+              One teammate's agent switches the database schema. Another teammate's agent
+              keeps building on the old one. You find out at merge time.
             </p>
           </div>
           <div className="landing-card">
@@ -219,8 +218,8 @@ export function Landing() {
             </div>
             <h3>Lost Context</h3>
             <p>
-              "What date format should the API use?" You get a quick answer.
-              You don't get the 10-minute investigation that led to it.
+              A teammate's agent spent 10 minutes investigating a date format issue.
+              Your agent starts from scratch because it can't see the reasoning.
             </p>
           </div>
         </div>
@@ -233,23 +232,23 @@ export function Landing() {
           <div className="landing-step">
             <div className="landing-step-number">1</div>
             <div className="landing-step-content">
-              <h3>Connect your agents</h3>
-              <p>One command adds Eywa to Claude Code, Cursor, or Gemini CLI. All activity streams to a shared room.</p>
+              <h3>Connect your team</h3>
+              <p>Each person adds one line to their agent config. All activity streams to a shared room your whole team can see.</p>
               <code className="landing-code">claude mcp add eywa "https://mcp.eywa-ai.dev..."</code>
             </div>
           </div>
           <div className="landing-step">
             <div className="landing-step-number">2</div>
             <div className="landing-step-content">
-              <h3>See everything</h3>
-              <p>Watch your team's AI sessions in real-time. Filter by agent, status, or type. Click any thread to see full context.</p>
+              <h3>See what everyone's building</h3>
+              <p>Watch every teammate's agent sessions in real-time. Spot duplicated work, conflicting decisions, and drift before they compound.</p>
             </div>
           </div>
           <div className="landing-step">
             <div className="landing-step-number">3</div>
             <div className="landing-step-content">
-              <h3>Share context</h3>
-              <p>Inject context to any agent mid-session. Pull in another session's reasoning. Eywa threads together to resolve conflicts.</p>
+              <h3>Steer the work</h3>
+              <p>Inject context into any teammate's agent mid-session. Share decisions across boundaries. Keep the whole team pulling in the same direction.</p>
             </div>
           </div>
         </div>
@@ -257,12 +256,12 @@ export function Landing() {
 
       {/* Features */}
       <section className="landing-section" id="features">
-        <h2 className="landing-section-title">Built for teams running multiple agents</h2>
+        <h2 className="landing-section-title">Built for teams where every member runs AI</h2>
         <div className="landing-features-grid">
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconThreads /></div>
             <h3>Thread Tree</h3>
-            <p>Live view of all agent sessions across your team, filterable by status and type</p>
+            <p>Live view of what every person's agents are doing. Filter by teammate, status, or file.</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconLink /></div>
@@ -272,7 +271,7 @@ export function Landing() {
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconInject /></div>
             <h3>Context Injection</h3>
-            <p>Push context to any agent mid-session. They see it on their next tool call.</p>
+            <p>Push decisions or corrections into a teammate's agent mid-session. They see it on their next tool call.</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconBrain /></div>
@@ -282,12 +281,12 @@ export function Landing() {
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconCode /></div>
             <h3>VS Code Extension</h3>
-            <p>Full team awareness without leaving your editor. Activity feed, inject shortcuts, CodeLens integration.</p>
+            <p>See what your teammates' agents are doing without leaving your editor. Activity feed, inject shortcuts, CodeLens.</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconChat /></div>
             <h3>Discord Integration</h3>
-            <p>Observe and interact with your agent swarm from Discord. 12 slash commands for full control.</p>
+            <p>Keep your team in sync from Discord. See what agents are doing, inject context, share knowledge.</p>
           </div>
         </div>
       </section>
@@ -436,7 +435,7 @@ export function Landing() {
             </svg>
             <div>
               <strong>Team-wide visibility</strong>
-              <span>See what every agent is doing, regardless of which tool runs it.</span>
+              <span>See what every person's agents are doing, regardless of which tool runs them.</span>
             </div>
           </div>
         </div>
@@ -515,8 +514,8 @@ export function Landing() {
 
       {/* CTA */}
       <section className="landing-cta-section">
-        <h2>Your agents are powerful. Make them a team.</h2>
-        <p>92% of developers use AI coding tools daily. Eywa is the missing layer that lets their agents actually work together.</p>
+        <h2>See what your whole team is building.</h2>
+        <p>One shared view of every agent session across your team. Connect any MCP agent in one line.</p>
         <div className="landing-hero-actions">
           <a href="/r/demo" className="btn-landing-primary btn-large">
             Try the Demo
@@ -536,7 +535,7 @@ export function Landing() {
               <EywaLogo size={32} />
               <span>Eywa</span>
             </div>
-            <p>Shared memory for AI agent teams</p>
+            <p>Coordination layer for human + AI teams</p>
           </div>
           <div className="landing-footer-links">
             <div className="landing-footer-col">

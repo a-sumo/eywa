@@ -1,6 +1,13 @@
 # Eywa
 
-Multi-agent shared memory system. Agents connect via MCP, share context through a Supabase backend, and coordinate work across sessions.
+Observability and coordination layer for human + AI teams. Each person on a team directs AI agents that code, decide, and ship autonomously. Eywa gives the team visibility across every agent session so the humans stay aligned.
+
+## Positioning and Copy
+
+- **Eywa is for humans, not agents.** The product helps people coordinate when everyone on the team runs AI. The agents are the amplifier, humans are the steerers.
+- **Always lead with the solution, never the problem.** Say what Eywa does. Two sentences, plain language. No cleverness, no negativity, no rhetorical questions. Be 80% accurate and 100% clear. (YC principle: "Socialcam is a mobile app that makes it easy to take videos and share them." No problem setup needed.)
+- **No marketing speak.** No superlatives (fastest, first, best). No vague abstractions ("gap in intent"). Describe the product in words a teammate would use.
+- **The core insight:** when every team member controls AI agents, small misalignments between people get amplified at machine speed. Eywa makes all agent work visible so humans know what to sync on.
 
 ## Project Structure
 

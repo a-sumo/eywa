@@ -231,6 +231,10 @@ Eywa meets your team where they already work.
 | <img src="https://cdn.simpleicons.org/snapchat/FFFC00" width="16" /> **Snap Spectacles** | AR panel anchored to physical displays | [`remix-specs/`](remix-specs/) |
 | <img src="https://cdn.simpleicons.org/raspberrypi/A22846" width="16" /> **E-ink Display** | 7-color Waveshare ambient agent status | [`web/` (MiniEywaEink)](web/src/components/MiniEywaEink.tsx) |
 
+### Spectacles Deployment
+
+For production deployment (auto‑join via display tracker marker and dynamic UI root), see `eywa-specs/DEPLOYMENT.md`.
+
 ---
 
 ## CLI

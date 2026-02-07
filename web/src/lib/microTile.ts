@@ -12,6 +12,7 @@ export type TileLayer = 0 | 1 | 2 | 3; // base, hover, drag, overlay
 export interface TileDescriptor {
   id: string;
   type: string;
+  group?: string; // optional parent group id
   x: number; // position in cm (Spectacles world units)
   y: number;
   z?: number; // explicit z position (overrides layer-based z). Used for background tiles at z=0.
@@ -39,6 +40,7 @@ export class MicroTile {
   readonly ctx: OffscreenCanvasRenderingContext2D;
 
   // Position and layout (in cm, Spectacles world units)
+  group: string | undefined = undefined;
   x = 0;
   y = 0;
   z: number | undefined = undefined; // explicit z (overrides layer-based z on Spectacles)
@@ -122,9 +124,10 @@ export class MicroTile {
    */
   applyDescriptor(desc: TileDescriptor): boolean {
     let moved = false;
-    if (this.x !== desc.x || this.y !== desc.y || this.scale !== desc.scale || this.layer !== desc.layer || this.z !== desc.z) {
+    if (this.x !== desc.x || this.y !== desc.y || this.scale !== desc.scale || this.layer !== desc.layer || this.z !== desc.z || this.group !== desc.group) {
       moved = true;
     }
+    this.group = desc.group;
     this.x = desc.x;
     this.y = desc.y;
     this.z = desc.z;
