@@ -9,6 +9,23 @@ Raspberry Pi scripts for physical Eywa displays.
 | Waveshare 5.65" 7-Color | 600x448 | E-Ink (passive) | `eink_display.py` |
 | 3.5" ILI9341 TFT | 320x480 | LCD (touch) | `tft_touch.py` |
 
+## Beginner Guides
+
+New to electronics? Start here:
+
+- **[TFT_GUIDE.md](./TFT_GUIDE.md)** - Complete walkthrough for the 3.5" TFT touch display. Covers every component, pin-by-pin wiring with explanations, driver setup, touch calibration, and troubleshooting.
+- **[EINK_GUIDE.md](./EINK_GUIDE.md)** - Complete walkthrough for the Waveshare 5.65" e-ink display. Covers HAT vs module wiring, the Waveshare library, refresh behavior, display care, and troubleshooting.
+
+## Test Scripts
+
+Run these after wiring to verify hardware before using the full Eywa apps:
+
+| Script | What it tests | Display needed? |
+|--------|--------------|----------------|
+| `test_tft.py` | TFT color bars, text rendering, touch input | TFT (or `--window` for laptop) |
+| `test_eink.py` | E-ink 7-color swatches, shapes, pixel grid | E-ink (or `--preview` for PNG) |
+| `test_touch.py` | Raw touch events, coordinate ranges, device detection | None (reads kernel input) |
+
 ## E-Ink Setup (Waveshare 5.65" ACeP)
 
 ### 1. Enable SPI on Pi
