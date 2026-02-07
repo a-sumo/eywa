@@ -10,6 +10,10 @@ interface Particle {
 }
 
 export function FlowBackground() {
+  // Marker mode: centered convergence, ACeP-safe colors, bigger logo, no glow.
+  // Activated by setting window.__eywaMarkerMode = true before page load.
+  const markerMode = typeof window !== "undefined" && (window as unknown as Record<string, unknown>).__eywaMarkerMode;
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const logoOverlayRef = useRef<HTMLImageElement>(null);
   const particlesRef = useRef<Particle[]>([]);
@@ -27,11 +31,11 @@ export function FlowBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const CENTER_Y_RATIO = 0.3;
-    const CENTER_Y_OFFSET = -40;
+    const CENTER_Y_RATIO = markerMode ? 0.5 : 0.3;
+    const CENTER_Y_OFFSET = markerMode ? 0 : -40;
 
     // Load logo with original colors (no white tint)
-    const LOGO_SIZE = 68;
+    const LOGO_SIZE = markerMode ? 200 : 68;
     const LOGO_RENDER_SCALE = 2;
     const LOGO_EXCLUSION_RADIUS = LOGO_SIZE * 0.7;
     const LOGO_MASK_SCALE = 1.08;
@@ -61,8 +65,18 @@ export function FlowBackground() {
     resize();
     window.addEventListener("resize", resize);
 
-    // Particle colors - blue biased
+    // Particle colors
     const randomHue = (): number => {
+      if (markerMode) {
+        // ACeP 7-color palette: hues that quantize to red, green, blue, orange, yellow
+        const r = Math.random();
+        if (r < 0.30) return 240;                    // Blue
+        if (r < 0.55) return 0 + Math.random() * 10; // Red
+        if (r < 0.75) return 120 + Math.random() * 20; // Green
+        if (r < 0.90) return 25 + Math.random() * 10;  // Orange
+        return 55 + Math.random() * 10;                 // Yellow
+      }
+      // Normal mode - blue biased aurora palette
       const r = Math.random();
       if (r < 0.65) return 200 + Math.random() * 40; // Blues
       if (r < 0.85) return 170 + Math.random() * 30; // Cyans
@@ -88,14 +102,15 @@ export function FlowBackground() {
         vx: (Math.random() - 0.5) * 2,
         vy: (Math.random() - 0.5) * 2,
         baseHue: randomHue(),
-        size: 2 + Math.random() * 1.5,
+        size: markerMode ? 3 + Math.random() * 4 : 2 + Math.random() * 1.5,
       };
     };
 
-    // Initialize with many particles
+    // Initialize with many particles (3x density in marker mode for tighter crop)
     const initParticles = () => {
       const particles: Particle[] = [];
-      const count = Math.floor((canvas.width * canvas.height) / 2500);
+      const density = markerMode ? 800 : 2500;
+      const count = Math.floor((canvas.width * canvas.height) / density);
 
       for (let i = 0; i < count; i++) {
         particles.push(createParticle(canvas.width, canvas.height));
@@ -124,8 +139,10 @@ export function FlowBackground() {
       const curlStrength = Math.min(1, dist / 300) * 0.8;
       const curl = noise(x, y, t) * curlStrength;
 
-      // Gentle convergence
-      const convergence = Math.min(1.8, 0.3 + dist * 0.003);
+      // Convergence toward center (stronger in marker mode to pull particles in)
+      const convergence = markerMode
+        ? Math.min(3.0, 0.6 + dist * 0.006)
+        : Math.min(1.8, 0.3 + dist * 0.003);
 
       const finalAngle = angle + curl;
 
@@ -172,7 +189,9 @@ export function FlowBackground() {
       const pulseShape = Math.exp(-Math.pow((pulseT - 0.18) / 0.22, 2));
       const corePulse = 0.7 + pulseShape * 0.5;
 
-      // Dynamic glow - animated aurora lights orbiting behind logo
+      // Dynamic glow - animated aurora lights orbiting behind logo (skip in marker mode)
+      if (markerMode) { /* no glow - soft gradients don't survive ACeP dithering */ }
+      else {
       ctx.save();
       ctx.globalCompositeOperation = "screen";
       const gt = timeRef.current;
@@ -200,6 +219,7 @@ export function FlowBackground() {
         ctx.fill();
       }
       ctx.restore();
+      } // end glow
 
       // Build spatial hash grid
       const grid = new Map<string, number[]>();
@@ -307,9 +327,10 @@ export function FlowBackground() {
         // Proximity boost for brightness near center
         const proximityBoost = Math.max(0, 1 - newDistToCenter / 200) * 0.3;
 
-        // Fade out when very close to center
-        const proximityFade = newDistToCenter < 80
-          ? newDistToCenter / 80
+        // Fade out when very close to center (larger zone in marker mode for bigger logo)
+        const fadeRadius = markerMode ? LOGO_SIZE * 1.2 : 80;
+        const proximityFade = newDistToCenter < fadeRadius
+          ? newDistToCenter / fadeRadius
           : 1;
 
         // Final alpha (hard drop at logo mask boundary)
@@ -317,14 +338,20 @@ export function FlowBackground() {
           ? 0
           : Math.min(1, velocityAlpha + pulseEffect * 0.7 + proximityBoost) * proximityFade;
 
-        // Color shifts towards white/cyan during pulse
-        const hue = pulseEffect > 0.15
-          ? 200 + (210 - 200) * pulseEffect
-          : p.baseHue;
-        const saturation = pulseEffect > 0.15
-          ? 75 - pulseEffect * 55
-          : 70;
-        const lightness = 45 + pulseEffect * 45 + proximityBoost * 25;
+        // Color shifts towards white/cyan during pulse (skip in marker mode to keep ACeP hues)
+        const hue = markerMode
+          ? p.baseHue
+          : pulseEffect > 0.15
+            ? 200 + (210 - 200) * pulseEffect
+            : p.baseHue;
+        const saturation = markerMode
+          ? 100
+          : pulseEffect > 0.15
+            ? 75 - pulseEffect * 55
+            : 70;
+        const lightness = markerMode
+          ? 50
+          : 45 + pulseEffect * 45 + proximityBoost * 25;
 
         // Draw particle - deform into velocity-aligned capsule at high speed
         const velRatio = speed / maxSpeed;
@@ -405,7 +432,7 @@ export function FlowBackground() {
         draggable={false}
         style={{
           position: "fixed",
-          width: "68px",
+          width: markerMode ? "200px" : "68px",
           height: "auto",
           zIndex: 1,
           pointerEvents: "none",
