@@ -11,14 +11,13 @@ interface Particle {
 
 export function FlowBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const logoOverlayRef = useRef<HTMLImageElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animationRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
   const pulseTimeRef = useRef<number>(0);
   const logoCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const logoRadiusRef = useRef<number>(0);
-  const glowCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const glowOffsetRef = useRef<number>(0);
   const logoMaskRef = useRef<{ data: Uint8ClampedArray; width: number; height: number } | null>(null);
 
   useEffect(() => {
@@ -35,7 +34,6 @@ export function FlowBackground() {
     const LOGO_SIZE = 68;
     const LOGO_RENDER_SCALE = 2;
     const LOGO_EXCLUSION_RADIUS = LOGO_SIZE * 0.7;
-    const LOGO_GLOW_BLUR = 56;
     const LOGO_MASK_SCALE = 1.08;
     const LOGO_MASK_ALPHA_THRESHOLD = 20;
     const logoImg = new Image();
@@ -54,27 +52,6 @@ export function FlowBackground() {
       const imageData = offCtx.getImageData(0, 0, w, h);
       logoMaskRef.current = { data: imageData.data, width: w, height: h };
 
-      // Build a blurred glow canvas based on the logo shape (SDF-like glow)
-      const tintCanvas = document.createElement("canvas");
-      tintCanvas.width = w;
-      tintCanvas.height = h;
-      const tintCtx = tintCanvas.getContext("2d")!;
-      tintCtx.drawImage(offscreen, 0, 0);
-      tintCtx.globalCompositeOperation = "source-in";
-      tintCtx.fillStyle = "rgba(255, 255, 255, 0.95)";
-      tintCtx.fillRect(0, 0, w, h);
-      tintCtx.globalCompositeOperation = "source-over";
-
-      const glowCanvas = document.createElement("canvas");
-      glowCanvas.width = w + LOGO_GLOW_BLUR * 3;
-      glowCanvas.height = h + LOGO_GLOW_BLUR * 3;
-      const glowCtx = glowCanvas.getContext("2d")!;
-      const glowInset = Math.floor(LOGO_GLOW_BLUR * 1.5);
-      glowCtx.filter = `blur(${LOGO_GLOW_BLUR}px)`;
-      glowCtx.drawImage(tintCanvas, glowInset, glowInset);
-      glowCtx.filter = "none";
-      glowCanvasRef.current = glowCanvas;
-      glowOffsetRef.current = glowInset;
     };
 
     const resize = () => {
@@ -190,24 +167,39 @@ export function FlowBackground() {
       const centerY = canvas.height * CENTER_Y_RATIO + CENTER_Y_OFFSET;
       const pulseRadius = pulseTimeRef.current * PULSE_SPEED;
 
-      // Logo-shaped glow behind particles (strong + broad, but not covering particles)
-      const t = pulseTimeRef.current / PULSE_INTERVAL;
-      const peak = 0.18;
-      const width = 0.22;
-      const pulseShape = Math.exp(-Math.pow((t - peak) / width, 2));
+      // Pulse timing
+      const pulseT = pulseTimeRef.current / PULSE_INTERVAL;
+      const pulseShape = Math.exp(-Math.pow((pulseT - 0.18) / 0.22, 2));
       const corePulse = 0.7 + pulseShape * 0.5;
-      const glowCanvas = glowCanvasRef.current;
-      if (glowCanvas) {
-        const gw = glowCanvas.width;
-        const gh = glowCanvas.height;
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        ctx.globalAlpha = 0.95 + corePulse * 0.25;
-        ctx.translate(centerX, centerY);
-        ctx.scale(1 / LOGO_RENDER_SCALE, 1 / LOGO_RENDER_SCALE);
-        ctx.drawImage(glowCanvas, -gw / 2, -gh / 2);
-        ctx.restore();
+
+      // Dynamic glow - animated aurora lights orbiting behind logo
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      const gt = timeRef.current;
+      const lights = [
+        { hue: 195, spd: 0.6, rx: 16, ry: 10, sz: 100, ph: 0 },
+        { hue: 270, spd: -0.45, rx: 20, ry: 12, sz: 110, ph: 1.2 },
+        { hue: 215, spd: 0.35, rx: 12, ry: 8, sz: 85, ph: 2.8 },
+        { hue: 330, spd: -0.7, rx: 14, ry: 9, sz: 75, ph: 0.6 },
+        { hue: 180, spd: 0.55, rx: 8, ry: 5, sz: 60, ph: 4.1 },
+      ];
+      for (const l of lights) {
+        const a = gt * l.spd + l.ph;
+        const lx = centerX + Math.cos(a) * l.rx;
+        const ly = centerY + Math.sin(a * 0.7) * l.ry;
+        const sz = l.sz * (0.85 + corePulse * 0.2);
+        const baseAlpha = 0.15 + corePulse * 0.08;
+        const grad = ctx.createRadialGradient(lx, ly, 0, lx, ly, sz);
+        grad.addColorStop(0, `hsla(${l.hue}, 80%, 70%, ${baseAlpha})`);
+        grad.addColorStop(0.3, `hsla(${l.hue}, 70%, 55%, ${baseAlpha * 0.5})`);
+        grad.addColorStop(0.6, `hsla(${l.hue}, 60%, 40%, ${baseAlpha * 0.15})`);
+        grad.addColorStop(1, `hsla(${l.hue}, 50%, 30%, 0)`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(lx, ly, sz, 0, Math.PI * 2);
+        ctx.fill();
       }
+      ctx.restore();
 
       // Build spatial hash grid
       const grid = new Map<string, number[]>();
@@ -335,8 +327,8 @@ export function FlowBackground() {
         const lightness = 45 + pulseEffect * 45 + proximityBoost * 25;
 
         // Draw particle - deform into velocity-aligned capsule at high speed
-        const t = speed / maxSpeed;
-        const elongation = t * t * p.size * 4;
+        const velRatio = speed / maxSpeed;
+        const elongation = velRatio * velRatio * p.size * 4;
         const color = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
 
         if (elongation < 0.5) {
@@ -371,38 +363,13 @@ export function FlowBackground() {
         }
       }
 
-      // Pulsing logo at center (crisp edges)
-      const logoCanvas = logoCanvasRef.current;
-      if (logoCanvas) {
-        const lw = logoCanvas.width;
-        const lh = logoCanvas.height;
-        ctx.save();
-
-        // Subtle breathing scale
-        const breathScale = 1 + (corePulse - 0.7) * 0.12;
-        ctx.translate(centerX, centerY);
-        ctx.scale(breathScale / LOGO_RENDER_SCALE, breathScale / LOGO_RENDER_SCALE);
-
-        // Logo-shaped glow pass (strong cyan, sharp core + broad extent)
-        ctx.save();
-        ctx.globalCompositeOperation = "screen";
-        ctx.shadowColor = "rgba(120, 240, 255, 1)";
-        ctx.shadowBlur = 95;
-        ctx.globalAlpha = 1;
-        ctx.drawImage(logoCanvas, -lw / 2, -lh / 2);
-        ctx.shadowBlur = 34;
-        ctx.shadowColor = "rgba(160, 255, 255, 1)";
-        ctx.globalAlpha = 1;
-        ctx.drawImage(logoCanvas, -lw / 2, -lh / 2);
-        ctx.restore();
-
-        // Main logo layer - crisp on top, no shadow glow
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = "transparent";
-        ctx.globalAlpha = 0.9;
-        ctx.drawImage(logoCanvas, -lw / 2, -lh / 2);
-
-        ctx.restore();
+      // Position the SVG overlay (crisp vector rendering, no canvas rasterization)
+      const logoEl = logoOverlayRef.current;
+      if (logoEl) {
+        const breathScale = 1 + (corePulse - 0.7) * 0.04;
+        logoEl.style.left = `${centerX}px`;
+        logoEl.style.top = `${centerY}px`;
+        logoEl.style.transform = `translate(-50%, -50%) scale(${breathScale})`;
       }
 
       animationRef.current = requestAnimationFrame(animate);
@@ -417,18 +384,34 @@ export function FlowBackground() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="flow-background"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        zIndex: 0,
-        pointerEvents: "none",
-      }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        className="flow-background"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+      <img
+        ref={logoOverlayRef}
+        src="/eywa-logo.svg"
+        alt=""
+        draggable={false}
+        style={{
+          position: "fixed",
+          width: "68px",
+          height: "auto",
+          zIndex: 1,
+          pointerEvents: "none",
+          willChange: "transform",
+        }}
+      />
+    </>
   );
 }
