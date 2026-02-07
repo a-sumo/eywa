@@ -1,0 +1,152 @@
+/* Score - Agent Activity Symbol Timeline */
+
+.score {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  font-family: var(--font-sans, "Inter", sans-serif);
+  color: var(--text-primary, #f0f2f8);
+}
+
+.score-loading,
+.score-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary, rgba(240, 242, 248, 0.7));
+  font-size: 0.9rem;
+}
+
+/* --- Header (agent columns) --- */
+
+.score-header {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-surface, #10121c);
+}
+
+.score-ts-head {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+.score-col-head {
+  width: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  overflow: hidden;
+}
+
+.score-agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.score-agent-name {
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-secondary, rgba(240, 242, 248, 0.7));
+}
+
+/* --- Body (scrollable timeline) --- */
+
+.score-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-height: 0;
+  padding-bottom: 8px;
+}
+
+/* --- Row (one time bucket) --- */
+
+.score-line {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.score-line:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.score-ts {
+  width: 72px;
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  color: var(--text-secondary, rgba(240, 242, 248, 0.5));
+  padding-left: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-cell {
+  width: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 0;
+}
+
+.score-cell canvas {
+  display: block;
+}
+
+/* --- Now line --- */
+
+.score-now {
+  height: 2px;
+  margin: 4px 0;
+  border: none;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--aurora-purple, #6417EC),
+    var(--aurora-pink, #E72B76),
+    var(--aurora-cyan, #15D1FF),
+    var(--aurora-blue, #2543FF),
+    var(--aurora-green, #4ade80),
+    var(--aurora-purple, #6417EC)
+  );
+  background-size: 200% 100%;
+  animation: now-sweep 4s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(21, 209, 255, 0.3);
+}
+
+@keyframes now-sweep {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* --- Scrollbar --- */
+
+.score-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.score-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.score-body::-webkit-scrollbar-thumb {
+  background: var(--border-default, rgba(255, 255, 255, 0.1));
+  border-radius: 2px;
+}

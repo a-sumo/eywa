@@ -13,7 +13,7 @@ metaInfo:
     []
   tags:
     []
-  lensName: Remix
+  lensName: Eywa
   lensDescriptors:
     - EXPERIMENTAL_API
   lensApplicability:
@@ -22,7 +22,7 @@ metaInfo:
   lensClientCompatibilities:
     - Spectacles
   platformBundlesEnabled: false
-  iconHash: ""
+  iconHash: 15586d6acee1ea0a68feb3353797fe7a
   videoPreviewHash: ""
   fromTemplateName: Spectacles
   fromTemplateUrl: Lens Studio 5.15.1.25102815
