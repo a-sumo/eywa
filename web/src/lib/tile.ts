@@ -1,5 +1,5 @@
 /**
- * MicroTile - a small, independent renderable unit.
+ * Tile - a small, independent renderable unit.
  *
  * Each tile owns its own OffscreenCanvas and tracks dirtiness via content hash.
  * Textures are cached as base64 after first encode, skipping re-encoding when
@@ -33,7 +33,7 @@ export type RenderFn = (
   data: Record<string, unknown>,
 ) => void;
 
-export class MicroTile {
+export class Tile {
   readonly id: string;
   readonly type: string;
   readonly canvas: OffscreenCanvas;
@@ -110,7 +110,7 @@ export class MicroTile {
     if (this.cachedBase64) return this.cachedBase64;
 
     // Use a shared export canvas to avoid creating new ones
-    const exportCanvas = MicroTile.getExportCanvas(this.w, this.h);
+    const exportCanvas = Tile.getExportCanvas(this.w, this.h);
     const exportCtx = exportCanvas.getContext("2d")!;
     exportCtx.drawImage(this.canvas, 0, 0);
     const dataUrl = exportCanvas.toDataURL("image/jpeg", quality);
@@ -145,12 +145,12 @@ export class MicroTile {
 
   static getExportCanvas(w: number, h: number): HTMLCanvasElement {
     const key = `${w}x${h}`;
-    let canvas = MicroTile.exportCanvasPool.get(key);
+    let canvas = Tile.exportCanvasPool.get(key);
     if (!canvas) {
       canvas = document.createElement("canvas");
       canvas.width = w;
       canvas.height = h;
-      MicroTile.exportCanvasPool.set(key, canvas);
+      Tile.exportCanvasPool.set(key, canvas);
     }
     return canvas;
   }

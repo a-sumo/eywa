@@ -1,5 +1,5 @@
 /**
- * tileLayout.ts - Pure layout function for micro-tiles.
+ * tileLayout.ts - Pure layout function for tiles.
  *
  * Takes all UI state and returns a TileDescriptor[] describing every tile
  * that should exist, with positions in cm (Spectacles world units).
@@ -8,7 +8,7 @@
  * Called via useMemo - only recomputes when inputs change.
  */
 
-import type { TileDescriptor, TileLayer } from "./microTile";
+import type { TileDescriptor, TileLayer } from "./tile";
 import type { Memory } from "./supabase";
 import type { ChatMessage } from "../hooks/useGeminiChat";
 
@@ -83,12 +83,28 @@ const CTX_BODY_PX = 8;
 const CHAT_ROLE_PX = 9;
 const CHAT_BODY_PX = 9;
 
-// --- Local Z offsets (cm) to avoid z-fighting within a group ---
-const Z_BG = 0.0;
-const Z_BAR = 0.03;
-const Z_TEXT = 0.06;
-const Z_ICON = 0.06;
-const Z_OVER = 0.09;
+// --- DOM-like Z stacking model ---
+// Groups act as stacking contexts. Each group sits at a base Z depth,
+// and child tiles get Z offsets relative to the group. This prevents
+// Z-fighting between elements at different hierarchy levels.
+
+// Group Z depths (assigned to groups based on visual role)
+const GROUP_Z_HEADER = 0.5;   // header section
+const GROUP_Z_AGENTS = 0.5;   // agent dot row
+const GROUP_Z_CARDS  = 0.8;   // content cards (memory, context, prompt, chat)
+
+// Ungrouped tile Z positions (tiles not in any group)
+const Z_SECTION_HDR  = 0.3;   // section headers (mem-header, ctx-header)
+const Z_STANDALONE   = 0.3;   // standalone tiles (page-nav, chat-empty, etc.)
+const Z_HOVER_GLOW   = 1.5;   // hover glow overlay, in front of all content
+
+// Local Z offsets within a group (relative to group Z)
+// Wider spacing than before (was 0.03cm) to eliminate Z-fighting
+const Z_BG   = 0.0;    // card background
+const Z_BAR  = 0.1;    // accent bar
+const Z_TEXT = 0.2;    // text content
+const Z_ICON = 0.2;    // icons (same depth as text)
+const Z_OVER = 0.3;    // overlays (checkmarks, remove buttons)
 
 const measureCtx = (() => {
   if (typeof OffscreenCanvas !== "undefined") {
@@ -364,7 +380,7 @@ export function computeLayout(params: {
   const headerBg = "#0d0d18";
   const headerGroup = "g-header";
 
-  groups.push({ id: headerGroup, x: headerX, y: headerY, z: 0, zone: "header" });
+  groups.push({ id: headerGroup, x: headerX, y: headerY, z: GROUP_Z_HEADER, zone: "header" });
 
   tiles.push({
     id: "header-bg",
@@ -514,7 +530,7 @@ export function computeLayout(params: {
     const color = agentColor(agent.name);
     const groupId = `g-agent-${i}`;
 
-    groups.push({ id: groupId, x: dotX, y: dotY, z: 0, zone: "left" });
+    groups.push({ id: groupId, x: dotX, y: dotY, z: GROUP_Z_AGENTS, zone: "left" });
 
     tiles.push({
       id: baseId,
@@ -591,6 +607,7 @@ export function computeLayout(params: {
     type: "mem-header",
     x: COL_LEFT,
     y: leftY,
+    z: Z_SECTION_HDR,
     ...SIZES.memHeader,
     scale: 1,
     layer,
@@ -622,7 +639,7 @@ export function computeLayout(params: {
     const color = agentColor(mem.agent);
     const groupId = `g-mem-${mem.id}`;
 
-    groups.push({ id: groupId, x: cardX, y: cardY, z: 0, zone: "left" });
+    groups.push({ id: groupId, x: cardX, y: cardY, z: GROUP_Z_CARDS, zone: "left" });
 
     // Background (interactive)
     tiles.push({
@@ -780,6 +797,7 @@ export function computeLayout(params: {
       type: "page-nav",
       x: COL_LEFT,
       y: leftY - ROW_GAP,
+      z: Z_STANDALONE,
       ...SIZES.pageNav,
       scale: 1,
       layer,
@@ -800,6 +818,7 @@ export function computeLayout(params: {
     type: "ctx-header",
     x: COL_RIGHT,
     y: rightY,
+    z: Z_SECTION_HDR,
     ...SIZES.ctxHeader,
     scale: 1,
     layer,
@@ -817,6 +836,7 @@ export function computeLayout(params: {
       type: "ctx-empty",
       x: COL_RIGHT,
       y: rightY,
+      z: Z_STANDALONE,
       ...SIZES.ctxEmpty,
       scale: 1,
       layer,
@@ -838,7 +858,7 @@ export function computeLayout(params: {
       const color = agentColor(item.agent);
       const groupId = `g-ctx-${item.memoryId}`;
 
-      groups.push({ id: groupId, x: cardX, y: cardY, z: 0, zone: "right" });
+      groups.push({ id: groupId, x: cardX, y: cardY, z: GROUP_Z_CARDS, zone: "right" });
 
       tiles.push({
         id: `ctx-${item.memoryId}`,
@@ -965,7 +985,7 @@ export function computeLayout(params: {
     const color = prompt.color;
     const groupId = `g-prompt-${i}`;
 
-    groups.push({ id: groupId, x: btnX, y: btnY, z: 0, zone: "action" });
+    groups.push({ id: groupId, x: btnX, y: btnY, z: GROUP_Z_CARDS, zone: "action" });
 
     tiles.push({
       id: `prompt-${i}`,
@@ -1045,6 +1065,7 @@ export function computeLayout(params: {
       type: "mic-indicator",
       x: COL_RIGHT + 8,
       y: TOP_Y - HEADER_H_CM + 0.5,
+      z: Z_STANDALONE,
       ...SIZES.mic,
       scale: 1,
       layer,
@@ -1060,6 +1081,7 @@ export function computeLayout(params: {
         type: "voice-transcript",
         x: COL_RIGHT,
         y: rightY,
+        z: Z_STANDALONE,
         ...SIZES.transcript,
         scale: 1,
         layer,
@@ -1081,6 +1103,7 @@ export function computeLayout(params: {
       type: "chat-loading",
       x: COL_RIGHT,
       y: chatY,
+      z: Z_STANDALONE,
       ...SIZES.chatLoading,
       scale: 1,
       layer,
@@ -1095,6 +1118,7 @@ export function computeLayout(params: {
       type: "chat-empty",
       x: COL_RIGHT,
       y: chatY,
+      z: Z_STANDALONE,
       ...SIZES.chatEmpty,
       scale: 1,
       layer,
@@ -1116,7 +1140,7 @@ export function computeLayout(params: {
       const roleColor = isUser ? "#15D1FF" : "#e879f9";
       const groupId = `g-chat-${msg.ts}`;
 
-      groups.push({ id: groupId, x: bubbleX, y: bubbleY, z: 0, zone: "right" });
+      groups.push({ id: groupId, x: bubbleX, y: bubbleY, z: GROUP_Z_CARDS, zone: "right" });
 
       tiles.push({
         id: `chat-${msg.ts}`,
@@ -1190,6 +1214,7 @@ export function computeLayout(params: {
     type: "hover-glow",
     x: -100, // off-screen by default
     y: -100,
+    z: Z_HOVER_GLOW,
     ...SIZES.hoverGlow,
     scale: 1,
     layer: 1,

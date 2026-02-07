@@ -14,22 +14,6 @@
   ImporterSettings: !<AssetImporterSettings>
     {}
   CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
-- !<SceneObject/58c83423-0cef-4151-81b4-8eef471b92bc>
-  PrefabRemaps:
-    []
-  Name: Object 1
-  Enabled: true
-  Layers: 1
-  LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
-    HasSegmentScaleCompensation: false
-  Children:
-    - !<own> b0eec50a-7279-4329-9504-931b69689973
-    - !<own> 7da65f7c-79db-4300-8c18-dfd46f49ea9c
-  Components:
-    - !<own> 88d7aed3-d6a9-4359-bcfd-22e92f0a3c17
 - !<ScriptComponent/619f46a9-930a-44aa-4462-8df6f7d90117>
   PrefabRemaps:
     []
@@ -43,100 +27,17 @@
     {}
   ScriptInputs:
     "":
-      markerComponent: !<reference.MarkerTrackingComponent> 88d7aed3-d6a9-4359-bcfd-22e92f0a3c17
+      markerComponent: !<reference.MarkerTrackingComponent> 06411cf9-a908-4b87-a7af-ea499d94e547
       trackMarkerOnce: true
       detachOnFound: true
   ScriptTypes:
     "":
       {}
-- !<RenderMeshVisual/640a0640-7229-4643-b958-3ce1ebc3b631>
-  PrefabRemaps:
-    []
-  Name: Render Mesh Visual
-  Enabled: true
-  RenderOrder: 0
-  StretchMode: Stretch
-  VerticalAlignment: Center
-  HorizontalAlignment: Center
-  MeshShadowMode: None
-  ShadowColor: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
-  ShadowDensity: 1.000000
-  Materials:
-    - !<reference> c0b70ccd-8896-4ef6-a38a-4a57d83c3178
-  Mesh: !<reference> e542623c-1432-4bfa-881d-a28905bd9e57
-  Skin: !<reference> 00000000-0000-0000-0000-000000000000
-  BlendShapesEnabled: true
-  BlendNormals: false
-  BlendShapes:
-    {}
-- !<SceneObject/7da65f7c-79db-4300-8c18-dfd46f49ea9c>
-  PrefabRemaps:
-    []
-  Name: TestCube
-  Enabled: false
-  Layers: 1
-  LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 5.000000, z: 0.000000}
-    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Scale: {x: 5.000000, y: 5.000000, z: 5.000000}
-    HasSegmentScaleCompensation: false
-  Children:
-    []
-  Components:
-    - !<own> 640a0640-7229-4643-b958-3ce1ebc3b631
-- !<MarkerTrackingComponent/88d7aed3-d6a9-4359-bcfd-22e92f0a3c17>
-  PrefabRemaps:
-    []
-  Name: Marker Tracking
-  Enabled: true
-  Marker: !<reference> f3ed3b7b-bbf0-482e-b98b-c877a0d21801
 - !<ObjectPrefabAssetData/917bb931-b5e3-4884-bf9e-5f1586d827b6>
   Prototype: !<ObjectOwner/fe777056-5569-461c-a1de-8ff4d4f29480>
     PackagePath: ""
     objects:
       - !<own> c89b4cc9-d57f-4bfa-5a10-e6a78dfe43c6
-- !<ScriptComponent/ad2d5473-9e28-446e-aa94-b99bb234a6be>
-  PrefabRemaps:
-    []
-  Name: MicroTilePanel
-  Enabled: true
-  ScriptAsset: !<reference> 67f9b941-2e35-4717-90f6-f4dcb72dbbd7
-  ScriptInputsDefault:
-    channelName: true
-    deviceId: true
-    positionOffset: true
-    showStatus: true
-  ScriptTypesDefault:
-    {}
-  ScriptInputs:
-    "":
-      snapCloudRequirements: !<MappingBased.AssignableType> 15221b26-20f6-42ab-a6e7-b358ab3bbf0f
-      channelName: demo
-      deviceId: editor
-      positionOffset: !<Vec3> {x: 0.000000, y: 0.000000, z: 0.000000}
-      material: !<reference.Material> fbfaad10-8f5f-4426-9a35-925d3feff052
-      pixelsPerCm: !<float> 32.000000
-      cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
-      showStatus: true
-      showTestQuads: true
-  ScriptTypes:
-    "":
-      {}
-- !<SceneObject/b0eec50a-7279-4329-9504-931b69689973>
-  PrefabRemaps:
-    []
-  Name: RealtimePanel
-  Enabled: false
-  Layers: 1
-  LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 30.000000, z: 0.000000}
-    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
-    HasSegmentScaleCompensation: false
-  Children:
-    []
-  Components:
-    - !<own> ad2d5473-9e28-446e-aa94-b99bb234a6be
 - !<SceneObject/c89b4cc9-d57f-4bfa-5a10-e6a78dfe43c6>
   PrefabRemaps:
     []
@@ -149,6 +50,6 @@
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
   Children:
-    - !<own> 58c83423-0cef-4151-81b4-8eef471b92bc
+    []
   Components:
     - !<own> 619f46a9-930a-44aa-4462-8df6f7d90117

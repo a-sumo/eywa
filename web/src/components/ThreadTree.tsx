@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
+import { useChat } from "../hooks/useChat";
 import { useRoomContext } from "../context/RoomContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase, type Memory } from "../lib/supabase";
@@ -10,7 +11,6 @@ import {
 import { ConnectAgent } from "./ConnectAgent";
 import { agentColor } from "../lib/agentColor";
 import { MemoryCard } from "./MemoryCard";
-import { SessionGraph } from "./SessionGraph";
 import { getAvatar } from "./avatars";
 import { useRealtimeLinks } from "../hooks/useRealtimeLinks";
 
@@ -48,8 +48,8 @@ function AgentAvatar({ name, size = 20 }: { name: string; size?: number }) {
 }
 
 interface ThreadInfo {
-  agent: string;      // unique agent id, e.g. "armand-a3f2"
-  user: string;       // base user name for grouping, e.g. "armand"
+  agent: string;
+  user: string;
   sessionId: string;
   memories: Memory[];
   status: "active" | "finished" | "idle";
@@ -67,6 +67,26 @@ interface ThreadTag {
   color: string;
   key: string;
 }
+
+// Time range options
+const TIME_RANGES = [
+  { label: "1h", hours: 1 },
+  { label: "6h", hours: 6 },
+  { label: "24h", hours: 24 },
+  { label: "7d", hours: 168 },
+  { label: "All", hours: 0 },
+];
+
+// Memory type short labels
+const TYPE_CHAR: Record<string, string> = {
+  user: "U",
+  assistant: "A",
+  tool_call: "T",
+  tool_result: "R",
+  injection: "\u2192",
+  knowledge: "K",
+  resource: "\u00B7",
+};
 
 
 function extractFilePaths(memories: Memory[]): string[] {
@@ -144,7 +164,6 @@ function buildThreads(memories: Memory[]): ThreadInfo[] {
         (endEvent.metadata as Record<string, unknown>)?.summary || ""
       );
     } else if (startEvent) {
-      // Only "active" if there's recent activity — otherwise stale unclosed session
       status = isRecent ? "active" : "idle";
       task = String(
         (startEvent.metadata as Record<string, unknown>)?.task || ""
@@ -160,7 +179,6 @@ function buildThreads(memories: Memory[]): ThreadInfo[] {
 
     const filePaths = extractFilePaths(sorted);
 
-    // Extract user from metadata, falling back to stripping -xxxx suffix
     const firstMeta = (first.metadata ?? {}) as Record<string, unknown>;
     const user = (firstMeta.user as string) ?? first.agent.split("/")[0];
 
@@ -186,7 +204,6 @@ function buildThreads(memories: Memory[]): ThreadInfo[] {
 function deriveThreadTags(thread: ThreadInfo): ThreadTag[] {
   const tags: ThreadTag[] = [];
 
-  // Status tag
   if (thread.status === "active") {
     tags.push({ label: "active", color: "#489664", key: "status:active" });
   } else if (thread.status === "finished") {
@@ -195,12 +212,10 @@ function deriveThreadTags(thread: ThreadInfo): ThreadTag[] {
     tags.push({ label: "idle", color: "#B48C50", key: "status:idle" });
   }
 
-  // Has files
   if (thread.isCodeThread) {
     tags.push({ label: "has-files", color: "#5570cc", key: "type:has-files" });
   }
 
-  // Message type distribution
   let toolCount = 0;
   let assistantCount = 0;
   const total = thread.memories.length;
@@ -244,48 +259,46 @@ function sortThreads(threads: ThreadInfo[], mode: SortMode): ThreadInfo[] {
 export function ThreadTree() {
   const { room } = useRoomContext();
   const { slug } = useParams<{ slug: string }>();
-  const { memories } = useRealtimeMemories(room?.id ?? null, 500);
-  const { links } = useRealtimeLinks(room?.id ?? null);
   const navigate = useNavigate();
 
-  // Split pane state
-  const [selectedThread, setSelectedThread] = useState<{ agent: string; sessionId: string } | null>(null);
+  // Time range (hours, 0 = all)
+  const [timeRange, setTimeRange] = useState(24);
+  const sinceMs = timeRange > 0 ? timeRange * 60 * 60 * 1000 : undefined;
 
+  const { memories } = useRealtimeMemories(room?.id ?? null, 500, sinceMs);
+  const { links } = useRealtimeLinks(room?.id ?? null);
+
+  // Embedded chat
+  const { messages: chatMessages, send: chatSend } = useChat(room?.id ?? null, "general");
+  const [chatInput, setChatInput] = useState("");
+  const chatSender = localStorage.getItem("eywa_user") || "anon";
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Thread selection
+  const [selectedThread, setSelectedThread] = useState<{ agent: string; sessionId: string } | null>(null);
   const [sortMode, setSortMode] = useState<SortMode | null>(null);
 
-  // Link creation state
-  const [linkingMemory, setLinkingMemory] = useState<string | null>(null); // memory ID being linked
-  const [linkTarget, setLinkTarget] = useState<{ agent: string; sessionId: string } | null>(null);
-  const [linkType, setLinkType] = useState<"reference" | "inject" | "fork">("reference");
-  const [linkSending, setLinkSending] = useState(false);
-
-  // Filter state
-  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
-  const [agentFilter, setAgentFilter] = useState<Set<string>>(new Set());
-  const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
-
-  // Pipeline state
-  const [pipelineOpen, setPipelineOpen] = useState(true);
-
-  // Inject state
-  const [injectOpen, setInjectOpen] = useState(false);
+  // Inject state (always visible in right panel)
   const [injectTarget, setInjectTarget] = useState("all");
   const [injectContent, setInjectContent] = useState("");
   const [injectPriority, setInjectPriority] = useState<"normal" | "high" | "urgent">("normal");
   const [injectSending, setInjectSending] = useState(false);
-  const injectRef = useRef<HTMLDivElement>(null);
 
-  // Close inject panel on outside click
+  // Link creation
+  const [linkingMemory, setLinkingMemory] = useState<string | null>(null);
+  const [linkTarget, setLinkTarget] = useState<{ agent: string; sessionId: string } | null>(null);
+  const [linkType, setLinkType] = useState<"reference" | "inject" | "fork">("reference");
+  const [linkSending, setLinkSending] = useState(false);
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
+  const [agentFilter, setAgentFilter] = useState<Set<string>>(new Set());
+  const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set());
+
+  // Auto-scroll chat
   useEffect(() => {
-    if (!injectOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (injectRef.current && !injectRef.current.contains(e.target as Node)) {
-        setInjectOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [injectOpen]);
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   const handleInject = useCallback(async () => {
     if (!injectContent.trim() || !room) return;
@@ -296,7 +309,7 @@ export function ThreadTree() {
         agent: "web-user",
         session_id: `web_${Date.now()}`,
         message_type: "injection",
-        content: `[INJECT → ${injectTarget}]: ${injectContent}`,
+        content: `[INJECT \u2192 ${injectTarget}]: ${injectContent}`,
         token_count: Math.floor(injectContent.length / 4),
         metadata: {
           event: "context_injection",
@@ -307,16 +320,10 @@ export function ThreadTree() {
         },
       });
       setInjectContent("");
-      setInjectOpen(false);
     } finally {
       setInjectSending(false);
     }
   }, [injectContent, injectTarget, injectPriority, room]);
-
-  function openInjectFor(agent: string) {
-    setInjectTarget(agent);
-    setInjectOpen(true);
-  }
 
   const handleCreateLink = useCallback(async () => {
     if (!linkingMemory || !linkTarget || !room) return;
@@ -344,9 +351,16 @@ export function ThreadTree() {
     await supabase.from("links").delete().eq("id", linkId);
   }, []);
 
+  const handleChatSend = () => {
+    const text = chatInput.trim();
+    if (!text) return;
+    chatSend(chatSender, text);
+    setChatInput("");
+  };
+
   const rawThreads = buildThreads(memories);
 
-  // Phase 1: Filter out connection-event-only threads
+  // Filter out connection-event-only threads
   const filteredThreads = rawThreads.filter(
     (t) =>
       !t.memories.every(
@@ -365,7 +379,6 @@ export function ThreadTree() {
         new Date(m.ts).getTime() > oneHourAgo
     );
 
-    // Build a map of each agent's latest activity timestamp
     const agentLastSeen = new Map<string, number>();
     for (const t of filteredThreads) {
       const existing = agentLastSeen.get(t.user) ?? 0;
@@ -382,10 +395,8 @@ export function ThreadTree() {
         const priority = String(meta?.priority ?? "normal") as "normal" | "high" | "urgent";
         const injectionTs = new Date(m.ts).getTime();
 
-        // Delivery heuristic: target agent has activity after injection time
         let delivered = false;
         if (target === "all") {
-          // For "all" — delivered if any agent has activity after injection
           for (const [, lastTs] of agentLastSeen) {
             if (lastTs > injectionTs) { delivered = true; break; }
           }
@@ -405,17 +416,12 @@ export function ThreadTree() {
         };
       });
 
-    const sent = items.length;
-    const delivered = items.filter((i) => i.delivered).length;
-
-    return { items, sent, stored: sent, delivered, seen: delivered };
+    return { items, sent: items.length, delivered: items.filter((i) => i.delivered).length };
   }, [memories, filteredThreads]);
 
-  // Auto-detect sort mode
   const effectiveSortMode: SortMode =
     sortMode ?? (filteredThreads.some((t) => t.isCodeThread) ? "files" : "time");
 
-  // Derive tags per thread (memoized)
   const threadTagsMap = useMemo(() => {
     const map = new Map<string, ThreadTag[]>();
     for (const t of filteredThreads) {
@@ -425,13 +431,11 @@ export function ThreadTree() {
     return map;
   }, [filteredThreads]);
 
-  // Collect all unique agents for filter bar
   const allAgents = useMemo(
     () => Array.from(new Set(filteredThreads.map((t) => t.user))),
     [filteredThreads]
   );
 
-  // Phase 3: Filter bar logic
   const displayThreads = useMemo(() => {
     return filteredThreads.filter((t) => {
       if (statusFilter.size && !statusFilter.has(t.status)) return false;
@@ -466,11 +470,8 @@ export function ThreadTree() {
   ) {
     setter((prev) => {
       const next = new Set(prev);
-      if (next.has(value)) {
-        next.delete(value);
-      } else {
-        next.add(value);
-      }
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
       return next;
     });
   }
@@ -502,7 +503,7 @@ export function ThreadTree() {
 
   const hasActiveFilters = statusFilter.size > 0 || agentFilter.size > 0 || typeFilter.size > 0;
 
-  // Get selected thread's memories for detail pane
+  // Selected thread detail
   const selectedThreadInfo = useMemo(() => {
     if (!selectedThread) return null;
     return displayThreads.find(
@@ -517,7 +518,6 @@ export function ThreadTree() {
     );
   }, [selectedThreadInfo]);
 
-  // Links involving the selected thread (as source or target)
   const selectedThreadLinks = useMemo(() => {
     if (!selectedThreadInfo) return [];
     const memIds = new Set(selectedThreadInfo.memories.map((m) => m.id));
@@ -529,7 +529,6 @@ export function ThreadTree() {
     );
   }, [links, selectedThreadInfo]);
 
-  // All sessions for link target picker
   const allSessions = useMemo(() => {
     return filteredThreads.map((t) => ({
       agent: t.agent,
@@ -539,7 +538,7 @@ export function ThreadTree() {
     }));
   }, [filteredThreads]);
 
-  // Only show connect screen if we have loaded memories and there are genuinely no threads
+  // Empty state
   if (!filteredThreads.length && memories.length === 0) {
     return (
       <div className="thread-tree">
@@ -553,15 +552,17 @@ export function ThreadTree() {
     <div className="thread-tree">
       <div className="thread-tree-header">
         <h2 className="section-title">Threads</h2>
-
-        <button
-          className="btn-inject"
-          onClick={() => { setInjectTarget("all"); setInjectOpen((prev) => !prev); }}
-          title="Inject context to agents"
-        >
-          Inject
-        </button>
-
+        <div className="time-range-toggle">
+          {TIME_RANGES.map(({ label, hours }) => (
+            <button
+              key={hours}
+              className={`time-range-btn ${timeRange === hours ? "time-range-active" : ""}`}
+              onClick={() => setTimeRange(hours)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <button
           className="btn-eywa-new"
           onClick={() => navigate(`/r/${slug}/workspace/new`)}
@@ -569,128 +570,6 @@ export function ThreadTree() {
           + New Session
         </button>
       </div>
-
-      {/* Inject panel */}
-      {injectOpen && (
-        <div className="inject-panel" ref={injectRef}>
-          <div className="inject-panel-header">
-            <span>Inject context</span>
-            <button className="inject-close" onClick={() => setInjectOpen(false)}>&times;</button>
-          </div>
-          <div className="inject-row">
-            <label className="inject-label">To</label>
-            <select
-              className="inject-select"
-              value={injectTarget}
-              onChange={(e) => setInjectTarget(e.target.value)}
-            >
-              <option value="all">All agents</option>
-              {allAgents.map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-            <div className="inject-priority-group">
-              {(["normal", "high", "urgent"] as const).map((p) => (
-                <button
-                  key={p}
-                  className={`inject-priority-btn ${injectPriority === p ? `inject-priority-${p}` : ""}`}
-                  onClick={() => setInjectPriority(p)}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="inject-input-row">
-            <textarea
-              className="inject-textarea"
-              placeholder="Context, instructions, or feedback..."
-              value={injectContent}
-              onChange={(e) => setInjectContent(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                  handleInject();
-                }
-              }}
-              rows={3}
-            />
-            <button
-              className="inject-send"
-              onClick={handleInject}
-              disabled={injectSending || !injectContent.trim()}
-            >
-              {injectSending ? "..." : "Send"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Injection Pipeline */}
-      {injectionData.sent > 0 && (
-        <div className="injection-pipeline">
-          <div
-            className="injection-pipeline-header"
-            onClick={() => setPipelineOpen((p) => !p)}
-          >
-            <span className="injection-pipeline-title">Injection Pipeline</span>
-            <span className="injection-pipeline-badge">{injectionData.sent}</span>
-            <span className="injection-pipeline-toggle">
-              {pipelineOpen ? "\u25BE" : "\u25B8"}
-            </span>
-          </div>
-
-          {pipelineOpen && (
-            <div className="injection-pipeline-body">
-              <div className="injection-pipeline-stages">
-                <div className="pipeline-stage">
-                  <span className="pipeline-stage-label">Source</span>
-                  <span className="pipeline-stage-count">{injectionData.sent} sent</span>
-                </div>
-                <span className="pipeline-arrow">&rarr;</span>
-                <div className="pipeline-stage">
-                  <span className="pipeline-stage-label">Supabase</span>
-                  <span className="pipeline-stage-count">{injectionData.stored} stored</span>
-                </div>
-                <span className="pipeline-arrow">&rarr;</span>
-                <div className="pipeline-stage">
-                  <span className="pipeline-stage-label">Piggyback</span>
-                  <span className="pipeline-stage-count">{injectionData.delivered} delivered</span>
-                </div>
-                <span className="pipeline-arrow">&rarr;</span>
-                <div className="pipeline-stage">
-                  <span className="pipeline-stage-label">Agent</span>
-                  <span className="pipeline-stage-count">{injectionData.seen} seen</span>
-                </div>
-              </div>
-
-              <div className="injection-recent-list">
-                <span className="injection-recent-label">Recent:</span>
-                {injectionData.items.slice(0, 8).map((inj) => (
-                  <div key={inj.id} className="injection-recent-item">
-                    <span
-                      className={`injection-priority-dot priority-${inj.priority}`}
-                      title={inj.priority}
-                    />
-                    <span className="injection-route">
-                      {inj.from} &rarr; {inj.target}
-                    </span>
-                    <span className="injection-preview">
-                      {inj.content.slice(0, 50)}{inj.content.length > 50 ? "..." : ""}
-                    </span>
-                    <span className="injection-time">{timeAgo(inj.ts)}</span>
-                    <span
-                      className={`injection-status ${inj.delivered ? "injection-delivered" : "injection-pending"}`}
-                      title={inj.delivered ? "Delivered" : "Pending"}
-                    >
-                      {inj.delivered ? "\u2713" : "\u23F3"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Compact filter bar */}
       <div className="thread-filter-bar">
@@ -700,15 +579,11 @@ export function ThreadTree() {
             <button
               className={`sort-btn ${effectiveSortMode === "time" ? "sort-btn-active" : ""}`}
               onClick={() => setSortMode("time")}
-            >
-              Time
-            </button>
+            >Time</button>
             <button
               className={`sort-btn ${effectiveSortMode === "files" ? "sort-btn-active" : ""}`}
               onClick={() => setSortMode("files")}
-            >
-              Files
-            </button>
+            >Files</button>
           </div>
         </div>
         <div className="filter-group">
@@ -718,9 +593,7 @@ export function ThreadTree() {
               key={s}
               className={`filter-chip ${statusFilter.has(s) ? "filter-chip-active" : ""}`}
               onClick={() => toggleFilter(setStatusFilter, s)}
-            >
-              {s}
-            </button>
+            >{s}</button>
           ))}
         </div>
         <div className="filter-group">
@@ -731,9 +604,7 @@ export function ThreadTree() {
               className={`filter-chip ${agentFilter.has(a) ? "filter-chip-active" : ""}`}
               onClick={() => toggleFilter(setAgentFilter, a)}
               style={agentFilter.has(a) ? { borderColor: agentColor(a), color: agentColor(a) } : undefined}
-            >
-              {a}
-            </button>
+            >{a}</button>
           ))}
         </div>
         <div className="filter-group">
@@ -747,14 +618,11 @@ export function ThreadTree() {
               key={ft.key}
               className={`filter-chip ${typeFilter.has(ft.key) ? "filter-chip-active" : ""}`}
               onClick={() => toggleFilter(setTypeFilter, ft.key)}
-            >
-              {ft.label}
-            </button>
+            >{ft.label}</button>
           ))}
         </div>
       </div>
 
-      {/* Active filters row */}
       {hasActiveFilters && (
         <div className="filter-active-row">
           {Array.from(statusFilter).map((s) => (
@@ -772,83 +640,117 @@ export function ThreadTree() {
               {t.replace("type:", "")} &times;
             </span>
           ))}
-          <button className="filter-clear-all" onClick={clearAllFilters}>
-            Clear all
-          </button>
+          <button className="filter-clear-all" onClick={clearAllFilters}>Clear all</button>
         </div>
       )}
 
-      {/* Split pane: thread list + detail + graph */}
-      <div className={`thread-split ${!selectedThreadInfo ? "thread-split-no-detail" : ""}`}>
-        {/* Left pane — vertical thread list */}
-        <div className="thread-list-pane">
-          {Array.from(agentThreads.entries()).map(([agent, agentTs]) => (
-            <div key={agent} className="thread-agent-group">
-              <div className="thread-agent-label">
-                <AgentAvatar name={agent} size={18} />
-                <span style={{ color: agentColorHex(agent) }}>{agent}</span>
-                <button
-                  className="inject-agent-btn"
-                  onClick={(e) => { e.stopPropagation(); openInjectFor(agent); }}
-                  title={`Inject context to ${agent}`}
-                >
-                  &#x21E8;
-                </button>
-                <span className="thread-count">
-                  {agentTs.length} thread{agentTs.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-
-              <div className="thread-branches">
-                {agentTs.map((thread) => {
-                  const isSelected =
-                    selectedThread?.agent === thread.agent &&
-                    selectedThread?.sessionId === thread.sessionId;
-
-                  return (
-                    <div
-                      key={thread.sessionId}
-                      className={`thread-card thread-card-collapsed thread-${thread.status} ${isSelected ? "thread-card-selected" : ""}`}
-                      onClick={() => {
-                        setSelectedThread({ agent: thread.agent, sessionId: thread.sessionId });
-                      }}
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData(
-                          "application/eywa-thread",
-                          JSON.stringify({
-                            agent: thread.agent,
-                            sessionId: thread.sessionId,
-                          })
-                        );
-                        e.dataTransfer.effectAllowed = "copy";
-                      }}
-                    >
-                      <div className="thread-card-compact-row">
-                        <span
-                          className={`thread-status-dot status-${thread.status}`}
-                        />
-                        <span className="thread-compact-label">
-                          {compactLabel(thread)}
-                        </span>
-                        <span className="thread-compact-count">
-                          {thread.memories.length}
-                        </span>
-                        <span className="thread-compact-time">
-                          {timeAgo(thread.lastSeen)}
-                        </span>
-                      </div>
-                    </div>
+      {/* Three-panel split: memories | context | chat */}
+      <div className="thread-split">
+        {/* Left: Memory feed */}
+        <div className="thread-memories-pane">
+          <div className="pane-header">
+            <span>Memories</span>
+            <span className="pane-count">{memories.length}</span>
+          </div>
+          <div className="memories-feed">
+            {memories.map((m) => (
+              <div
+                key={m.id}
+                className={`memory-tile ${
+                  selectedThread &&
+                  m.agent === selectedThread.agent &&
+                  m.session_id === selectedThread.sessionId
+                    ? "memory-tile-active"
+                    : ""
+                }`}
+                title={`${m.agent} - ${m.message_type}\n${m.content?.slice(0, 200)}`}
+                onClick={() => {
+                  const thread = displayThreads.find(
+                    (t) => t.agent === m.agent && t.sessionId === m.session_id
                   );
-                })}
+                  if (thread) {
+                    setSelectedThread({ agent: thread.agent, sessionId: thread.sessionId });
+                  }
+                }}
+              >
+                <span className="mt-dot" style={{ background: agentColor(m.agent) }} />
+                <span className={`mt-type mt-type-${m.message_type}`}>
+                  {TYPE_CHAR[m.message_type] || "\u00B7"}
+                </span>
+                <span className="mt-text">{m.content?.slice(0, 50) || ""}</span>
+                <span className="mt-time">{timeAgo(m.ts)}</span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Center pane — thread detail */}
-        <div className="thread-detail-pane">
-          {selectedThreadInfo ? (
+        {/* Mid: Context (threads + detail) */}
+        <div className="thread-context-pane">
+          <div className="pane-header">
+            <span>Context</span>
+            <span className="pane-count">{displayThreads.length} threads</span>
+          </div>
+
+          {/* Thread list */}
+          <div className="context-threads">
+            {Array.from(agentThreads.entries()).map(([agent, agentTs]) => (
+              <div key={agent} className="thread-agent-group">
+                <div className="thread-agent-label">
+                  <AgentAvatar name={agent} size={18} />
+                  <span style={{ color: agentColorHex(agent) }}>{agent}</span>
+                  <button
+                    className="inject-agent-btn"
+                    onClick={(e) => { e.stopPropagation(); setInjectTarget(agent); }}
+                    title={`Inject context to ${agent}`}
+                  >&#x21E8;</button>
+                  <span className="thread-count">
+                    {agentTs.length} thread{agentTs.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="thread-branches">
+                  {agentTs.map((thread) => {
+                    const isSelected =
+                      selectedThread?.agent === thread.agent &&
+                      selectedThread?.sessionId === thread.sessionId;
+
+                    return (
+                      <div
+                        key={thread.sessionId}
+                        className={`thread-card thread-card-collapsed thread-${thread.status} ${isSelected ? "thread-card-selected" : ""}`}
+                        onClick={() => {
+                          setSelectedThread(
+                            isSelected ? null : { agent: thread.agent, sessionId: thread.sessionId }
+                          );
+                        }}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData(
+                            "application/eywa-thread",
+                            JSON.stringify({
+                              agent: thread.agent,
+                              sessionId: thread.sessionId,
+                            })
+                          );
+                          e.dataTransfer.effectAllowed = "copy";
+                        }}
+                      >
+                        <div className="thread-card-compact-row">
+                          <span className={`thread-status-dot status-${thread.status}`} />
+                          <span className="thread-compact-label">{compactLabel(thread)}</span>
+                          <span className="thread-compact-count">{thread.memories.length}</span>
+                          <span className="thread-compact-time">{timeAgo(thread.lastSeen)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Selected thread detail (inline below thread list) */}
+          {selectedThreadInfo && (
             <div className="thread-inline-detail">
               <div className="thread-detail-header">
                 <AgentAvatar name={selectedThreadInfo.user} size={22} />
@@ -891,7 +793,7 @@ export function ThreadTree() {
                 <p className="thread-view-task">{selectedThreadInfo.task}</p>
               )}
 
-              {/* Links section */}
+              {/* Links */}
               {selectedThreadLinks.length > 0 && (
                 <div className="thread-links-section">
                   <span className="thread-links-label">Links ({selectedThreadLinks.length})</span>
@@ -907,15 +809,13 @@ export function ThreadTree() {
                         className="thread-link-delete"
                         onClick={() => handleDeleteLink(l.id)}
                         title="Remove link"
-                      >
-                        &times;
-                      </button>
+                      >&times;</button>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Link creation panel */}
+              {/* Link creation */}
               {linkingMemory && (
                 <div className="link-create-panel">
                   <div className="link-create-header">
@@ -939,8 +839,7 @@ export function ThreadTree() {
                           <option key={`${s.agent}::${s.sessionId}`} value={`${s.agent}::${s.sessionId}`}>
                             {s.user} - {s.label}
                           </option>
-                        ))
-                      }
+                        ))}
                     </select>
                   </div>
                   <div className="link-create-row">
@@ -951,9 +850,7 @@ export function ThreadTree() {
                           key={t}
                           className={`inject-priority-btn ${linkType === t ? "inject-priority-normal" : ""}`}
                           onClick={() => setLinkType(t)}
-                        >
-                          {t}
-                        </button>
+                        >{t}</button>
                       ))}
                     </div>
                   </div>
@@ -968,6 +865,7 @@ export function ThreadTree() {
                 </div>
               )}
 
+              {/* Memory cards */}
               <div className="feed">
                 {selectedMemories.map((m) => {
                   const memLinks = links.filter((l) => l.source_memory_id === m.id);
@@ -1002,16 +900,117 @@ export function ThreadTree() {
                 })}
               </div>
             </div>
-          ) : (
-            <div className="thread-detail-empty">
-              Select a thread to view details
-            </div>
           )}
         </div>
 
-        {/* Right pane — graph always visible */}
-        <div className="thread-graph-pane">
-          <SessionGraph links={links} />
+        {/* Right: Chat + Inject */}
+        <div className="thread-chat-pane">
+          {/* Inject section */}
+          <div className="pane-header">
+            <span>Inject</span>
+          </div>
+          <div className="chat-inject-section">
+            <div className="inject-row">
+              <select
+                className="inject-select"
+                value={injectTarget}
+                onChange={(e) => setInjectTarget(e.target.value)}
+              >
+                <option value="all">All agents</option>
+                {allAgents.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+              <div className="inject-priority-group">
+                {(["normal", "high", "urgent"] as const).map((p) => (
+                  <button
+                    key={p}
+                    className={`inject-priority-btn ${injectPriority === p ? `inject-priority-${p}` : ""}`}
+                    onClick={() => setInjectPriority(p)}
+                  >{p}</button>
+                ))}
+              </div>
+            </div>
+            <div className="inject-input-row">
+              <textarea
+                className="inject-textarea"
+                placeholder="Context, instructions, feedback..."
+                value={injectContent}
+                onChange={(e) => setInjectContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    handleInject();
+                  }
+                }}
+                rows={2}
+              />
+              <button
+                className="inject-send"
+                onClick={handleInject}
+                disabled={injectSending || !injectContent.trim()}
+              >
+                {injectSending ? "..." : "Send"}
+              </button>
+            </div>
+          </div>
+
+          {/* Recent injections */}
+          {injectionData.items.length > 0 && (
+            <div className="chat-injections">
+              <div className="chat-injections-header">
+                Injections ({injectionData.sent} sent, {injectionData.delivered} delivered)
+              </div>
+              {injectionData.items.slice(0, 5).map((inj) => (
+                <div key={inj.id} className="injection-recent-item">
+                  <span
+                    className={`injection-priority-dot priority-${inj.priority}`}
+                    title={inj.priority}
+                  />
+                  <span className="injection-route">
+                    {inj.from} &rarr; {inj.target}
+                  </span>
+                  <span className="injection-preview">
+                    {inj.content.slice(0, 40)}{inj.content.length > 40 ? "..." : ""}
+                  </span>
+                  <span
+                    className={`injection-status ${inj.delivered ? "injection-delivered" : "injection-pending"}`}
+                  >
+                    {inj.delivered ? "\u2713" : "\u23F3"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Chat section */}
+          <div className="chat-section">
+            <div className="pane-header">
+              <span>#general</span>
+              <span className="pane-count">{chatSender}</span>
+            </div>
+            <div className="chat-section-messages">
+              {chatMessages.map((m) => (
+                <div key={m.id} className="chat-msg-compact">
+                  <span className="chat-msg-who">{m.sender}</span>
+                  <span className="chat-msg-text">{m.content}</span>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+            <div className="chat-section-input">
+              <input
+                placeholder="Message..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleChatSend();
+                }}
+              />
+              <button onClick={handleChatSend} disabled={!chatInput.trim()}>
+                Send
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,13 +1,13 @@
 /**
- * TileScene - scene graph manager for micro-tiles.
+ * TileScene - scene graph manager for tiles.
  *
- * Maintains a registry of live MicroTiles. Reconcile() diffs desired vs current
+ * Maintains a registry of live Tiles. Reconcile() diffs desired vs current
  * state, emitting create/destroy/move ops. renderDirty() calls render on tiles
  * whose content hash changed. takeOps(n)/takeTextures(n) return pending scene
  * ops and dirty texture payloads without draining more than requested.
  */
 
-import { MicroTile, type TileDescriptor, type TileLayer, type RenderFn } from "./microTile";
+import { Tile, type TileDescriptor, type TileLayer, type RenderFn } from "./tile";
 
 export interface GroupDescriptor {
   id: string;
@@ -45,7 +45,7 @@ export interface TexPayload {
 }
 
 export class TileScene {
-  private tiles = new Map<string, MicroTile>();
+  private tiles = new Map<string, Tile>();
   private renderers = new Map<string, RenderFn>();
   private groups = new Map<string, GroupDescriptor>();
   private pendingOps: SceneOp[] = [];
@@ -83,14 +83,14 @@ export class TileScene {
   /**
    * Get a tile by ID.
    */
-  getTile(id: string): MicroTile | undefined {
+  getTile(id: string): Tile | undefined {
     return this.tiles.get(id);
   }
 
   /**
    * Get all live tiles.
    */
-  getAllTiles(): MicroTile[] {
+  getAllTiles(): Tile[] {
     return Array.from(this.tiles.values());
   }
 
@@ -168,7 +168,7 @@ export class TileScene {
 
       if (!tile) {
         // New tile
-        tile = new MicroTile(desc.id, desc.type, desc.w, desc.h);
+        tile = new Tile(desc.id, desc.type, desc.w, desc.h);
         const renderer = this.renderers.get(desc.type);
         if (renderer) tile.setRenderFn(renderer);
         tile.setData(desc.data);

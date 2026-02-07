@@ -18,7 +18,7 @@ import { agentColor } from "../lib/agentColor";
 export function AgentList() {
   const { room } = useRoomContext();
   const { slug } = useParams<{ slug: string }>();
-  const agents = useRealtimeAgents(room?.id ?? null);
+  const agents = useRealtimeAgents(room?.id ?? null, 24 * 60 * 60 * 1000);
   const navigate = useNavigate();
   const location = useLocation();
   const [showViews, setShowLabs] = useState(false);

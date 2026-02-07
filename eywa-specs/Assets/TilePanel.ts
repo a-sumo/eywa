@@ -1,5 +1,5 @@
 /**
- * MicroTilePanel.ts
+ * TilePanel.ts
  *
  * The "DOM" for Spectacles. Like a browser rendering engine, this manages
  * a tree of quads (the "elements") inside a container panel (the "viewport").
@@ -37,18 +37,20 @@ interface QuadEntry {
 }
 
 // Z offset per layer (cm). Higher layers are closer to the user.
+// Content cards sit at group z (0.5-0.8) + tile z (0.0-0.3), so max ~1.1cm.
+// Overlay layers must be above that.
 const LAYER_Z: Record<number, number> = {
-  0: 0.05,  // base content (slightly in front of background)
-  1: 0.5,   // hover overlay
-  2: 1.0,   // drag ghost
-  3: 2.0,   // modal overlay
+  0: 0.05,  // base content (fallback, groups handle stacking for most tiles)
+  1: 1.5,   // hover overlay (in front of all card content)
+  2: 2.5,   // drag ghost
+  3: 3.5,   // modal overlay
 };
 
 // Max buffered textures before we start dropping old ones
 const MAX_TEXTURE_BUFFER = 50;
 
 @component
-export class MicroTilePanel extends BaseScriptComponent {
+export class TilePanel extends BaseScriptComponent {
   @input
   @hint("SnapCloudRequirements reference for Supabase config")
   public snapCloudRequirements: SnapCloudRequirements;
@@ -122,20 +124,20 @@ export class MicroTilePanel extends BaseScriptComponent {
     // Fallback if channelName is empty (not set in Inspector)
     if (!this.channelName || this.channelName.trim() === "") {
       this.channelName = "demo";
-      print("[MicroTilePanel] WARNING: channelName empty, defaulting to 'demo'");
+      print("[TilePanel] WARNING: channelName empty, defaulting to 'demo'");
     }
 
-    print("[MicroTilePanel] Initializing, device: " + this.resolvedDeviceId);
-    print("[MicroTilePanel] Channel: " + this.channelName);
-    print("[MicroTilePanel] Material template: " + (this.material ? "set" : "MISSING"));
-    print("[MicroTilePanel] pixelsPerCm: " + this.pixelsPerCm);
+    print("[TilePanel] Initializing, device: " + this.resolvedDeviceId);
+    print("[TilePanel] Channel: " + this.channelName);
+    print("[TilePanel] Material template: " + (this.material ? "set" : "MISSING"));
+    print("[TilePanel] pixelsPerCm: " + this.pixelsPerCm);
 
     if (!this.material) {
-      print("[MicroTilePanel] ERROR: No material template assigned! Assign an Unlit material in the Inspector.");
+      print("[TilePanel] ERROR: No material template assigned! Assign an Unlit material in the Inspector.");
       return;
     }
 
-    this.quadParent = global.scene.createSceneObject("MicroTileRoot");
+    this.quadParent = global.scene.createSceneObject("TileRoot");
     this.quadParent.setParent(this.sceneObject);
     this.quadParent.layer = this.sceneObject.layer; // inherit render layer (world space, not orthographic)
     this.quadParent.getTransform().setLocalPosition(this.positionOffset);
@@ -149,8 +151,8 @@ export class MicroTilePanel extends BaseScriptComponent {
     // Log parent transform for debugging
     const worldPos = this.sceneObject.getTransform().getWorldPosition();
     const worldScale = this.sceneObject.getTransform().getWorldScale();
-    print("[MicroTilePanel] Parent world pos: (" + worldPos.x.toFixed(1) + ", " + worldPos.y.toFixed(1) + ", " + worldPos.z.toFixed(1) + ")");
-    print("[MicroTilePanel] Parent world scale: (" + worldScale.x.toFixed(2) + ", " + worldScale.y.toFixed(2) + ", " + worldScale.z.toFixed(2) + ")");
+    print("[TilePanel] Parent world pos: (" + worldPos.x.toFixed(1) + ", " + worldPos.y.toFixed(1) + ", " + worldPos.z.toFixed(1) + ")");
+    print("[TilePanel] Parent world scale: (" + worldScale.x.toFixed(2) + ", " + worldScale.y.toFixed(2) + ", " + worldScale.z.toFixed(2) + ")");
 
     // Test quads (toggle via Inspector to verify mesh/material pipeline)
     if (this.showTestQuads) {
@@ -159,7 +161,7 @@ export class MicroTilePanel extends BaseScriptComponent {
 
     this.receiver = this.attachReceiver();
 
-    print("[MicroTilePanel] Ready! Channel: spectacles:" + this.channelName + ":" + this.resolvedDeviceId);
+    print("[TilePanel] Ready! Channel: spectacles:" + this.channelName + ":" + this.resolvedDeviceId);
   }
 
   // Minimal 4x4 JPEG base64 strings for test quads (baseTex required, no baseColor on this material)
@@ -174,9 +176,9 @@ export class MicroTilePanel extends BaseScriptComponent {
    */
   private spawnTestQuads() {
     const quads = [
-      { b64: MicroTilePanel.TEST_TEX_WHITE, label: "white", x: -12 },
-      { b64: MicroTilePanel.TEST_TEX_RED,   label: "red",   x: 0 },
-      { b64: MicroTilePanel.TEST_TEX_GREEN, label: "green", x: 12 },
+      { b64: TilePanel.TEST_TEX_WHITE, label: "white", x: -12 },
+      { b64: TilePanel.TEST_TEX_RED,   label: "red",   x: 0 },
+      { b64: TilePanel.TEST_TEX_GREEN, label: "green", x: 12 },
     ];
 
     for (const q of quads) {
@@ -201,17 +203,17 @@ export class MicroTilePanel extends BaseScriptComponent {
         q.b64,
         (texture: Texture) => {
           mat.mainPass["baseTex"] = texture;
-          print("[MicroTilePanel] TEST quad " + q.label + " texture applied!");
+          print("[TilePanel] TEST quad " + q.label + " texture applied!");
         },
         () => {
-          print("[MicroTilePanel] TEST quad " + q.label + " texture FAILED to decode!");
+          print("[TilePanel] TEST quad " + q.label + " texture FAILED to decode!");
         }
       );
 
-      print("[MicroTilePanel] TEST quad: " + q.label + " at x=" + q.x + ", scale=10x10cm (texture pending async decode)");
+      print("[TilePanel] TEST quad: " + q.label + " at x=" + q.x + ", scale=10x10cm (texture pending async decode)");
     }
 
-    print("[MicroTilePanel] 3 test quads spawned. Textures decoding async...");
+    print("[TilePanel] 3 test quads spawned. Textures decoding async...");
   }
 
   private generateDeviceId(): string {
@@ -265,12 +267,12 @@ export class MicroTilePanel extends BaseScriptComponent {
       mat.mainPass["baseColor"] = new vec4(0.08, 0.82, 1.0, 0.8);
       rmv.mainMaterial = mat;
       Base64.decodeTextureAsync(
-        MicroTilePanel.TEST_TEX_WHITE,
+        TilePanel.TEST_TEX_WHITE,
         (texture: Texture) => {
           mat.mainPass["baseTex"] = texture;
         },
         () => {
-          print("[MicroTilePanel] Cursor texture FAILED to decode!");
+          print("[TilePanel] Cursor texture FAILED to decode!");
         }
       );
     }
@@ -457,17 +459,11 @@ export class MicroTilePanel extends BaseScriptComponent {
       case "group":
         this.createGroup(op);
         break;
-      case "group-move":
-        this.moveGroup(op);
-        break;
       case "group-destroy":
         this.destroyGroup(op.id);
         break;
       case "create":
         this.createQuad(op);
-        break;
-      case "move":
-        this.moveQuad(op);
         break;
       case "destroy":
         this.destroyQuad(op.id);
@@ -475,8 +471,12 @@ export class MicroTilePanel extends BaseScriptComponent {
       case "visibility":
         this.setVisibility(op.id, op.visible);
         break;
+      case "move":
+      case "group-move":
+        // Ignored - static layout, no repositioning after creation
+        break;
       default:
-        print("[MicroTilePanel] Unknown op: " + op.op);
+        print("[TilePanel] Unknown op: " + op.op);
     }
   }
 
@@ -484,7 +484,7 @@ export class MicroTilePanel extends BaseScriptComponent {
     if (!payload) return;
 
     if (payload.ops && Array.isArray(payload.ops)) {
-      print("[MicroTilePanel] Batch: " + payload.ops.length + " ops");
+      print("[TilePanel] Batch: " + payload.ops.length + " ops");
       for (const op of payload.ops) {
         this.handleSceneOp(op);
       }
@@ -499,11 +499,8 @@ export class MicroTilePanel extends BaseScriptComponent {
     const id = op.id as string;
     if (!id) return;
 
-    // If quad already exists, just update its position
-    if (this.quads.has(id)) {
-      this.moveQuad(op);
-      return;
-    }
+    // Skip if quad already exists (static layout, no repositioning)
+    if (this.quads.has(id)) return;
 
     // Reuse from pool or create new
     let entry = this.quadPool.pop();
@@ -546,14 +543,14 @@ export class MicroTilePanel extends BaseScriptComponent {
 
     this.quads.set(id, entry);
 
-    print("[MicroTilePanel] + " + id + " at (" + x.toFixed(1) + "," + y.toFixed(1) + "," + z.toFixed(2) + ") " + widthCm.toFixed(1) + "x" + heightCm.toFixed(1) + "cm");
+    print("[TilePanel] + " + id + " at (" + x.toFixed(1) + "," + y.toFixed(1) + "," + z.toFixed(2) + ") " + widthCm.toFixed(1) + "x" + heightCm.toFixed(1) + "cm");
 
     // Check for buffered texture - apply immediately if one was waiting
     const buffered = this.bufferedTextures.get(id);
     if (buffered) {
       this.bufferedTextures.delete(id);
       this.applyTexture(entry, buffered);
-      print("[MicroTilePanel]   -> applied buffered texture for " + id);
+      print("[TilePanel]   -> applied buffered texture for " + id);
     }
 
     this.updatePanelColliderBounds();
@@ -652,74 +649,6 @@ export class MicroTilePanel extends BaseScriptComponent {
     return { x: localPanel.x, y: localPanel.y, u, v };
   }
 
-  private moveQuad(op: any) {
-    const id = op.id as string;
-    const entry = this.quads.get(id);
-    if (!entry) return;
-
-    const x = (op.x !== undefined ? op.x : entry.obj.getTransform().getLocalPosition().x) as number;
-    const y = (op.y !== undefined ? op.y : entry.obj.getTransform().getLocalPosition().y) as number;
-    const layer = op.layer !== undefined ? op.layer : entry.layer;
-    const z = op.z !== undefined ? (op.z as number) : (LAYER_Z[layer] !== undefined ? LAYER_Z[layer] : 0.05);
-    const groupId = (op.group as string) || null;
-    if (op.interactive !== undefined) {
-      entry.interactive = !!op.interactive;
-    }
-
-    if (groupId !== entry.groupId) {
-      if (groupId) {
-        const groupObj = this.ensureGroup(groupId);
-        entry.obj.setParent(groupObj);
-        entry.groupId = groupId;
-      } else {
-        entry.obj.setParent(this.quadParent);
-        entry.groupId = null;
-      }
-    }
-
-    if (op.s !== undefined) {
-      const widthCm = entry.w / this.pixelsPerCm;
-      const heightCm = entry.h / this.pixelsPerCm;
-      const s = op.s as number;
-      entry.obj.getTransform().setLocalScale(new vec3(widthCm * s, heightCm * s, 1));
-    }
-
-    const targetPos = new vec3(x, y, z);
-    const duration = (op.duration || 0) as number;
-
-    if (duration > 0) {
-      this.animatePosition(entry.obj, targetPos, duration);
-    } else {
-      entry.obj.getTransform().setLocalPosition(targetPos);
-    }
-
-    entry.layer = layer;
-    this.updatePanelColliderBounds();
-  }
-
-  private animatePosition(obj: SceneObject, target: vec3, durationMs: number) {
-    const start = obj.getTransform().getLocalPosition();
-    const startTime = Date.now();
-
-    const updateEvent = this.createEvent("UpdateEvent");
-    updateEvent.bind(() => {
-      const elapsed = Date.now() - startTime;
-      const t = Math.min(1, elapsed / durationMs);
-      const ease = t * t * (3 - 2 * t); // smoothstep
-
-      const pos = new vec3(
-        start.x + (target.x - start.x) * ease,
-        start.y + (target.y - start.y) * ease,
-        start.z + (target.z - start.z) * ease,
-      );
-      obj.getTransform().setLocalPosition(pos);
-
-      if (t >= 1) {
-        updateEvent.enabled = false;
-      }
-    });
-  }
-
   private destroyQuad(id: string) {
     const entry = this.quads.get(id);
     if (!entry) return;
@@ -737,7 +666,7 @@ export class MicroTilePanel extends BaseScriptComponent {
     }
 
     this.quads.delete(id);
-    print("[MicroTilePanel] - " + id + " (live:" + this.quads.size + " pool:" + this.quadPool.length + ")");
+    print("[TilePanel] - " + id + " (live:" + this.quads.size + " pool:" + this.quadPool.length + ")");
     this.updatePanelColliderBounds();
   }
 
@@ -763,25 +692,6 @@ export class MicroTilePanel extends BaseScriptComponent {
     const z = (op.z !== undefined ? op.z : 0) as number;
     groupObj.getTransform().setLocalPosition(new vec3(x, y, z));
     groupObj.enabled = op.visible !== false;
-    this.updatePanelColliderBounds();
-  }
-
-  private moveGroup(op: any) {
-    const id = op.id as string;
-    if (!id) return;
-    const groupObj = this.ensureGroup(id);
-    const x = (op.x !== undefined ? op.x : groupObj.getTransform().getLocalPosition().x) as number;
-    const y = (op.y !== undefined ? op.y : groupObj.getTransform().getLocalPosition().y) as number;
-    const z = (op.z !== undefined ? op.z : groupObj.getTransform().getLocalPosition().z) as number;
-    const duration = (op.duration || 0) as number;
-    groupObj.enabled = op.visible !== false;
-
-    const target = new vec3(x, y, z);
-    if (duration > 0) {
-      this.animatePosition(groupObj, target, duration);
-    } else {
-      groupObj.getTransform().setLocalPosition(target);
-    }
     this.updatePanelColliderBounds();
   }
 
@@ -822,7 +732,7 @@ export class MicroTilePanel extends BaseScriptComponent {
       // Use payload dimensions if available, otherwise use defaults.
       const w = (payload.w as number) || 220;
       const h = (payload.h as number) || 48;
-      print("[MicroTilePanel] Auto-creating quad for tex: " + id + " (" + w + "x" + h + ")");
+      print("[TilePanel] Auto-creating quad for tex: " + id + " (" + w + "x" + h + ")");
       this.createQuad({ op: "create", id: id, w: w, h: h, x: 0, y: 0, layer: 0 });
       entry = this.quads.get(id);
       if (!entry) return;
@@ -841,7 +751,7 @@ export class MicroTilePanel extends BaseScriptComponent {
         entry.material.mainPass["baseTex"] = texture;
       },
       () => {
-        print("[MicroTilePanel] Failed to decode texture for " + entry.id);
+        print("[TilePanel] Failed to decode texture for " + entry.id);
       }
     );
   }
@@ -891,14 +801,14 @@ export class MicroTilePanel extends BaseScriptComponent {
 
     // Wire up scene ops and texture events
     receiver.onScene((payload: any) => {
-      print("[MicroTilePanel] onScene: " + JSON.stringify(payload).substring(0, 100));
+      print("[TilePanel] onScene: " + JSON.stringify(payload).substring(0, 100));
       this.handleSceneEvent(payload);
     });
 
     receiver.onTex((payload: any) => {
       const id = payload?.id ?? "?";
       const imgLen = payload?.image?.length ?? 0;
-      print("[MicroTilePanel] onTex: id=" + id + " imgLen=" + imgLen);
+      print("[TilePanel] onTex: id=" + id + " imgLen=" + imgLen);
       this.handleTexEvent(payload);
     });
 
@@ -947,7 +857,7 @@ export class MicroTilePanel extends BaseScriptComponent {
       });
     });
 
-    print("[MicroTilePanel] Receiver attached");
+    print("[TilePanel] Receiver attached");
     return receiver;
   }
 
@@ -969,7 +879,7 @@ export class MicroTilePanel extends BaseScriptComponent {
     }
     this.quadPool = [];
     this.bufferedTextures.clear();
-    print("[MicroTilePanel] Cleaned up");
+    print("[TilePanel] Cleaned up");
   }
 
   private hideCursor() {

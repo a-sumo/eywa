@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase, type Memory } from "../lib/supabase";
 
-export function useRealtimeMemories(roomId: string | null, limit = 50) {
+export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?: number) {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -12,15 +12,21 @@ export function useRealtimeMemories(roomId: string | null, limit = 50) {
       return;
     }
 
-    const { data } = await supabase
+    let query = supabase
       .from("memories")
       .select("*")
       .eq("room_id", roomId)
       .order("ts", { ascending: false })
       .limit(limit);
+
+    if (sinceMs != null && sinceMs > 0) {
+      query = query.gte("ts", new Date(Date.now() - sinceMs).toISOString());
+    }
+
+    const { data } = await query;
     if (data) setMemories(data);
     setLoading(false);
-  }, [roomId, limit]);
+  }, [roomId, limit, sinceMs]);
 
   useEffect(() => {
     fetchInitial();
@@ -46,7 +52,7 @@ export function useRealtimeMemories(roomId: string | null, limit = 50) {
   return { memories, loading, refresh: fetchInitial };
 }
 
-export function useRealtimeAgents(roomId: string | null) {
+export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
   const [agents, setAgents] = useState<
     { name: string; lastSeen: string; sessionCount: number; isActive: boolean }[]
   >([]);
@@ -57,11 +63,17 @@ export function useRealtimeAgents(roomId: string | null) {
       return;
     }
 
-    const { data } = await supabase
+    let query = supabase
       .from("memories")
       .select("agent, ts, session_id, metadata")
       .eq("room_id", roomId)
       .order("ts", { ascending: false });
+
+    if (sinceMs != null && sinceMs > 0) {
+      query = query.gte("ts", new Date(Date.now() - sinceMs).toISOString());
+    }
+
+    const { data } = await query;
 
     if (!data) return;
 
@@ -92,7 +104,7 @@ export function useRealtimeAgents(roomId: string | null) {
         isActive: now - new Date(info.lastSeen).getTime() < 5 * 60 * 1000,
       }))
     );
-  }, [roomId]);
+  }, [roomId, sinceMs]);
 
   useEffect(() => {
     fetchAgents();
