@@ -79,7 +79,7 @@
 .score-line {
   display: flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 28px;
   border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
 }
 
@@ -106,8 +106,40 @@
   padding: 2px 0;
 }
 
-.score-cell canvas {
+/* --- Glyph base --- */
+
+.score-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-glyph svg {
   display: block;
+}
+
+/* --- Glyph states --- */
+
+.glyph-live {
+  animation: glyph-pulse 2s ease-in-out infinite;
+}
+
+.glyph-idle {
+  opacity: 0.6;
+}
+
+.glyph-recent {
+  animation: glyph-settle 300ms ease-out forwards;
+}
+
+@keyframes glyph-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes glyph-settle {
+  from { transform: scale(1.15); opacity: 0.8; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 /* --- Now line --- */

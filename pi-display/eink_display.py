@@ -212,22 +212,31 @@ def draw_creature(draw: ImageDraw, x: int, y: int, sprite: list, color: tuple, s
                 draw.rectangle([px, py, px + scale - 1, py + scale - 1], fill=COLORS["white"])
 
 
-def draw_tracking_marker(draw: ImageDraw, x: int, y: int, size: int = 60):
-    """Draw a tracking marker for Spectacles image tracking."""
-    # Simple high-contrast pattern that's easy to track
-    # Black border with inner pattern
-    draw.rectangle([x, y, x + size, y + size], fill=COLORS["black"])
-    draw.rectangle([x + 4, y + 4, x + size - 4, y + size - 4], fill=COLORS["white"])
+def load_tracking_marker(size: int = 120) -> Image.Image:
+    """Load the Eywa tracking marker PNG, scaled to the given size.
 
-    # Inner cross pattern
+    Falls back to a simple cross pattern if the PNG is missing.
+    """
+    marker_paths = [
+        os.path.join(os.path.dirname(__file__), "tracking-marker.png"),
+        os.path.join(os.path.dirname(__file__), "..", "web", "public", "tracking-marker.png"),
+        os.path.join(os.path.dirname(__file__), "..", "eywa-specs", "Assets", "tracking-marker.png"),
+    ]
+
+    for path in marker_paths:
+        if os.path.exists(path):
+            img = Image.open(path).convert("RGB")
+            img = img.resize((size, size), Image.LANCZOS)
+            return img
+
+    # Fallback: simple cross pattern
+    img = Image.new("RGB", (size, size), (255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    draw.rectangle([0, 0, size - 1, size - 1], outline=(0, 0, 0), width=4)
     mid = size // 2
-    draw.rectangle([x + mid - 4, y + 8, x + mid + 4, y + size - 8], fill=COLORS["black"])
-    draw.rectangle([x + 8, y + mid - 4, x + size - 8, y + mid + 4], fill=COLORS["black"])
-
-    # Corner squares
-    sq = 8
-    for cx, cy in [(12, 12), (size - 12 - sq, 12), (12, size - 12 - sq), (size - 12 - sq, size - 12 - sq)]:
-        draw.rectangle([x + cx, y + cy, x + cx + sq, y + cy + sq], fill=COLORS["black"])
+    draw.rectangle([mid - 4, 8, mid + 4, size - 8], fill=(0, 0, 0))
+    draw.rectangle([8, mid - 4, size - 8, mid + 4], fill=(0, 0, 0))
+    return img
 
 
 def render_display(agents: list) -> Image.Image:
@@ -252,8 +261,9 @@ def render_display(agents: list) -> Image.Image:
     now = datetime.now().strftime("%H:%M")
     draw.text((WIDTH - 60, 18), now, fill=COLORS["black"], font=font_medium)
 
-    # Tracking marker (top right corner)
-    draw_tracking_marker(draw, WIDTH - 80, 60, 60)
+    # Tracking marker (top right corner, for Spectacles AR anchoring)
+    marker = load_tracking_marker(120)
+    img.paste(marker, (WIDTH - 140, 55))
 
     # Divider
     draw.line([(20, 50), (WIDTH - 20, 50)], fill=COLORS["black"], width=2)

@@ -225,7 +225,45 @@ Eywa meets your team where they already work.
 | <img src="https://cdn.simpleicons.org/discord/5865F2" width="16" /> **Discord Bot** | 12 slash commands for team observability from chat | [`discord-bot/`](discord-bot/) |
 | <img src="https://cdn.simpleicons.org/visualstudiocode/007ACC" width="16" /> **VS Code Extension** | Agent tree sidebar, activity feed, context injection, knowledge lens | [`vscode-extension/`](vscode-extension/) |
 | <img src="https://cdn.simpleicons.org/snapchat/FFFC00" width="16" /> **Snap Spectacles** | AR panel anchored to physical displays | [`eywa-specs/`](eywa-specs/) |
-| <img src="https://cdn.simpleicons.org/raspberrypi/A22846" width="16" /> **E-ink Display** | 7-color Waveshare ambient team status | [`web/` (MiniEywaEink)](web/src/components/MiniEywaEink.tsx) |
+| <img src="https://cdn.simpleicons.org/raspberrypi/A22846" width="16" /> **Pi Displays** | E-ink (AR anchor + ambient) and TFT touch (interactive) | [`pi-display/`](pi-display/) |
+
+---
+
+## Physical Displays + AR
+
+Eywa can project agent activity into the physical world through Raspberry Pi displays and Snap Spectacles AR.
+
+### How it works
+
+A physical display (e-ink or phone) shows agent status and a tracking marker. Spectacles detect the marker, anchor an AR interface at that position, then stream live tile textures from the web dashboard.
+
+```
+E-ink display                  Spectacles
+┌──────────────┐              ┌──────────────┐
+│ Agent status │◄─ Supabase ──│ AR tile UI   │
+│ Activity feed│              │ Hand tracking │
+│ [QR] [MARKER]│──── sees ───▶│ Pinch to tap │
+└──────────────┘              └──────────────┘
+```
+
+### Why two display types
+
+| | E-ink | TFT Touch |
+|---|---|---|
+| **Surface** | Matte, no reflections | Glossy, reflective |
+| **Tracking** | Reliable marker detection | Reflections break tracking |
+| **Role** | AR anchor + ambient status | Direct touch interaction |
+| **Interaction** | Through Spectacles (hand tracking) | Touch screen |
+| **Power** | Low (refreshes every 60s) | Continuous |
+
+The tracking marker is a fixed pattern shared across all rooms. It provides position. Spectacles' IMU provides orientation. A separate QR code encodes the room slug for joining.
+
+### Setup
+
+See [`pi-display/`](pi-display/) for Raspberry Pi hardware setup (wiring, drivers, auto-start).
+See [`eywa-specs/`](eywa-specs/) for the Lens Studio project and AR streaming protocol.
+
+No Pi? Any device with a browser works as a display. Navigate to `/r/{room-slug}` for the ambient view.
 
 ---
 

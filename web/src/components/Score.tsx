@@ -1,8 +1,7 @@
 import { useMemo, useRef, useEffect } from "react";
 import { useRoomContext } from "../context/RoomContext";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { agentColor, agentColorHSL } from "../lib/agentColor";
-import { ParticleGlyph } from "./ParticleGlyph";
+import { agentColor } from "../lib/agentColor";
 import type { Memory } from "../lib/supabase";
 import "./Score.css";
 
@@ -23,9 +22,12 @@ const SEARCH_PATTERNS = /grep|glob|search|find|rg |ripgrep/i;
 function memoryToGlyph(m: Memory): GlyphType {
   const event = m.metadata?.event as string | undefined;
 
+  // Lifecycle events first (most specific)
   if (event === "session_start" || event === "session_end" || event === "session_done") {
     return "lifecycle";
   }
+
+  // Knowledge / file storage
   if (
     m.message_type === "knowledge" ||
     event === "knowledge_stored" ||
@@ -33,21 +35,31 @@ function memoryToGlyph(m: Memory): GlyphType {
   ) {
     return "store";
   }
+
+  // Injection / communication
   if (m.message_type === "injection" || event === "context_injection") {
     return "communicate";
   }
+
+  // Human steering
   if (m.message_type === "user") {
     return "decide";
   }
+
+  // Tool calls - distinguish search from general execution
   if (m.message_type === "tool_call") {
     if (SEARCH_PATTERNS.test(m.content)) {
       return "search";
     }
     return "execute";
   }
+
+  // Assistant output
   if (m.message_type === "assistant") {
     return "write";
   }
+
+  // Tool results, resources, everything else
   return "observe";
 }
 
@@ -61,6 +73,98 @@ const GLYPH_LABELS: Record<GlyphType, string> = {
   store: "Store",
   lifecycle: "Lifecycle",
 };
+
+// --- SVG Glyph Components (20px, stroke-based, currentColor) ---
+
+function GlyphObserve() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M2 10s3.5-5 8-5 8 5 8 5-3.5 5-8 5-8-5-8-5z" />
+      <circle cx="10" cy="10" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function GlyphWrite() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M14 3l3 3-10 10H4v-3L14 3z" />
+    </svg>
+  );
+}
+
+function GlyphExecute() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="6" />
+      <path d="M10 4V2M10 18v-2M4 10H2M18 10h-2M5.8 5.8L4.4 4.4M15.6 15.6l-1.4-1.4M5.8 14.2l-1.4 1.4M15.6 4.4l-1.4 1.4" />
+    </svg>
+  );
+}
+
+function GlyphSearch() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M10 4a6 6 0 100 0" opacity="0.4" />
+      <path d="M10 6a4 4 0 100 0" opacity="0.7" />
+      <circle cx="10" cy="10" r="2" />
+    </svg>
+  );
+}
+
+function GlyphCommunicate() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="5" cy="10" r="2" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="10" r="2" fill="currentColor" stroke="none" />
+      <path d="M7 10c0-3 6-3 6 0" />
+    </svg>
+  );
+}
+
+function GlyphDecide() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+      <path d="M10 2l6 8-6 8-6-8z" />
+    </svg>
+  );
+}
+
+function GlyphStore() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M10 2v12M7 11l3 3 3-3M6 18h8" />
+    </svg>
+  );
+}
+
+function GlyphLifecycle() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M10 2v4M10 14v4M2 10h4M14 10h4M4.5 4.5l2.8 2.8M12.7 12.7l2.8 2.8M15.5 4.5l-2.8 2.8M7.3 12.7l-2.8 2.8" />
+    </svg>
+  );
+}
+
+const GLYPH_MAP: Record<GlyphType, () => React.JSX.Element> = {
+  observe: GlyphObserve,
+  write: GlyphWrite,
+  execute: GlyphExecute,
+  search: GlyphSearch,
+  communicate: GlyphCommunicate,
+  decide: GlyphDecide,
+  store: GlyphStore,
+  lifecycle: GlyphLifecycle,
+};
+
+function Glyph({ type, className }: { type: GlyphType; className?: string }) {
+  const Component = GLYPH_MAP[type];
+  return (
+    <span className={`score-glyph ${className ?? ""}`}>
+      <Component />
+    </span>
+  );
+}
 
 // --- Time quantization ---
 
@@ -125,8 +229,6 @@ export function Score() {
 
   const { agents, rows } = useMemo(() => buildRows(memories), [memories]);
 
-  const latestBucket = rows.length > 0 ? rows[rows.length - 1].ts : 0;
-
   // Track if user is at the bottom before render
   useEffect(() => {
     const el = bodyRef.current;
@@ -155,6 +257,8 @@ export function Score() {
     );
   }
 
+  const latestBucket = rows.length > 0 ? rows[rows.length - 1].ts : 0;
+
   return (
     <div className="score">
       <div className="score-header">
@@ -181,13 +285,16 @@ export function Score() {
               {agents.map((agent) => (
                 <span key={agent} className="score-cell">
                   {row.events[agent]?.map((e) => (
-                    <ParticleGlyph
+                    <span
                       key={e.memory.id}
-                      memory={e.memory}
-                      agentHSL={agentColorHSL(agent)}
-                      live={isLatest}
                       title={glyphTitle(e.memory, e.glyph)}
-                    />
+                      style={{ color: agentColor(agent) }}
+                    >
+                      <Glyph
+                        type={e.glyph}
+                        className={isLatest ? "glyph-live" : "glyph-idle"}
+                      />
+                    </span>
                   ))}
                 </span>
               ))}

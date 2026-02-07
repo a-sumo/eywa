@@ -146,6 +146,31 @@ Assign the SupabaseProject asset in the Inspector.
 - Positions are in cm, centered at the panel origin
 - Layer Z offsets: 0=0.05cm, 1=0.5cm, 2=1.0cm, 3=2.0cm
 
+## Marker Tracking
+
+The scene uses Extended Marker Tracking to anchor the AR panel to a physical display.
+
+**How it works:**
+1. Spectacles camera detects the tracking marker pattern (`tracking-marker.png`) on a physical display
+2. The AR panel spawns at the marker position (children start disabled, enabled on detection)
+3. A 2-second warmup guard ignores false positives from the first frames
+4. With `trackMarkerOnce: true`, the marker is detected once, the panel detaches to world space, and marker tracking is disabled to save performance
+5. After detach, Spectacles' IMU handles orientation tracking
+
+**Scene hierarchy:**
+```
+Extended_Marker_Tracking (root)
+  Object 1 [MarkerTrackingComponent]
+    RealtimePanel [MicroTilePanel]   <- disabled until marker found
+```
+
+**Why a fixed pattern (not a QR code):**
+- Lens Studio imgmarker needs a pre-registered texture baked at build time
+- A fixed pattern works across all rooms. Room identity comes from a separate QR code.
+- The pattern is designed for high contrast and asymmetric features to improve detection reliability
+
+See [`pi-display/`](../pi-display/) for the physical display setup and tracking strategy.
+
 ## Dependencies
 
 - Lens Studio (latest)
