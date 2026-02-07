@@ -32,12 +32,9 @@
     "views": {
       "eywa": [
         {
-          "id": "eywaAgents",
-          "name": "Agents"
-        },
-        {
-          "id": "eywaActivity",
-          "name": "Activity"
+          "type": "webview",
+          "id": "eywaLive",
+          "name": "Live"
         },
         {
           "id": "eywaKnowledge",
@@ -100,55 +97,14 @@
         "command": "eywa.toggleTabTitles",
         "title": "Eywa: Toggle Agent Tab Titles",
         "icon": "$(terminal)"
-      }
-    ],
-    "viewsWelcome": [
+      },
       {
-        "view": "eywaAgents",
-        "contents": "Connect to Eywa to monitor your agents.\n[Login with Browser](command:eywa.login)",
-        "when": "config.eywa.room == ''"
+        "command": "eywa.setRoom",
+        "title": "Eywa: Switch Room",
+        "icon": "$(folder)"
       }
     ],
     "menus": {
-      "view/title": [
-        {
-          "command": "eywa.login",
-          "when": "view == eywaAgents && config.eywa.room == ''",
-          "group": "navigation"
-        },
-        {
-          "command": "eywa.toggleTabTitles",
-          "when": "view == eywaAgents",
-          "group": "navigation"
-        },
-        {
-          "command": "eywa.refreshAgents",
-          "when": "view == eywaAgents",
-          "group": "navigation"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "eywa.injectToSession",
-          "when": "viewItem == eywaSession",
-          "group": "inline"
-        },
-        {
-          "command": "eywa.copySessionSummary",
-          "when": "viewItem == eywaSession",
-          "group": "1_actions"
-        },
-        {
-          "command": "eywa.openSessionInDashboard",
-          "when": "viewItem == eywaSession",
-          "group": "1_actions"
-        },
-        {
-          "command": "eywa.injectContext",
-          "when": "viewItem == eywaUser",
-          "group": "1_actions"
-        }
-      ],
       "editor/context": [
         {
           "command": "eywa.injectSelection",

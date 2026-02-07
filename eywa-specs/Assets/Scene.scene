@@ -939,6 +939,21 @@
   ScriptTypes:
     "":
       {}
+- !<SceneObject/2b48895c-cb4b-4a25-8b2d-24073e57122e>
+  PrefabRemaps:
+    []
+  Name: Object 1
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    - !<own> fe200ce3-7785-4709-a5ea-d42da5d3b833
+  Components:
+    - !<own> c68be074-dcc8-4359-a4fe-c998032f2c3d
 - !<SceneObject/2b48df55-44c4-4516-b674-91f4c5d5481b>
   PrefabRemaps:
     []
@@ -1978,7 +1993,6 @@
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
   Children:
-    - !<own> fe200ce3-7785-4709-a5ea-d42da5d3b833
     - !<own> 33ad14c4-2802-4b68-8d6a-eaa3e9555951
   Components:
     []
@@ -2601,9 +2615,11 @@
 - !<SceneObject/799ee426-dfca-40e6-bead-0a06a401bdb2>
   PrefabRemaps:
     - 016d5305-d2df-4c22-a1b2-d4261d6d0fd0: 228b3859-c92d-406c-9cf6-08734347fae1
+    - 2b48895c-cb4b-4a25-8b2d-24073e57122e: 58c83423-0cef-4151-81b4-8eef471b92bc
     - 799ee426-dfca-40e6-bead-0a06a401bdb2: c89b4cc9-d57f-4bfa-5a10-e6a78dfe43c6
     - 8833c591-6a1a-4588-ac68-b873f76b0f1a: d57879c5-26fa-4f84-8373-bcad34f19d76
     - a74c66b9-d7d8-4fb7-9f69-ea6c5af26a5c: 619f46a9-930a-44aa-4462-8df6f7d90117
+    - c68be074-dcc8-4359-a4fe-c998032f2c3d: 88d7aed3-d6a9-4359-bcfd-22e92f0a3c17
   Name: Extended_Marker_Tracking_-PLACE_AT_ROOT-
   Enabled: true
   Layers: 1
@@ -2614,6 +2630,7 @@
     HasSegmentScaleCompensation: false
   Children:
     - !<own> 016d5305-d2df-4c22-a1b2-d4261d6d0fd0
+    - !<own> 2b48895c-cb4b-4a25-8b2d-24073e57122e
   Components:
     - !<own> a74c66b9-d7d8-4fb7-9f69-ea6c5af26a5c
 - !<SceneObject/7b9d067f-414a-4620-a6b1-b0824953478c>
@@ -3271,7 +3288,7 @@
     {}
   ScriptInputs:
     "":
-      markerComponent: !<reference.MarkerTrackingComponent> 0005753c-121c-e9ac-0000-000000012934
+      markerComponent: !<reference.MarkerTrackingComponent> c68be074-dcc8-4359-a4fe-c998032f2c3d
       trackMarkerOnce: true
       detachOnFound: true
   ScriptTypes:
@@ -4108,6 +4125,12 @@
     - !<own> 9b8da751-599e-41c3-bebf-7b11dadee25a
   Components:
     []
+- !<MarkerTrackingComponent/c68be074-dcc8-4359-a4fe-c998032f2c3d>
+  PrefabRemaps:
+    []
+  Name: Marker Tracking
+  Enabled: true
+  Marker: !<reference> f3ed3b7b-bbf0-482e-b98b-c877a0d21801
 - !<Skin/c6a71617-bec5-4be9-ba30-ccd2320ff3e4>
   PrefabRemaps:
     []
@@ -4753,23 +4776,23 @@
   Enabled: true
   ScriptAsset: !<reference> 67f9b941-2e35-4717-90f6-f4dcb72dbbd7
   ScriptInputsDefault:
+    channelName: true
     deviceId: true
     positionOffset: true
     showStatus: true
-    showTestQuads: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
     "":
       snapCloudRequirements: !<MappingBased.AssignableType> 15221b26-20f6-42ab-a6e7-b358ab3bbf0f
-      channelName: ""
+      channelName: demo
       deviceId: editor
       positionOffset: !<Vec3> {x: 0.000000, y: 0.000000, z: 0.000000}
       material: !<reference.Material> fbfaad10-8f5f-4426-9a35-925d3feff052
       pixelsPerCm: !<float> 32.000000
       cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
       showStatus: true
-      showTestQuads: false
+      showTestQuads: true
   ScriptTypes:
     "":
       {}
@@ -5563,7 +5586,7 @@
   Enabled: true
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 0.000000, z: -80.000000}
+    Position: {x: 0.000000, y: 30.000000, z: 0.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false

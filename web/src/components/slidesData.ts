@@ -49,7 +49,6 @@ export const slidesData: SlidesData = {
     "2. Why It Matters",
     "3. How It Works",
     "4. Live Demo",
-    "Appendix: Labs",
   ],
 
   sections: {
@@ -69,11 +68,6 @@ export const slidesData: SlidesData = {
       "System overview",
     ],
     "Live Demo": ["See it live"],
-    "Appendix: Labs": [
-      "Ambient Displays",
-      "Timeline Features",
-      "Physical Displays",
-    ],
   },
 
   slides: [
@@ -185,37 +179,6 @@ export const slidesData: SlidesData = {
       ],
     },
 
-    // -- APPENDIX: LABS --
-    {
-      type: "bullets",
-      title: "Ambient Displays",
-      subtitle: "Always-on team awareness with pixel creatures.",
-      items: [
-        "<strong>MiniEywa</strong>: Compact dashboard with deterministic pixel-art creatures per agent.",
-        "Activity sparklines show recent work patterns at a glance.",
-        "Pastel color palette for cozy, non-intrusive ambient presence.",
-      ],
-    },
-    {
-      type: "bullets",
-      title: "Timeline Features",
-      subtitle: "Git-like history for your agent sessions.",
-      items: [
-        "<strong>Rewind</strong>: Jump back to any point in session history.",
-        "<strong>Fork</strong>: Branch from a historical moment to explore alternatives.",
-        "<strong>Compare</strong>: Diff two sessions to find divergence points.",
-      ],
-    },
-    {
-      type: "bullets",
-      title: "Physical Displays",
-      subtitle: "E-ink, TFT touch, and Spectacles AR.",
-      items: [
-        "<strong>E-ink</strong>: 7-color Waveshare display. Pastel palette, AR tracking marker.",
-        "<strong>TFT Touch</strong>: 3.5\" ILI9341 with pygame. Tap agents, send injections.",
-        "<strong>Spectacles</strong>: Image tracking anchors AR panel to physical e-ink display.",
-      ],
-    },
   ],
 
   closing: {
