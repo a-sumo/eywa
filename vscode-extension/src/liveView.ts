@@ -56,6 +56,17 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
       else if (msg.type === "refresh") this.loadInitial();
     });
 
+    // Re-push state when sidebar becomes visible again
+    view.onDidChangeVisibility(() => {
+      if (view.visible) {
+        if (this.agents.size > 0 || this.activity.length > 0) {
+          this.pushState();
+        } else {
+          this.loadInitial();
+        }
+      }
+    });
+
     this.loadInitial();
   }
 
@@ -191,9 +202,8 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     padding: 10px 12px;
     border-bottom: 1px solid var(--vscode-panel-border);
   }
-  .logo { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.85; }
-  .logo circle { fill: var(--vscode-foreground); opacity: 0.12; }
-  .logo path { stroke: var(--vscode-foreground); fill: none; stroke-width: 1.5; stroke-linecap: round; }
+  .logo { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.7; }
+  .logo path, .logo rect { fill: var(--vscode-foreground); }
   .header-room {
     flex: 1; min-width: 0;
     font-weight: 600; font-size: 12px;
@@ -276,9 +286,8 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
 
   /* States */
   .state-msg { text-align: center; padding: 32px 16px; }
-  .state-msg .state-icon { width: 36px; height: 36px; margin: 0 auto 10px; opacity: 0.25; }
-  .state-msg .state-icon circle { fill: var(--vscode-foreground); opacity: 0.12; }
-  .state-msg .state-icon path { stroke: var(--vscode-foreground); fill: none; stroke-width: 1.5; }
+  .state-msg .state-icon { width: 36px; height: 36px; margin: 0 auto 10px; opacity: 0.2; }
+  .state-msg .state-icon path, .state-msg .state-icon rect { fill: var(--vscode-foreground); }
   .state-msg p { opacity: 0.5; font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
   .btn {
     background: var(--vscode-button-background); color: var(--vscode-button-foreground);
@@ -322,12 +331,12 @@ function timeAgo(ts) {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-const LOGO = '<svg class="logo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11"/><path d="M12 4C8 4 4 8 4 12s4 8 8 8 8-4 8-8"/><path d="M12 8C10 8 8 10 8 12s2 4 4 4"/><circle cx="12" cy="12" r="1.5" fill="var(--vscode-foreground)" opacity="0.5" stroke="none"/></svg>';
+const LOGO = '<svg class="logo" viewBox="0 0 250 250" fill="none"><path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/><path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/><path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/><path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/><rect width="69.09" height="37.63" rx="18.81" transform="matrix(-0.682 -0.731 0.715 -0.7 165.13 184.31)"/><rect width="69.09" height="37.47" rx="18.73" transform="matrix(-0.682 0.731 -0.714 -0.7 182.38 88.9)"/><rect width="75.28" height="37.98" rx="18.99" transform="matrix(0.679 0.734 -0.717 0.697 95.87 64.43)"/><rect width="71.22" height="41.64" rx="20.82" transform="matrix(0.799 -0.601 0.583 0.813 55 149.83)"/></svg>';
 
 function render(data) {
   if (!data) {
     root.innerHTML = '<div class="state-msg">'
-      + '<svg class="state-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11"/><path d="M12 4C8 4 4 8 4 12s4 8 8 8 8-4 8-8"/><path d="M12 8C10 8 8 10 8 12s2 4 4 4"/></svg>'
+      + '<svg class="state-icon" viewBox="0 0 250 250" fill="none"><path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/><path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/><path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/><path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/><rect width="69.09" height="37.63" rx="18.81" transform="matrix(-0.682 -0.731 0.715 -0.7 165.13 184.31)"/><rect width="69.09" height="37.47" rx="18.73" transform="matrix(-0.682 0.731 -0.714 -0.7 182.38 88.9)"/><rect width="75.28" height="37.98" rx="18.99" transform="matrix(0.679 0.734 -0.717 0.697 95.87 64.43)"/><rect width="71.22" height="41.64" rx="20.82" transform="matrix(0.799 -0.601 0.583 0.813 55 149.83)"/></svg>'
       + '<p>Set a room to start<br>monitoring your agents.</p>'
       + '<button class="btn" onclick="vscode.postMessage({type:\\'setRoom\\'})">Set Room</button></div>';
     return;
@@ -382,9 +391,17 @@ function render(data) {
 
 window.addEventListener('message', e => {
   const m = e.data;
-  if (m.type === 'state') render(m);
-  else if (m.type === 'noRoom') render(null);
-  else if (m.type === 'loading') {
+  if (m.type === 'state') {
+    vscode.setState(m);
+    render(m);
+  } else if (m.type === 'noRoom') {
+    // Only show noRoom if we don't already have data
+    const prev = vscode.getState();
+    if (!prev || prev.type !== 'state') {
+      vscode.setState(null);
+      render(null);
+    }
+  } else if (m.type === 'loading') {
     root.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Connecting to /' + esc(m.room) + '</p></div>';
   } else if (m.type === 'error') {
     root.innerHTML = '<div class="state-msg"><p>' + esc(m.message) + '</p>'
@@ -392,7 +409,15 @@ window.addEventListener('message', e => {
   }
 });
 
-render(null);
+// Restore persisted state on load
+const saved = vscode.getState();
+if (saved && saved.type === 'state') {
+  render(saved);
+} else {
+  render(null);
+  // Only ask for refresh if we have no saved state
+  vscode.postMessage({ type: 'refresh' });
+}
 </script>
 </body>
 </html>`;
