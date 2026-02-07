@@ -138,7 +138,7 @@
 - !<ScriptComponent/ccce2d07-abcc-4cf6-b03a-2a13a59ef225>
   PrefabRemaps:
     []
-  Name: MicroTilePanel
+  Name: TilePanel
   Enabled: true
   ScriptAsset: !<reference> 67f9b941-2e35-4717-90f6-f4dcb72dbbd7
   ScriptInputsDefault:

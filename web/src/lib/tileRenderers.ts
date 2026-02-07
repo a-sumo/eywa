@@ -1,12 +1,12 @@
 /**
- * tileRenderers.ts - Pure render functions for each micro-tile type.
+ * tileRenderers.ts - Pure render functions for each tile type.
  *
  * Each function draws to an OffscreenCanvas context. Same data = same output.
  * These are extracted from the old SpectaclesView rendering code but operate
  * on individual tiles rather than a monolithic grid.
  */
 
-import type { RenderFn } from "./microTile";
+import type { RenderFn } from "./tile";
 
 // --- Colors (same palette as the old SpectaclesView) ---
 const C = {

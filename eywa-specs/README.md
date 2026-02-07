@@ -16,7 +16,7 @@ Web (SpectaclesView.tsx)
         |
         | Supabase Realtime broadcast
         v
-Spectacles (MicroTilePanel.ts)
+Spectacles (TilePanel.ts)
   RealtimeTextureReceiver -> subscribe to channel
   onScene -> create/move/destroy quads
   onTex -> Base64.decodeTextureAsync -> material.mainPass.baseTex
@@ -27,7 +27,7 @@ Each tile is its own quad with its own cloned material. Only dirty tiles re-rend
 
 ## Scripts
 
-### MicroTilePanel.ts
+### TilePanel.ts
 The "DOM" for Spectacles. Manages a tree of quads inside a container. Receives scene ops (create/move/destroy) and texture events from the web renderer, creates/destroys quads dynamically, handles interaction via SIK Interactable, and sends tap/hover events back.
 
 **Inspector inputs:**
@@ -40,14 +40,14 @@ The "DOM" for Spectacles. Manages a tree of quads inside a container. Receives s
 
 ### RealtimeTextureReceiver.ts
 Network layer. Connects to Supabase Realtime, subscribes to broadcast channels, handles three protocols:
-- **Scene ops** (`scene` event) - forwarded to MicroTilePanel
+- **Scene ops** (`scene` event) - forwarded to TilePanel
 - **Texture updates** (`tex` event) - base64 JPEG by tile ID
 - **Lobby** - device discovery and heartbeat
 
 Also supports legacy modes: single-frame (`frame`) and tile-grid (`tile`).
 
 ### RealtimePanel.ts
-Fixed-grid mode (legacy). Creates a static NxM quad grid. Each quad has its own material. Simpler than MicroTilePanel but less flexible - tiles can't be created/destroyed dynamically. Includes built-in cursor overlay for interaction feedback.
+Fixed-grid mode (legacy). Creates a static NxM quad grid. Each quad has its own material. Simpler than TilePanel but less flexible - tiles can't be created/destroyed dynamically. Includes built-in cursor overlay for interaction feedback.
 
 ### SnapCloudRequirements.ts
 Config bridge. Reads Supabase URL and anon key from the SupabaseProject asset (created via the Supabase Lens Studio plugin). Other scripts reference this instead of configuring Supabase directly.
@@ -64,7 +64,7 @@ Window > Supabase > Login > Import Credentials. This creates a SupabaseProject a
 ```
 CloudManager          <- SnapCloudRequirements script, assign SupabaseProject
 Camera
-EywaPanel             <- MicroTilePanel script
+EywaPanel             <- TilePanel script
   material: Unlit     <- assign the Unlit material from Assets
   channelName: demo   <- your room slug
   deviceId: editor    <- or leave empty for auto-ID
@@ -79,12 +79,12 @@ See `DEPLOYMENT.md` for the tracker‑based auto‑join flow. This replaces the 
 ### 5. Test in editor
 Push to device or use Lens Studio preview. Check the Logger panel for:
 ```
-[MicroTilePanel] Initializing, device: editor
+[TilePanel] Initializing, device: editor
 [RealtimeTextureReceiver] Subscribing to: spectacles:demo:editor
 [RealtimeTextureReceiver] SUCCESS: Subscribed to spectacles:demo:editor
-[MicroTilePanel] onScene: {"op":"create","id":"header","x":0,"y":10,...}
-[MicroTilePanel] onTex: id=header imgLen=8234
-[MicroTilePanel] + header at (0.0,10.0,0.05) 25.0x7.5cm
+[TilePanel] onScene: {"op":"create","id":"header","x":0,"y":10,...}
+[TilePanel] onTex: id=header imgLen=8234
+[TilePanel] + header at (0.0,10.0,0.05) 25.0x7.5cm
 ```
 
 ## Protocol
@@ -161,7 +161,7 @@ The scene uses Extended Marker Tracking to anchor the AR panel to a physical dis
 ```
 Extended_Marker_Tracking (root)
   Object 1 [MarkerTrackingComponent]
-    RealtimePanel [MicroTilePanel]   <- disabled until marker found
+    RealtimePanel [TilePanel]   <- disabled until marker found
 ```
 
 **Why a fixed pattern (not a QR code):**

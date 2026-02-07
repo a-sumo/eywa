@@ -70,7 +70,7 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
   private lobbyChannel: RealtimeChannel;
   private singleMaterial: Material; // for single-quad mode
   private materialsGrid: Material[][] = []; // for tile-grid mode
-  private microTileMaterials: Map<string, Material> = new Map(); // for micro-tile mode (keyed by tile ID)
+  private tileMaterials: Map<string, Material> = new Map(); // for tile mode (keyed by tile ID)
   private frameCount: number = 0;
   private tileUpdateCounts: Map<string, number> = new Map();
   private lastFrameTime: number = 0;
@@ -105,7 +105,7 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
       + " | snapCloud: " + (this.snapCloudRequirements ? "yes" : "no"));
 
     if (hasCallbacks) {
-      // Relay mode: MicroTilePanel manages quads and materials. Just connect.
+      // Relay mode: TilePanel manages quads and materials. Just connect.
       this.log("Relay mode (forwarding to callbacks)");
     } else if (hasGrid) {
       // Grid mode: RealtimePanel set the materials grid.
@@ -417,15 +417,15 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
   }
 
   /**
-   * Register a callback for micro-tile scene ops (create/move/destroy).
-   * Used by MicroTilePanel to manage quads dynamically.
+   * Register a callback for tile scene ops (create/move/destroy).
+   * Used by TilePanel to manage quads dynamically.
    */
   public onScene(callback: (payload: any) => void) {
     this.onSceneCallback = callback;
   }
 
   /**
-   * Handle a micro-tile texture update.
+   * Handle a tile texture update.
    * Payload: { id: string, image: string (base64) }
    */
   private onMicroTex(payload: any) {
@@ -439,13 +439,13 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
       this.log("MicroTex " + id + " #" + this.frameCount);
     }
 
-    // Try micro-tile material map first
-    const mat = this.microTileMaterials.get(id);
+    // Try tile material map first
+    const mat = this.tileMaterials.get(id);
     if (mat) {
       this.applyTextureToMaterial(payload.image, mat, -1, -1);
     }
 
-    // Also forward to the tex callback if registered (MicroTilePanel handles its own materials)
+    // Also forward to the tex callback if registered (TilePanel handles its own materials)
     if (this.onTexCallback) {
       this.onTexCallback(payload);
     }
@@ -454,31 +454,31 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
   }
 
   /**
-   * Register a callback for micro-tile texture events.
-   * Used by MicroTilePanel when it manages its own materials.
+   * Register a callback for tile texture events.
+   * Used by TilePanel when it manages its own materials.
    */
   public onTex(callback: (payload: any) => void) {
     this.onTexCallback = callback;
   }
 
   /**
-   * Register a material for a micro-tile ID.
+   * Register a material for a tile ID.
    * Used when this receiver manages materials directly.
    */
-  public setMicroTileMaterial(id: string, material: Material) {
-    this.microTileMaterials.set(id, material);
+  public setTileMaterial(id: string, material: Material) {
+    this.tileMaterials.set(id, material);
   }
 
   /**
-   * Remove a material for a micro-tile ID.
+   * Remove a material for a tile ID.
    */
-  public removeMicroTileMaterial(id: string) {
-    this.microTileMaterials.delete(id);
+  public removeTileMaterial(id: string) {
+    this.tileMaterials.delete(id);
   }
 
   /**
    * Send an event back to the web via the same broadcast channel.
-   * Used by RealtimePanel and MicroTilePanel to relay interaction events.
+   * Used by RealtimePanel and TilePanel to relay interaction events.
    */
   public sendEvent(event: string, payload: any) {
     if (!this.realtimeChannel) return;

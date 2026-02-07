@@ -22,7 +22,6 @@ import { supabase, type Memory } from "../lib/supabase";
 import { TileScene } from "../lib/tileScene";
 import { RENDERERS } from "../lib/tileRenderers";
 import { computeLayout, tileHash, MEMORIES_PER_PAGE, type AgentInfo, type ContextItem, type GroupLayout } from "../lib/tileLayout";
-import { applyLayoutActions, type LayoutAction } from "../lib/layoutActions";
 
 // --- Colors ---
 const C = {
@@ -69,9 +68,6 @@ export function SpectaclesView() {
   const [broadcasting, setBroadcasting] = useState(false);
   const [channelReady, setChannelReady] = useState(false);
   const [hoveredTileId, setHoveredTileId] = useState<string | null>(null);
-  const [cameraPose, setCameraPose] = useState<{ x: number; y: number; z: number } | null>(null);
-  const [layoutActions, setLayoutActions] = useState<LayoutAction[]>([]);
-  const [chatFocusGroupId, setChatFocusGroupId] = useState<string | null>(null);
 
   // Auto-discovery
   const [devices, setDevices] = useState<Map<string, ConnectedDevice>>(new Map());
@@ -234,103 +230,8 @@ export function SpectaclesView() {
     deviceId,
   }), [agents, memories, contextItems, chatMessages, chatLoading, chatError, memoryPage, selectedAgent, isListening, voiceTranscript, room?.slug, channelReady, deviceId]);
 
-  const applyCameraLayout = useCallback((tiles: ReturnType<typeof computeLayout>["tiles"], groups: ReturnType<typeof computeLayout>["groups"]) => {
-    if (!cameraPose) return groups;
-
-    // Build group bounds (cm) from tiles
-    const bounds = new Map<string, { minX: number; maxX: number; minY: number; maxY: number }>();
-    for (const tile of tiles) {
-      const gid = tile.group;
-      if (!gid) continue;
-      const wCm = (tile.w / PIXELS_PER_CM) * tile.scale;
-      const hCm = (tile.h / PIXELS_PER_CM) * tile.scale;
-      const minX = tile.x - wCm / 2;
-      const maxX = tile.x + wCm / 2;
-      const minY = tile.y - hCm / 2;
-      const maxY = tile.y + hCm / 2;
-      const b = bounds.get(gid);
-      if (!b) {
-        bounds.set(gid, { minX, maxX, minY, maxY });
-      } else {
-        b.minX = Math.min(b.minX, minX);
-        b.maxX = Math.max(b.maxX, maxX);
-        b.minY = Math.min(b.minY, minY);
-        b.maxY = Math.max(b.maxY, maxY);
-      }
-    }
-
-    // Compute overall bounds in world (group positions applied)
-    let minX = 9999, maxX = -9999, minY = 9999, maxY = -9999;
-    for (const g of groups) {
-      const b = bounds.get(g.id);
-      if (!b) continue;
-      minX = Math.min(minX, g.x + b.minX);
-      maxX = Math.max(maxX, g.x + b.maxX);
-      minY = Math.min(minY, g.y + b.minY);
-      maxY = Math.max(maxY, g.y + b.maxY);
-    }
-    if (minX > maxX || minY > maxY) return groups;
-
-    const contentCx = (minX + maxX) / 2;
-    const contentCy = (minY + maxY) / 2;
-
-    // Comfort box from ergonomics spec
-    const COMFORT_W = 47;
-    const COMFORT_H = 28;
-    const TARGET_Y_OFFSET = -3;
-
-    const targetCx = cameraPose.x;
-    const targetCy = cameraPose.y + TARGET_Y_OFFSET;
-    let dx = targetCx - contentCx;
-    let dy = targetCy - contentCy;
-
-    // Clamp to comfort rectangle
-    const halfW = COMFORT_W / 2;
-    const halfH = COMFORT_H / 2;
-    if (minX + dx < targetCx - halfW) dx += (targetCx - halfW) - (minX + dx);
-    if (maxX + dx > targetCx + halfW) dx -= (maxX + dx) - (targetCx + halfW);
-    if (minY + dy < targetCy - halfH) dy += (targetCy - halfH) - (minY + dy);
-    if (maxY + dy > targetCy + halfH) dy -= (maxY + dy) - (targetCy + halfH);
-
-    return groups.map(g => ({ ...g, x: g.x + dx, y: g.y + dy }));
-  }, [cameraPose]);
-
-  const effectiveGroups = useMemo(() => applyCameraLayout(desiredTiles, desiredGroups), [applyCameraLayout, desiredTiles, desiredGroups]);
-
-  const emphasizedGroups = useMemo(() => {
-    if (!hoveredTileId) return effectiveGroups;
-    const tile = desiredTiles.find(t => t.id === hoveredTileId);
-    const gid = tile?.group;
-    if (!gid) return effectiveGroups;
-    const HOVER_Z_PULL = 1.5; // cm toward user (ergonomics spec: active 1-2cm)
-    return effectiveGroups.map(g => g.id === gid ? { ...g, z: (g.z ?? 0) + HOVER_Z_PULL } : g);
-  }, [effectiveGroups, desiredTiles, hoveredTileId]);
-
-  const actionGroups = useMemo(() => applyLayoutActions(emphasizedGroups, layoutActions), [emphasizedGroups, layoutActions]);
-
-  // Track latest chat model response for focus
-  useEffect(() => {
-    const lastModel = [...chatMessages].reverse().find(m => m.role !== "user");
-    const groupId = lastModel ? `g-chat-${lastModel.ts}` : null;
-    if (groupId && groupId !== chatFocusGroupId) {
-      setChatFocusGroupId(groupId);
-    }
-  }, [chatMessages, chatFocusGroupId]);
-
-  // Apply chat focus (pull latest response toward camera)
-  const focusedGroups = useMemo(() => {
-    if (!chatFocusGroupId || !cameraPose) return actionGroups;
-    const targetX = cameraPose.x;
-    const targetY = cameraPose.y - 3;
-    const targetZ = 2.5;
-    return actionGroups.map(g => g.id === chatFocusGroupId
-      ? { ...g, x: targetX, y: targetY, z: targetZ, duration: 320 }
-      : g
-    );
-  }, [actionGroups, chatFocusGroupId, cameraPose]);
-
-  // Final groups passed to reconcile. Duration values tell Spectacles to animate.
-  const finalGroups = focusedGroups;
+  // Browser layout is static. All spatial movement (camera tracking,
+  // comfort-zone repositioning) happens on Spectacles, not here.
 
   // --- Interaction handler: map tile IDs to actions ---
   const handleTileInteraction = useCallback((tileId: string, type: string) => {
@@ -462,16 +363,6 @@ export function SpectaclesView() {
       }
     });
 
-    channel.on("broadcast", { event: "camera" }, ({ payload }) => {
-      if (!payload || payload.x === undefined || payload.y === undefined || payload.z === undefined) return;
-      setCameraPose({ x: payload.x as number, y: payload.y as number, z: payload.z as number });
-    });
-
-    channel.on("broadcast", { event: "layout" }, ({ payload }) => {
-      if (!payload?.actions || !Array.isArray(payload.actions)) return;
-      setLayoutActions(payload.actions as LayoutAction[]);
-    });
-
     // Legacy interaction events (from old RealtimePanel)
     channel.on("broadcast", { event: "interaction" }, ({ payload }) => {
       if (!payload) return;
@@ -512,7 +403,7 @@ export function SpectaclesView() {
 
     const loop = () => {
       // 1. Reconcile desired state with current tiles
-      scene.reconcile(desiredTiles, finalGroups);
+      scene.reconcile(desiredTiles, desiredGroups);
 
       // 2. Update content hashes so dirty tiles get flagged
       for (const desc of desiredTiles) {
@@ -551,7 +442,7 @@ export function SpectaclesView() {
 
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [desiredTiles, finalGroups, hoveredTileId, channelReady]);
+  }, [desiredTiles, desiredGroups, hoveredTileId, channelReady]);
 
   // --- Draw composite preview to visible canvas ---
   const previewCtxRef = useRef<CanvasRenderingContext2D | null>(null);

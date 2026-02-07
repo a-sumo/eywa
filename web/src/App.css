@@ -2962,7 +2962,7 @@ body {
   border-color: var(--border-strong);
 }
 
-/* Split pane layout — 3 columns: list | detail | graph */
+/* Split pane layout — 3 columns: memories | context | chat */
 .thread-split {
   display: flex;
   gap: 0;
@@ -2970,49 +2970,284 @@ body {
   min-height: 400px;
 }
 
-.thread-list-pane {
-  width: 340px;
-  min-width: 280px;
+/* Left: Memory feed */
+.thread-memories-pane {
+  width: 280px;
+  min-width: 220px;
   flex-shrink: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid var(--border-subtle);
-  padding-right: 0.25rem;
+  overflow: hidden;
 }
 
-.thread-detail-pane {
+.memories-feed {
   flex: 1;
   overflow-y: auto;
-  padding: 0 1rem;
+}
+
+/* Mid: Context (threads + detail) */
+.thread-context-pane {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0.5rem;
   display: flex;
   flex-direction: column;
   min-width: 0;
   border-right: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
 }
 
-.thread-graph-pane {
-  width: 420px;
-  min-width: 320px;
+.context-threads {
   flex-shrink: 0;
-  overflow: auto;
-  padding-left: 0.5rem;
-  background: var(--bg-base);
 }
 
-/* When no thread is selected, collapse the empty detail pane */
-.thread-split-no-detail .thread-list-pane {
+/* Right: Chat + Inject */
+.thread-chat-pane {
+  width: 320px;
+  min-width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Pane headers */
+.pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, rgba(240, 242, 248, 0.7));
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.pane-count {
+  font-size: 0.65rem;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+/* Memory tiles */
+.memory-tile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
+  min-height: 24px;
+  transition: background 120ms ease;
+}
+
+.memory-tile:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.memory-tile-active {
+  background: rgba(255, 255, 255, 0.06);
+  border-left: 2px solid var(--aurora-cyan, #15D1FF);
+}
+
+.mt-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mt-type {
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+}
+
+.mt-type-user { color: #5C7CFA; }
+.mt-type-assistant { color: #20C997; }
+.mt-type-tool_call { color: #FF922B; }
+.mt-type-tool_result { color: #FCC419; }
+.mt-type-injection { color: #CC5DE8; }
+.mt-type-knowledge { color: #845EF7; }
+
+.mt-text {
   flex: 1;
-  width: auto;
-  min-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  opacity: 0.8;
 }
 
-.thread-split-no-detail .thread-detail-pane {
-  display: none;
+.mt-time {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  opacity: 0.6;
 }
 
-.thread-split-no-detail .thread-graph-pane {
-  width: 480px;
-  min-width: 380px;
+/* Time range toggle */
+.time-range-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-surface, #1a1d2e);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.time-range-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary, rgba(240, 242, 248, 0.5));
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.time-range-btn:hover {
+  color: var(--text-primary);
+}
+
+.time-range-active {
+  background: var(--bg-surface-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary);
+}
+
+/* Chat inject section */
+.chat-inject-section {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.chat-inject-section .inject-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.chat-inject-section .inject-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.chat-inject-section .inject-textarea {
+  flex: 1;
+  min-height: 40px;
+  resize: vertical;
+}
+
+/* Chat injections list */
+.chat-injections {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.chat-injections-header {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+/* Chat section */
+.chat-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-section-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.chat-msg-compact {
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.chat-msg-who {
+  font-weight: 600;
+  margin-right: 6px;
+  color: var(--text-secondary);
+}
+
+.chat-msg-text {
+  color: var(--text-primary);
+}
+
+.chat-section-input {
+  display: flex;
+  gap: 4px;
+  padding: 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.chat-section-input input {
+  flex: 1;
+  background: var(--bg-surface, #1a1d2e);
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.1));
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+.chat-section-input input:focus {
+  outline: none;
+  border-color: var(--aurora-cyan, #15D1FF);
+}
+
+.chat-section-input button {
+  background: var(--bg-surface, #1a1d2e);
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.1));
+  border-radius: 4px;
+  padding: 6px 12px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease;
+}
+
+.chat-section-input button:hover:not(:disabled) {
+  background: var(--bg-surface-hover, rgba(255, 255, 255, 0.08));
+}
+
+.chat-section-input button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Scrollbar for memory feed and chat */
+.memories-feed::-webkit-scrollbar,
+.chat-section-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.memories-feed::-webkit-scrollbar-track,
+.chat-section-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.memories-feed::-webkit-scrollbar-thumb,
+.chat-section-messages::-webkit-scrollbar-thumb {
+  background: var(--border-default, rgba(255, 255, 255, 0.1));
+  border-radius: 2px;
 }
 
 .thread-agent-group {
@@ -4576,11 +4811,7 @@ body {
   padding: 0.75rem 0;
 }
 
-/* Graph pane — suppress the section title since it's always visible */
-.thread-graph-pane .session-graph-header .section-title {
-  font-size: 0.85rem;
-  margin: 0;
-}
+/* (Graph pane moved to dedicated view) */
 
 /* ============================================
    Links UI
@@ -4823,13 +5054,13 @@ body {
 
 /* Responsive: stack panes on narrow screens */
 @media (max-width: 1200px) {
-  .thread-graph-pane {
-    width: 320px;
-    min-width: 260px;
+  .thread-memories-pane {
+    width: 220px;
+    min-width: 180px;
   }
-  .thread-split-no-detail .thread-graph-pane {
-    width: 380px;
-    min-width: 300px;
+  .thread-chat-pane {
+    width: 260px;
+    min-width: 220px;
   }
 }
 
@@ -4839,25 +5070,25 @@ body {
     height: auto;
   }
 
-  .thread-list-pane {
+  .thread-memories-pane {
     width: 100%;
     min-width: 0;
     border-right: none;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--border-subtle);
+    max-height: 25vh;
+  }
+
+  .thread-context-pane {
+    padding: 0.5rem 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
     max-height: 35vh;
   }
 
-  .thread-detail-pane {
-    padding: 0.5rem 0;
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .thread-graph-pane {
+  .thread-chat-pane {
     width: 100%;
     min-width: 0;
-    padding-left: 0;
-    max-height: 40vh;
+    max-height: 30vh;
   }
 }
 
@@ -5329,11 +5560,11 @@ body {
   }
 
   /* Thread split: more room on phones */
-  .thread-list-pane {
-    max-height: 50vh;
+  .thread-memories-pane {
+    max-height: 30vh;
   }
 
-  .thread-graph-pane {
+  .thread-chat-pane {
     max-height: none;
   }
 

@@ -45,7 +45,7 @@ The Spectacles client uses the marker pose as the root of the Eywa panel:
 
 ```
 Marker Pose (world)
-  └── MicroTilePanel root (local space)
+  └── TilePanel root (local space)
        └── group nodes (headers, cards, chat)
             └── atomic quads (text, bg, icons)
 ```
@@ -63,7 +63,7 @@ Once subscribed, the existing pipeline renders the UI:
 ```
 Web: computeLayout → TileScene → scene/tex ops
 Supabase Realtime broadcast
-Spectacles: MicroTilePanel applies ops + textures
+Spectacles: TilePanel applies ops + textures
 ```
 
 ## Why This Works Well
@@ -104,7 +104,7 @@ The exact encoding is up to you; the important property is:
 
 - Image tracking provides marker pose.
 - Marker decode returns room slug.
-- `MicroTilePanel` root moves to the marker pose.
+- `TilePanel` root moves to the marker pose.
 - Subscribes to Supabase room channel immediately.
 
 ### Web

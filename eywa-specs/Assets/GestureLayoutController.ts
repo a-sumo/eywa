@@ -1,12 +1,12 @@
 import { SIK } from "SpectaclesInteractionKit.lspkg/SIK";
-import { MicroTilePanel } from "./MicroTilePanel";
+import { TilePanel } from "./TilePanel";
 import { RealtimeTextureReceiver } from "./RealtimeTextureReceiver";
 
 @component
 export class GestureLayoutController extends BaseScriptComponent {
   @input
-  @hint("MicroTilePanel for hover context + receiver")
-  panel: MicroTilePanel;
+  @hint("TilePanel for hover context + receiver")
+  panel: TilePanel;
 
   @input
   @hint("Receiver (optional override). If unset, uses panel.getReceiver().")
