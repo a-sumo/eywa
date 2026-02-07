@@ -3,7 +3,7 @@
   "displayName": "Eywa - Agent Memory",
   "description": "See what your team's AI agents are building, right in VS Code",
   "version": "0.3.0",
-  "publisher": "armandsumo",
+  "publisher": "curvilinear",
   "icon": "icon.png",
   "repository": {
     "type": "git",

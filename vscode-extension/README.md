@@ -8,7 +8,7 @@ Eywa gives you a live sidebar showing every agent session in your room - who's a
 
 ## Quick Start
 
-1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=armandsumo.eywa-agents)
+1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=curvilinear.eywa-agents)
 2. Click the Eywa icon in the activity bar
 3. Click **Set Room** and enter your room slug (e.g. `my-project`)
 
