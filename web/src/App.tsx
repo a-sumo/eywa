@@ -17,7 +17,10 @@ import { SessionGraph } from "./components/SessionGraph";
 import { Score } from "./components/Score";
 import { SpectaclesView } from "./components/SpectaclesView";
 import { SpectaclesReceiver } from "./components/SpectaclesReceiver";
+import { GlobalKnowledgeHub } from "./components/GlobalKnowledgeHub";
 import { BroadcastTest } from "./components/BroadcastTest";
+import { LogoGlowTuner } from "./components/LogoGlowTuner";
+import { JellyEditor } from "./components/JellyEditor";
 import { DocsLayout, DocsOverview } from "./components/DocsLayout";
 import { IntegrationGuide } from "./components/IntegrationGuide";
 import "./App.css";
@@ -30,6 +33,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/slides" element={<SlidePresentation />} />
+          <Route path="/logo-glow" element={<LogoGlowTuner />} />
+          <Route path="/jelly" element={<JellyEditor />} />
           <Route path="/cli-auth" element={<CLIAuth />} />
           <Route path="/docs" element={<DocsLayout />}>
             <Route index element={<DocsOverview />} />
@@ -70,6 +75,7 @@ function RoomRoutes() {
           <Route path="mini" element={<MiniEywa />} />
           <Route path="graph" element={<SessionGraph />} />
           <Route path="score" element={<Score />} />
+          <Route path="knowledge" element={<GlobalKnowledgeHub />} />
           <Route path="eink" element={<MiniEywaEink />} />
         </Routes>
       </RoomLayout>
