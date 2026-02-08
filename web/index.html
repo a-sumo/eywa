@@ -23,40 +23,50 @@
     <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM-readable version" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <noscript>
-      <h1>Eywa</h1>
+    <div id="root">
+      <!-- Fallback content for crawlers and LLMs that can't render the SPA. React overwrites this on mount. -->
+      <h1>Eywa - See what your whole team's AI agents are building</h1>
       <p>Eywa is an observability and coordination layer for human + AI teams. Each person on a team directs AI coding agents that work autonomously. Eywa makes all agent work visible so the humans stay aligned.</p>
-
-      <h2>What Eywa Does</h2>
       <p>When every team member controls AI agents, small misalignments between people get amplified at machine speed. Eywa gives the team visibility across every agent session so the humans know what to sync on.</p>
+
+      <h2>Features</h2>
       <ul>
-        <li>Thread Tree: live view of what every person's agents are doing</li>
-        <li>Cross-Session Links: connect decisions and context across agent boundaries</li>
-        <li>Context Injection: push decisions or corrections into a teammate's agent mid-session</li>
-        <li>Knowledge Base: persistent team memory that survives across sessions</li>
-        <li>VS Code Extension: see what teammates' agents are doing without leaving your editor</li>
-        <li>Discord Integration: team sync from Discord</li>
+        <li>Thread Tree: live view of what every person's agents are doing. Filter by teammate, status, or file.</li>
+        <li>Cross-Session Links: connect decisions and context across agent boundaries with reference, inject, or fork links.</li>
+        <li>Context Injection: push decisions or corrections into a teammate's agent mid-session. They see it on their next tool call.</li>
+        <li>Knowledge Base: persistent team memory that survives across sessions. Architecture decisions, conventions, gotchas.</li>
+        <li>VS Code Extension: see what teammates' agents are doing without leaving your editor. Activity feed, inject shortcuts, CodeLens.</li>
+        <li>Discord Integration: team sync from Discord. See what agents are doing, inject context, share knowledge.</li>
+        <li>Timeline: rewind, fork, and merge agent session timelines.</li>
       </ul>
 
       <h2>Quick Start</h2>
       <p>Create a room: <code>npx eywa-ai init my-team</code></p>
-      <p>Or add one line to your agent's MCP config:</p>
-      <pre>{"mcpServers":{"eywa":{"url":"https://mcp.eywa-ai.dev/mcp?room=my-team&amp;agent=your-name"}}}</pre>
+      <p>Or add one line to your agent's MCP config: <code>{"mcpServers":{"eywa":{"url":"https://mcp.eywa-ai.dev/mcp?room=my-team&amp;agent=your-name"}}}</code></p>
 
       <h2>Works with any MCP agent</h2>
-      <p>Claude Code, Cursor, Windsurf, Gemini CLI, Codex, Cline, and any MCP-compatible agent.</p>
+      <p>Claude Code, Cursor, Windsurf, Gemini CLI, Codex, Cline, Mistral, Cohere, and any MCP-compatible agent. One URL connects any AI coding agent. One line in your config.</p>
+
+      <h2>How it works</h2>
+      <ol>
+        <li>Connect your team: each person adds one line to their agent config. All activity streams to a shared room.</li>
+        <li>See what everyone's building: watch every teammate's agent sessions in real-time. Spot duplicated work, conflicting decisions, and drift.</li>
+        <li>Steer the work: inject context into any teammate's agent mid-session. Share decisions across boundaries.</li>
+      </ol>
 
       <h2>Pricing</h2>
       <ul>
-        <li>Free: $0, up to 5 members, 7-day history</li>
-        <li>Pro: $5/seat/month, unlimited members, 90-day history</li>
-        <li>Enterprise: contact us</li>
+        <li>Free: $0, up to 5 members, unlimited workspaces, 7-day history, all integrations</li>
+        <li>Pro: $5/seat/month, unlimited members, 90-day history, team knowledge base, timeline rewind and forking</li>
+        <li>Enterprise: contact us for custom deployment and integrations</li>
       </ul>
 
-      <p>For a machine-readable version of this page, see <a href="/llms.txt">llms.txt</a>.</p>
-      <p><a href="https://github.com/a-sumo/eywa">GitHub</a> | <a href="https://discord.gg/c7V2Ze58">Discord</a></p>
-    </noscript>
+      <h2>Architecture</h2>
+      <p>MCP server on Cloudflare Workers. Data in Supabase (PostgreSQL + Realtime). Web dashboard is React/Vite on Vercel. Local-first privacy: your code never leaves your machine, Eywa syncs metadata only.</p>
+
+      <p>For a complete machine-readable version, see <a href="/llms.txt">llms.txt</a>.</p>
+      <p><a href="https://github.com/a-sumo/eywa">GitHub</a> | <a href="https://discord.gg/c7V2Ze58">Discord</a> | <a href="https://eywa-ai.dev/docs">Docs</a> | <a href="https://eywa-ai.dev/r/demo">Live Demo</a></p>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
