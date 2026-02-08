@@ -24,7 +24,8 @@
   </head>
   <body>
     <div id="root">
-      <!-- Fallback content for crawlers and LLMs that can't render the SPA. React overwrites this on mount. -->
+      <!-- Fallback content for crawlers/LLMs. Hidden visually, React overwrites on mount. -->
+      <div style="display:none">
       <h1>Eywa - See what your whole team's AI agents are building</h1>
       <p>Eywa is an observability and coordination layer for human + AI teams. Each person on a team directs AI coding agents that work autonomously. Eywa makes all agent work visible so the humans stay aligned.</p>
       <p>When every team member controls AI agents, small misalignments between people get amplified at machine speed. Eywa gives the team visibility across every agent session so the humans know what to sync on.</p>
@@ -66,6 +67,7 @@
 
       <p>For a complete machine-readable version, see <a href="/llms.txt">llms.txt</a>.</p>
       <p><a href="https://github.com/a-sumo/eywa">GitHub</a> | <a href="https://discord.gg/c7V2Ze58">Discord</a> | <a href="https://eywa-ai.dev/docs">Docs</a> | <a href="https://eywa-ai.dev/r/demo">Live Demo</a></p>
+      </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
