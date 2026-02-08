@@ -67,6 +67,22 @@ CREATE INDEX IF NOT EXISTS idx_links_source ON links(source_memory_id);
 CREATE INDEX IF NOT EXISTS idx_links_target_session ON links(target_session_id);
 CREATE INDEX IF NOT EXISTS idx_links_ts ON links(ts DESC);
 
+-- Global Knowledge Hub: cross-room anonymized insights
+CREATE TABLE IF NOT EXISTS global_insights (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  insight TEXT NOT NULL,
+  domain_tags TEXT[] DEFAULT '{}',
+  source_hash TEXT NOT NULL,  -- SHA-256 of room_id + agent, anonymized
+  room_id UUID REFERENCES rooms(id),  -- nullable, for optional tracing
+  agent TEXT,                          -- nullable, for optional tracing
+  upvotes INTEGER DEFAULT 0,
+  ts TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_global_insights_ts ON global_insights(ts DESC);
+CREATE INDEX IF NOT EXISTS idx_global_insights_domain ON global_insights USING GIN(domain_tags);
+CREATE INDEX IF NOT EXISTS idx_global_insights_source ON global_insights(source_hash);
+
 -- Optional: Row Level Security (if you want user isolation)
 -- ALTER TABLE memories ENABLE ROW LEVEL SECURITY;
 -- CREATE POLICY "Users can read all" ON memories FOR SELECT USING (true);

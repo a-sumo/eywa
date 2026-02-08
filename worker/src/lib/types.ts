@@ -57,6 +57,17 @@ export interface MessageRow {
   ts: string;
 }
 
+export interface GlobalInsightRow {
+  id: string;
+  insight: string;
+  domain_tags: string[];
+  source_hash: string;
+  room_id: string | null;
+  agent: string | null;
+  upvotes: number;
+  ts: string;
+}
+
 export interface LinkRow {
   id: string;
   room_id: string | null;
