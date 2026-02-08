@@ -47,8 +47,9 @@ const SIZES = {
 
 // --- Layout constants (cm, from SPECTACLES_ERGONOMICS.md) ---
 const PIXELS_PER_CM = 16;
-const COL_LEFT = -10;    // left column x center
-const COL_RIGHT = 10;    // right column x center
+const COL_LEFT = -14;    // left column x center (memories)
+const COL_MID = 0;       // middle column x center (context)
+const COL_RIGHT = 14;    // right column x center (prompts + chat)
 const TOP_Y = 14;        // top of content area
 const ROW_GAP = 0.3;     // gap between tiles (cm)
 const AGENT_GAP = 0.15;
@@ -84,27 +85,27 @@ const CHAT_ROLE_PX = 9;
 const CHAT_BODY_PX = 9;
 
 // --- DOM-like Z stacking model ---
-// Groups act as stacking contexts. Each group sits at a base Z depth,
-// and child tiles get Z offsets relative to the group. This prevents
-// Z-fighting between elements at different hierarchy levels.
+// Each column gets its own base Z depth to eliminate z-fighting between
+// columns on Spectacles. Child tiles use small offsets within each column.
 
-// Group Z depths (assigned to groups based on visual role)
-const GROUP_Z_HEADER = 0.5;   // header section
-const GROUP_Z_AGENTS = 0.5;   // agent dot row
-const GROUP_Z_CARDS  = 0.8;   // content cards (memory, context, prompt, chat)
+// Container base Z (each column gets its own depth)
+const Z_COL_LEFT  = 0.5;   // memories column
+const Z_COL_MID   = 0.6;   // context column
+const Z_COL_RIGHT = 0.7;   // prompts + chat column
+const Z_HEADER    = 0.4;   // header (behind content)
+const Z_AGENTS    = 0.45;  // agent dots
 
-// Ungrouped tile Z positions (tiles not in any group)
+// Ungrouped tile Z positions
 const Z_SECTION_HDR  = 0.3;   // section headers (mem-header, ctx-header)
 const Z_STANDALONE   = 0.3;   // standalone tiles (page-nav, chat-empty, etc.)
 const Z_HOVER_GLOW   = 1.5;   // hover glow overlay, in front of all content
 
-// Local Z offsets within a group (relative to group Z)
-// Wider spacing than before (was 0.03cm) to eliminate Z-fighting
-const Z_BG   = 0.0;    // card background
-const Z_BAR  = 0.1;    // accent bar
-const Z_TEXT = 0.2;    // text content
-const Z_ICON = 0.2;    // icons (same depth as text)
-const Z_OVER = 0.3;    // overlays (checkmarks, remove buttons)
+// Element Z offsets within a group (relative to container Z)
+const Z_BG   = 0.0;     // card background
+const Z_BAR  = 0.02;    // accent bar
+const Z_TEXT = 0.04;    // text content
+const Z_ICON = 0.04;    // icons (same depth as text)
+const Z_OVER = 0.06;    // overlays (checkmarks, remove buttons)
 
 const measureCtx = (() => {
   if (typeof OffscreenCanvas !== "undefined") {
@@ -359,9 +360,9 @@ export function computeLayout(params: {
   tiles.push({
     id: "panel-bg",
     type: "panel-bg",
-    x: (COL_LEFT + COL_RIGHT) / 2,
+    x: COL_MID,
     y: 0,
-    z: 0, // at z=0, behind content at z=0.05
+    z: 0, // at z=0, behind content
     ...SIZES.panelBg,
     scale: 1,
     layer,
@@ -373,14 +374,14 @@ export function computeLayout(params: {
 
   // ---- Header (atomic) ----
   const activeCount = agents.filter(a => a.isActive).length;
-  const headerX = (COL_LEFT + COL_RIGHT) / 2;
+  const headerX = COL_MID;
   const headerY = TOP_Y + 2;
   const headerWpx = SIZES.header.w;
   const headerHpx = SIZES.header.h;
   const headerBg = "#0d0d18";
   const headerGroup = "g-header";
 
-  groups.push({ id: headerGroup, x: headerX, y: headerY, z: GROUP_Z_HEADER, zone: "header" });
+  groups.push({ id: headerGroup, x: headerX, y: headerY, z: Z_HEADER, zone: "header" });
 
   tiles.push({
     id: "header-bg",
@@ -530,7 +531,7 @@ export function computeLayout(params: {
     const color = agentColor(agent.name);
     const groupId = `g-agent-${i}`;
 
-    groups.push({ id: groupId, x: dotX, y: dotY, z: GROUP_Z_AGENTS, zone: "left" });
+    groups.push({ id: groupId, x: dotX, y: dotY, z: Z_AGENTS, zone: "left" });
 
     tiles.push({
       id: baseId,
@@ -639,7 +640,7 @@ export function computeLayout(params: {
     const color = agentColor(mem.agent);
     const groupId = `g-mem-${mem.id}`;
 
-    groups.push({ id: groupId, x: cardX, y: cardY, z: GROUP_Z_CARDS, zone: "left" });
+    groups.push({ id: groupId, x: cardX, y: cardY, z: Z_COL_LEFT, zone: "left" });
 
     // Background (interactive)
     tiles.push({
@@ -809,15 +810,15 @@ export function computeLayout(params: {
     leftY -= NAV_H_CM + ROW_GAP;
   }
 
-  // ---- RIGHT COLUMN: Context + Prompts/Chat ----
-  let rightY = agentY - SECTION_HDR_CM - ROW_GAP;
+  // ---- MIDDLE COLUMN: Context ----
+  let midY = agentY - SECTION_HDR_CM - ROW_GAP;
 
   // Context section header
   tiles.push({
     id: "ctx-header",
     type: "ctx-header",
-    x: COL_RIGHT,
-    y: rightY,
+    x: COL_MID,
+    y: midY,
     z: Z_SECTION_HDR,
     ...SIZES.ctxHeader,
     scale: 1,
@@ -827,15 +828,15 @@ export function computeLayout(params: {
     visible: true,
     data: { count: contextItems.length },
   });
-  rightY -= SECTION_HDR_CM;
+  midY -= SECTION_HDR_CM;
 
   if (contextItems.length === 0) {
     // Empty context placeholder
     tiles.push({
       id: "ctx-empty",
       type: "ctx-empty",
-      x: COL_RIGHT,
-      y: rightY,
+      x: COL_MID,
+      y: midY,
       z: Z_STANDALONE,
       ...SIZES.ctxEmpty,
       scale: 1,
@@ -845,12 +846,12 @@ export function computeLayout(params: {
       visible: true,
       data: {},
     });
-    rightY -= 3.5;
+    midY -= 3.5;
   } else {
     // Context cards (atomic)
     contextItems.slice(0, 6).forEach((item, i) => {
-      const cardX = COL_RIGHT;
-      const cardY = rightY - i * (CTX_CARD_H_CM + ROW_GAP);
+      const cardX = COL_MID;
+      const cardY = midY - i * (CTX_CARD_H_CM + ROW_GAP);
       const cardWpx = SIZES.ctxCard.w;
       const cardHpx = SIZES.ctxCard.h;
       const bg = "#151520";
@@ -858,7 +859,7 @@ export function computeLayout(params: {
       const color = agentColor(item.agent);
       const groupId = `g-ctx-${item.memoryId}`;
 
-      groups.push({ id: groupId, x: cardX, y: cardY, z: GROUP_Z_CARDS, zone: "right" });
+      groups.push({ id: groupId, x: cardX, y: cardY, z: Z_COL_MID, zone: "mid" });
 
       tiles.push({
         id: `ctx-${item.memoryId}`,
@@ -971,8 +972,11 @@ export function computeLayout(params: {
       removeTile.group = groupId;
       tiles.push(removeTile);
     });
-    rightY -= contextItems.length * (CTX_CARD_H_CM + ROW_GAP) + ROW_GAP;
+    midY -= contextItems.length * (CTX_CARD_H_CM + ROW_GAP) + ROW_GAP;
   }
+
+  // ---- RIGHT COLUMN: Prompts + Chat ----
+  let rightY = agentY - SECTION_HDR_CM - ROW_GAP;
 
   // ---- Quick prompts (atomic) ----
   const promptsDisabled = contextItems.length === 0;
@@ -985,7 +989,7 @@ export function computeLayout(params: {
     const color = prompt.color;
     const groupId = `g-prompt-${i}`;
 
-    groups.push({ id: groupId, x: btnX, y: btnY, z: GROUP_Z_CARDS, zone: "action" });
+    groups.push({ id: groupId, x: btnX, y: btnY, z: Z_COL_RIGHT, zone: "action" });
 
     tiles.push({
       id: `prompt-${i}`,
@@ -1140,7 +1144,7 @@ export function computeLayout(params: {
       const roleColor = isUser ? "#15D1FF" : "#e879f9";
       const groupId = `g-chat-${msg.ts}`;
 
-      groups.push({ id: groupId, x: bubbleX, y: bubbleY, z: GROUP_Z_CARDS, zone: "right" });
+      groups.push({ id: groupId, x: bubbleX, y: bubbleY, z: Z_COL_RIGHT, zone: "right" });
 
       tiles.push({
         id: `chat-${msg.ts}`,
