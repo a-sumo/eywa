@@ -11,6 +11,7 @@ import { registerInjectTools } from "./tools/inject.js";
 import { registerKnowledgeTools } from "./tools/knowledge.js";
 import { registerLinkTools } from "./tools/link.js";
 import { registerTimelineTools } from "./tools/timeline.js";
+import { registerNetworkTools } from "./tools/network.js";
 
 export default {
   async fetch(request: Request, env: Env, execCtx: ExecutionContext): Promise<Response> {
@@ -186,6 +187,7 @@ async function handleMcp(
   registerKnowledgeTools(server, db, ctx);
   registerLinkTools(server, db, ctx);
   registerTimelineTools(server, db, ctx);
+  registerNetworkTools(server, db, ctx);
 
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);
