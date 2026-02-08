@@ -51,6 +51,110 @@ def load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
         return ImageFont.load_default()
 
 
+# --- Mascot: cross body + static tendrils ---
+# Each tuple: (x, dy_from_center, grayscale 0-255)
+# Mapped from aurora colors: purple/blue/pink -> dark, cyan -> medium, core -> white, eyes -> black
+MASCOT_BODY = [
+    # top nub (cyan -> medium gray)
+    (15,-6,160),(16,-6,160),
+    # up arm (purple -> dark)
+    (15,-5,80),(16,-5,80),
+    (14,-4,80),(15,-4,80),(16,-4,80),(17,-4,80),
+    (14,-3,80),(15,-3,80),(16,-3,80),(17,-3,80),
+    # cross bar top (pink, core, cyan)
+    (12,-2,70),(13,-2,70),(14,-2,240),(15,-2,240),(16,-2,240),(17,-2,240),(18,-2,160),(19,-2,160),
+    # cross bar wide
+    (11,-1,70),(12,-1,70),(13,-1,70),(14,-1,240),(15,-1,240),(16,-1,240),(17,-1,240),(18,-1,160),(19,-1,160),(20,-1,160),
+    (11, 0,70),(12, 0,70),(13, 0,70),(14, 0,240),(15, 0,240),(16, 0,240),(17, 0,240),(18, 0,160),(19, 0,160),(20, 0,160),
+    # cross bar bottom
+    (12,+1,70),(13,+1,70),(14,+1,240),(15,+1,240),(16,+1,240),(17,+1,240),(18,+1,160),(19,+1,160),
+    # down arm (indigo -> dark)
+    (14,+2,60),(15,+2,60),(16,+2,60),(17,+2,60),
+    (14,+3,60),(15,+3,60),(16,+3,60),(17,+3,60),
+    (15,+4,60),(16,+4,60),
+    # bottom nub
+    (15,+5,160),(16,+5,160),
+]
+
+# Static tendril arcs at rest pose (phase=0.75, no wave, no contraction)
+import math as _math
+_TOTAL_ARC = _math.pi * 1.1
+_TENDRIL_SEGS = 28
+_TENDRIL_SEG_LEN = 0.82
+_NUM_TENDRILS = 8
+
+def _compute_static_tendrils():
+    """Pre-compute static tendril pixel positions for rest pose."""
+    arc = _TOTAL_ARC
+    positions = []
+    # Build profile
+    rs, hs = [0.0], [0.0]
+    r, h = 0.0, 0.0
+    for s in range(_TENDRIL_SEGS):
+        t = s / (_TENDRIL_SEGS - 1)
+        bend = t ** 1.3
+        angle = _math.pi / 2 - arc * bend
+        r += _math.cos(angle) * _TENDRIL_SEG_LEN
+        h += _math.sin(angle) * _TENDRIL_SEG_LEN
+        rs.append(r)
+        hs.append(h)
+
+    # Project 8 tendrils around Y axis
+    bx, by_offset = 15.5, -6  # tendrilTop relative to body center
+    for ti in range(_NUM_TENDRILS):
+        theta = (ti / _NUM_TENDRILS) * _math.pi * 2
+        for s in range(_TENDRIL_SEGS):
+            sx = bx + rs[s + 1] * _math.cos(theta)
+            sy = -hs[s + 1]  # relative to tendrilTop
+            positions.append((round(sx), round(sy + by_offset)))
+    return positions
+
+MASCOT_TENDRILS = _compute_static_tendrils()
+
+# Eyes: two pixels at (14, -1) and (17, -1) relative to body center
+MASCOT_EYES = [(14, -1), (17, -1)]
+
+
+def draw_mascot(draw, ox: int, oy: int, cell_size: int = 4):
+    """Draw the Eywa mascot at (ox, oy) on a Pillow ImageDraw.
+
+    The mascot occupies roughly 32x32 grid cells, so total size is 32*cell_size.
+    ox, oy is the top-left corner of the bounding box.
+    """
+    # Body center in the 32x32 grid is at (15.5, 18)
+    cx = ox + 15 * cell_size
+    cy = oy + 18 * cell_size
+
+    # Tendrils (gray dots)
+    tendril_gray = 180
+    for (tx, ty) in MASCOT_TENDRILS:
+        px = ox + tx * cell_size
+        py = cy + ty * cell_size
+        if px >= ox and py >= oy:
+            draw.rectangle(
+                [px, py, px + cell_size - 1, py + cell_size - 1],
+                fill=(tendril_gray, tendril_gray, tendril_gray),
+            )
+
+    # Body pixels
+    for (bx, dy, gray) in MASCOT_BODY:
+        px = ox + bx * cell_size
+        py = cy + dy * cell_size
+        draw.rectangle(
+            [px, py, px + cell_size - 1, py + cell_size - 1],
+            fill=(gray, gray, gray),
+        )
+
+    # Eyes (black)
+    for (ex, ey) in MASCOT_EYES:
+        px = ox + ex * cell_size
+        py = cy + ey * cell_size
+        draw.rectangle(
+            [px, py, px + cell_size - 1, py + cell_size - 1],
+            fill=BLACK,
+        )
+
+
 def load_logo(size: int = 160) -> Image.Image:
     """Load the Eywa logo PNG, scaled to fit within size x size."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -251,6 +355,12 @@ def render_display(room_info: dict) -> Image.Image:
         ((left_w - author_w) // 2, footer_y + 22),
         author_text, fill=BLACK, font=font_tiny,
     )
+
+    # --- Mascot in header area (next to logo, right side of left column) ---
+    mascot_cell = 3
+    mascot_x = left_w - 32 * mascot_cell - 20  # right-align in left column
+    mascot_y = 24
+    draw_mascot(draw, mascot_x, mascot_y, mascot_cell)
 
     # --- Right side: tracking marker ---
     marker_size = 220
