@@ -71,6 +71,7 @@ export class TileScene {
     "mic-indicator": 0.5,
     "voice-transcript": 0.5,
     "hover-glow": 0.3,
+    "mascot": 0.7,
   };
 
   /**

@@ -14,7 +14,6 @@ import { MiniEywaEink } from "./components/MiniEywaEink";
 import { CLIAuth } from "./components/CLIAuth";
 import { SlidePresentation } from "./components/SlidePresentation";
 import { SessionGraph } from "./components/SessionGraph";
-import { Score } from "./components/Score";
 import { SpectaclesView } from "./components/SpectaclesView";
 import { SpectaclesReceiver } from "./components/SpectaclesReceiver";
 import { GlobalKnowledgeHub } from "./components/GlobalKnowledgeHub";
@@ -74,7 +73,6 @@ function RoomRoutes() {
           <Route path="chat" element={<Chat />} />
           <Route path="mini" element={<MiniEywa />} />
           <Route path="graph" element={<SessionGraph />} />
-          <Route path="score" element={<Score />} />
           <Route path="knowledge" element={<GlobalKnowledgeHub />} />
           <Route path="eink" element={<MiniEywaEink />} />
         </Routes>
