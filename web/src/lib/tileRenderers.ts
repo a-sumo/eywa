@@ -7,6 +7,7 @@
  */
 
 import type { RenderFn } from "./tile";
+import { computeFrame, type Mood as MascotMood } from "../components/mascotCore";
 
 // --- Colors (same palette as the old SpectaclesView) ---
 const C = {
@@ -107,11 +108,11 @@ export const renderMemBg: RenderFn = (ctx, w, h, data) => {
   const bg = (data.bg as string) || (inContext ? "#1a2a2a" : C.cardBg);
   const border = (data.border as string) || (inContext ? C.green : C.border);
 
+  // Fill entire canvas to prevent transparent areas (black = transparent on Spectacles)
   ctx.fillStyle = bg;
-  ctx.beginPath();
-  ctx.roundRect(2, 2, w - 4, h - 4, 4);
-  ctx.fill();
+  ctx.fillRect(0, 0, w, h);
 
+  // Rounded border
   ctx.strokeStyle = border;
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -165,10 +166,9 @@ export const renderCtxBg: RenderFn = (ctx, w, h, data) => {
   const bg = (data.bg as string) || C.cardBg;
   const border = (data.border as string) || C.border;
 
+  // Fill entire canvas to prevent transparency
   ctx.fillStyle = bg;
-  ctx.beginPath();
-  ctx.roundRect(2, 2, w - 4, h - 4, 3);
-  ctx.fill();
+  ctx.fillRect(0, 0, w, h);
 
   ctx.strokeStyle = border;
   ctx.lineWidth = 1;
@@ -189,10 +189,9 @@ export const renderCtxBar: RenderFn = (ctx, w, h, data) => {
 // data: { isUser }
 export const renderChatBg: RenderFn = (ctx, w, h, data) => {
   const isUser = data.isUser as boolean;
+  // Fill entire canvas to prevent transparency
   ctx.fillStyle = isUser ? "#1a2a3a" : "#1a1a2e";
-  ctx.beginPath();
-  ctx.roundRect(2, 2, w - 4, h - 4, 6);
-  ctx.fill();
+  ctx.fillRect(0, 0, w, h);
 };
 
 // --- Panel background tile: dark container ---
@@ -345,8 +344,8 @@ export const renderMemoryCard: RenderFn = (ctx, w, h, data) => {
     ctx.textAlign = "left";
   }
 
-  // Content preview
-  ctx.fillStyle = "#aab0b8";
+  // Content preview (high contrast for Spectacles readability)
+  ctx.fillStyle = "#e6edf3";
   ctx.font = "9px system-ui";
   const maxChars = Math.floor((w - 20) / 4.5);
   ctx.fillText(content.slice(0, maxChars), 10, 30);
@@ -622,18 +621,49 @@ export const renderMemoriesHeader: RenderFn = (ctx, w, h) => {
   ctx.fillText("MEMORIES", 4, h / 2 + 3);
 };
 
-// --- Hover glow tile: semi-transparent highlight ---
+// --- Hover glow tile: highlight overlay ---
 export const renderHoverGlow: RenderFn = (ctx, w, h) => {
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = "rgba(21, 209, 255, 0.08)";
+  // Fill with near-black (not pure black, to avoid full transparency on Spectacles)
+  ctx.fillStyle = "#080810";
+  ctx.fillRect(0, 0, w, h);
+  // Glow fill
+  ctx.fillStyle = "rgba(21, 209, 255, 0.12)";
   ctx.beginPath();
   ctx.roundRect(2, 2, w - 4, h - 4, 6);
   ctx.fill();
-  ctx.strokeStyle = "rgba(21, 209, 255, 0.3)";
+  ctx.strokeStyle = "rgba(21, 209, 255, 0.5)";
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.roundRect(2, 2, w - 4, h - 4, 6);
   ctx.stroke();
+};
+
+// --- Mascot tile: pixel art jellyfish from mascotCore ---
+// data: { mood, time, blinking, bg }
+export const renderMascot: RenderFn = (ctx, w, h, data) => {
+  const mood = (data.mood as string as MascotMood) || "okay";
+  const time = (data.time as number) || 0;
+  const blinking = (data.blinking as boolean) || false;
+  const bg = (data.bg as string) || "#0c0c18";
+
+  // Fill background (non-black)
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Compute mascot frame (32x32 grid)
+  const pixels = computeFrame(time, mood, blinking);
+  const cellW = w / 32;
+  const cellH = h / 32;
+
+  for (const { x, y, color } of pixels) {
+    ctx.fillStyle = color;
+    ctx.fillRect(
+      Math.floor(x * cellW),
+      Math.floor(y * cellH),
+      Math.ceil(cellW),
+      Math.ceil(cellH)
+    );
+  }
 };
 
 // --- Registry of active renderers ---
@@ -648,6 +678,7 @@ export const RENDERERS: Record<string, RenderFn> = {
   "ctx-bar": renderCtxBar,
   "chat-bg": renderChatBg,
   "hover-glow": renderHoverGlow,
+  "mascot": renderMascot,
   // Composite tiles still used by layout (section headers, nav, indicators)
   "page-nav": renderPageNav,
   "mic-indicator": renderMic,

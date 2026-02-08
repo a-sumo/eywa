@@ -29,20 +29,21 @@ export interface ContextItem {
 const SIZES = {
   panelBg:    { w: 640, h: 480 },  // background container (low detail, just solid fill)
   header:     { w: 400, h: 120 },
-  agentDot:   { w: 120, h: 24 },
+  mascot:     { w: 96,  h: 96 },   // pixel art mascot (32x32 grid at 3x)
+  agentDot:   { w: 64,  h: 22 },   // compact agent chip
   memHeader:  { w: 220, h: 20 },
   memCard:    { w: 220, h: 42 },
   ctxHeader:  { w: 180, h: 20 },
   ctxCard:    { w: 180, h: 36 },
   ctxEmpty:   { w: 180, h: 60 },
-  promptBtn:  { w: 180, h: 40 },
+  promptBtn:  { w: 200, h: 48 },   // larger touch targets for Spectacles
   chatBubble: { w: 220, h: 60 },
   chatEmpty:  { w: 220, h: 60 },
   chatLoading:{ w: 220, h: 40 },
-  pageNav:    { w: 220, h: 24 },
+  pageNav:    { w: 220, h: 28 },   // slightly taller for touch
   mic:        { w: 80,  h: 20 },
   transcript: { w: 220, h: 28 },
-  hoverGlow:  { w: 230, h: 48 }, // no texture, colored quad
+  hoverGlow:  { w: 230, h: 48 },   // no texture, colored quad
 };
 
 // --- Layout constants (cm, from SPECTACLES_ERGONOMICS.md) ---
@@ -55,7 +56,7 @@ const ROW_GAP = 0.3;     // gap between tiles (cm)
 const AGENT_GAP = 0.15;
 const CARD_H_CM = 2.4;   // memory card height in cm
 const CTX_CARD_H_CM = 2.0;
-const BTN_H_CM = 2.4;
+const BTN_H_CM = 3.0; // matches 48px / 16px-per-cm = 3cm
 const BUBBLE_H_CM = 3.2;
 const NAV_H_CM = 1.5;
 const HEADER_H_CM = 6.5;
@@ -492,6 +493,24 @@ export function computeLayout(params: {
   statusTile.group = headerGroup;
   tiles.push(statusTile);
 
+  // Mascot (center-right of header, animated separately in render loop)
+  tiles.push({
+    id: "mascot",
+    type: "mascot",
+    group: headerGroup,
+    x: 6.0,   // center-right, clear of stats (left) and status text (far right)
+    y: -0.5,  // slightly below center to clear status text above
+    z: Z_TEXT,
+    w: SIZES.mascot.w,
+    h: SIZES.mascot.h,
+    scale: 1,
+    layer,
+    interactive: false,
+    draggable: false,
+    visible: true,
+    data: { mood: "okay", time: 0, blinking: false, bg: headerBg },
+  });
+
   const stats = [
     `${agents.length} agents (${activeCount} active)`,
     `${memories.length} memories`,
@@ -521,11 +540,14 @@ export function computeLayout(params: {
     tiles.push(statTile);
   });
 
-  // ---- Agent dots (atomic: tiny dot + name text) ----
+  // ---- Agent dots (atomic: compact chips, centered row) ----
   const agentY = TOP_Y - HEADER_H_CM + 0.5;
+  const maxAgents = Math.min(agents.length, 8);
+  const agentSpacing = 4.2; // cm between dot centers
+  const agentStartX = -(maxAgents - 1) * agentSpacing / 2; // center the row
   agents.slice(0, 8).forEach((agent, i) => {
     const baseId = `agent-${i}`;
-    const dotX = COL_LEFT - 4 + i * 3.2;
+    const dotX = agentStartX + i * agentSpacing;
     const dotY = agentY;
     const isSelected = selectedAgent === agent.name;
     const color = agentColor(agent.name);
@@ -1276,6 +1298,8 @@ export function tileHash(desc: TileDescriptor): string {
       return `ctx-${desc.data.count}`;
     case "panel-bg":
       return "bg"; // never changes
+    case "mascot":
+      return `mascot-${desc.data.mood}-${desc.data.time}`;
     default:
       return desc.id;
   }

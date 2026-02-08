@@ -84,6 +84,7 @@ export function SpectaclesView() {
   const lastSceneBroadcast = useRef(0);
   const lastCursorBroadcast = useRef(0);
   const cursorRef = useRef<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
+  const activeCountRef = useRef(0);
 
   // --- Initialize TileScene ---
   useEffect(() => {
@@ -212,6 +213,9 @@ export function SpectaclesView() {
     });
     return result;
   }, [memories]);
+
+  // Track active count for mascot mood (used in render loop without re-renders)
+  activeCountRef.current = agents.filter(a => a.isActive).length;
 
   // Total memory pages
   const totalMemoryPages = useMemo(() => {
@@ -429,6 +433,15 @@ export function SpectaclesView() {
         }
       }
 
+      // 2.5. Animate mascot tile (outside memoized layout to avoid full recompute)
+      const mascotTile = scene.getTile("mascot");
+      if (mascotTile) {
+        const t = performance.now() / 1000;
+        const mood = activeCountRef.current > 0 ? "happy" : "okay";
+        mascotTile.setData({ mood, time: t, blinking: false, bg: "#0c0c18" });
+        mascotTile.updateHash(`mascot-${Math.floor(t * 5)}`);
+      }
+
       // 3. Render dirty tiles
       scene.renderDirty();
 
@@ -490,9 +503,9 @@ export function SpectaclesView() {
       if (!tile.visible || tile.type === "hover-glow") continue;
 
       const pos = scene.getTileWorldPosition(tile.id) ?? { x: tile.x, y: tile.y };
-      // Convert cm position to pixel position
-      const drawW = tile.w * tile.scale;
-      const drawH = tile.h * tile.scale;
+      // Convert tile pixel size to cm, then to preview pixels (consistent with position scale)
+      const drawW = (tile.w / PIXELS_PER_CM) * tile.scale * scale;
+      const drawH = (tile.h / PIXELS_PER_CM) * tile.scale * scale;
       const px = cx + pos.x * scale - (drawW / 2);
       const py = cy - pos.y * scale - (drawH / 2); // flip Y
 
@@ -566,13 +579,13 @@ export function SpectaclesView() {
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
 
-    // Find tile under cursor
+    // Find tile under cursor (using consistent cm-to-pixel scaling)
     let found: string | null = null;
     for (const tile of scene.getAllTiles()) {
       if (!tile.visible || !tile.interactive) continue;
       const pos = scene.getTileWorldPosition(tile.id) ?? { x: tile.x, y: tile.y };
-      const drawW = tile.w * tile.scale;
-      const drawH = tile.h * tile.scale;
+      const drawW = (tile.w / PIXELS_PER_CM) * tile.scale * scale;
+      const drawH = (tile.h / PIXELS_PER_CM) * tile.scale * scale;
       const tx = cx + pos.x * scale - drawW / 2;
       const ty = cy - pos.y * scale - drawH / 2;
       if (px >= tx && px <= tx + drawW && py >= ty && py <= ty + drawH) {
@@ -595,8 +608,8 @@ export function SpectaclesView() {
 
   // --- UI ---
   // Preview canvas sized to show all tiles comfortably
-  const previewW = 600;
-  const previewH = 500;
+  const previewW = 800;
+  const previewH = 600;
 
   return (
     <div style={{
