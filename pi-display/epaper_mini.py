@@ -102,26 +102,36 @@ def _compute_static_tendrils():
 _MASCOT_TENDRILS = _compute_static_tendrils()
 
 
-def draw_mascot_bw(draw, ox: int, oy: int):
-    """Draw mascot at 1:1 pixel scale (32x32 grid) in black on white."""
-    cy = oy + 18  # body center Y
+def draw_mascot_bw(draw, ox: int, oy: int, cell: int = 1):
+    """Draw mascot on a B/W display. cell controls pixel scale (1=32px, 2=64px)."""
+    cy = oy + 18 * cell  # body center Y
 
-    # Tendrils (black dots)
+    # Tendrils (black)
     for (tx, ty) in _MASCOT_TENDRILS:
-        px = ox + tx
-        py = cy + ty
+        px = ox + tx * cell
+        py = cy + ty * cell
         if 0 <= px < WIDTH and 0 <= py < HEIGHT:
-            draw.point((px, py), fill=BLACK)
+            if cell == 1:
+                draw.point((px, py), fill=BLACK)
+            else:
+                draw.rectangle([px, py, px + cell - 1, py + cell - 1], fill=BLACK)
 
-    # Body (black pixels, overwrite tendrils)
+    # Body (black, overwrite tendrils)
     for (bx, dy) in _MASCOT_BODY:
-        px = ox + bx
-        py = cy + dy
+        px = ox + bx * cell
+        py = cy + dy * cell
         if 0 <= px < WIDTH and 0 <= py < HEIGHT:
-            draw.point((px, py), fill=BLACK)
+            if cell == 1:
+                draw.point((px, py), fill=BLACK)
+            else:
+                draw.rectangle([px, py, px + cell - 1, py + cell - 1], fill=BLACK)
 
-    # Eyes are part of body (already black), but clear them as white for contrast
-    # Actually, for B/W at this scale eyes blend in. Leave them as black body pixels.
+    # Eyes: white cutout at larger scales for contrast
+    if cell >= 2:
+        for (ex, ey) in _MASCOT_EYES:
+            px = ox + ex * cell
+            py = cy + ey * cell
+            draw.rectangle([px, py, px + cell - 1, py + cell - 1], fill=WHITE)
 
 
 # --- Supabase ---
@@ -208,12 +218,14 @@ def render_display(room_info: dict) -> Image.Image:
     """Render the 250x122 mini display.
 
     Layout:
-    +--------+------------------------------------+
-    | Mascot | Room: /name                        |
-    | 32x32  | N agents: name1, name2, ...        |
-    | static | Last activity: Xm ago              |
-    +--------+------------------------------------+
-      ~40px                 ~210px
+    +------------+-------------------------------+
+    |            | Room: /name                   |
+    |  Mascot    | N agents: name1, name2, ...   |
+    |  64x64     | Last activity: Xm ago         |
+    |            |                               |
+    |            | eywa-ai.dev                   |
+    +------------+-------------------------------+
+        ~72px                ~178px
     """
     img = Image.new("L", (WIDTH, HEIGHT), WHITE)
     draw = ImageDraw.Draw(img)
@@ -222,17 +234,17 @@ def render_display(room_info: dict) -> Image.Image:
     font_body = load_font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 11)
     font_small = load_font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 9)
 
-    # Left: mascot (32x32 at 1:1, centered vertically in 122px)
+    # Left: mascot (64x64 at cell_size=2, centered vertically)
     mascot_x = 4
-    mascot_y = (HEIGHT - 32) // 2
-    draw_mascot_bw(draw, mascot_x, mascot_y)
+    mascot_y = (HEIGHT - 32 * 2) // 2
+    draw_mascot_bw(draw, mascot_x, mascot_y, cell=2)
 
     # Vertical separator
-    sep_x = 42
+    sep_x = 72
     draw.line([(sep_x, 8), (sep_x, HEIGHT - 8)], fill=BLACK, width=1)
 
     # Right: room info
-    text_x = 50
+    text_x = 80
     y = 10
 
     # Room name
