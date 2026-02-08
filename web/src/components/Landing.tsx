@@ -3,8 +3,6 @@ import { Link } from "react-router-dom";
 import { useRoom } from "../hooks/useRoom";
 import { FlowBackground } from "./FlowBackground";
 import EywaLogo from "./EywaLogo";
-import EywaMascot from "./EywaMascot";
-import type { Mood } from "./EywaMascot";
 
 // Animated SVG Icons - aurora colored, heartbeat-synced animations
 const IconThreads = () => (
@@ -83,7 +81,6 @@ const IconDiscord = () => (
 export function Landing() {
   const { createRoom, creating, error } = useRoom();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mascotMood, setMascotMood] = useState<Mood>("okay");
 
   return (
     <div className="landing-dark">
@@ -171,30 +168,6 @@ export function Landing() {
           </div>
           {error && <p className="landing-error">{error}</p>}
 
-          {/* Mascot preview */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "2rem", gap: "0.75rem" }}>
-            <EywaMascot mood={mascotMood} scale={2} />
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              {(["happy", "okay", "sad", "thinking", "sleeping"] as Mood[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMascotMood(m)}
-                  style={{
-                    padding: "4px 10px",
-                    fontSize: "0.75rem",
-                    borderRadius: "9999px",
-                    border: mascotMood === m ? "1px solid var(--aurora-cyan)" : "1px solid var(--border-default)",
-                    background: mascotMood === m ? "var(--aurora-cyan-glow)" : "var(--bg-surface)",
-                    color: mascotMood === m ? "var(--aurora-cyan)" : "var(--text-secondary)",
-                    cursor: "pointer",
-                    transition: "all 150ms ease",
-                  }}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
