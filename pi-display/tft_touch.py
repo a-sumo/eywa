@@ -14,6 +14,7 @@ Usage:
 import os
 import sys
 import time
+import math
 import argparse
 import hashlib
 from datetime import datetime, timedelta
@@ -68,6 +69,161 @@ def get_agent_color(name: str) -> tuple:
     return AGENT_PALETTE[idx]
 
 
+# --- Mascot Animator ---
+# Full port of mascotCore.ts bell pulse + tendril math
+
+# Aurora palette as RGB tuples
+_MC_CORE = (238, 240, 255)
+_MC_ARM_UP = (121, 70, 255)
+_MC_ARM_DOWN = (57, 60, 245)
+_MC_ARM_LEFT = (231, 43, 118)
+_MC_ARM_RIGHT = (21, 209, 255)
+_MC_NUB = (21, 209, 255)
+_MC_TENDRIL = (94, 200, 230)
+_MC_EYE = (10, 10, 18)
+
+_MC_BODY = [
+    (15,-6,_MC_NUB),(16,-6,_MC_NUB),
+    (15,-5,_MC_ARM_UP),(16,-5,_MC_ARM_UP),
+    (14,-4,_MC_ARM_UP),(15,-4,_MC_ARM_UP),(16,-4,_MC_ARM_UP),(17,-4,_MC_ARM_UP),
+    (14,-3,_MC_ARM_UP),(15,-3,_MC_ARM_UP),(16,-3,_MC_ARM_UP),(17,-3,_MC_ARM_UP),
+    (12,-2,_MC_ARM_LEFT),(13,-2,_MC_ARM_LEFT),(14,-2,_MC_CORE),(15,-2,_MC_CORE),(16,-2,_MC_CORE),(17,-2,_MC_CORE),(18,-2,_MC_ARM_RIGHT),(19,-2,_MC_ARM_RIGHT),
+    (11,-1,_MC_ARM_LEFT),(12,-1,_MC_ARM_LEFT),(13,-1,_MC_ARM_LEFT),(14,-1,_MC_CORE),(15,-1,_MC_CORE),(16,-1,_MC_CORE),(17,-1,_MC_CORE),(18,-1,_MC_ARM_RIGHT),(19,-1,_MC_ARM_RIGHT),(20,-1,_MC_ARM_RIGHT),
+    (11,0,_MC_ARM_LEFT),(12,0,_MC_ARM_LEFT),(13,0,_MC_ARM_LEFT),(14,0,_MC_CORE),(15,0,_MC_CORE),(16,0,_MC_CORE),(17,0,_MC_CORE),(18,0,_MC_ARM_RIGHT),(19,0,_MC_ARM_RIGHT),(20,0,_MC_ARM_RIGHT),
+    (12,+1,_MC_ARM_LEFT),(13,+1,_MC_ARM_LEFT),(14,+1,_MC_CORE),(15,+1,_MC_CORE),(16,+1,_MC_CORE),(17,+1,_MC_CORE),(18,+1,_MC_ARM_RIGHT),(19,+1,_MC_ARM_RIGHT),
+    (14,+2,_MC_ARM_DOWN),(15,+2,_MC_ARM_DOWN),(16,+2,_MC_ARM_DOWN),(17,+2,_MC_ARM_DOWN),
+    (14,+3,_MC_ARM_DOWN),(15,+3,_MC_ARM_DOWN),(16,+3,_MC_ARM_DOWN),(17,+3,_MC_ARM_DOWN),
+    (15,+4,_MC_ARM_DOWN),(16,+4,_MC_ARM_DOWN),
+    (15,+5,_MC_NUB),(16,+5,_MC_NUB),
+]
+
+_DUTY_UP = 0.25
+_DUTY_HOLD = 0.10
+_DUTY_DROP = 0.30
+_TOTAL_ARC = math.pi * 1.1
+_TENDRIL_SEGS = 28
+_TENDRIL_SEG_LEN = 0.82
+_NUM_TENDRILS = 8
+
+_MOOD_PARAMS = {
+    "okay":     {"pulseFreq":0.5, "bobAmp":1.5, "waveAmp":3.0, "driftSpeed":0.12, "driftAmp":0.6, "yRotSpeed":0, "arcMult":1.0, "slouch":0},
+    "happy":    {"pulseFreq":0.8, "bobAmp":2.5, "waveAmp":4.5, "driftSpeed":0.25, "driftAmp":1.0, "yRotSpeed":0.6, "arcMult":0.9, "slouch":0},
+    "sad":      {"pulseFreq":0.25,"bobAmp":0.8, "waveAmp":1.5, "driftSpeed":0.08, "driftAmp":0.3, "yRotSpeed":0, "arcMult":1.35,"slouch":3.0},
+    "thinking": {"pulseFreq":0.4, "bobAmp":1.2, "waveAmp":2.0, "driftSpeed":0,    "driftAmp":0,   "yRotSpeed":0, "arcMult":1.0, "slouch":0},
+    "sleeping": {"pulseFreq":0.15,"bobAmp":0.4, "waveAmp":1.0, "driftSpeed":0.06, "driftAmp":0.4, "yRotSpeed":0, "arcMult":1.1, "slouch":0},
+}
+
+
+def _bell_pulse(t: float, freq: float) -> float:
+    phase = (t * freq) % 1
+    if phase < 0:
+        phase += 1
+    if phase < _DUTY_UP:
+        u = phase / _DUTY_UP
+        return math.sin(u * math.pi * 0.5)
+    if phase < _DUTY_UP + _DUTY_HOLD:
+        return 1.0
+    drop_start = _DUTY_UP + _DUTY_HOLD
+    if phase < drop_start + _DUTY_DROP:
+        u = (phase - drop_start) / _DUTY_DROP
+        return 1.0 - u * u
+    return 0.0
+
+
+def _bell_phase(t: float, freq: float) -> float:
+    return (t * freq) % 1
+
+
+class MascotAnimator:
+    """Animated Eywa cross mascot for pygame surfaces."""
+
+    def __init__(self):
+        self.time = 0.0
+        self.mood = "okay"
+
+    def update(self, dt: float):
+        self.time += dt
+
+    def draw(self, surface, ox: int, oy: int, cell: int = 5):
+        """Render the mascot at (ox, oy) with given cell size."""
+        p = _MOOD_PARAMS.get(self.mood, _MOOD_PARAMS["okay"])
+
+        phase = _bell_phase(self.time, p["pulseFreq"])
+        contract = _bell_pulse(self.time, p["pulseFreq"])
+        bob = contract * p["bobAmp"]
+        drift = math.sin(self.time * p["driftSpeed"] * math.pi * 2) * p["driftAmp"]
+
+        bx = 15.5
+        by = 18 - bob + drift
+        wave_t = phase * math.pi * 2
+        tendril_top = by - 6
+
+        # Build tendril profile
+        arc = _TOTAL_ARC * p["arcMult"]
+        wave_r = [0.0]
+        wave_h = [0.0]
+        r, h = 0.0, 0.0
+
+        for s in range(_TENDRIL_SEGS):
+            t = s / (_TENDRIL_SEGS - 1)
+            bend = t ** 1.3
+            arc_angle = math.pi / 2 - arc * bend
+            contract_push = contract * 0.15 * t
+            angle = arc_angle - contract_push
+
+            r += math.cos(angle) * _TENDRIL_SEG_LEN
+            h += math.sin(angle) * _TENDRIL_SEG_LEN
+
+            flex = t * t * t
+            wave = math.sin(wave_t - 2.5 * math.pi * t) * p["waveAmp"] * flex
+
+            perp_r = -math.sin(angle)
+            perp_h = math.cos(angle)
+
+            wave_r.append(r + wave * perp_r)
+            wave_h.append(h + wave * perp_h)
+
+        # Project tendrils
+        y_rot = self.time * p["yRotSpeed"]
+        for ti in range(_NUM_TENDRILS):
+            theta = (ti / _NUM_TENDRILS) * math.pi * 2 + y_rot
+            cos_t = math.cos(theta)
+            sin_t_abs = abs(math.sin(theta))
+
+            for s in range(_TENDRIL_SEGS):
+                sx = bx + wave_r[s + 1] * cos_t
+                sy = tendril_top - wave_h[s + 1]
+
+                if p["slouch"] > 0:
+                    sag_t = (s + 1) / _TENDRIL_SEGS
+                    sy += p["slouch"] * sin_t_abs * sag_t * sag_t
+
+                px = ox + round(sx) * cell
+                py = oy + round(sy) * cell
+                pygame.draw.rect(surface, _MC_TENDRIL, (px, py, cell, cell))
+
+        # Body
+        by_r = round(by)
+        for (bpx, dy, color) in _MC_BODY:
+            px = ox + bpx * cell
+            py = oy + (by_r + dy) * cell
+            pygame.draw.rect(surface, color, (px, py, cell, cell))
+
+        # Eyes
+        if self.mood == "sleeping":
+            for ex in (14, 17):
+                px = ox + ex * cell
+                py = oy + (by_r - 1) * cell
+                pygame.draw.rect(surface, _MC_EYE, (px, py, cell, cell))
+        else:
+            for ex in (14, 17):
+                px = ox + ex * cell
+                py1 = oy + (by_r - 1) * cell
+                py2 = oy + by_r * cell
+                pygame.draw.rect(surface, _MC_EYE, (px, py1, cell, cell))
+                pygame.draw.rect(surface, _MC_EYE, (px, py2, cell, cell))
+
+
 class EywaTouchApp:
     def __init__(self, room: str):
         self.room = room
@@ -99,6 +255,9 @@ class EywaTouchApp:
         # UI state
         self.view = "list"  # "list" or "detail"
         self.buttons: List[Dict] = []
+
+        # Mascot
+        self.mascot = MascotAnimator()
 
     def fetch_room_id(self):
         """Get room ID from slug."""
@@ -410,6 +569,16 @@ class EywaTouchApp:
         elif self.view == "detail":
             self.draw_detail_view()
 
+        # Mascot in bottom-left corner
+        active_count = sum(1 for a in self.agents if a.get("status") == "active")
+        if active_count > 0:
+            self.mascot.mood = "happy"
+        elif self.agents:
+            self.mascot.mood = "okay"
+        else:
+            self.mascot.mood = "sleeping"
+        self.mascot.draw(self.screen, 0, HEIGHT - 160, cell=5)
+
         pygame.display.flip()
 
     def handle_touch(self, pos):
@@ -459,6 +628,9 @@ class EywaTouchApp:
                     self.last_fetch = now
                 except Exception as e:
                     print(f"Fetch error: {e}")
+
+            # Update mascot (~12fps timing built into 30fps loop)
+            self.mascot.update(1.0 / 30.0)
 
             # Draw
             self.draw()

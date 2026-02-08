@@ -8,6 +8,7 @@ import type { Memory, Room } from "../lib/supabase";
 import { getAvatar } from "./avatars";
 import { EywaLogoWarm } from "./EywaLogo";
 import { GrainTexture } from "./GrainTexture";
+import EywaMascot, { type Mood } from "./EywaMascot";
 
 /* ── Palette (earthy, readable on clay) ── */
 
@@ -631,6 +632,15 @@ export function MiniEywa() {
 
   const isDragging = draggingId !== null;
 
+  // Mascot mood: based on agent activity
+  const mascotMood: Mood = useMemo(() => {
+    if (agents.length === 0) return "sleeping";
+    if (activeCount === 0) return "okay";
+    if (callsLast10m > 10) return "happy";
+    if (activeCount >= 2) return "thinking";
+    return "okay";
+  }, [agents.length, activeCount, callsLast10m]);
+
   return (
     <div className="mini-container">
       <GrainTexture
@@ -680,6 +690,11 @@ export function MiniEywa() {
           onClose={() => setShowRoomPicker(false)}
         />
       )}
+
+      {/* Mascot */}
+      <div style={{ display: "flex", justifyContent: "center", margin: "-4px 0 -8px" }}>
+        <EywaMascot mood={mascotMood} scale={0.45} />
+      </div>
 
       {/* QR overlay */}
       {showQr && roomUrl && (

@@ -1,10 +1,102 @@
 <svg width="250" height="250" viewBox="0 0 250 250" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z" fill="#15D1FF"/>
-<path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z" fill="#2543FF"/>
-<path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z" fill="#823DFC"/>
-<path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z" fill="#E72B76"/>
-<rect width="69.0908" height="37.6259" rx="18.813" transform="matrix(-0.682103 -0.731256 0.714523 -0.699611 165.127 184.307)" fill="#15D1FF"/>
-<rect width="69.0901" height="37.4677" rx="18.7339" transform="matrix(-0.682386 0.730992 -0.714252 -0.699889 182.38 88.9044)" fill="#823DFC"/>
-<rect width="75.2802" height="37.978" rx="18.989" transform="matrix(0.679222 0.733933 -0.717276 0.696789 95.8679 64.4296)" fill="#E72B76"/>
-<rect width="71.2152" height="41.6372" rx="20.8186" transform="matrix(0.798895 -0.60147 0.582827 0.812597 55 149.834)" fill="#2543FF"/>
+<defs>
+  <clipPath id="clip-cyan-g">
+    <path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/>
+    <rect width="69.0908" height="37.6259" rx="18.813" transform="matrix(-0.682103 -0.731256 0.714523 -0.699611 165.127 184.307)"/>
+  </clipPath>
+  <clipPath id="clip-blue-g">
+    <path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/>
+    <rect width="71.2152" height="41.6372" rx="20.8186" transform="matrix(0.798895 -0.60147 0.582827 0.812597 55 149.834)"/>
+  </clipPath>
+  <clipPath id="clip-purple-g">
+    <path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/>
+    <rect width="69.0901" height="37.4677" rx="18.7339" transform="matrix(-0.682386 0.730992 -0.714252 -0.699889 182.38 88.9044)"/>
+  </clipPath>
+  <clipPath id="clip-pink-g">
+    <path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/>
+    <rect width="75.2802" height="37.978" rx="18.989" transform="matrix(0.679222 0.733933 -0.717276 0.696789 95.8679 64.4296)"/>
+  </clipPath>
+  <radialGradient id="rg-cyan-g" cx="125" cy="125" r="145" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#c4f6ff"/>
+    <stop offset="4%" stop-color="#c4f6ff"/>
+    <stop offset="8%" stop-color="#c3f6ff"/>
+    <stop offset="13%" stop-color="#c2f5ff"/>
+    <stop offset="19%" stop-color="#bff5ff"/>
+    <stop offset="26%" stop-color="#b9f5ff"/>
+    <stop offset="34%" stop-color="#aef4ff"/>
+    <stop offset="42%" stop-color="#9bf3ff"/>
+    <stop offset="52%" stop-color="#71f0ff"/>
+    <stop offset="62%" stop-color="#3becff"/>
+    <stop offset="73%" stop-color="#15e9ff"/>
+    <stop offset="84%" stop-color="#03e8ff"/>
+    <stop offset="92%" stop-color="#00e5fc"/>
+    <stop offset="100%" stop-color="#00e3fa"/>
+  </radialGradient>
+  <radialGradient id="rg-blue-g" cx="125" cy="125" r="145" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#c4e3ff"/>
+    <stop offset="4%" stop-color="#c4e3ff"/>
+    <stop offset="8%" stop-color="#c4e2ff"/>
+    <stop offset="13%" stop-color="#c2e0ff"/>
+    <stop offset="19%" stop-color="#c1deff"/>
+    <stop offset="26%" stop-color="#bdd9ff"/>
+    <stop offset="34%" stop-color="#b4cfff"/>
+    <stop offset="42%" stop-color="#a7bffe"/>
+    <stop offset="52%" stop-color="#899bfd"/>
+    <stop offset="62%" stop-color="#636ffa"/>
+    <stop offset="73%" stop-color="#4a50f7"/>
+    <stop offset="84%" stop-color="#3e42f6"/>
+    <stop offset="92%" stop-color="#3a3df5"/>
+    <stop offset="100%" stop-color="#393cf5"/>
+  </radialGradient>
+  <radialGradient id="rg-purple-g" cx="125" cy="125" r="145" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#cce2ff"/>
+    <stop offset="4%" stop-color="#cce2ff"/>
+    <stop offset="8%" stop-color="#cbe2ff"/>
+    <stop offset="13%" stop-color="#cbe0ff"/>
+    <stop offset="19%" stop-color="#cadeff"/>
+    <stop offset="26%" stop-color="#c8d9ff"/>
+    <stop offset="34%" stop-color="#c5cfff"/>
+    <stop offset="42%" stop-color="#bebfff"/>
+    <stop offset="52%" stop-color="#ae9cff"/>
+    <stop offset="62%" stop-color="#9a6fff"/>
+    <stop offset="73%" stop-color="#8c51fd"/>
+    <stop offset="84%" stop-color="#8443fc"/>
+    <stop offset="92%" stop-color="#833efc"/>
+    <stop offset="100%" stop-color="#823dfc"/>
+  </radialGradient>
+  <radialGradient id="rg-pink-g" cx="125" cy="125" r="145" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#d9e3f2"/>
+    <stop offset="4%" stop-color="#d9e3f2"/>
+    <stop offset="8%" stop-color="#d9e3f2"/>
+    <stop offset="13%" stop-color="#d9e1f1"/>
+    <stop offset="19%" stop-color="#d9dfef"/>
+    <stop offset="26%" stop-color="#dad9eb"/>
+    <stop offset="34%" stop-color="#dccee4"/>
+    <stop offset="42%" stop-color="#debcd8"/>
+    <stop offset="52%" stop-color="#e294be"/>
+    <stop offset="62%" stop-color="#e5629d"/>
+    <stop offset="73%" stop-color="#e74285"/>
+    <stop offset="84%" stop-color="#e7327b"/>
+    <stop offset="92%" stop-color="#e72c77"/>
+    <stop offset="100%" stop-color="#e72b76"/>
+  </radialGradient>
+  <filter id="front-haze-g" x="-8%" y="-8%" width="116%" height="116%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="5"/>
+    <feComponentTransfer>
+      <feFuncA type="linear" slope="0.180"/>
+    </feComponentTransfer>
+  </filter>
+</defs>
+<g>
+  <rect x="0" y="0" width="250" height="250" fill="url(#rg-cyan-g)" clip-path="url(#clip-cyan-g)"/>
+  <rect x="0" y="0" width="250" height="250" fill="url(#rg-blue-g)" clip-path="url(#clip-blue-g)"/>
+  <rect x="0" y="0" width="250" height="250" fill="url(#rg-purple-g)" clip-path="url(#clip-purple-g)"/>
+  <rect x="0" y="0" width="250" height="250" fill="url(#rg-pink-g)" clip-path="url(#clip-pink-g)"/>
+</g>
+<g filter="url(#front-haze-g)">
+  <rect x="0" y="0" width="250" height="250" fill="url(#rg-cyan-g)" clip-path="url(#clip-cyan-g)"/>
+  <rect x="0" y="0" width="250" height="250" fill="url(#rg-blue-g)" clip-path="url(#clip-blue-g)"/>
+  <rect x="0" y="0" width="250" height="250" fill="url(#rg-purple-g)" clip-path="url(#clip-purple-g)"/>
+  <rect x="0" y="0" width="250" height="250" fill="url(#rg-pink-g)" clip-path="url(#clip-pink-g)"/>
+</g>
 </svg>

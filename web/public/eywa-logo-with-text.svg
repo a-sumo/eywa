@@ -1,16 +1,63 @@
 <svg width="260" height="48" viewBox="0 0 260 48" xmlns="http://www.w3.org/2000/svg">
-  <!-- Logo part -->
-  <g id="logo" transform="translate(0, 0) scale(0.192)">
-    <path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z" fill="#15D1FF"/>
-    <path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z" fill="#2543FF"/>
-    <path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z" fill="#823DFC"/>
-    <path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z" fill="#E72B76"/>
-    <rect width="69.0908" height="37.6259" rx="18.813" transform="matrix(-0.682103 -0.731256 0.714523 -0.699611 165.127 184.307)" fill="#15D1FF"/>
-    <rect width="69.0901" height="37.4677" rx="18.7339" transform="matrix(-0.682386 0.730992 -0.714252 -0.699889 182.38 88.9044)" fill="#823DFC"/>
-    <rect width="75.2802" height="37.978" rx="18.989" transform="matrix(0.679222 0.733933 -0.717276 0.696789 95.8679 64.4296)" fill="#E72B76"/>
-    <rect width="71.2152" height="41.6372" rx="20.8186" transform="matrix(0.798895 -0.60147 0.582827 0.812597 55 149.834)" fill="#2543FF"/>
-  </g>
-
-  <!-- Text part -->
+  <svg x="0" y="0" width="48" height="48" viewBox="0 0 250 250" fill="none">
+    <defs>
+      <clipPath id="clip-cyan-t">
+        <path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/>
+        <rect width="69.0908" height="37.6259" rx="18.813" transform="matrix(-0.682103 -0.731256 0.714523 -0.699611 165.127 184.307)"/>
+      </clipPath>
+      <clipPath id="clip-blue-t">
+        <path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/>
+        <rect width="71.2152" height="41.6372" rx="20.8186" transform="matrix(0.798895 -0.60147 0.582827 0.812597 55 149.834)"/>
+      </clipPath>
+      <clipPath id="clip-purple-t">
+        <path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/>
+        <rect width="69.0901" height="37.4677" rx="18.7339" transform="matrix(-0.682386 0.730992 -0.714252 -0.699889 182.38 88.9044)"/>
+      </clipPath>
+      <clipPath id="clip-pink-t">
+        <path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/>
+        <rect width="75.2802" height="37.978" rx="18.989" transform="matrix(0.679222 0.733933 -0.717276 0.696789 95.8679 64.4296)"/>
+      </clipPath>
+      <radialGradient id="rg-cyan-t" cx="125" cy="125" r="145" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#c4f6ff"/><stop offset="13%" stop-color="#c2f5ff"/>
+        <stop offset="26%" stop-color="#b9f5ff"/><stop offset="42%" stop-color="#9bf3ff"/>
+        <stop offset="62%" stop-color="#3becff"/><stop offset="84%" stop-color="#03e8ff"/>
+        <stop offset="100%" stop-color="#00e3fa"/>
+      </radialGradient>
+      <radialGradient id="rg-blue-t" cx="125" cy="125" r="145" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#c4e3ff"/><stop offset="13%" stop-color="#c2e0ff"/>
+        <stop offset="26%" stop-color="#bdd9ff"/><stop offset="42%" stop-color="#a7bffe"/>
+        <stop offset="62%" stop-color="#636ffa"/><stop offset="84%" stop-color="#3e42f6"/>
+        <stop offset="100%" stop-color="#393cf5"/>
+      </radialGradient>
+      <radialGradient id="rg-purple-t" cx="125" cy="125" r="145" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#cce2ff"/><stop offset="13%" stop-color="#cbe0ff"/>
+        <stop offset="26%" stop-color="#c8d9ff"/><stop offset="42%" stop-color="#bebfff"/>
+        <stop offset="62%" stop-color="#9a6fff"/><stop offset="84%" stop-color="#8443fc"/>
+        <stop offset="100%" stop-color="#823dfc"/>
+      </radialGradient>
+      <radialGradient id="rg-pink-t" cx="125" cy="125" r="145" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#d9e3f2"/><stop offset="13%" stop-color="#d9e1f1"/>
+        <stop offset="26%" stop-color="#dad9eb"/><stop offset="42%" stop-color="#debcd8"/>
+        <stop offset="62%" stop-color="#e5629d"/><stop offset="84%" stop-color="#e7327b"/>
+        <stop offset="100%" stop-color="#e72b76"/>
+      </radialGradient>
+      <filter id="front-haze-t" x="-8%" y="-8%" width="116%" height="116%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="5"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.180"/></feComponentTransfer>
+      </filter>
+    </defs>
+    <g>
+      <rect width="250" height="250" fill="url(#rg-cyan-t)" clip-path="url(#clip-cyan-t)"/>
+      <rect width="250" height="250" fill="url(#rg-blue-t)" clip-path="url(#clip-blue-t)"/>
+      <rect width="250" height="250" fill="url(#rg-purple-t)" clip-path="url(#clip-purple-t)"/>
+      <rect width="250" height="250" fill="url(#rg-pink-t)" clip-path="url(#clip-pink-t)"/>
+    </g>
+    <g filter="url(#front-haze-t)">
+      <rect width="250" height="250" fill="url(#rg-cyan-t)" clip-path="url(#clip-cyan-t)"/>
+      <rect width="250" height="250" fill="url(#rg-blue-t)" clip-path="url(#clip-blue-t)"/>
+      <rect width="250" height="250" fill="url(#rg-purple-t)" clip-path="url(#clip-purple-t)"/>
+      <rect width="250" height="250" fill="url(#rg-pink-t)" clip-path="url(#clip-pink-t)"/>
+    </g>
+  </svg>
   <text x="60" y="32" font-family="Plus Jakarta Sans, Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="600" fill="#e5e7eb" letter-spacing="-0.02em">Eywa</text>
 </svg>

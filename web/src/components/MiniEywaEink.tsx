@@ -6,6 +6,7 @@ import type { Memory } from "../lib/supabase";
 import { getAvatar } from "./avatars";
 import { EywaLogoWarm } from "./EywaLogo";
 import { GrainTexture } from "./GrainTexture";
+import EywaMascot, { type Mood } from "./EywaMascot";
 
 /* ── Clay palette (warm parchment, high-contrast dark text) ── */
 
@@ -180,6 +181,14 @@ export function MiniEywaEink() {
   const agents = useMemo(() => buildAgents(memories), [memories]);
   const activeCount = agents.filter((a) => a.isActive).length;
 
+  // Mascot mood for e-ink
+  const mascotMood: Mood = useMemo(() => {
+    if (agents.length === 0) return "sleeping";
+    if (activeCount === 0) return "okay";
+    if (activeCount >= 2) return "happy";
+    return "thinking";
+  }, [agents.length, activeCount]);
+
   const getShort = useMemo(
     () => shortName(agents.map((a) => a.agent)),
     [agents]
@@ -294,9 +303,11 @@ export function MiniEywaEink() {
       {/* Footer with AR tracking marker */}
       <div className="ei-footer">
         <div className="ei-footer-left">
-          <EywaLogoWarm size={16} />
-          <span className="ei-footer-brand">EYWA</span>
-          <span className="ei-footer-room">{room?.slug ?? ""}</span>
+          <EywaMascot mood={mascotMood} scale={0.32} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <span className="ei-footer-brand">EYWA</span>
+            <span className="ei-footer-room">{room?.slug ?? ""}</span>
+          </div>
         </div>
         <div className="ei-marker">
           <QRCodeSVG
