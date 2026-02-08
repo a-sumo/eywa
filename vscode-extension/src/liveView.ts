@@ -23,6 +23,35 @@ interface ActivityItem {
   ts: string;
 }
 
+/** Which message types pass a given log level filter. */
+const LOG_LEVEL_FILTERS: Record<string, Set<string>> = {
+  sessions: new Set(["resource"]),
+  important: new Set(["resource", "knowledge", "injection"]),
+  all: new Set(), // empty = show everything
+};
+
+/** Which metadata events pass a given log level. */
+const LOG_LEVEL_EVENTS: Record<string, Set<string> | null> = {
+  sessions: new Set(["session_start", "session_done", "session_end"]),
+  important: new Set(["session_start", "session_done", "session_end", "knowledge_stored", "context_injection", "learned"]),
+  all: null,
+};
+
+function passesLogFilter(type: string, event: string | undefined, level: string): boolean {
+  if (level === "all") return true;
+  const typeSet = LOG_LEVEL_FILTERS[level];
+  const eventSet = LOG_LEVEL_EVENTS[level];
+  if (typeSet && typeSet.has(type)) {
+    // For resource type, only pass if event is in allowed events
+    if (type === "resource" && eventSet && event && !eventSet.has(event)) return false;
+    if (type === "resource" && eventSet && !event) return false;
+    return true;
+  }
+  if (eventSet && event && eventSet.has(event)) return true;
+  if (!typeSet?.size) return true; // "all" - show everything
+  return typeSet.has(type);
+}
+
 export class LiveViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "eywaLive";
   private view?: vscode.WebviewView;
@@ -96,16 +125,24 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
         }
       }
 
-      // Load recent activity
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const events = await client.getRecentEvents(since, 30);
-      this.activity = events.map((e) => ({
-        id: e.id,
-        agent: e.agent,
-        content: e.content.slice(0, 150),
-        type: e.message_type,
-        ts: e.ts,
-      }));
+      // Load recent activity (respecting history depth and log level)
+      const historyHours = vscode.workspace.getConfiguration("eywa").get<number>("historyHours") ?? 24;
+      const logLevel = vscode.workspace.getConfiguration("eywa").get<string>("logLevel") ?? "all";
+      const since = new Date(Date.now() - historyHours * 60 * 60 * 1000).toISOString();
+      const events = await client.getRecentEvents(since, 50);
+      this.activity = events
+        .filter((e) => {
+          const event = (e.metadata?.event as string) || undefined;
+          return passesLogFilter(e.message_type, event, logLevel);
+        })
+        .slice(0, 40)
+        .map((e) => ({
+          id: e.id,
+          agent: e.agent,
+          content: e.content.slice(0, 150),
+          type: e.message_type,
+          ts: e.ts,
+        }));
 
       this.pushState();
     } catch (err) {
@@ -139,15 +176,18 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
       a.memoryCount++;
     }
 
-    // Add to activity feed
-    this.activity.unshift({
-      id: mem.id,
-      agent: mem.agent,
-      content: (mem.content || "").slice(0, 150),
-      type: mem.message_type || "assistant",
-      ts: mem.ts,
-    });
-    if (this.activity.length > 40) this.activity.length = 40;
+    // Add to activity feed (filtered by log level)
+    const logLevel = vscode.workspace.getConfiguration("eywa").get<string>("logLevel") ?? "all";
+    if (passesLogFilter(mem.message_type || "assistant", event, logLevel)) {
+      this.activity.unshift({
+        id: mem.id,
+        agent: mem.agent,
+        content: (mem.content || "").slice(0, 150),
+        type: mem.message_type || "assistant",
+        ts: mem.ts,
+      });
+      if (this.activity.length > 40) this.activity.length = 40;
+    }
 
     this.pushState();
   }
@@ -301,6 +341,8 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     animation: spin 0.8s linear infinite; opacity: 0.3; margin: 0 auto 8px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes mascot-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+  .mascot-wrap svg { animation: mascot-bob 2s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -354,6 +396,60 @@ function render(data) {
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'inject\\'})" title="Inject context"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 3L14 8l-3.5 5h-2l3-4.5H2V7.5h9.5l-3-4.5h2z"/></svg></button>'
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'openDashboard\\'})" title="Web dashboard"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h13l.5.5v13l-.5.5h-13l-.5-.5v-13l.5-.5zM2 5v9h12V5H2zm0-1h12V2H2v2z"/></svg></button>'
     + '</div></div>';
+
+  // Mascot: cross-body between header and agent strip
+  const mascotMood = agents.filter(a => a.status === 'active').length > 0 ? 'active' : (agents.length > 0 ? 'idle' : 'sleeping');
+  // Color palette per mood
+  const mPalette = mascotMood === 'active'
+    ? { core:'#eef0ff', up:'#7946FF', down:'#393CF5', left:'#E72B76', right:'#15D1FF', nub:'#15D1FF', tendril:'#5ec8e6' }
+    : mascotMood === 'idle'
+    ? { core:'#b0a8d0', up:'#5a3ab0', down:'#3a3890', left:'#a02060', right:'#1090b0', nub:'#1090b0', tendril:'#4a90a0' }
+    : { core:'#444', up:'#333', down:'#2a2a2a', left:'#333', right:'#333', nub:'#333', tendril:'#2a2a2a' };
+  const mascotGlow = mascotMood === 'active' ? 'drop-shadow(0 0 4px rgba(21,209,255,0.4))' : 'none';
+  const mascotOp = mascotMood === 'sleeping' ? '0.3' : '0.7';
+
+  // Build cross-body pixel rects (scaled to ~32x36 viewport from 32x32 grid, each grid cell = 1 unit)
+  const mBody = [
+    [15,-6,'nub'],[16,-6,'nub'],
+    [15,-5,'up'],[16,-5,'up'],
+    [14,-4,'up'],[15,-4,'up'],[16,-4,'up'],[17,-4,'up'],
+    [14,-3,'up'],[15,-3,'up'],[16,-3,'up'],[17,-3,'up'],
+    [12,-2,'left'],[13,-2,'left'],[14,-2,'core'],[15,-2,'core'],[16,-2,'core'],[17,-2,'core'],[18,-2,'right'],[19,-2,'right'],
+    [11,-1,'left'],[12,-1,'left'],[13,-1,'left'],[14,-1,'core'],[15,-1,'core'],[16,-1,'core'],[17,-1,'core'],[18,-1,'right'],[19,-1,'right'],[20,-1,'right'],
+    [11, 0,'left'],[12, 0,'left'],[13, 0,'left'],[14, 0,'core'],[15, 0,'core'],[16, 0,'core'],[17, 0,'core'],[18, 0,'right'],[19, 0,'right'],[20, 0,'right'],
+    [12,+1,'left'],[13,+1,'left'],[14,+1,'core'],[15,+1,'core'],[16,+1,'core'],[17,+1,'core'],[18,+1,'right'],[19,+1,'right'],
+    [14,+2,'down'],[15,+2,'down'],[16,+2,'down'],[17,+2,'down'],
+    [14,+3,'down'],[15,+3,'down'],[16,+3,'down'],[17,+3,'down'],
+    [15,+4,'down'],[16,+4,'down'],
+    [15,+5,'nub'],[16,+5,'nub'],
+  ];
+  let bodyRects = '';
+  for (const [bx, dy, part] of mBody) {
+    bodyRects += '<rect x="' + bx + '" y="' + (18 + dy) + '" width="1" height="1" fill="' + mPalette[part] + '"/>';
+  }
+
+  // Eyes
+  let eyeSvg = '';
+  if (mascotMood === 'sleeping') {
+    eyeSvg = '<line x1="13.5" y1="17.5" x2="15" y2="17.5" stroke="#0a0a12" stroke-width="0.6"/>'
+      + '<line x1="16.5" y1="17.5" x2="18" y2="17.5" stroke="#0a0a12" stroke-width="0.6"/>';
+  } else {
+    eyeSvg = '<rect x="14" y="17" width="1" height="2" fill="#0a0a12"/>'
+      + '<rect x="17" y="17" width="1" height="2" fill="#0a0a12"/>';
+  }
+
+  // Tendrils as arc paths
+  const tC = mPalette.tendril;
+  const tendrils = '<path d="M11 12 Q9 7 11 3 Q13 0 15 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.5"/>'
+    + '<path d="M13 12 Q13 7 14.5 3 Q15 0 16 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.6"/>'
+    + '<path d="M16 12 Q16 6 16 2 Q16 0 16 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.7"/>'
+    + '<path d="M19 12 Q19 7 17.5 3 Q17 0 16 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.6"/>'
+    + '<path d="M21 12 Q23 7 21 3 Q19 0 17 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.5"/>';
+
+  html += '<div class="mascot-wrap" style="text-align:center;padding:4px 0;opacity:' + mascotOp + ';filter:' + mascotGlow + '">'
+    + '<svg width="32" height="36" viewBox="0 -2 32 34" shape-rendering="crispEdges">'
+    + tendrils + bodyRects + eyeSvg
+    + '</svg></div>';
 
   // Agent strip
   if (agents.length > 0) {
