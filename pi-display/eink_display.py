@@ -277,15 +277,15 @@ def render_display(room_info: dict) -> Image.Image:
     Layout (600x448):
     +---------------------------+-----------------+
     |                           |                 |
-    |  [Logo]                   |   [Tracking     |
-    |                           |    Marker]      |
-    |  EYWA                     |                 |
-    |                           |   ~220x220      |
-    |  room / agent-count       |                 |
+    |      [Mascot 192x192]    |   [Tracking     |
+    |      centered             |    Marker]      |
     |                           |                 |
-    |  eywa-ai.dev              |                 |
-    |  by Armand Sumo           |                 |
+    |      EYWA                 |   ~220x220      |
+    |      /room                |                 |
+    |      N agents             |                 |
     |                           |                 |
+    |      eywa-ai.dev          |                 |
+    |      by Armand Sumo       |                 |
     +---------------------------+-----------------+
     """
     img = Image.new("RGB", (WIDTH, HEIGHT), WHITE)
@@ -300,20 +300,15 @@ def render_display(room_info: dict) -> Image.Image:
     # --- Left side: branding ---
     left_w = WIDTH - 240  # 360px for branding, 240px for marker
 
-    # Logo (centered in left column, upper area)
-    logo = load_logo(120)
-    logo_x = (left_w - logo.width) // 2
-    logo_y = 30
-    if logo.mode == "RGBA":
-        # Composite onto white background
-        logo_bg = Image.new("RGB", logo.size, WHITE)
-        logo_bg.paste(logo, mask=logo.split()[3])
-        img.paste(logo_bg, (logo_x, logo_y))
-    else:
-        img.paste(logo, (logo_x, logo_y))
+    # Mascot as hero visual (centered, top of left column)
+    mascot_cell = 6
+    mascot_w = 32 * mascot_cell  # 192px
+    mascot_x = (left_w - mascot_w) // 2
+    mascot_y = 20
+    draw_mascot(draw, mascot_x, mascot_y, mascot_cell)
 
-    # "Eywa" title
-    title_y = logo_y + logo.height + 16
+    # "Eywa" title below mascot
+    title_y = mascot_y + mascot_w + 12
     title_bbox = font_title.getbbox("Eywa")
     title_w = title_bbox[2] - title_bbox[0]
     draw.text(((left_w - title_w) // 2, title_y), "Eywa", fill=BLACK, font=font_title)
@@ -355,12 +350,6 @@ def render_display(room_info: dict) -> Image.Image:
         ((left_w - author_w) // 2, footer_y + 22),
         author_text, fill=BLACK, font=font_tiny,
     )
-
-    # --- Mascot in header area (next to logo, right side of left column) ---
-    mascot_cell = 3
-    mascot_x = left_w - 32 * mascot_cell - 20  # right-align in left column
-    mascot_y = 24
-    draw_mascot(draw, mascot_x, mascot_y, mascot_cell)
 
     # --- Right side: tracking marker ---
     marker_size = 220
