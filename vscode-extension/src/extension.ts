@@ -19,6 +19,9 @@ let client: EywaClient | undefined;
 let statusBarItem: vscode.StatusBarItem;
 let realtime: RealtimeManager | undefined;
 
+// Terminal <-> Agent associations
+const terminalAgentMap = new Map<vscode.Terminal, string>();
+
 export function activate(context: vscode.ExtensionContext) {
   // Status bar
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
@@ -197,6 +200,54 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage("Agent tab titles enabled");
       }
     }),
+
+    vscode.commands.registerCommand("eywa.tagTerminal", async () => {
+      const terminal = vscode.window.activeTerminal;
+      if (!terminal) {
+        vscode.window.showWarningMessage("No active terminal to tag.");
+        return;
+      }
+      if (!client) {
+        vscode.window.showWarningMessage("Not connected to Eywa.");
+        return;
+      }
+      const agents = await client.getAgents();
+      const items = agents.map((a) => ({
+        label: a.name,
+        description: a.isActive ? "active" : "idle",
+      }));
+      items.push({ label: "Custom name...", description: "" });
+      const pick = await vscode.window.showQuickPick(items, { placeHolder: "Associate this terminal with an agent" });
+      if (!pick) return;
+
+      let agentName = pick.label;
+      if (agentName === "Custom name...") {
+        const custom = await vscode.window.showInputBox({ prompt: "Agent name for this terminal" });
+        if (!custom) return;
+        agentName = custom;
+      }
+
+      terminalAgentMap.set(terminal, agentName);
+      const short = agentName.includes("/") ? agentName.split("/").pop()! : agentName;
+      terminal.sendText(`# Tagged: ${agentName}`, false);
+      vscode.window.showInformationMessage(`Terminal tagged as ${short}`);
+    }),
+  );
+
+  // Clean up terminal tags when terminals close
+  context.subscriptions.push(
+    vscode.window.onDidCloseTerminal((t) => { terminalAgentMap.delete(t); }),
+  );
+
+  // Auto-tag terminals when agent sessions start
+  context.subscriptions.push(
+    vscode.window.onDidOpenTerminal((terminal) => {
+      // Check terminal name for known agent patterns
+      const name = terminal.name.toLowerCase();
+      if (name.includes("claude") || name.includes("eywa")) {
+        // Will be tagged when the agent connects via realtime
+      }
+    }),
   );
 
   registerKnowledgeForFileCommand(context);
@@ -214,9 +265,16 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 async function showWelcome() {
-  const action = await vscode.window.showInformationMessage("Eywa: enter a room slug to start monitoring your agents.", "Set Room", "Login with Browser");
-  if (action === "Set Room") vscode.commands.executeCommand("eywa.setRoom");
-  else if (action === "Login with Browser") vscode.commands.executeCommand("eywa.login");
+  const action = await vscode.window.showInformationMessage(
+    "Welcome to Eywa. Set a room to start monitoring your agents.",
+    "Get Started",
+    "Set Room",
+  );
+  if (action === "Get Started") {
+    vscode.commands.executeCommand("workbench.action.openWalkthrough", "curvilinear.eywa-agents#eywa.welcome");
+  } else if (action === "Set Room") {
+    vscode.commands.executeCommand("eywa.setRoom");
+  }
 }
 
 function getConfig(key: string): string {

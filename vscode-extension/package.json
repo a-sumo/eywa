@@ -83,6 +83,48 @@
         "command": "eywa.setRoom",
         "title": "Eywa: Switch Room",
         "icon": "$(folder)"
+      },
+      {
+        "command": "eywa.tagTerminal",
+        "title": "Eywa: Tag Terminal with Agent",
+        "icon": "$(terminal)"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "eywa.welcome",
+        "title": "Get Started with Eywa",
+        "description": "See what your team's AI agents are building, right in VS Code.",
+        "steps": [
+          {
+            "id": "eywa.welcome.setRoom",
+            "title": "Join a Room",
+            "description": "Eywa rooms are shared workspaces where all agent activity is visible. Set a room slug to start monitoring.\n\n[Set Room](command:eywa.setRoom)",
+            "media": { "altText": "Set a room", "image": "icon.svg" },
+            "completionEvents": ["onSettingChanged:eywa.room"]
+          },
+          {
+            "id": "eywa.welcome.connectAgent",
+            "title": "Connect an Agent",
+            "description": "Give your AI agent (Claude Code, Cursor, etc.) an MCP URL so it reports to Eywa.\n\n[Connect Agent](command:eywa.connectAgent)",
+            "media": { "altText": "Connect agent", "image": "icon.svg" },
+            "completionEvents": ["onCommand:eywa.connectAgent"]
+          },
+          {
+            "id": "eywa.welcome.sidebar",
+            "title": "Open the Sidebar",
+            "description": "The Eywa sidebar shows live agent activity, avatars, and status. Click the Eywa icon in the activity bar.\n\n[Open Sidebar](command:eywaLive.focus)",
+            "media": { "altText": "Sidebar", "image": "icon.svg" },
+            "completionEvents": ["onView:eywaLive"]
+          },
+          {
+            "id": "eywa.welcome.inject",
+            "title": "Inject Context",
+            "description": "Select code in the editor and press Cmd+Shift+I to send it to an agent. You can also use the command palette.\n\n[Try Inject](command:eywa.injectContext)",
+            "media": { "altText": "Inject", "image": "icon.svg" },
+            "completionEvents": ["onCommand:eywa.injectContext"]
+          }
+        ]
       }
     ],
     "menus": {
@@ -121,6 +163,23 @@
           "type": "string",
           "default": "",
           "description": "Room slug to monitor"
+        },
+        "eywa.logLevel": {
+          "type": "string",
+          "default": "all",
+          "enum": ["all", "important", "sessions"],
+          "enumDescriptions": [
+            "Show all agent activity",
+            "Show sessions, knowledge, injections, and errors only",
+            "Show session start/stop only"
+          ],
+          "description": "What to show in the activity feed"
+        },
+        "eywa.historyHours": {
+          "type": "number",
+          "default": 24,
+          "enum": [1, 6, 24, 72],
+          "description": "How many hours of history to load"
         }
       }
     }
