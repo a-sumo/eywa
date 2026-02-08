@@ -1,18 +1,33 @@
 # Eywa
 
-> Eywa is an MCP (Model Context Protocol) server that provides shared memory for AI coding agents. It enables multiple agents to collaborate by sharing context, decisions, and progress across sessions.
+> Eywa is an observability and coordination layer for human + AI teams. Each person on a team directs AI coding agents that work autonomously. Eywa makes all agent work visible so the humans stay aligned. It connects any MCP-compatible AI agent with one line of config.
 
-Eywa works with any MCP-compatible AI coding agent including Claude Code, Cursor, Windsurf, Gemini CLI, Codex, and Cline. One configuration works for all agents.
+Website: https://eywa-ai.dev
+GitHub: https://github.com/a-sumo/eywa
+Discord: https://discord.gg/c7V2Ze58
+MCP Server: https://mcp.eywa-ai.dev/mcp
+
+## What Eywa Does
+
+When every team member controls AI agents, small misalignments between people get amplified at machine speed. Eywa gives the team visibility across every agent session so the humans know what to sync on.
+
+- Thread Tree: live view of what every person's agents are doing. Filter by teammate, status, or file.
+- Cross-Session Links: connect decisions and context across agent boundaries with reference, inject, or fork links.
+- Context Injection: push decisions or corrections into a teammate's agent mid-session. They see it on their next tool call.
+- Knowledge Base: persistent team memory that survives across sessions. Architecture decisions, conventions, gotchas.
+- VS Code Extension: see what your teammates' agents are doing without leaving your editor. Activity feed, inject shortcuts, CodeLens.
+- Discord Integration: team sync from Discord. See what agents are doing, inject context, share knowledge.
+- Timeline: rewind, fork, and merge agent session timelines.
 
 ## Quick Start
 
 Create a room with the CLI:
 
-```bash
+```
 npx eywa-ai init my-team
 ```
 
-Or add Eywa directly to your agent's MCP configuration:
+Or add Eywa directly to your agent's MCP config:
 
 ```json
 {
@@ -24,117 +39,115 @@ Or add Eywa directly to your agent's MCP configuration:
 }
 ```
 
-Configuration via URL params:
-- `room`: Your team's room identifier (e.g., "my-team")
-- `agent`: Your name or identifier (e.g., "claude/alice")
+URL params:
+- `room` - your team's room identifier (e.g. "my-team")
+- `agent` - your name or identifier (e.g. "claude/alice")
 
-Note: Gemini CLI uses `httpUrl` instead of `url`. Windsurf uses `serverUrl`.
+## Supported Agents
 
-## Available Tools
+Eywa works with any MCP-compatible AI coding agent:
 
-Once connected, these tools are available:
+- Claude Code (CLI) - config: ~/.claude/claude_desktop_config.json
+- Cursor (IDE) - config: ~/.cursor/mcp.json - enable MCP in Settings > Features > MCP
+- Windsurf (IDE) - config: ~/.windsurf/mcp.json - uses `serverUrl` instead of `url`
+- Gemini CLI - config: ~/.gemini/settings.json - uses `httpUrl` instead of `url`
+- Codex (CLI) - config: ~/.codex/config.json
+- Cline (VS Code) - config: VS Code Settings > Cline > MCP Servers
+- Mistral, Cohere, and any other MCP-compatible agent
+
+## Available MCP Tools
 
 ### Session Management
-- `eywa_start`: Start logging a session with a task description
-- `eywa_stop`: Stop the current session with a summary
-- `eywa_done`: Mark session complete with status, artifacts, and next steps
-- `eywa_whoami`: Check your agent identity and session info
+- `eywa_start` - start logging a session with a task description
+- `eywa_stop` - stop the current session with a summary
+- `eywa_done` - mark session complete with status, artifacts, and next steps
+- `eywa_whoami` - check your agent identity and session info
 
-### Logging & Memory
-- `eywa_log`: Log a message to shared memory
-- `eywa_file`: Store a file or code block, returns a reference ID
-- `eywa_get_file`: Retrieve a stored file by ID
+### Logging and Memory
+- `eywa_log` - log a message to shared memory
+- `eywa_file` - store a file or code block, returns a reference ID
+- `eywa_get_file` - retrieve a stored file by ID
 
 ### Context Sharing
-- `eywa_context`: Get recent context from all agents in the room
-- `eywa_pull`: Pull context from a specific agent's session
-- `eywa_sync`: Sync another agent's session history into your context
-- `eywa_inject`: Push context to another agent's inbox
-- `eywa_inbox`: Check for context injected by other agents
+- `eywa_context` - get recent context from all agents in the room
+- `eywa_pull` - pull context from a specific agent's session
+- `eywa_sync` - sync another agent's session history into your context
+- `eywa_inject` - push context to another agent's inbox
+- `eywa_inbox` - check for context injected by other agents
 
 ### Knowledge Base
-- `eywa_learn`: Store persistent project knowledge
-- `eywa_knowledge`: Retrieve the project knowledge base
-- `eywa_forget`: Remove outdated knowledge entries
+- `eywa_learn` - store persistent project knowledge
+- `eywa_knowledge` - retrieve the project knowledge base
+- `eywa_forget` - remove outdated knowledge entries
 
 ### Discovery
-- `eywa_agents`: List all agents in the room
-- `eywa_status`: See what all agents are currently working on
-- `eywa_search`: Search memories for a query string
-- `eywa_recall`: Get messages from a specific agent
+- `eywa_agents` - list all agents in the room
+- `eywa_status` - see what all agents are currently working on
+- `eywa_search` - search memories for a query string
+- `eywa_recall` - get messages from a specific agent
+
+### Timeline
+- `eywa_history` - view session history
+- `eywa_rewind` - rewind to an earlier point
+- `eywa_fork` - create a new timeline branch
+- `eywa_bookmark` - mark an important moment
+- `eywa_merge` - combine timelines
+- `eywa_compare` - compare two points in the timeline
+- `eywa_pick` - cherry-pick moments from another timeline
 
 ### Linking
-- `eywa_link`: Create connections between memories and sessions
-- `eywa_links`: List existing links
-- `eywa_unlink`: Remove a link
-- `eywa_fetch`: Fetch a specific memory by ID
+- `eywa_link` - create connections between memories and sessions
+- `eywa_links` - list existing links
+- `eywa_unlink` - remove a link
+- `eywa_fetch` - fetch a specific memory by ID
 
-## Integration Guides
+### Messaging
+- `eywa_msg` - send a message to teammates via Eywa
 
-### Claude Code
-Config path: `~/.claude/claude_desktop_config.json`
+## Pricing
 
-Claude Code has first-class MCP support. Add the Eywa server to your config and restart Claude Code.
+- Free: $0, up to 5 team members, unlimited workspaces, 7-day history, all integrations
+- Pro: $5/seat/month, unlimited members, 90-day history, team knowledge base, timeline rewind + forking, priority support
+- Enterprise: contact us, custom deployment, custom integrations, volume discounts
 
-### Cursor
-Config path: `~/.cursor/mcp.json`
+## Architecture
 
-Enable MCP in Cursor Settings > Features > MCP, then add Eywa to your MCP config.
-
-### Windsurf
-Config path: `~/.windsurf/mcp.json`
-
-Windsurf has built-in MCP support. Add Eywa and access tools via the Cascade panel.
-
-### Gemini CLI
-Config path: `~/.gemini/settings.json`
-
-Gemini CLI supports MCP servers natively. Add Eywa to your settings.
-
-### Codex
-Config path: `~/.codex/config.json`
-
-OpenAI's Codex CLI supports MCP. Add Eywa to your config.
-
-### Cline (VS Code)
-Config path: VS Code Settings > Cline > MCP Servers
-
-Add Eywa to your VS Code settings.json under `cline.mcpServers`.
+- MCP server runs on Cloudflare Workers (Streamable HTTP transport)
+- Data stored in Supabase (PostgreSQL + Realtime)
+- Web dashboard is a React/Vite SPA deployed on Vercel
+- Agent identity format: `{base_name}/{adjective}-{noun}` (e.g. `armand/quiet-oak`)
+- Three core tables: rooms, memories, messages
+- Local-first privacy: your code never leaves your machine, Eywa syncs metadata only
 
 ## Common Workflows
 
-### Starting a Session
-```
-Use eywa_start to begin logging: "Working on authentication refactor"
-```
+Starting a session:
+- "Start a session for working on the auth feature" (uses eywa_start)
 
-### Checking Team Context
-```
-Use eywa_context to see what other agents are working on
-Use eywa_status for a quick overview of active sessions
-```
+Checking team context:
+- "What are the other agents working on?" (uses eywa_context or eywa_status)
 
-### Sharing Decisions
-```
-Use eywa_learn to store architectural decisions
-Use eywa_inject to push important context to specific agents
-```
+Sharing decisions:
+- "Save this decision to the knowledge base" (uses eywa_learn)
+- "Tell Alice about this API change" (uses eywa_inject)
 
-### Handoff Between Agents
-```
-Use eywa_done to mark your session complete with artifacts and next steps
-The next agent can use eywa_pull to get your context
-```
+Handoff between agents:
+- Use eywa_done to mark your session complete with artifacts and next steps
+- The next agent can use eywa_pull to get your context
 
-## API Reference
+## Docs
 
-Base URL: `https://mcp.eywa-ai.dev/mcp`
+- [Integration Guides](https://eywa-ai.dev/docs)
+- [Claude Code Setup](https://eywa-ai.dev/docs/integrations/claude-code)
+- [Cursor Setup](https://eywa-ai.dev/docs/integrations/cursor)
+- [Windsurf Setup](https://eywa-ai.dev/docs/integrations/windsurf)
+- [Gemini CLI Setup](https://eywa-ai.dev/docs/integrations/gemini-cli)
+- [Codex Setup](https://eywa-ai.dev/docs/integrations/codex)
+- [Cline Setup](https://eywa-ai.dev/docs/integrations/cline)
 
-The MCP server handles all communication. Agents don't need to call the API directly. Room and agent identity are passed as URL query params.
+## Optional
 
-## Support
-
-- Dashboard: https://eywa-ai.dev
-- Discord: https://discord.gg/eywa-ai
-- GitHub: https://github.com/a-sumo/eywa
-- CLI: `npx eywa-ai help`
+- [Live Demo](https://eywa-ai.dev/r/demo)
+- [Pitch Deck](https://eywa-ai.dev/slides)
+- [GitHub Repository](https://github.com/a-sumo/eywa)
+- [Discord Community](https://discord.gg/c7V2Ze58)
