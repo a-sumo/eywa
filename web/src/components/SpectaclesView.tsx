@@ -69,6 +69,13 @@ export function SpectaclesView() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
+  // Voice events from Spectacles
+  const [voiceEvents, setVoiceEvents] = useState<Array<{
+    type: "input" | "response" | "inject";
+    text: string;
+    ts: number;
+  }>>([]);
+
   // Build context from recent memories for Gemini
   const contextSummary = useMemo(() => {
     const recent = memories.filter(m => !isNoise(m)).slice(0, 20);
@@ -128,6 +135,28 @@ export function SpectaclesView() {
     const channel = supabase.channel(channelKey, {
       config: { broadcast: { ack: false, self: false } },
     });
+
+    // Listen for voice events from Spectacles
+    channel.on("broadcast", { event: "voice_input" }, (msg) => {
+      setVoiceEvents(prev => [...prev.slice(-49), {
+        type: "input", text: msg.payload.text, ts: msg.payload.timestamp,
+      }]);
+    });
+    channel.on("broadcast", { event: "voice_response" }, (msg) => {
+      setVoiceEvents(prev => [...prev.slice(-49), {
+        type: "response", text: msg.payload.text, ts: msg.payload.timestamp,
+      }]);
+    });
+    channel.on("broadcast", { event: "voice_inject" }, (msg) => {
+      setVoiceEvents(prev => [...prev.slice(-49), {
+        type: "inject", text: msg.payload.message, ts: msg.payload.timestamp,
+      }]);
+    });
+    channel.on("broadcast", { event: "interact" }, (msg) => {
+      const p = msg.payload;
+      console.log("[Spectacles] Interaction:", p.type, p.id, `(${p.x?.toFixed(2)}, ${p.y?.toFixed(2)})`);
+    });
+
     channel.subscribe((status) => {
       if (status === "SUBSCRIBED") setChannelReady(true);
     });
@@ -288,10 +317,34 @@ export function SpectaclesView() {
               <button onClick={clearChat} style={styles.clearBtn}>Clear</button>
             )}
           </div>
+
+          {/* Voice feed from Spectacles */}
+          {voiceEvents.length > 0 && (
+            <div style={styles.voiceFeed}>
+              <div style={styles.voiceFeedHeader}>
+                <span style={styles.liveDot} /> Spectacles Voice
+              </div>
+              {voiceEvents.slice(-8).map((ev, i) => (
+                <div key={i} style={{
+                  ...styles.voiceMsg,
+                  ...(ev.type === "input" ? styles.voiceInput : {}),
+                  ...(ev.type === "response" ? styles.voiceResponse : {}),
+                  ...(ev.type === "inject" ? styles.voiceInject : {}),
+                }}>
+                  <span style={styles.voiceLabel}>
+                    {ev.type === "input" ? "You" : ev.type === "inject" ? "Injected" : "Eywa"}
+                  </span>
+                  {ev.text}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div style={styles.chatScroll}>
-            {chatMessages.length === 0 && (
+            {chatMessages.length === 0 && voiceEvents.length === 0 && (
               <div style={styles.chatEmpty}>
-                Ask Gemini about agent activity, destination progress, or patterns.
+                Ask Gemini here, or speak through Spectacles. Voice transcriptions
+                and responses from the glasses appear above.
               </div>
             )}
             {chatMessages.map((msg, i) => (
@@ -633,5 +686,48 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "50%",
     background: "#4ade80",
     flexShrink: 0,
+  },
+  voiceFeed: {
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    padding: "6px 12px",
+    maxHeight: 180,
+    overflowY: "auto" as const,
+    background: "rgba(74,222,128,0.03)",
+  },
+  voiceFeedHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: "0.6rem",
+    fontWeight: 600,
+    color: "#4ade80",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.5px",
+    marginBottom: 4,
+  },
+  voiceMsg: {
+    fontSize: "0.7rem",
+    padding: "3px 8px",
+    borderRadius: 4,
+    marginBottom: 2,
+    lineHeight: 1.4,
+  },
+  voiceInput: {
+    color: "#c4b5fd",
+    background: "rgba(139,92,246,0.08)",
+  },
+  voiceResponse: {
+    color: "rgba(255,255,255,0.7)",
+    background: "rgba(255,255,255,0.03)",
+  },
+  voiceInject: {
+    color: "#fcd34d",
+    background: "rgba(252,211,77,0.08)",
+    borderLeft: "2px solid #fcd34d",
+  },
+  voiceLabel: {
+    fontWeight: 600,
+    marginRight: 6,
+    fontSize: "0.6rem",
   },
 };
