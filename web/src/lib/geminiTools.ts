@@ -376,90 +376,103 @@ async function handleGetKnowledge(
 }
 
 // ---------------------------------------------------------------------------
-// detect_patterns (intent vector cosine similarity)
+// detect_patterns (LLM-based semantic intent analysis via Gemini)
 // ---------------------------------------------------------------------------
 
-/** All known dimensions for intent vectors. */
-const INTENT_SYSTEMS = ["git", "database", "api", "deploy", "infra", "browser", "filesystem", "communication", "terminal", "editor", "ci", "cloud"];
-const INTENT_ACTIONS = ["read", "write", "create", "delete", "deploy", "test", "review", "debug", "configure", "monitor"];
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
+const PATTERN_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite"];
 
-/** Build an intent vector from agent operation metadata. */
-function buildIntentVector(mems: Memory[]): number[] {
-  // Vector dimensions: [systems...12, actions...10, create_bias, fix_bias, refactor_bias]
-  const systemCounts = new Array(INTENT_SYSTEMS.length).fill(0);
-  const actionCounts = new Array(INTENT_ACTIONS.length).fill(0);
-  let createBias = 0;
-  let fixBias = 0;
-  let refactorBias = 0;
+/** Build a compact intent profile for one agent from their recent activity. */
+function buildAgentProfile(agent: string, mems: Memory[]): string {
+  // Task description from session start
+  const startMem = mems.find((m) => {
+    const md = (m.metadata ?? {}) as Record<string, unknown>;
+    return md.event === "session_start";
+  });
+  const task = startMem
+    ? ((startMem.metadata as Record<string, unknown>)?.task as string || "")
+    : (mems[0]?.content ?? "").slice(0, 150);
 
-  for (const m of mems) {
-    const meta = (m.metadata ?? {}) as Record<string, unknown>;
-    const system = meta.system as string | undefined;
-    const action = meta.action as string | undefined;
-    const content = (m.content ?? "").toLowerCase();
-
-    if (system) {
-      const idx = INTENT_SYSTEMS.indexOf(system);
-      if (idx >= 0) systemCounts[idx]++;
-    }
-    if (action) {
-      const idx = INTENT_ACTIONS.indexOf(action);
-      if (idx >= 0) actionCounts[idx]++;
-    }
-
-    // Direction heuristics from content
-    if (/\b(add|creat|implement|build|new|ship)\b/.test(content)) createBias++;
-    if (/\b(fix|bug|error|broken|repair|patch)\b/.test(content)) fixBias++;
-    if (/\b(refactor|clean|reorganiz|restructur|simplif)\b/.test(content)) refactorBias++;
-  }
-
-  return [...systemCounts, ...actionCounts, createBias, fixBias, refactorBias];
-}
-
-/** Extract scope keywords from agent activity for overlap detection. */
-function extractScopeSignature(mems: Memory[]): Set<string> {
+  // Aggregate operation metadata
+  const systems = new Set<string>();
+  const actions = new Set<string>();
   const scopes = new Set<string>();
+  const outcomes: string[] = [];
+
   for (const m of mems) {
     const meta = (m.metadata ?? {}) as Record<string, unknown>;
-    const scope = meta.scope as string | undefined;
-    if (scope) {
-      // Split scope into normalized tokens (file paths, component names)
-      for (const token of scope.toLowerCase().split(/[,\s/]+/)) {
-        if (token.length > 2) scopes.add(token);
-      }
-    }
-    // Also extract from task descriptions in session_start events
-    if (meta.event === "session_start" || meta.event === "session_done") {
-      const task = ((meta.task as string) || (meta.summary as string) || "").toLowerCase();
-      for (const token of task.split(/\W+/)) {
-        if (token.length > 3) scopes.add(token);
-      }
-    }
+    if (meta.system) systems.add(meta.system as string);
+    if (meta.action) actions.add(meta.action as string);
+    if (meta.scope) scopes.add((meta.scope as string).slice(0, 60));
+    if (meta.outcome) outcomes.push(meta.outcome as string);
   }
-  return scopes;
+
+  // Recent content (last 5 meaningful entries, truncated)
+  const snippets = mems
+    .filter((m) => m.content && m.content.length > 10)
+    .slice(0, 5)
+    .map((m) => m.content!.slice(0, 120));
+
+  const lines = [`AGENT: ${agent}`, `TASK: ${task}`];
+  if (systems.size > 0) lines.push(`SYSTEMS: ${[...systems].join(", ")}`);
+  if (actions.size > 0) lines.push(`ACTIONS: ${[...actions].join(", ")}`);
+  if (scopes.size > 0) lines.push(`SCOPES: ${[...scopes].join("; ")}`);
+  if (outcomes.length > 0) {
+    const ok = outcomes.filter((o) => o === "success").length;
+    const fail = outcomes.filter((o) => o === "failure").length;
+    const blocked = outcomes.filter((o) => o === "blocked").length;
+    lines.push(`OUTCOMES: ${ok} ok, ${fail} fail, ${blocked} blocked`);
+  }
+  if (snippets.length > 0) lines.push(`RECENT:\n  ${snippets.join("\n  ")}`);
+
+  return lines.join("\n");
 }
 
-/** Cosine similarity between two vectors. */
-function cosineSimilarity(a: number[], b: number[]): number {
-  let dot = 0, magA = 0, magB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    magA += a[i] * a[i];
-    magB += b[i] * b[i];
-  }
-  const denom = Math.sqrt(magA) * Math.sqrt(magB);
-  return denom > 0 ? dot / denom : 0;
-}
+const PATTERN_PROMPT = `You are analyzing AI agents working in the same room toward a shared destination. Below is each agent's recent activity profile.
 
-/** Scope overlap ratio (Jaccard on scope tokens, not raw content). */
-function scopeOverlap(a: Set<string>, b: Set<string>): number {
-  if (a.size === 0 || b.size === 0) return 0;
-  let intersection = 0;
-  for (const w of a) {
-    if (b.has(w)) intersection++;
+Identify ONLY patterns that matter for steering. Classify each as:
+- REDUNDANCY: Agents working toward the SAME goal with the SAME approach. Could be merged. Focus on semantic intent, not surface keywords or file names.
+- DIVERGENCE: Agents on the SAME scope but pulling in DIFFERENT directions. Their work may conflict.
+- ALIGNMENT: Agents whose work COMPLEMENTS each other toward the destination.
+- DISTRESS: Agents stuck, failing repeatedly, or blocked.
+
+IMPORTANT:
+- Two agents touching the same file is NOT divergence if they're working on different aspects.
+- Two agents using different files IS redundancy if they're implementing the same feature.
+- Do NOT list idle agents. That's noise. Only flag agents that are stuck or distressed.
+- Be concise. One line per finding. No em dashes.
+- If nothing notable, say "No significant patterns" in one line.
+
+Respond ONLY with findings. Omit empty sections.`;
+
+/** Call Gemini to semantically analyze agent intent patterns. */
+async function analyzeWithGemini(profiles: string[]): Promise<string | null> {
+  if (!GEMINI_KEY) return null;
+
+  const userPrompt = `${profiles.length} active agents:\n\n${profiles.map((p, i) => `--- Agent ${i + 1} ---\n${p}`).join("\n\n")}`;
+
+  for (const model of PATTERN_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: PATTERN_PROMPT }] },
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 1536 },
+        }),
+      });
+      if (res.status === 429) continue;
+      if (!res.ok) continue;
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch {
+      continue;
+    }
   }
-  const union = a.size + b.size - intersection;
-  return union > 0 ? intersection / union : 0;
+  return null;
 }
 
 async function handleDetectPatterns(roomId: string): Promise<string> {
@@ -477,7 +490,7 @@ async function handleDetectPatterns(roomId: string): Promise<string> {
   if (!data || data.length === 0)
     return "No recent activity to analyze (last 30 minutes).";
 
-  const now = Date.now();
+  // Group by agent, only keep agents with meaningful activity (>2 events)
   const byAgent = new Map<string, Memory[]>();
   for (const row of data) {
     const arr = byAgent.get(row.agent) ?? [];
@@ -485,142 +498,23 @@ async function handleDetectPatterns(roomId: string): Promise<string> {
     byAgent.set(row.agent, arr);
   }
 
-  // Build intent vectors and scope signatures per agent
-  const intentVectors = new Map<string, number[]>();
-  const scopeSigs = new Map<string, Set<string>>();
-  const agentTasks = new Map<string, string>();
-
-  for (const [agent, mems] of byAgent) {
-    intentVectors.set(agent, buildIntentVector(mems));
-    scopeSigs.set(agent, extractScopeSignature(mems));
-    // Extract task description
-    const taskMem = mems.find((m) => {
-      const meta = (m.metadata ?? {}) as Record<string, unknown>;
-      return meta.event === "session_start";
-    });
-    const taskMeta = taskMem ? (taskMem.metadata as Record<string, unknown>) : null;
-    agentTasks.set(agent, (taskMeta?.task as string) || (mems[0]?.content ?? "").slice(0, 100));
+  const activeAgents = [...byAgent.entries()].filter(([, mems]) => mems.length > 2);
+  if (activeAgents.length === 0) {
+    return `${data.length} events from ${byAgent.size} agents, but no agent has enough activity for analysis.`;
   }
 
-  const sections: string[] = [];
-  const agents = Array.from(byAgent.keys());
+  // Build compact profiles
+  const profiles = activeAgents.map(([agent, mems]) => buildAgentProfile(agent, mems));
 
-  // --- Redundancy detection (intent cosine > 0.8 AND scope overlap > 0.3) ---
-  const redundancies: string[] = [];
-  for (let i = 0; i < agents.length; i++) {
-    for (let j = i + 1; j < agents.length; j++) {
-      const intentSim = cosineSimilarity(
-        intentVectors.get(agents[i])!,
-        intentVectors.get(agents[j])!
-      );
-      const scopeSim = scopeOverlap(
-        scopeSigs.get(agents[i])!,
-        scopeSigs.get(agents[j])!
-      );
+  // Ask Gemini for semantic intent analysis
+  const geminiResult = await analyzeWithGemini(profiles);
 
-      if (intentSim > 0.8 && scopeSim > 0.3) {
-        const shortA = agents[i].split("/")[1] || agents[i];
-        const shortB = agents[j].split("/")[1] || agents[j];
-        redundancies.push(
-          `${shortA} and ${shortB}: intent ${Math.round(intentSim * 100)}% similar, scope ${Math.round(scopeSim * 100)}% overlap\n    ${shortA}: ${agentTasks.get(agents[i])?.slice(0, 80)}\n    ${shortB}: ${agentTasks.get(agents[j])?.slice(0, 80)}`
-        );
-      }
-    }
+  if (geminiResult) {
+    return `Pattern analysis (${data.length} events, ${activeAgents.length} active agents, LLM-analyzed):\n\n${geminiResult}`;
   }
 
-  if (redundancies.length > 0) {
-    sections.push(`REDUNDANCY (agents with very similar intent and scope):\n${redundancies.map((r) => `  - ${r}`).join("\n")}`);
-  }
-
-  // --- Divergence detection (same scope but low intent similarity) ---
-  const divergences: string[] = [];
-  for (let i = 0; i < agents.length; i++) {
-    for (let j = i + 1; j < agents.length; j++) {
-      const intentSim = cosineSimilarity(
-        intentVectors.get(agents[i])!,
-        intentVectors.get(agents[j])!
-      );
-      const scopeSim = scopeOverlap(
-        scopeSigs.get(agents[i])!,
-        scopeSigs.get(agents[j])!
-      );
-
-      // Same scope (>0.3) but different intent (<0.4) = pulling in different directions
-      if (scopeSim > 0.3 && intentSim < 0.4) {
-        const shortA = agents[i].split("/")[1] || agents[i];
-        const shortB = agents[j].split("/")[1] || agents[j];
-        divergences.push(
-          `${shortA} and ${shortB}: same scope (${Math.round(scopeSim * 100)}% overlap) but different intent (${Math.round(intentSim * 100)}% similar)\n    ${shortA}: ${agentTasks.get(agents[i])?.slice(0, 80)}\n    ${shortB}: ${agentTasks.get(agents[j])?.slice(0, 80)}`
-        );
-      }
-    }
-  }
-
-  if (divergences.length > 0) {
-    sections.push(`DIVERGENCE (same scope, different direction):\n${divergences.map((d) => `  - ${d}`).join("\n")}`);
-  }
-
-  // --- Alignment detection (same scope AND similar intent = good) ---
-  const alignments: string[] = [];
-  for (let i = 0; i < agents.length; i++) {
-    for (let j = i + 1; j < agents.length; j++) {
-      const intentSim = cosineSimilarity(
-        intentVectors.get(agents[i])!,
-        intentVectors.get(agents[j])!
-      );
-      const scopeSim = scopeOverlap(
-        scopeSigs.get(agents[i])!,
-        scopeSigs.get(agents[j])!
-      );
-
-      // Same scope AND same intent but not redundant (0.5 < intent < 0.8) = aligned
-      if (scopeSim > 0.3 && intentSim > 0.5 && intentSim <= 0.8) {
-        const shortA = agents[i].split("/")[1] || agents[i];
-        const shortB = agents[j].split("/")[1] || agents[j];
-        alignments.push(
-          `${shortA} and ${shortB}: aligned (intent ${Math.round(intentSim * 100)}%, scope ${Math.round(scopeSim * 100)}%)`
-        );
-      }
-    }
-  }
-
-  if (alignments.length > 0) {
-    sections.push(`ALIGNMENT (agents working in the same direction):\n${alignments.map((a) => `  - ${a}`).join("\n")}`);
-  }
-
-  // --- Idleness detection ---
-  const idle: string[] = [];
-  for (const [agent, mems] of byAgent) {
-    const lastTs = new Date(mems[0].ts).getTime();
-    if (now - lastTs > 5 * 60 * 1000) {
-      idle.push(`${agent} (last active ${formatTimeAgo(mems[0].ts)})`);
-    }
-  }
-
-  if (idle.length > 0) {
-    sections.push(`IDLE AGENTS:\n${idle.map((i) => `  - ${i}`).join("\n")}`);
-  }
-
-  // --- Distress detection ---
-  const distressed: string[] = [];
-  for (const row of data) {
-    const meta = row.metadata as Record<string, unknown>;
-    if (meta?.event === "distress" && meta?.resolved !== true) {
-      distressed.push(
-        `${row.agent}: ${(meta.task as string) || "unknown task"} (${formatTimeAgo(row.ts)}). Remaining: ${((meta.remaining as string) || "").slice(0, 100)}`
-      );
-    }
-  }
-
-  if (distressed.length > 0) {
-    sections.push(`DISTRESS (agents that ran out of context):\n${distressed.map((d) => `  - ${d}`).join("\n")}`);
-  }
-
-  if (sections.length === 0) {
-    return `Analyzed ${data.length} recent events across ${byAgent.size} agents. No significant patterns detected (no redundancy, divergence, idleness, or distress).`;
-  }
-
-  return `Pattern analysis (${data.length} events, ${byAgent.size} agents, last 30 min):\n\n${sections.join("\n\n")}`;
+  // Fallback: just return the profiles so the steering agent can reason about them
+  return `Pattern analysis (${data.length} events, ${activeAgents.length} active agents, raw profiles):\n\n${profiles.join("\n\n")}`;
 }
 
 // ---------------------------------------------------------------------------
