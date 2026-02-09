@@ -13,6 +13,7 @@ import { KnowledgeCodeLensProvider, registerKnowledgeForFileCommand } from "./kn
 import { CourseCodeLensProvider } from "./courseAwareness";
 import { AgentDecorationManager } from "./agentDecorations";
 import { SessionTreeProvider } from "./sessionTree";
+import { PanelViewProvider } from "./panelView";
 import { startLoginFlow } from "./authServer";
 import { LiveViewProvider } from "./liveView";
 import type { AttentionItem } from "./client";
@@ -40,6 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
   const courseProvider = new CourseCodeLensProvider(() => client);
   const decorationManager = new AgentDecorationManager(() => client);
   const sessionTree = new SessionTreeProvider(() => client);
+  const panelView = new PanelViewProvider(() => client);
   const liveProvider = new LiveViewProvider(() => client, getConfig("room"));
 
   // Track attention items for badge and notifications
@@ -121,12 +123,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     decorationManager.handleEvent(mem);
     sessionTree.handleEvent(mem);
+    panelView.handleEvent(mem);
     liveProvider.handleEvent(mem);
     updateStatusBar();
   }
 
   // Initialize client
-  initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, handleRealtimeEvent, context);
+  initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
 
   if (!getConfig("room")) {
     showWelcome();
@@ -134,6 +137,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(LiveViewProvider.viewType, liveProvider, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
+    vscode.window.registerWebviewViewProvider(PanelViewProvider.viewType, panelView, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.window.registerTreeDataProvider("eywaSessions", sessionTree),
@@ -151,6 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
     }),
     { dispose: () => decorationManager.dispose() },
     { dispose: () => sessionTree.dispose() },
+    { dispose: () => panelView.dispose() },
   );
 
   // Commands
@@ -160,6 +167,7 @@ export function activate(context: vscode.ExtensionContext) {
       courseProvider.refresh();
       decorationManager.seed();
       sessionTree.seed();
+      panelView.seed();
       liveProvider.loadInitial();
     }),
 
@@ -337,7 +345,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
-        initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, handleRealtimeEvent, context);
+        initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
         liveProvider.setRoom(getConfig("room"));
         updateStatusBar();
       }
@@ -373,6 +381,7 @@ function initClient(
   courseProvider: CourseCodeLensProvider,
   decorationManager: AgentDecorationManager,
   sessionTree: SessionTreeProvider,
+  panelView: PanelViewProvider,
   onEvent: (mem: MemoryPayload) => void,
   context: vscode.ExtensionContext,
 ) {
@@ -391,6 +400,7 @@ function initClient(
     courseProvider.refresh();
     decorationManager.seed();
     sessionTree.seed();
+    panelView.seed();
 
     realtime = new RealtimeManager();
     const unsub = realtime.on(onEvent);
