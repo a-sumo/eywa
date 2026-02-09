@@ -46,10 +46,11 @@
       ],
       "eywaPanel": [
         {
-          "id": "eywaSessions",
-          "name": "Sessions",
+          "type": "webview",
+          "id": "eywaAgentPanel",
+          "name": "Agents",
           "icon": "$(pulse)",
-          "contextualTitle": "Agent Sessions"
+          "contextualTitle": "Agent Activity"
         }
       ]
     },
