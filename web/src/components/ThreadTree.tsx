@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import { supabase, type Memory, type GlobalInsight } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
+import { ConnectAgent } from "./ConnectAgent";
 import { useGeminiChat, type ChatMessage } from "../hooks/useGeminiChat";
 
 // --- Destination ---
