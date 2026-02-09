@@ -123,6 +123,7 @@ function saveMessages(roomId: string | null | undefined, msgs: ChatMessage[]) {
 export function useGeminiChat(systemContext: string, roomId?: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessages(roomId));
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [autoContext, setAutoContext] = useState("");
   const abortRef = useRef<AbortController | null>(null);
@@ -215,6 +216,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
 
       setMessages((prev) => [...prev, userMsg]);
       setLoading(true);
+      setStatus("Thinking...");
       setError(null);
 
       abortRef.current = new AbortController();
@@ -376,9 +378,11 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
             const responses: GeminiFunctionResponse[] = [];
             for (const fc of functionCalls) {
               toolNames.push(fc.name);
+              setStatus(`Calling ${fc.name}...`);
               const result = await executeTool(roomId, fc);
               responses.push(result);
             }
+            setStatus("Analyzing results...");
 
             // Add function responses to API conversation
             apiContents.push({
@@ -447,6 +451,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
         );
       } finally {
         setLoading(false);
+        setStatus("");
         abortRef.current = null;
       }
     },
@@ -461,7 +466,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
     try { localStorage.removeItem(storageKey(roomId)); } catch {}
   }, []);
 
-  return { messages, loading, error, send, clear, autoContext };
+  return { messages, loading, status, error, send, clear, autoContext };
 }
 
 // ---------------------------------------------------------------------------
