@@ -5039,7 +5039,11 @@ body {
     border-top: 1px solid var(--color-border);
     padding: 0.75rem;
     justify-content: space-around;
-    z-index: 100;
+    z-index: 110;
+  }
+
+  .hub-inject-bar {
+    bottom: 60px;
   }
 
   .mobile-tabs a {
