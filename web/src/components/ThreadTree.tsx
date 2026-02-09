@@ -5,7 +5,6 @@ import { useParams } from "react-router-dom";
 import { supabase, type Memory, type GlobalInsight } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
-import { ConnectAgent } from "./ConnectAgent";
 import { useGeminiChat, type ChatMessage } from "../hooks/useGeminiChat";
 
 // --- Destination ---
@@ -901,14 +900,37 @@ export function ThreadTree() {
     });
   }
 
-  // Empty state
+  // Empty state - onboarding
   if (!loading && memories.length === 0) {
     return (
       <div className="hub-view">
         <div className="hub-header">
           <h2 className="hub-title">Hub</h2>
         </div>
-        {room ? <ConnectAgent slug={slug || ""} /> : null}
+        <div className="hub-onboarding">
+          <div className="hub-onboarding-welcome">
+            <h3>Your room is ready</h3>
+            <p>Connect an AI agent to start seeing its work here. Every session, decision, and file gets logged in real time so your whole team can see what's happening.</p>
+          </div>
+          {room ? <ConnectAgent slug={slug || ""} /> : null}
+          <div className="hub-onboarding-next">
+            <h4>What happens next</h4>
+            <div className="hub-onboarding-steps">
+              <div className="hub-onboarding-step">
+                <span className="hub-onboarding-num">1</span>
+                <span>Agent sessions appear here as live cards with progress and status</span>
+              </div>
+              <div className="hub-onboarding-step">
+                <span className="hub-onboarding-num">2</span>
+                <span>Use the Gemini chat panel to ask questions across all agent threads</span>
+              </div>
+              <div className="hub-onboarding-step">
+                <span className="hub-onboarding-num">3</span>
+                <span>Set a destination to track team progress toward a goal</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
