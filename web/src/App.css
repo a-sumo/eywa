@@ -3600,39 +3600,7 @@ body {
   50% { opacity: 0.6; }
 }
 
-/* Gemini steering panel */
-.hub-steering {
-  margin-bottom: 10px;
-}
-
-.hub-steering-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  background: rgba(139, 92, 246, 0.04);
-  border: 1px solid rgba(139, 92, 246, 0.15);
-  border-radius: 6px;
-  padding: 8px 12px;
-  color: var(--text-primary);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.82rem;
-  transition: background 120ms ease, border-color 120ms ease;
-}
-
-.hub-steering-toggle:hover {
-  background: rgba(139, 92, 246, 0.08);
-  border-color: rgba(139, 92, 246, 0.3);
-}
-
-.hub-steering-label {
-  color: #a78bfa;
-  font-weight: 700;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
+/* Gemini steering panel (conversation area) */
 
 .hub-steering-count {
   background: rgba(139, 92, 246, 0.2);
@@ -3645,9 +3613,9 @@ body {
 
 .hub-steering-body {
   border: 1px solid rgba(139, 92, 246, 0.15);
-  border-top: none;
-  border-radius: 0 0 6px 6px;
+  border-radius: 6px;
   background: rgba(0, 0, 0, 0.15);
+  margin-bottom: 10px;
 }
 
 .hub-steering-messages {
@@ -3734,67 +3702,26 @@ body {
   margin-bottom: 4px;
 }
 
-.hub-steering-input {
-  display: flex;
-  gap: 4px;
-  padding: 6px 8px;
+.hub-steering-clear {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.hub-steering-input input {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  padding: 6px 10px;
-  color: var(--text-primary);
-  font-size: 0.78rem;
-  font-family: inherit;
-}
-
-.hub-steering-input input:focus {
-  outline: none;
-  border-color: rgba(139, 92, 246, 0.4);
-}
-
-.hub-steering-input input::placeholder {
-  color: rgba(240, 242, 248, 0.3);
-}
-
-.hub-steering-input button {
-  background: rgba(139, 92, 246, 0.15);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  border-radius: 4px;
-  padding: 4px 10px;
-  color: #c084fc;
-  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.7rem;
+  padding: 4px;
   cursor: pointer;
   font-family: inherit;
-  transition: background 120ms ease;
 }
 
-.hub-steering-input button:hover:not(:disabled) {
-  background: rgba(139, 92, 246, 0.25);
+.hub-steering-clear:hover {
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.hub-steering-input button:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-
-.hub-steering-clear {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: rgba(255, 255, 255, 0.4) !important;
-  font-size: 0.75rem !important;
-}
-
-.hub-steering-clear:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08) !important;
-}
-
-/* Sticky inject bar */
-.hub-inject-bar {
+/* Unified command bar (Gemini + Inject) */
+.hub-command-bar {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -3802,10 +3729,81 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   background: var(--bg-surface, #1a1d2e);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 100;
+}
+
+.hub-command-mode {
+  display: flex;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.hub-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(240, 242, 248, 0.4);
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.hub-mode-btn:first-child { border-radius: 4px 0 0 4px; }
+.hub-mode-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+
+.hub-mode-btn.hub-mode-active {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c084fc;
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.hub-command-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 6px 12px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+
+.hub-command-input:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.hub-command-input::placeholder {
+  color: rgba(240, 242, 248, 0.3);
+}
+
+.hub-command-send {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+  padding: 6px 14px;
+  color: #c084fc;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease;
+}
+
+.hub-command-send:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.25);
+}
+
+.hub-command-send:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
 .hub-inject-target {
@@ -3862,46 +3860,7 @@ body {
   border-color: rgba(239, 68, 68, 0.3);
 }
 
-.hub-inject-input {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  padding: 6px 12px;
-  color: var(--text-primary);
-  font-size: 0.82rem;
-  font-family: inherit;
-}
-
-.hub-inject-input:focus {
-  outline: none;
-  border-color: var(--aurora-cyan, #15D1FF);
-}
-
-.hub-inject-input::placeholder {
-  color: rgba(240, 242, 248, 0.3);
-}
-
-.hub-inject-send {
-  background: rgba(168, 85, 247, 0.15);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  border-radius: 4px;
-  padding: 6px 14px;
-  color: #c084fc;
-  font-size: 1rem;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 120ms ease;
-}
-
-.hub-inject-send:hover:not(:disabled) {
-  background: rgba(168, 85, 247, 0.25);
-}
-
-.hub-inject-send:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
+/* (inject-input and inject-send removed, now using hub-command-* unified styles) */
 
 /* ============================================
    Thread View
@@ -4753,12 +4712,8 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .hub-inject-bar {
+  .hub-command-bar {
     flex-wrap: wrap;
-  }
-
-  .hub-inject-input {
-    min-width: 0;
   }
 }
 
@@ -5127,7 +5082,7 @@ body {
     z-index: 110;
   }
 
-  .hub-inject-bar {
+  .hub-command-bar {
     bottom: 60px;
   }
 

@@ -137,19 +137,13 @@ async function run() {
   // ============================================
   console.log("📍 Act 3: Gemini steering panel...");
 
-  // Scroll back up to steering panel
+  // Scroll back up and focus the command bar (already in Gemini mode by default)
   await smoothScroll(page, 0, 1000);
-  await sleep(PAUSE.shortBeat);
-
-  // Open Gemini steering panel
-  const steeringToggle = page.locator(".hub-steering-toggle");
-  await steeringToggle.click();
   await sleep(PAUSE.shortBeat);
 
   // First query: "What are my agents doing?"
   console.log("  > Asking: What are my agents doing?");
-  const steeringInput = page.locator(".hub-steering-input input");
-  await typeHuman(page, ".hub-steering-input input", "What are my agents doing right now?");
+  await typeHuman(page, ".hub-command-input", "What are my agents doing right now?");
   await sleep(PAUSE.shortBeat);
 
   // Send
@@ -159,7 +153,7 @@ async function run() {
 
   // Second query: "Detect patterns"
   console.log("  > Asking: Detect patterns across my agents");
-  await typeHuman(page, ".hub-steering-input input", "Detect patterns across my agents");
+  await typeHuman(page, ".hub-command-input", "Detect patterns across my agents");
   await sleep(PAUSE.shortBeat);
 
   await page.keyboard.press("Enter");
@@ -175,7 +169,7 @@ async function run() {
   console.log("  > Asking: Which milestones are stuck?");
   await typeHuman(
     page,
-    ".hub-steering-input input",
+    ".hub-command-input",
     "Which milestones are stuck and what should I prioritize?"
   );
   await sleep(PAUSE.shortBeat);
@@ -189,9 +183,9 @@ async function run() {
   // ============================================
   console.log("📍 Act 5: Inject bar...");
 
-  // Scroll to inject bar at bottom
-  const injectBar = page.locator(".hub-inject-bar");
-  await injectBar.scrollIntoViewIfNeeded();
+  // Switch to inject mode in the unified command bar
+  const injectModeBtn = page.locator('.hub-mode-btn:has-text("Inject")');
+  await injectModeBtn.click();
   await sleep(PAUSE.shortBeat);
 
   // Set priority to urgent
@@ -202,13 +196,13 @@ async function run() {
   // Type inject message
   await typeHuman(
     page,
-    ".hub-inject-input",
+    ".hub-command-input",
     "Focus on the Spectacles map and network routing. Those are the last two milestones."
   );
   await sleep(PAUSE.shortBeat);
 
   // Send inject
-  await page.locator(".hub-inject-send").click();
+  await page.locator(".hub-command-send").click();
   await sleep(PAUSE.readMoment);
 
   // ============================================
