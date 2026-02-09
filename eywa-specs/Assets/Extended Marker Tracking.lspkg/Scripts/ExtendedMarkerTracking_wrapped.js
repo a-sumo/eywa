@@ -91,11 +91,21 @@ function init() {
     // Guard against false positive on first frame - ignore detections in first 2s
     var startTime = getTime();
     var ready = false;
+    var autoDetached = false;
+    var markerEverFound = false;
 
     script.createEvent("UpdateEvent").bind(function() {
         if (!ready && getTime() - startTime > 2.0) {
             ready = true;
             print("[Eywa] Marker tracking armed (2s warmup done)");
+        }
+
+        // Auto-detach after 3s if no marker detected (default placement mode)
+        if (ready && !autoDetached && !markerEverFound && getTime() - startTime > 3.0) {
+            autoDetached = true;
+            print("[Eywa] No marker after 3s, auto-detaching to default position");
+            detachMarker(objectContainer, freeParent);
+            // Keep marker tracking enabled so it can reposition later
         }
     });
 
@@ -111,7 +121,17 @@ function init() {
             print("[Eywa] Skipping detach during warmup");
             return;
         }
-        detachMarker(objectContainer, freeParent);
+        markerEverFound = true;
+
+        if (autoDetached) {
+            // Already detached to default position. Reposition to marker.
+            var markerT = script.markerComponent.getSceneObject().getTransform();
+            objectContainer.getTransform().setWorldPosition(markerT.getWorldPosition());
+            objectContainer.getTransform().setWorldRotation(markerT.getWorldRotation());
+            print("[Eywa] Repositioned from default to marker location");
+        } else {
+            detachMarker(objectContainer, freeParent);
+        }
     }
 
     // When marker found/lost, detach to world (guarded)
