@@ -26,19 +26,8 @@ const integrations: Record<string, IntegrationConfig> = {
     ),
     website: "https://claude.ai/claude-code",
     mcpDocs: "https://docs.anthropic.com/en/docs/claude-code/mcp",
-    configPath: "~/.claude/claude_desktop_config.json",
-    configExample: `{
-  "mcpServers": {
-    "eywa": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/eywa-mcp"],
-      "env": {
-        "EYWA_ROOM": "your-room-slug",
-        "EYWA_AGENT": "your-name"
-      }
-    }
-  }
-}`,
+    configPath: "Terminal (one command)",
+    configExample: `claude mcp add --transport http eywa "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=claude/alice"`,
     features: [
       "Full MCP support with all Eywa tools",
       "Automatic session tracking",
@@ -47,7 +36,7 @@ const integrations: Record<string, IntegrationConfig> = {
     ],
     notes: [
       "Claude Code has first-class MCP support built-in",
-      "Restart Claude Code after editing the config file",
+      "Replace my-team with your room slug and alice with your name",
     ],
   },
 
@@ -66,12 +55,7 @@ const integrations: Record<string, IntegrationConfig> = {
     configExample: `{
   "mcpServers": {
     "eywa": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/eywa-mcp"],
-      "env": {
-        "EYWA_ROOM": "your-room-slug",
-        "EYWA_AGENT": "your-name"
-      }
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cursor/alice"
     }
   }
 }`,
@@ -98,16 +82,11 @@ const integrations: Record<string, IntegrationConfig> = {
     ),
     website: "https://codeium.com/windsurf",
     mcpDocs: "https://docs.codeium.com/windsurf/mcp",
-    configPath: "~/.windsurf/mcp.json",
+    configPath: "~/.codeium/windsurf/mcp_config.json",
     configExample: `{
   "mcpServers": {
     "eywa": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/eywa-mcp"],
-      "env": {
-        "EYWA_ROOM": "your-room-slug",
-        "EYWA_AGENT": "your-name"
-      }
+      "serverUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=windsurf/alice"
     }
   }
 }`,
@@ -137,12 +116,7 @@ const integrations: Record<string, IntegrationConfig> = {
     configExample: `{
   "mcpServers": {
     "eywa": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/eywa-mcp"],
-      "env": {
-        "EYWA_ROOM": "your-room-slug",
-        "EYWA_AGENT": "your-name"
-      }
+      "httpUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=gemini/alice"
     }
   }
 }`,
@@ -172,12 +146,7 @@ const integrations: Record<string, IntegrationConfig> = {
     configExample: `{
   "mcpServers": {
     "eywa": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/eywa-mcp"],
-      "env": {
-        "EYWA_ROOM": "your-room-slug",
-        "EYWA_AGENT": "your-name"
-      }
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=codex/alice"
     }
   }
 }`,
@@ -205,17 +174,11 @@ const integrations: Record<string, IntegrationConfig> = {
     ),
     website: "https://github.com/cline/cline",
     mcpDocs: "https://github.com/cline/cline#mcp-support",
-    configPath: "VS Code Settings > Cline > MCP Servers",
-    configExample: `// In VS Code settings.json
-{
-  "cline.mcpServers": {
+    configPath: "VS Code MCP settings",
+    configExample: `{
+  "mcpServers": {
     "eywa": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/eywa-mcp"],
-      "env": {
-        "EYWA_ROOM": "your-room-slug",
-        "EYWA_AGENT": "your-name"
-      }
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cline/alice"
     }
   }
 }`,
@@ -242,17 +205,12 @@ const integrations: Record<string, IntegrationConfig> = {
     ),
     website: "https://mistral.ai",
     configPath: "Agent-dependent",
-    configExample: `// Mistral models can be used with any MCP-compatible agent
+    configExample: `// Mistral models can be used with any MCP-compatible agent.
 // Configure your agent to use Mistral's API, then add Eywa:
 {
   "mcpServers": {
     "eywa": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/eywa-mcp"],
-      "env": {
-        "EYWA_ROOM": "your-room-slug",
-        "EYWA_AGENT": "your-name"
-      }
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=mistral/alice"
     }
   }
 }`,
@@ -281,17 +239,12 @@ const integrations: Record<string, IntegrationConfig> = {
     ),
     website: "https://cohere.com",
     configPath: "Agent-dependent",
-    configExample: `// Cohere models can be used with any MCP-compatible agent
+    configExample: `// Cohere models can be used with any MCP-compatible agent.
 // Configure your agent to use Cohere's API, then add Eywa:
 {
   "mcpServers": {
     "eywa": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/eywa-mcp"],
-      "env": {
-        "EYWA_ROOM": "your-room-slug",
-        "EYWA_AGENT": "your-name"
-      }
+      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cohere/alice"
     }
   }
 }`,
@@ -351,12 +304,12 @@ export function IntegrationGuide() {
       <h2>Setup Instructions</h2>
       <ol className="docs-steps">
         <li>
-          <strong>Install the Eywa MCP server</strong>
-          <p>No installation needed - it runs via npx automatically.</p>
+          <strong>Add the Eywa MCP endpoint to your config</strong>
+          <p>No installation needed. Eywa runs as a hosted HTTP endpoint.</p>
         </li>
         <li>
-          <strong>Add Eywa to your config</strong>
-          <p>Edit <code>{config.configPath}</code></p>
+          <strong>Edit <code>{config.configPath}</code></strong>
+          <p>Paste the configuration below with your room and agent name.</p>
         </li>
         <li>
           <strong>Restart {config.name}</strong>
@@ -371,10 +324,10 @@ export function IntegrationGuide() {
       </pre>
 
       <div className="docs-config-note">
-        <strong>Configuration values:</strong>
+        <strong>URL parameters:</strong>
         <ul>
-          <li><code>EYWA_ROOM</code> - Your team's room slug (e.g., "my-team")</li>
-          <li><code>EYWA_AGENT</code> - Your name or identifier (e.g., "alice")</li>
+          <li><code>room</code> - Your team's room slug (e.g., "my-team"). Create one with <code>npx eywa-ai init</code>.</li>
+          <li><code>agent</code> - Your agent identity in <code>{"agent/name"}</code> format (e.g., "cursor/alice"). Each person uses their own name so Eywa can tell agents apart.</li>
         </ul>
       </div>
 

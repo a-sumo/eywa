@@ -113,10 +113,11 @@ Replace `alice` with your name. Each person uses their own name so Eywa can tell
 ```
 eywa init [name]              Create a room (random name if omitted)
 eywa join <room-slug>         Join an existing room
-eywa status [room]            Show all agent status
-eywa log [room] [limit]       Activity feed
-eywa inject <agent> <msg>     Push context to an agent
-eywa dashboard [room]         Open the web dashboard
+eywa status [room]            Show agent status with systems and actions
+eywa log [room] [limit]       Activity feed with operation metadata
+eywa inject <target> <msg>    Push context to an agent
+eywa dashboard [room]         Open the web dashboard (aliases: dash, open)
+eywa help                     Show help
 ```
 
 ## Examples
@@ -143,16 +144,22 @@ npx eywa-ai dashboard
 
 ## What Agents Can Do
 
-Once connected, agents get 20+ MCP tools:
+Once connected, agents get 40+ MCP tools:
 
 | Category | Tools | What they do |
 |----------|-------|-------------|
-| **Session** | `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on |
-| **Memory** | `eywa_log`, `eywa_file`, `eywa_search` | Log decisions, store files, search history |
-| **Context** | `eywa_context`, `eywa_pull`, `eywa_sync` | See what others are doing, pull their context |
+| **Session** | `eywa_whoami`, `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on |
+| **Memory** | `eywa_log`, `eywa_file`, `eywa_get_file`, `eywa_import`, `eywa_search` | Log decisions, store files, search history |
+| **Context** | `eywa_context`, `eywa_agents`, `eywa_recall`, `eywa_status`, `eywa_summary`, `eywa_pull`, `eywa_sync` | See what others are doing, pull their context |
 | **Injection** | `eywa_inject`, `eywa_inbox` | Push context to any agent |
-| **Knowledge** | `eywa_learn`, `eywa_knowledge` | Persistent project knowledge across sessions |
+| **Knowledge** | `eywa_learn`, `eywa_knowledge`, `eywa_forget` | Persistent project knowledge across sessions |
 | **Messaging** | `eywa_msg` | Team chat between agents and humans |
+| **Destination** | `eywa_destination`, `eywa_progress` | Set team goals, track milestones, report progress |
+| **Recovery** | `eywa_checkpoint`, `eywa_distress`, `eywa_recover` | Save state, survive context exhaustion, hand off work |
+| **Claiming** | `eywa_claim`, `eywa_unclaim` | Prevent duplicate work across agents |
+| **Linking** | `eywa_link`, `eywa_links`, `eywa_unlink`, `eywa_fetch` | Connect memories across sessions |
+| **Timeline** | `eywa_history`, `eywa_rewind`, `eywa_fork`, `eywa_bookmark`, `eywa_bookmarks`, `eywa_compare`, `eywa_pick`, `eywa_timelines`, `eywa_merge` | Git-like version control for agent work |
+| **Network** | `eywa_publish_insight`, `eywa_query_network`, `eywa_route` | Cross-room anonymized knowledge sharing and routing |
 
 ## How It Works
 
@@ -168,10 +175,11 @@ Agents connect via MCP (Model Context Protocol). The server is a stateless Cloud
 
 ## More Interfaces
 
-- **[Web Dashboard](https://eywa-ai.dev)** - thread tree, Gemini chat, real-time team activity
-- **Discord Bot** - 12 slash commands for team observability from chat
-- **VS Code Extension** - agent tree sidebar, activity feed, context injection
-- **Snap Spectacles AR** - team status in augmented reality
+- **[Web Dashboard](https://eywa-ai.dev)** - HubView with agent map, destination banner, Gemini steering, activity stream
+- **[Discord Bot](https://github.com/a-sumo/eywa/tree/main/discord-bot)** - 14 slash commands for team steering from chat
+- **[VS Code Extension](https://github.com/a-sumo/eywa/tree/main/vscode-extension)** - agent tree sidebar, activity feed, context injection, knowledge lens
+- **[Snap Spectacles AR](https://github.com/a-sumo/eywa/tree/main/eywa-specs)** - floating AR panels with activity, Gemini chat, and destination progress
+- **[Pi Displays](https://github.com/a-sumo/eywa/tree/main/pi-display)** - e-ink and TFT touch displays for ambient team status
 
 ## Self-Hosting
 

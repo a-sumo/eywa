@@ -151,7 +151,7 @@ export const slidesData: SlidesData = {
       items: [
         "<strong>Web dashboard</strong>: Thread tree, workspace, Gemini chat. Works on phone.",
         "<strong>VS Code</strong>: Realtime sidebar, activity feed, one-click context injection.",
-        "<strong>Discord</strong>: 12 slash commands. Your group chat becomes your agent control room.",
+        "<strong>Discord</strong>: 15 slash commands. Your group chat becomes your agent control room.",
         "<strong>CLI</strong>: npx eywa-ai init, status, inject, log.",
       ],
     },

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { RoomProvider } from "./context/RoomContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { AppHeader } from "./components/AppHeader";
 import { Landing } from "./components/Landing";
 import { RoomLayout } from "./components/RoomLayout";
 import { ThreadTree } from "./components/ThreadTree";
@@ -23,6 +24,14 @@ import { LogoGlowTuner } from "./components/LogoGlowTuner";
 import { JellyEditor } from "./components/JellyEditor";
 import { DocsLayout, DocsOverview } from "./components/DocsLayout";
 import { IntegrationGuide } from "./components/IntegrationGuide";
+import { QuickstartDocs } from "./components/docs/QuickstartDocs";
+import { CLIDocs } from "./components/docs/CLIDocs";
+import { VSCodeDocs } from "./components/docs/VSCodeDocs";
+import { DiscordDocs } from "./components/docs/DiscordDocs";
+import { SpectaclesDocs } from "./components/docs/SpectaclesDocs";
+import { PiDisplayDocs } from "./components/docs/PiDisplayDocs";
+import { ArchitectureDocs } from "./components/docs/ArchitectureDocs";
+import { SelfHostingDocs } from "./components/docs/SelfHostingDocs";
 import "./App.css";
 
 function App() {
@@ -30,6 +39,7 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <ScrollToTop />
+        <AppHeader />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/slides" element={<SlidePresentation />} />
@@ -38,6 +48,14 @@ function App() {
           <Route path="/cli-auth" element={<CLIAuth />} />
           <Route path="/docs" element={<DocsLayout />}>
             <Route index element={<DocsOverview />} />
+            <Route path="quickstart" element={<QuickstartDocs />} />
+            <Route path="cli" element={<CLIDocs />} />
+            <Route path="vscode" element={<VSCodeDocs />} />
+            <Route path="discord" element={<DiscordDocs />} />
+            <Route path="spectacles" element={<SpectaclesDocs />} />
+            <Route path="pi-displays" element={<PiDisplayDocs />} />
+            <Route path="architecture" element={<ArchitectureDocs />} />
+            <Route path="self-hosting" element={<SelfHostingDocs />} />
             <Route path="integrations/:provider" element={<IntegrationGuide />} />
           </Route>
           <Route path="/r/:slug/eink" element={<RoomProvider><MiniEywaEink /></RoomProvider>} />
@@ -73,10 +91,8 @@ function RoomRoutes() {
           <Route path="workspace" element={<WorkspaceView />} />
           <Route path="agent/:name" element={<AgentDetail />} />
           <Route path="chat" element={<Chat />} />
-          <Route path="mini" element={<MiniEywa />} />
           <Route path="graph" element={<SessionGraph />} />
           <Route path="knowledge" element={<GlobalKnowledgeHub />} />
-          <Route path="eink" element={<MiniEywaEink />} />
         </Routes>
       </RoomLayout>
     </RoomProvider>

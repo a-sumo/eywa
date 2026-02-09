@@ -926,7 +926,164 @@ export function ThreadTree() {
 
   return (
     <div className="hub-view hub-two-col">
-      {/* LEFT: Gemini chat panel */}
+      {/* LEFT: Dashboard content */}
+      <div className="hub-dashboard">
+      {/* Header: time range + stats */}
+      <div className="hub-header">
+        <div className="hub-time-range">
+          {TIME_RANGES.map(({ label, hours }) => (
+            <button
+              key={hours}
+              className={`hub-time-btn ${timeRange === hours ? "hub-time-active" : ""}`}
+              onClick={() => setTimeRange(hours)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="hub-stats">
+          <span className="hub-stat"><b>{activeAgents.length}</b> active</span>
+          <span className="hub-stat-sep">&middot;</span>
+          <span className="hub-stat"><b>{finishedAgents.length}</b> done</span>
+          <span className="hub-stat-sep">&middot;</span>
+          <span className="hub-stat"><b>{idleCount}</b> idle</span>
+        </div>
+      </div>
+
+      {/* Destination banner */}
+      {destination && (
+        <div className="hub-destination">
+          <div className="hub-destination-header">
+            <span className="hub-destination-label">Destination</span>
+            <span className="hub-activity-time">{timeAgo(destination.ts)}</span>
+          </div>
+          <div className="hub-destination-text">{destination.destination}</div>
+          {destination.milestones.length > 0 && (() => {
+            const done = destination.milestones.filter((m) => destination.progress[m]).length;
+            const total = destination.milestones.length;
+            const pct = Math.round((done / total) * 100);
+            return (
+              <>
+                <div className="hub-destination-progress">
+                  <div className="hub-destination-track">
+                    <div
+                      className="hub-destination-fill"
+                      style={{
+                        width: `${pct}%`,
+                        background: pct === 100
+                          ? "#34d399"
+                          : "linear-gradient(90deg, #8b5cf6, #06b6d4)",
+                      }}
+                    />
+                  </div>
+                  <span className="hub-destination-pct">
+                    {done}/{total} ({pct}%)
+                  </span>
+                </div>
+                <div className="hub-destination-milestones">
+                  {destination.milestones.map((m) => (
+                    <span
+                      key={m}
+                      className={`hub-milestone ${destination.progress[m] ? "hub-milestone-done" : ""}`}
+                    >
+                      {destination.progress[m] ? "\u2713 " : ""}{m}
+                    </span>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
+          {destination.notes && (
+            <div className="hub-destination-notes">{destination.notes}</div>
+          )}
+        </div>
+      )}
+
+      {/* Network routes (cross-room intelligence) */}
+      {networkRoutes.length > 0 && (
+        <div className="hub-network-routes">
+          <div className="hub-network-routes-header">
+            <span className="hub-network-routes-label">Network Routes</span>
+            <span className="hub-network-routes-count">{networkRoutes.reduce((a, r) => a + r.insights.length, 0)} signals</span>
+          </div>
+          <div className="hub-network-routes-grid">
+            {networkRoutes.map((route) => (
+              <div key={route.domain} className="hub-route-card">
+                <div className="hub-route-header">
+                  <span className="hub-route-domain">{route.domain}</span>
+                  <span className="hub-route-match">{route.match}%</span>
+                </div>
+                {route.insights.map((ins) => (
+                  <div key={ins.id} className="hub-route-insight">
+                    {ins.insight.slice(0, 120)}{ins.insight.length > 120 ? "..." : ""}
+                    {ins.upvotes > 0 && <span className="hub-route-votes">+{ins.upvotes}</span>}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Agent topology map */}
+      {sortedAgents.length > 0 && (
+        <AgentTopologyMap agents={sortedAgents} destination={destination} />
+      )}
+
+      {/* Distress alerts */}
+      {unresolvedDistress.map((d) => (
+        <DistressAlert key={d.id} signal={d} />
+      ))}
+
+      {/* Active agents */}
+      {activeAgents.length > 0 && (
+        <div className="hub-section">
+          <div className="hub-section-label">Active agents</div>
+          <div className="hub-agent-grid">
+            {activeAgents.map((a) => (
+              <AgentCard
+                key={a.agent}
+                state={a}
+                expanded={expandedAgents.has(a.agent)}
+                onToggle={() => toggleAgent(a.agent)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Finished agents (collapsible) */}
+      {finishedAgents.length > 0 && (
+        <div className="hub-section">
+          <button
+            className="hub-collapse-btn"
+            onClick={() => setShowFinished(!showFinished)}
+          >
+            {showFinished ? "\u25BE" : "\u25B8"} {finishedAgents.length} finished
+          </button>
+          {showFinished && (
+            <div className="hub-agent-grid">
+              {finishedAgents.map((a) => (
+                <AgentCard
+                  key={a.agent}
+                  state={a}
+                  expanded={expandedAgents.has(a.agent)}
+                  onToggle={() => toggleAgent(a.agent)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Idle count */}
+      {idleCount > 0 && (
+        <div className="hub-idle-count">{idleCount} idle agents</div>
+      )}
+
+      </div>{/* end hub-dashboard */}
+
+      {/* RIGHT: Gemini chat + activity panel */}
       <div className="hub-chat-panel">
         <div className="hub-chat-header">
           <span className="hub-chat-title">Gemini</span>
@@ -1036,207 +1193,47 @@ export function ThreadTree() {
             </button>
           </div>
         </div>
-      </div>
+        {/* Activity stream */}
+        <div className="hub-chat-activity">
+          <div className="hub-section-label" style={{ padding: "8px 14px 4px" }}>Activity</div>
+          <div className="hub-activity-stream">
+            {activityStream.map((item) => {
+              const borderColor =
+                (item.event && EVENT_STYLES[item.event]?.borderColor) ||
+                (item.outcome ? OUTCOME_COLORS[item.outcome] || "#333" : "#333");
+              const bgTint =
+                (item.event && EVENT_STYLES[item.event]?.bgTint) || "transparent";
+              const isDistress = item.event === "distress";
+              const isInjection = item.messageType === "injection" || item.event === "context_injection";
+              const isSessionStart = item.event === "session_start";
+              const isSessionEnd = item.event === "session_done" || item.event === "session_end";
+              const isLong = item.content.length > 200;
 
-      {/* RIGHT: Dashboard content */}
-      <div className="hub-dashboard">
-      {/* Header: time range + stats */}
-      <div className="hub-header">
-        <div className="hub-time-range">
-          {TIME_RANGES.map(({ label, hours }) => (
-            <button
-              key={hours}
-              className={`hub-time-btn ${timeRange === hours ? "hub-time-active" : ""}`}
-              onClick={() => setTimeRange(hours)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="hub-stats">
-          <span className="hub-stat"><b>{activeAgents.length}</b> active</span>
-          <span className="hub-stat-sep">&middot;</span>
-          <span className="hub-stat"><b>{finishedAgents.length}</b> done</span>
-          <span className="hub-stat-sep">&middot;</span>
-          <span className="hub-stat"><b>{idleCount}</b> idle</span>
-        </div>
-      </div>
-
-      {/* Destination banner */}
-      {destination && (
-        <div className="hub-destination">
-          <div className="hub-destination-header">
-            <span className="hub-destination-label">Destination</span>
-            <span className="hub-activity-time">{timeAgo(destination.ts)}</span>
-          </div>
-          <div className="hub-destination-text">{destination.destination}</div>
-          {destination.milestones.length > 0 && (() => {
-            const done = destination.milestones.filter((m) => destination.progress[m]).length;
-            const total = destination.milestones.length;
-            const pct = Math.round((done / total) * 100);
-            return (
-              <>
-                <div className="hub-destination-progress">
-                  <div className="hub-destination-track">
-                    <div
-                      className="hub-destination-fill"
-                      style={{
-                        width: `${pct}%`,
-                        background: pct === 100
-                          ? "#34d399"
-                          : "linear-gradient(90deg, #8b5cf6, #06b6d4)",
-                      }}
-                    />
-                  </div>
-                  <span className="hub-destination-pct">
-                    {done}/{total} ({pct}%)
-                  </span>
-                </div>
-                <div className="hub-destination-milestones">
-                  {destination.milestones.map((m) => (
-                    <span
-                      key={m}
-                      className={`hub-milestone ${destination.progress[m] ? "hub-milestone-done" : ""}`}
-                    >
-                      {destination.progress[m] ? "\u2713 " : ""}{m}
-                    </span>
-                  ))}
-                </div>
-              </>
-            );
-          })()}
-          {destination.notes && (
-            <div className="hub-destination-notes">{destination.notes}</div>
-          )}
-        </div>
-      )}
-
-      {/* Network routes (cross-room intelligence) */}
-      {networkRoutes.length > 0 && (
-        <div className="hub-network-routes">
-          <div className="hub-network-routes-header">
-            <span className="hub-network-routes-label">Network Routes</span>
-            <span className="hub-network-routes-count">{networkRoutes.reduce((a, r) => a + r.insights.length, 0)} signals</span>
-          </div>
-          <div className="hub-network-routes-grid">
-            {networkRoutes.map((route) => (
-              <div key={route.domain} className="hub-route-card">
-                <div className="hub-route-header">
-                  <span className="hub-route-domain">{route.domain}</span>
-                  <span className="hub-route-match">{route.match}%</span>
-                </div>
-                {route.insights.map((ins) => (
-                  <div key={ins.id} className="hub-route-insight">
-                    {ins.insight.slice(0, 120)}{ins.insight.length > 120 ? "..." : ""}
-                    {ins.upvotes > 0 && <span className="hub-route-votes">+{ins.upvotes}</span>}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Agent topology map */}
-      {sortedAgents.length > 0 && (
-        <AgentTopologyMap agents={sortedAgents} destination={destination} />
-      )}
-
-      {/* (Gemini chat is now in the left panel) */}
-
-      {/* Distress alerts */}
-      {unresolvedDistress.map((d) => (
-        <DistressAlert key={d.id} signal={d} />
-      ))}
-
-      {/* Active agents */}
-      {activeAgents.length > 0 && (
-        <div className="hub-section">
-          <div className="hub-section-label">Active agents</div>
-          <div className="hub-agent-grid">
-            {activeAgents.map((a) => (
-              <AgentCard
-                key={a.agent}
-                state={a}
-                expanded={expandedAgents.has(a.agent)}
-                onToggle={() => toggleAgent(a.agent)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Finished agents (collapsible) */}
-      {finishedAgents.length > 0 && (
-        <div className="hub-section">
-          <button
-            className="hub-collapse-btn"
-            onClick={() => setShowFinished(!showFinished)}
-          >
-            {showFinished ? "\u25BE" : "\u25B8"} {finishedAgents.length} finished
-          </button>
-          {showFinished && (
-            <div className="hub-agent-grid">
-              {finishedAgents.map((a) => (
-                <AgentCard
-                  key={a.agent}
-                  state={a}
-                  expanded={expandedAgents.has(a.agent)}
-                  onToggle={() => toggleAgent(a.agent)}
+              return (
+                <ActivityRowFull
+                  key={item.id}
+                  agent={item.agent}
+                  content={item.content}
+                  system={item.system}
+                  outcome={item.outcome}
+                  scope={item.scope}
+                  ts={item.ts}
+                  borderColor={borderColor}
+                  bgTint={bgTint}
+                  isDistress={isDistress}
+                  isInjection={isInjection}
+                  isSessionStart={isSessionStart}
+                  isSessionEnd={isSessionEnd}
+                  isLong={isLong}
                 />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Idle count */}
-      {idleCount > 0 && (
-        <div className="hub-idle-count">{idleCount} idle agents</div>
-      )}
-
-      {/* Activity stream */}
-      <div className="hub-section">
-        <div className="hub-section-label">Activity</div>
-        <div className="hub-activity-stream">
-          {activityStream.map((item) => {
-            const borderColor =
-              (item.event && EVENT_STYLES[item.event]?.borderColor) ||
-              (item.outcome ? OUTCOME_COLORS[item.outcome] || "#333" : "#333");
-            const bgTint =
-              (item.event && EVENT_STYLES[item.event]?.bgTint) || "transparent";
-            const isDistress = item.event === "distress";
-            const isInjection = item.messageType === "injection" || item.event === "context_injection";
-            const isSessionStart = item.event === "session_start";
-            const isSessionEnd = item.event === "session_done" || item.event === "session_end";
-            const isLong = item.content.length > 200;
-
-            return (
-              <ActivityRowFull
-                key={item.id}
-                agent={item.agent}
-                content={item.content}
-                system={item.system}
-                outcome={item.outcome}
-                scope={item.scope}
-                ts={item.ts}
-                borderColor={borderColor}
-                bgTint={bgTint}
-                isDistress={isDistress}
-                isInjection={isInjection}
-                isSessionStart={isSessionStart}
-                isSessionEnd={isSessionEnd}
-                isLong={isLong}
-              />
-            );
-          })}
-          {activityStream.length === 0 && (
-            <div className="hub-empty">No activity yet</div>
-          )}
+              );
+            })}
+            {activityStream.length === 0 && (
+              <div className="hub-empty">No activity yet</div>
+            )}
+          </div>
         </div>
       </div>
-
-      </div>{/* end hub-dashboard */}
     </div>
   );
 }

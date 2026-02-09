@@ -53,9 +53,11 @@ function stepPath(x1: number, y1: number, x2: number, y2: number): string {
 
 // --- Data types ---
 
+type EventType = "start" | "end" | "inject" | "knowledge" | "work" | "distress" | "checkpoint" | "progress" | "claim" | "destination" | "operation";
+
 interface GraphEvent {
   id: string;
-  type: "start" | "end" | "inject" | "knowledge" | "work";
+  type: EventType;
   agent: string;
   user: string;
   sessionId: string;
@@ -64,7 +66,33 @@ interface GraphEvent {
   status?: string;
   priority?: string;
   targetUser?: string;
+  system?: string;
+  action?: string;
+  scope?: string;
+  outcome?: string;
+  percent?: number;
 }
+
+// Filter groups for the graph toolbar
+const EVENT_TYPE_GROUPS: { label: string; types: EventType[]; color: string; defaultOn: boolean }[] = [
+  { label: "Sessions", types: ["start", "end"], color: "#a78bfa", defaultOn: true },
+  { label: "Injections", types: ["inject"], color: "#f472b6", defaultOn: true },
+  { label: "Knowledge", types: ["knowledge"], color: "#c084fc", defaultOn: true },
+  { label: "Distress", types: ["distress"], color: "#ef4444", defaultOn: true },
+  { label: "Checkpoints", types: ["checkpoint"], color: "#eab308", defaultOn: true },
+  { label: "Destination", types: ["destination"], color: "#8b5cf6", defaultOn: true },
+  { label: "Claims", types: ["claim"], color: "#06b6d4", defaultOn: true },
+  { label: "Progress", types: ["progress"], color: "#34d399", defaultOn: false },
+  { label: "Operations", types: ["operation"], color: "#64748b", defaultOn: false },
+  { label: "Work", types: ["work"], color: "#475569", defaultOn: false },
+];
+
+const OP_SYSTEM_COLORS: Record<string, string> = {
+  git: "#f97316", database: "#06b6d4", api: "#8b5cf6", deploy: "#22c55e",
+  infra: "#ec4899", browser: "#3b82f6", filesystem: "#64748b",
+  communication: "#f472b6", terminal: "#a3e635", editor: "#38bdf8",
+  ci: "#fb923c", cloud: "#818cf8",
+};
 
 interface LayoutEvent extends GraphEvent {
   row: number;
@@ -148,6 +176,50 @@ function extractEvents(memories: Memory[]): GraphEvent[] {
         sessionId: m.session_id, ts: new Date(m.ts),
         label: (meta.title as string) ?? "knowledge",
       });
+    } else if (event === "distress") {
+      events.push({
+        id: m.id, type: "distress", agent: m.agent, user,
+        sessionId: m.session_id, ts: new Date(m.ts),
+        label: (meta.task as string) ?? "distress",
+        status: meta.resolved === true ? "resolved" : "unresolved",
+      });
+    } else if (event === "checkpoint") {
+      events.push({
+        id: m.id, type: "checkpoint", agent: m.agent, user,
+        sessionId: m.session_id, ts: new Date(m.ts),
+        label: (meta.task as string) ?? "checkpoint",
+      });
+    } else if (event === "progress") {
+      events.push({
+        id: m.id, type: "progress", agent: m.agent, user,
+        sessionId: m.session_id, ts: new Date(m.ts),
+        label: (meta.task as string) ?? "progress",
+        percent: (meta.percent as number) ?? 0,
+        status: (meta.status as string) ?? "working",
+      });
+    } else if (event === "claim" || event === "unclaim") {
+      events.push({
+        id: m.id, type: "claim", agent: m.agent, user,
+        sessionId: m.session_id, ts: new Date(m.ts),
+        label: event === "claim" ? ((meta.scope as string) ?? "claim") : "unclaim",
+      });
+    } else if (event === "destination") {
+      events.push({
+        id: m.id, type: "destination", agent: m.agent, user,
+        sessionId: m.session_id, ts: new Date(m.ts),
+        label: (meta.destination as string) ?? "destination update",
+      });
+    } else if (!event && meta.system && meta.action) {
+      // Operation-tagged log entry (no specific event, but has system/action metadata)
+      events.push({
+        id: m.id, type: "operation", agent: m.agent, user,
+        sessionId: m.session_id, ts: new Date(m.ts),
+        label: (meta.scope as string) ?? (m.content ?? "").slice(0, 100),
+        system: meta.system as string,
+        action: meta.action as string,
+        scope: meta.scope as string | undefined,
+        outcome: meta.outcome as string | undefined,
+      });
     }
   }
 
@@ -175,15 +247,18 @@ function extractEvents(memories: Memory[]): GraphEvent[] {
 
 // --- Build layout ---
 
-function buildGraphData(memories: Memory[]): GraphData {
+function buildGraphData(memories: Memory[], filterTypes?: Set<string>): GraphData {
   const empty: GraphData = {
     tracks: [], events: [], edges: [],
     totalRows: 0, labelX: 0, svgWidth: 0, svgHeight: 0,
   };
   if (memories.length === 0) return empty;
 
-  const rawEvents = extractEvents(memories);
-  rawEvents.sort((a, b) => a.ts.getTime() - b.ts.getTime());
+  let rawEvents = extractEvents(memories);
+  if (filterTypes) {
+    rawEvents = rawEvents.filter(e => filterTypes.has(e.type));
+  }
+  rawEvents.sort((a, b) => b.ts.getTime() - a.ts.getTime());
   if (rawEvents.length === 0) return empty;
 
   // Assign tracks by user, ordered by first appearance
@@ -331,6 +406,18 @@ function Tooltip({ data }: { data: TooltipData }) {
           {event.status}
         </div>
       )}
+      {event.percent !== undefined && (
+        <div className="graph-tooltip-meta">{event.percent}% complete</div>
+      )}
+      {(event.system || event.action || event.outcome) && (
+        <div className="graph-tooltip-ops">
+          {event.system && <span className="graph-tooltip-pill" style={{ color: OP_SYSTEM_COLORS[event.system] || "#64748b" }}>{event.system}</span>}
+          {event.action && <span className="graph-tooltip-pill">{event.action}</span>}
+          {event.outcome && <span className="graph-tooltip-pill" style={{
+            color: event.outcome === "success" ? "#6ee7b7" : event.outcome === "failure" ? "#fca5a5" : event.outcome === "blocked" ? "#fcd34d" : "#93c5fd"
+          }}>{event.outcome}</span>}
+        </div>
+      )}
       <div className="graph-tooltip-time">
         {event.ts.toLocaleDateString([], { month: "short", day: "numeric" })}{" "}
         {event.ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -366,8 +453,8 @@ function renderGraph(
 ): d3.ZoomBehavior<SVGSVGElement, unknown> {
   const svg = d3.select(svgEl);
 
-  // Set SVG to natural data-driven size - container scrolls if needed
-  svg.attr("width", graph.svgWidth).attr("height", graph.svgHeight);
+  // SVG fills container via CSS; viewBox not set so D3 zoom controls the viewport
+  svg.attr("width", null).attr("height", null);
 
   // Get or create zoom group
   let zoomGroup = svg.select<SVGGElement>("g.zoom-group");
@@ -579,6 +666,105 @@ function renderGraph(
     .attr("opacity", 0.7)
     .attr("shape-rendering", "geometricPrecision");
 
+  // Distress nodes: red circle with "!" marker
+  const distressNodes = nodeGs.filter(d => d.type === "distress");
+
+  distressNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", NODE_R + 1)
+    .attr("fill", d => d.status === "resolved" ? "#64748b" : "#ef4444")
+    .attr("shape-rendering", "geometricPrecision");
+
+  distressNodes.append("text")
+    .attr("x", d => graph.tracks[d.trackIdx].x)
+    .attr("y", d => rowY(d.row))
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "central")
+    .attr("fill", "white")
+    .attr("font-size", 10)
+    .attr("font-weight", 700)
+    .text("!");
+
+  // Checkpoint nodes: amber diamond
+  const checkpointNodes = nodeGs.filter(d => d.type === "checkpoint");
+
+  checkpointNodes.append("rect")
+    .attr("x", d => graph.tracks[d.trackIdx].x - 5)
+    .attr("y", d => rowY(d.row) - 5)
+    .attr("width", 10)
+    .attr("height", 10)
+    .attr("transform", d => `rotate(45, ${graph.tracks[d.trackIdx].x}, ${rowY(d.row)})`)
+    .attr("fill", "#eab308")
+    .attr("shape-rendering", "geometricPrecision");
+
+  // Progress nodes: filled circle, opacity scales with percent
+  const progressNodes = nodeGs.filter(d => d.type === "progress");
+
+  progressNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", NODE_R - 2)
+    .attr("fill", d => (d.percent ?? 0) >= 100 ? "#34d399" : "#06b6d4")
+    .attr("opacity", d => 0.3 + ((d.percent ?? 0) / 100) * 0.7)
+    .attr("shape-rendering", "geometricPrecision");
+
+  progressNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", NODE_R - 2)
+    .attr("fill", "none")
+    .attr("stroke", d => (d.percent ?? 0) >= 100 ? "#34d399" : "#06b6d4")
+    .attr("stroke-width", 1.5)
+    .attr("shape-rendering", "geometricPrecision");
+
+  // Claim nodes: small outlined square
+  const claimNodes = nodeGs.filter(d => d.type === "claim");
+
+  claimNodes.append("rect")
+    .attr("x", d => graph.tracks[d.trackIdx].x - 4)
+    .attr("y", d => rowY(d.row) - 4)
+    .attr("width", 8)
+    .attr("height", 8)
+    .attr("fill", "var(--color-fill)")
+    .attr("stroke", "#06b6d4")
+    .attr("stroke-width", 2)
+    .attr("shape-rendering", "crispEdges");
+
+  // Destination nodes: purple diamond, larger
+  const destNodes = nodeGs.filter(d => d.type === "destination");
+
+  destNodes.append("rect")
+    .attr("x", d => graph.tracks[d.trackIdx].x - 6)
+    .attr("y", d => rowY(d.row) - 6)
+    .attr("width", 12)
+    .attr("height", 12)
+    .attr("transform", d => `rotate(45, ${graph.tracks[d.trackIdx].x}, ${rowY(d.row)})`)
+    .attr("fill", "#8b5cf6")
+    .attr("stroke", "#06b6d4")
+    .attr("stroke-width", 1.5)
+    .attr("shape-rendering", "geometricPrecision");
+
+  // Operation nodes: tiny dot colored by system, failure ring if failed
+  const operationNodes = nodeGs.filter(d => d.type === "operation");
+
+  operationNodes.append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", 3)
+    .attr("fill", d => OP_SYSTEM_COLORS[d.system ?? ""] || "#64748b")
+    .attr("opacity", d => d.outcome === "failure" ? 1 : d.outcome === "blocked" ? 0.8 : 0.5)
+    .attr("shape-rendering", "geometricPrecision");
+
+  operationNodes.filter(d => d.outcome === "failure").append("circle")
+    .attr("cx", d => graph.tracks[d.trackIdx].x)
+    .attr("cy", d => rowY(d.row))
+    .attr("r", 5)
+    .attr("fill", "none")
+    .attr("stroke", "#ef4444")
+    .attr("stroke-width", 1.5)
+    .attr("shape-rendering", "geometricPrecision");
+
   // Event labels - wrap long text into 2 lines
   const LABEL_FONT = 12;
   const CHARS_PER_LINE = Math.floor(LABEL_MAX / (LABEL_FONT * 0.6)); // ~83 chars at 12px
@@ -656,17 +842,43 @@ function renderGraph(
       callbacks.onTrackHover(null);
     });
 
-  // --- Zoom behavior ---
+  // --- Pan-only behavior (clamped to content bounds) ---
+  const container = svgEl.parentElement;
+  const containerW = container ? container.clientWidth : graph.svgWidth;
+  const containerH = container ? container.clientHeight : graph.svgHeight;
+
   const zoom = d3.zoom<SVGSVGElement, unknown>()
-    .scaleExtent([0.3, 3])
+    .scaleExtent([1, 1])
+    .translateExtent([[0, 0], [graph.svgWidth, graph.svgHeight]])
+    .extent([[0, 0], [containerW, containerH]])
+    .filter((event) => {
+      // Only allow drag for panning. Block wheel and dblclick entirely
+      // so we can handle wheel ourselves as scroll.
+      if (event.type === "wheel") return false;
+      if (event.type === "dblclick") return false;
+      return true;
+    })
     .on("zoom", (event) => {
       zoomGroup.attr("transform", event.transform.toString());
     });
 
   svg.call(zoom);
-
-  // Start at 1:1 scale - container scrolls for overflow, user can zoom out for overview
   svg.call(zoom.transform, d3.zoomIdentity);
+
+  // Native wheel listener for vertical scroll (bypasses D3 completely)
+  const node = svg.node()!;
+  const minY = Math.min(0, containerH - graph.svgHeight);
+
+  function handleWheel(event: WheelEvent) {
+    event.preventDefault();
+    const current = d3.zoomTransform(node);
+    const newY = Math.max(minY, Math.min(0, current.y - event.deltaY));
+    svg.call(zoom.transform, d3.zoomIdentity.translate(current.x, newY));
+  }
+
+  node.addEventListener("wheel", handleWheel, { passive: false });
+  node.addEventListener("gesturestart", (e) => e.preventDefault());
+  node.addEventListener("gesturechange", (e) => e.preventDefault());
 
   return zoom;
 }
@@ -734,10 +946,34 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [hoveredTrack, setHoveredTrack] = useState<number | null>(null);
 
+  // Filter state: which event type groups are enabled
+  const [enabledGroups, setEnabledGroups] = useState<Set<number>>(
+    () => new Set(EVENT_TYPE_GROUPS.map((g, i) => g.defaultOn ? i : -1).filter(i => i >= 0))
+  );
+
+  const visibleTypes = useMemo(() => {
+    const types = new Set<string>();
+    for (const idx of enabledGroups) {
+      if (idx >= 0 && idx < EVENT_TYPE_GROUPS.length) {
+        for (const t of EVENT_TYPE_GROUPS[idx].types) types.add(t);
+      }
+    }
+    return types;
+  }, [enabledGroups]);
+
+  const toggleGroup = useCallback((idx: number) => {
+    setEnabledGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  }, []);
+
   const svgRef = useRef<SVGSVGElement>(null);
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
-  const graph = useMemo(() => buildGraphData(memories), [memories]);
+  const graph = useMemo(() => buildGraphData(memories, visibleTypes), [memories, visibleTypes]);
 
   // Map links onto the graph
   const linkEdges = useMemo(() => {
@@ -802,38 +1038,19 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
     updateTrackHighlight(svgRef.current, hoveredTrack);
   }, [hoveredTrack]);
 
-  // Zoom controls
-  const handleZoomIn = useCallback(() => {
+  const scrollBy = useCallback((delta: number) => {
     if (!svgRef.current || !zoomRef.current) return;
-    d3.select(svgRef.current)
-      .transition().duration(200)
-      .call(zoomRef.current.scaleBy, 1.3);
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    if (!svgRef.current || !zoomRef.current) return;
-    d3.select(svgRef.current)
-      .transition().duration(200)
-      .call(zoomRef.current.scaleBy, 1 / 1.3);
-  }, []);
-
-  const handleZoomFit = useCallback(() => {
-    if (!svgRef.current || !zoomRef.current) return;
+    const svg = d3.select(svgRef.current);
+    const current = d3.zoomTransform(svgRef.current);
     const container = svgRef.current.parentElement;
-    if (!container) return;
-    const containerW = container.clientWidth;
-    const containerH = container.clientHeight;
-    const scaleX = containerW / graph.svgWidth;
-    const scaleY = containerH / graph.svgHeight;
-    const scale = Math.min(scaleX, scaleY, 1);
-    const tx = (containerW - graph.svgWidth * scale) / 2;
-    const ty = (containerH - graph.svgHeight * scale) / 2;
-    d3.select(svgRef.current)
-      .transition().duration(300)
-      .call(zoomRef.current.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
-  }, [graph.svgWidth, graph.svgHeight]);
+    const containerH = container ? container.clientHeight : 600;
+    const minY = Math.min(0, containerH - graph.svgHeight);
+    const newY = Math.max(minY, Math.min(0, current.y + delta));
+    svg.transition().duration(200)
+      .call(zoomRef.current.transform, d3.zoomIdentity.translate(current.x, newY));
+  }, [graph.svgHeight]);
 
-  const handleZoomReset = useCallback(() => {
+  const handleScrollTop = useCallback(() => {
     if (!svgRef.current || !zoomRef.current) return;
     d3.select(svgRef.current)
       .transition().duration(300)
@@ -867,7 +1084,7 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
   return (
     <div className="session-graph">
       <div className="session-graph-header">
-        <h2 className="section-title">Session Graph</h2>
+        <h2 className="section-title">Graph</h2>
         <div className="graph-legend">
           {graph.tracks.map((t) => (
             <span key={t.user} className="graph-legend-item">
@@ -877,16 +1094,31 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
           ))}
         </div>
       </div>
+      <div className="graph-type-filters">
+        {EVENT_TYPE_GROUPS.map((group, idx) => (
+          <button
+            key={group.label}
+            className={`graph-type-filter ${enabledGroups.has(idx) ? "active" : ""}`}
+            style={{
+              borderColor: group.color,
+              background: enabledGroups.has(idx) ? `${group.color}20` : "transparent",
+              color: enabledGroups.has(idx) ? group.color : "rgba(255,255,255,0.3)",
+            }}
+            onClick={() => toggleGroup(idx)}
+          >
+            {group.label}
+          </button>
+        ))}
+      </div>
       <div className="session-graph-canvas" style={{ position: "relative" }}>
         <svg ref={svgRef}>
           <g className="zoom-group" />
         </svg>
 
         <div className="graph-zoom-controls">
-          <button onClick={handleZoomIn} title="Zoom in">+</button>
-          <button onClick={handleZoomOut} title="Zoom out">-</button>
-          <button onClick={handleZoomReset} title="Reset to 1:1">1:1</button>
-          <button onClick={handleZoomFit} title="Fit to view">Fit</button>
+          <button onClick={handleScrollTop} title="Scroll to top">Top</button>
+          <button onClick={() => scrollBy(200)} title="Scroll up">&uarr;</button>
+          <button onClick={() => scrollBy(-200)} title="Scroll down">&darr;</button>
         </div>
 
         {tooltip && <Tooltip data={tooltip} />}

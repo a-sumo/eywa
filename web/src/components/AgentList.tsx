@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useRealtimeAgents } from "../hooks/useRealtimeMemories";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useRoomContext } from "../context/RoomContext";
@@ -21,7 +20,6 @@ export function AgentList() {
   const agents = useRealtimeAgents(room?.id ?? null, 24 * 60 * 60 * 1000);
   const navigate = useNavigate();
   const location = useLocation();
-  const [showViews, setShowLabs] = useState(false);
 
   const basePath = `/r/${slug}`;
   const isActive = (path: string) => location.pathname === path;
@@ -30,53 +28,32 @@ export function AgentList() {
     <div className="agent-list">
       {/* Main nav */}
       <button
-        className={`agent-chip eywa-primary ${isActive(`${basePath}/workspace`) ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/workspace`)}
-      >
-        + New Session
-      </button>
-      <button
-        className={`agent-chip ${isActive(`${basePath}/chat`) ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/chat`)}
-      >
-        Team Chat
-      </button>
-      <button
-        className={`agent-chip ${isActive(basePath) ? "active" : ""}`}
+        className={`agent-chip eywa-primary ${isActive(basePath) ? "active" : ""}`}
         onClick={() => navigate(basePath)}
       >
-        Threads
+        Hub
       </button>
-
-      {/* Spacer pushes labs + agents to bottom */}
-      <div style={{ flex: 1 }} />
-
-      {/* Views */}
       <button
-        className="nav-labs-toggle"
-        onClick={() => setShowLabs(!showViews)}
+        className={`agent-chip ${isActive(`${basePath}/knowledge`) ? "active" : ""}`}
+        onClick={() => navigate(`${basePath}/knowledge`)}
       >
-        {showViews ? "▾" : "▸"} Views
+        Knowledge
       </button>
-      {showViews && (
-        <div className="nav-labs">
-          {[
-            { path: "graph", label: "Session Graph", icon: "◉" },
-            { path: "knowledge", label: "Knowledge Hub", icon: "◆" },
-            { path: "mini", label: "Mini", icon: "▪" },
-            { path: "eink", label: "E-Ink", icon: "▫" },
-            { path: "spectacles", label: "Spectacles", icon: "◎" },
-          ].map(({ path, label, icon }) => (
-            <button
-              key={path}
-              className={`nav-lab-item ${isActive(`${basePath}/${path}`) ? "active" : ""}`}
-              onClick={() => navigate(`${basePath}/${path}`)}
-            >
-              <span className="nav-lab-icon">{icon}</span> {label}
-            </button>
-          ))}
-        </div>
-      )}
+      <button
+        className={`agent-chip ${isActive(`${basePath}/graph`) ? "active" : ""}`}
+        onClick={() => navigate(`${basePath}/graph`)}
+      >
+        Graph
+      </button>
+      <button
+        className={`agent-chip ${isActive(`${basePath}/spectacles`) ? "active" : ""}`}
+        onClick={() => navigate(`${basePath}/spectacles`)}
+      >
+        Spectacles
+      </button>
+
+      {/* Spacer pushes agents to bottom */}
+      <div style={{ flex: 1 }} />
 
       {/* Agents — compact, at the very bottom */}
       {agents.length > 0 && (

@@ -34,8 +34,15 @@
 
 Each person on your team directs AI agents that code, decide, and ship autonomously. Eywa makes all of that work visible so the humans stay aligned.
 
-- Every agent session becomes a **shared thread** with memories, artifacts, and decisions
-- Any team member can browse, search, or inject context into any agent's session
+- **Destination tracking** - set a target state for the team, define milestones, and watch progress as agents ship
+- **Live agent map** - see what every agent is working on, what systems they're touching, and their completion percentage
+- **Context injection** - push decisions or corrections into any agent mid-session with automatic piggyback delivery
+- **Team knowledge** - persistent memory that survives across sessions for architecture decisions, conventions, and patterns
+- **Context recovery** - agents checkpoint their progress and send distress signals when context runs low, so new sessions pick up where old ones left off
+- **Work claiming** - agents declare what they're working on to prevent duplicate effort across the team
+- **Timeline branching** - git-like version control for agent work with rewind, fork, merge, and cherry-pick
+- **Global insights network** - publish anonymized patterns from your room and query what worked in other teams
+- **Gemini steering** - built-in AI chat panel for querying agent status, detecting patterns, and steering the team
 - One MCP endpoint. Zero config. Works with 8+ AI coding agents today.
 
 When everyone runs AI, small misalignments between people compound at machine speed. Eywa gives your team one shared view of what all agents are building, so you know what to sync on.
@@ -161,7 +168,7 @@ Replace `alice` with your name. Each person uses their own name so Eywa can tell
                      └───────────────────────┘        │
                                                 ┌─────┴──────────┐
                                                 │ Web Dashboard  │
-                                                │ Thread Tree    │
+                                                │ HubView        │
                                                 │ Gemini Chat    │
                                                 │ CLI            │
                                                 │ Discord Bot    │
@@ -176,15 +183,18 @@ Agents connect via [MCP](https://modelcontextprotocol.io) (Model Context Protoco
 
 | Category | Tools | What they do |
 |----------|-------|-------------|
-| **Session** | `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on. `eywa_start` returns a room snapshot with active agents, systems, injections. |
-| **Memory** | `eywa_log`, `eywa_file`, `eywa_search` | Log decisions with operation metadata (system, action, scope, outcome). Store files, search history. |
-| **Context** | `eywa_context`, `eywa_summary`, `eywa_pull`, `eywa_sync` | See what other agents are doing. `eywa_summary` is a compressed room view for token-efficient agents. |
+| **Session** | `eywa_whoami`, `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on. `eywa_start` returns a room snapshot with active agents, systems, injections, claims, and recovery state. |
+| **Memory** | `eywa_log`, `eywa_file`, `eywa_get_file`, `eywa_import`, `eywa_search` | Log decisions with operation metadata (system, action, scope, outcome). Store files, bulk-import transcripts, search history. |
+| **Context** | `eywa_context`, `eywa_agents`, `eywa_recall` | See shared context from all agents, list agents in the room, recall a specific agent's messages. |
+| **Collaboration** | `eywa_status`, `eywa_summary`, `eywa_pull`, `eywa_sync`, `eywa_msg` | Per-agent status with curvature metrics. Compressed room summaries. Pull or sync another agent's context. Team messaging. |
 | **Injection** | `eywa_inject`, `eywa_inbox` | Push context to any agent. They see it on their next action (piggyback delivery). |
-| **Knowledge** | `eywa_learn`, `eywa_knowledge` | Persistent project knowledge across all sessions |
-| **Messaging** | `eywa_msg` | Team chat between agents and humans |
-| **Linking** | `eywa_link`, `eywa_fetch` | Connect memories across sessions |
-| **Timeline** | `eywa_history`, `eywa_fork`, `eywa_rewind`, `eywa_merge` | Git-like version control over agent work |
-| **Network** | `eywa_publish_insight`, `eywa_query_network` | Cross-room anonymized knowledge sharing |
+| **Knowledge** | `eywa_learn`, `eywa_knowledge`, `eywa_forget` | Persistent project knowledge across all sessions. Searchable by tags and content. |
+| **Linking** | `eywa_link`, `eywa_links`, `eywa_unlink`, `eywa_fetch` | Connect memories across sessions. List, delete, and fetch linked memories. |
+| **Timeline** | `eywa_history`, `eywa_rewind`, `eywa_fork`, `eywa_bookmark`, `eywa_bookmarks`, `eywa_compare`, `eywa_pick`, `eywa_timelines`, `eywa_merge` | Git-like version control over agent work. Rewind, fork, bookmark, compare, cherry-pick, and merge. |
+| **Recovery** | `eywa_checkpoint`, `eywa_distress`, `eywa_recover`, `eywa_progress` | Save working state for crash recovery. Distress signals broadcast to the room. Progress reporting with percentage and phase. |
+| **Destination** | `eywa_destination` | Set, update, or view the room's target state. Milestones with completion tracking. |
+| **Claims** | `eywa_claim`, `eywa_unclaim` | Declare work scope so other agents avoid duplicating it. Auto-release on session end. |
+| **Network** | `eywa_publish_insight`, `eywa_query_network`, `eywa_route` | Cross-room anonymized knowledge sharing. Lane recommendations based on network telemetry. |
 
 ### Common workflows
 
@@ -230,11 +240,11 @@ Eywa meets your team where they already work.
 
 | Integration | Description | Path |
 |------------|-------------|------|
-| <img src="https://cdn.simpleicons.org/react/61DAFB" width="16" /> **Web Dashboard** | Thread tree, Gemini chat, workspace, real-time activity | [`web/`](web/) |
-| <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" /> **CLI** | `npx eywa-ai init`, status, inject, log - zero-auth setup | [`cli/`](cli/) |
-| <img src="https://cdn.simpleicons.org/discord/5865F2" width="16" /> **Discord Bot** | 12 slash commands for team observability from chat | [`discord-bot/`](discord-bot/) |
+| <img src="https://cdn.simpleicons.org/react/61DAFB" width="16" /> **Web Dashboard** | HubView with agent map, destination banner, Gemini chat, operations view, real-time activity | [`web/`](web/) |
+| <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" /> **CLI** | `npx eywa-ai init`, status, inject, log, dashboard, join - zero-auth setup | [`cli/`](cli/) |
+| <img src="https://cdn.simpleicons.org/discord/5865F2" width="16" /> **Discord Bot** | 15 slash commands for team observability from chat | [`discord-bot/`](discord-bot/) |
 | <img src="https://cdn.simpleicons.org/visualstudiocode/007ACC" width="16" /> **VS Code Extension** | Agent tree sidebar, activity feed, context injection, knowledge lens | [`vscode-extension/`](vscode-extension/) |
-| <img src="https://cdn.simpleicons.org/snapchat/FFFC00" width="16" /> **Snap Spectacles** | AR panel anchored to physical displays | [`eywa-specs/`](eywa-specs/) |
+| <img src="https://cdn.simpleicons.org/snapchat/FFFC00" width="16" /> **Snap Spectacles** | AR panels with activity, destination, and voice interface via Gemini Live | [`eywa-specs/`](eywa-specs/) |
 | <img src="https://cdn.simpleicons.org/raspberrypi/A22846" width="16" /> **Pi Displays** | E-ink (AR anchor + ambient) and TFT touch (interactive) | [`pi-display/`](pi-display/) |
 
 ---
@@ -294,11 +304,12 @@ No Pi? Any device with a browser works as a display. Navigate to `/r/{room-slug}
 
 ```bash
 npx eywa-ai init [name]            # Create a room and get MCP configs
-npx eywa-ai join <slug>            # Join an existing room
-npx eywa-ai status [room]          # Show all agent status
-npx eywa-ai log [room] [limit]     # Activity feed
-npx eywa-ai inject <agent> <msg>   # Push context to an agent
-npx eywa-ai dashboard [room]       # Open web dashboard
+npx eywa-ai join <room-slug>       # Join an existing room
+npx eywa-ai status [room]          # Show agent status with systems and operations
+npx eywa-ai log [room] [limit]     # Activity feed with operation metadata
+npx eywa-ai inject <target> <msg>  # Push context to an agent
+npx eywa-ai dashboard [room]       # Open the web dashboard
+npx eywa-ai help                   # Show all commands
 ```
 
 ---
@@ -310,18 +321,19 @@ eywa/
 ├── worker/           # Cloudflare Worker MCP server (Streamable HTTP)
 │   └── src/
 │       ├── index.ts          # Entry: routing, room lookup, MCP handler
-│       └── tools/            # session, memory, context, collaboration, inject, link, knowledge
+│       └── tools/            # 45 tools: session, memory, context, collaboration, inject,
+│                             #   knowledge, link, timeline, recovery, destination, claim, network
 │
-├── web/              # React/Vite dashboard + landing page + presentation
+├── web/              # React/Vite dashboard + landing page + docs
 │   └── src/
-│       ├── components/       # ThreadTree, ThreadView, WorkspaceView, Landing, SlidePresentation, ...
+│       ├── components/       # ThreadTree, HubView, OperationsView, Landing, DocsLayout, ...
 │       ├── hooks/            # useRealtimeMemories, useNotifications, useGeminiChat, ...
-│       └── lib/              # Supabase client, thread similarity
+│       └── lib/              # Supabase client, Gemini tools, thread similarity
 │
 ├── cli/              # npx eywa-ai (zero-auth CLI)
 │   └── bin/eywa.mjs
 │
-├── discord-bot/      # Discord bot (12 slash commands, direct Supabase)
+├── discord-bot/      # Discord bot (15 slash commands, direct Supabase)
 ├── vscode-extension/ # VS Code sidebar: agent tree, activity feed, injection, knowledge lens
 ├── eywa-specs/       # Snap Spectacles AR (Lens Studio project)
 ├── pi-display/       # Raspberry Pi display scripts (e-ink, TFT touch)

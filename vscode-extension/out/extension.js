@@ -8023,7 +8023,7 @@ __export(extension_exports, {
   deactivate: () => deactivate
 });
 module.exports = __toCommonJS(extension_exports);
-var vscode8 = __toESM(require("vscode"));
+var vscode6 = __toESM(require("vscode"));
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
 var os = __toESM(require("os"));
@@ -12946,170 +12946,8 @@ ${text}
   vscode.window.showInformationMessage(`Injected ${filePath}:${startLine}-${endLine} \u2192 ${pick.label}`);
 }
 
-// src/knowledgeLens.ts
-var vscode2 = __toESM(require("vscode"));
-var KnowledgeCodeLensProvider = class {
-  constructor(getClient) {
-    this.getClient = getClient;
-  }
-  _onDidChangeCodeLenses = new vscode2.EventEmitter();
-  onDidChangeCodeLenses = this._onDidChangeCodeLenses.event;
-  cache = [];
-  async refreshCache() {
-    const client2 = this.getClient();
-    if (!client2) {
-      this.cache = [];
-      return;
-    }
-    this.cache = await client2.getKnowledge(100);
-    this._onDidChangeCodeLenses.fire();
-  }
-  provideCodeLenses(document2) {
-    const relativePath = vscode2.workspace.asRelativePath(document2.uri);
-    const fileName = document2.uri.path.split("/").pop() ?? "";
-    const matches = this.cache.filter((k) => {
-      const content = k.content.toLowerCase();
-      const tags = k.tags.map((t) => t.toLowerCase());
-      return content.includes(relativePath.toLowerCase()) || content.includes(fileName.toLowerCase()) || tags.includes(relativePath.toLowerCase()) || tags.includes(fileName.toLowerCase());
-    });
-    if (matches.length === 0) return [];
-    const range = new vscode2.Range(0, 0, 0, 0);
-    const titles = matches.map((m) => m.title || m.content.slice(0, 40)).join(", ");
-    return [
-      new vscode2.CodeLens(range, {
-        title: `$(book) Eywa: ${matches.length} knowledge entr${matches.length === 1 ? "y" : "ies"} about this file`,
-        command: "eywa.showKnowledgeForFile",
-        arguments: [matches],
-        tooltip: titles
-      })
-    ];
-  }
-};
-function registerKnowledgeForFileCommand(context) {
-  context.subscriptions.push(
-    vscode2.commands.registerCommand("eywa.showKnowledgeForFile", (entries) => {
-      const channel = vscode2.window.createOutputChannel("Eywa Knowledge");
-      channel.clear();
-      channel.appendLine(`Eywa Knowledge - ${entries.length} entries
-`);
-      for (const e of entries) {
-        channel.appendLine(`--- ${e.title || "(untitled)"} ---`);
-        channel.appendLine(`Agent: ${e.agent} \xB7 Tags: ${e.tags.join(", ")}`);
-        channel.appendLine(e.content);
-        channel.appendLine("");
-      }
-      channel.show();
-    })
-  );
-}
-
-// src/courseAwareness.ts
-var vscode3 = __toESM(require("vscode"));
-var CourseCodeLensProvider = class {
-  constructor(getClient) {
-    this.getClient = getClient;
-  }
-  _onDidChangeCodeLenses = new vscode3.EventEmitter();
-  onDidChangeCodeLenses = this._onDidChangeCodeLenses.event;
-  destination = null;
-  agentProgress = [];
-  activeScopes = [];
-  async refresh() {
-    const client2 = this.getClient();
-    if (!client2) return;
-    const [dest, prog, events] = await Promise.all([
-      client2.getDestination(),
-      client2.getAgentProgress(),
-      client2.getRecentEvents(
-        new Date(Date.now() - 30 * 60 * 1e3).toISOString(),
-        100
-      )
-    ]);
-    this.destination = dest;
-    this.agentProgress = prog;
-    const scopeMap = /* @__PURE__ */ new Map();
-    for (const e of events) {
-      const meta = e.metadata ?? {};
-      const scope = meta.scope;
-      const system = meta.system;
-      if (scope && !scopeMap.has(e.agent)) {
-        scopeMap.set(e.agent, { scope, system: system || "" });
-      }
-    }
-    this.activeScopes = Array.from(scopeMap.entries()).map(([agent, info]) => ({
-      agent,
-      ...info
-    }));
-    this._onDidChangeCodeLenses.fire();
-  }
-  updateDestination(dest) {
-    this.destination = dest;
-    this._onDidChangeCodeLenses.fire();
-  }
-  updateProgress(prog) {
-    this.agentProgress = prog;
-    this._onDidChangeCodeLenses.fire();
-  }
-  provideCodeLenses(document2) {
-    const lenses = [];
-    const range = new vscode3.Range(0, 0, 0, 0);
-    if (this.destination) {
-      const ms = this.destination.milestones;
-      const done = ms.filter((m) => this.destination.progress[m]).length;
-      const total = ms.length;
-      const pct = total > 0 ? Math.round(done / total * 100) : 0;
-      const bar = total > 0 ? progressBar(done, total) : "";
-      lenses.push(
-        new vscode3.CodeLens(range, {
-          title: `$(compass) Course: ${done}/${total} ${bar} ${pct}%`,
-          command: "eywaLive.focus",
-          tooltip: this.destination.destination
-        })
-      );
-    }
-    const relativePath = vscode3.workspace.asRelativePath(document2.uri);
-    const pathParts = relativePath.toLowerCase().split("/");
-    const fileName = pathParts[pathParts.length - 1] ?? "";
-    const dirName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : "";
-    const related = this.activeScopes.filter((s) => {
-      const scopeLower = s.scope.toLowerCase();
-      return scopeLower.includes(fileName.replace(/\.[^.]+$/, "")) || dirName && scopeLower.includes(dirName) || relativePath.toLowerCase().includes(scopeLower);
-    });
-    if (related.length > 0) {
-      const names = related.map((r) => {
-        const short = r.agent.includes("/") ? r.agent.split("/").pop() : r.agent;
-        return short;
-      }).join(", ");
-      lenses.push(
-        new vscode3.CodeLens(range, {
-          title: `$(broadcast) ${related.length} agent${related.length === 1 ? "" : "s"} nearby: ${names}`,
-          command: "eywaLive.focus",
-          tooltip: related.map((r) => `${r.agent}: ${r.scope} (${r.system})`).join("\n")
-        })
-      );
-    }
-    const activeCount = this.agentProgress.filter(
-      (p) => p.status === "working" || p.status === "blocked"
-    ).length;
-    if (activeCount > 0 && related.length === 0) {
-      lenses.push(
-        new vscode3.CodeLens(range, {
-          title: `$(pulse) ${activeCount} agent${activeCount === 1 ? "" : "s"} active`,
-          command: "eywaLive.focus",
-          tooltip: this.agentProgress.filter((p) => p.status === "working" || p.status === "blocked").map((p) => `${p.agent}: ${p.task} (${p.percent}%)`).join("\n")
-        })
-      );
-    }
-    return lenses;
-  }
-};
-function progressBar(done, total) {
-  const filled = Math.round(done / total * 8);
-  return "\u2588".repeat(filled) + "\u2591".repeat(8 - filled);
-}
-
 // src/agentDecorations.ts
-var vscode4 = __toESM(require("vscode"));
+var vscode2 = __toESM(require("vscode"));
 var TTL_MS = 30 * 60 * 1e3;
 function agentColor(name) {
   let hash = 0;
@@ -13216,7 +13054,7 @@ var AgentDecorationManager = class {
       content: (content || "").slice(0, 100)
     };
     this.allTouches.push(touch);
-    const folders = vscode4.workspace.workspaceFolders;
+    const folders = vscode2.workspace.workspaceFolders;
     if (!folders?.length) {
       const key = (scope || "").toLowerCase();
       if (key) {
@@ -13240,7 +13078,7 @@ var AgentDecorationManager = class {
   }
   /** Find touches relevant to an editor's file. */
   findTouches(editor) {
-    const relPath = vscode4.workspace.asRelativePath(editor.document.uri);
+    const relPath = vscode2.workspace.asRelativePath(editor.document.uri);
     const matches = [];
     const seen = /* @__PURE__ */ new Set();
     for (const touch of this.allTouches) {
@@ -13276,14 +13114,14 @@ var AgentDecorationManager = class {
     const ago = timeAgo(touch.ts);
     const actionLabel = touch.action;
     const scopeShort = touch.scope.length > 30 ? touch.scope.split(/[/\\]/).pop() || touch.scope.slice(0, 30) : touch.scope;
-    const decType = vscode4.window.createTextEditorDecorationType({
+    const decType = vscode2.window.createTextEditorDecorationType({
       gutterIconPath: this.makeGutterDot(color),
       gutterIconSize: "60%",
       overviewRulerColor: color,
-      overviewRulerLane: vscode4.OverviewRulerLane.Right,
+      overviewRulerLane: vscode2.OverviewRulerLane.Right,
       after: {
         contentText: `  ${name} ${actionLabel} ${scopeShort}  ${ago}`,
-        color: new vscode4.ThemeColor("editorCodeLens.foreground"),
+        color: new vscode2.ThemeColor("editorCodeLens.foreground"),
         fontStyle: "italic",
         fontWeight: "normal",
         margin: "0 0 0 2em"
@@ -13295,7 +13133,7 @@ var AgentDecorationManager = class {
   /** Create a tiny SVG dot for the gutter. */
   makeGutterDot(color) {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="6" height="16" viewBox="0 0 6 16"><circle cx="3" cy="8" r="2.5" fill="${color}"/></svg>`;
-    return vscode4.Uri.parse(
+    return vscode2.Uri.parse(
       `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
     );
   }
@@ -13311,28 +13149,28 @@ var AgentDecorationManager = class {
     for (let i = 0; i < touches.length && i < 5; i++) {
       const touch = touches[i];
       const line = Math.min(i, editor.document.lineCount - 1);
-      const range = new vscode4.Range(line, 0, line, 0);
+      const range = new vscode2.Range(line, 0, line, 0);
       const decType = this.getDecorationType(touch.agent, line, touch);
       editor.setDecorations(decType, [range]);
     }
   }
   /** Refresh decorations on all visible editors. */
   updateAllVisibleEditors() {
-    for (const editor of vscode4.window.visibleTextEditors) {
+    for (const editor of vscode2.window.visibleTextEditors) {
       this.updateDecorations(editor);
     }
   }
   /** Build hover content for a file's agent touches. */
   getHoverContent(document2, position) {
     if (position.line > 4) return null;
-    const relPath = vscode4.workspace.asRelativePath(document2.uri);
+    const relPath = vscode2.workspace.asRelativePath(document2.uri);
     const touches = this.findTouches(
-      vscode4.window.activeTextEditor
+      vscode2.window.activeTextEditor
     );
     const touch = touches[position.line];
     if (!touch) return null;
     const color = agentColor(touch.agent);
-    const md = new vscode4.MarkdownString("", true);
+    const md = new vscode2.MarkdownString("", true);
     md.isTrusted = true;
     md.supportHtml = true;
     md.appendMarkdown(
@@ -13360,7 +13198,7 @@ var AgentDecorationManager = class {
     md.appendMarkdown(
       `[Open Eywa](command:eywaLive.focus)`
     );
-    return new vscode4.Hover(md);
+    return new vscode2.Hover(md);
   }
   /** Remove touches older than TTL. */
   pruneStale() {
@@ -13392,7 +13230,7 @@ var AgentDecorationManager = class {
 };
 
 // src/sessionTree.ts
-var vscode5 = __toESM(require("vscode"));
+var vscode3 = __toESM(require("vscode"));
 function shortName2(agent) {
   return agent.includes("/") ? agent.split("/").pop() : agent;
 }
@@ -13404,12 +13242,12 @@ function timeAgo2(ts) {
   const hours = Math.floor(mins / 60);
   return `${hours}h ago`;
 }
-var SessionItem = class extends vscode5.TreeItem {
+var SessionItem = class extends vscode3.TreeItem {
   constructor(session) {
     const name = shortName2(session.agent);
     const statusIcon = session.status === "active" ? "$(pulse)" : session.status === "finished" ? "$(check)" : "$(circle-outline)";
     const actionText = session.lastAction ? `${session.lastAction} ${session.lastScope}` : session.task || "starting...";
-    super(`${statusIcon} ${name}`, vscode5.TreeItemCollapsibleState.Expanded);
+    super(`${statusIcon} ${name}`, vscode3.TreeItemCollapsibleState.Expanded);
     this.session = session;
     this.description = actionText.slice(0, 60);
     const lines = [
@@ -13424,22 +13262,22 @@ var SessionItem = class extends vscode5.TreeItem {
 ${session.lastContent}`);
     if (session.progress > 0) lines.push(`Progress: ${session.progress}%`);
     lines.push(`Last seen: ${timeAgo2(session.ts)}`);
-    this.tooltip = new vscode5.MarkdownString(lines.join("\n\n"));
+    this.tooltip = new vscode3.MarkdownString(lines.join("\n\n"));
     this.contextValue = "session";
-    this.iconPath = new vscode5.ThemeIcon(
+    this.iconPath = new vscode3.ThemeIcon(
       session.status === "active" ? "vm-running" : session.status === "finished" ? "pass-filled" : "circle-outline",
-      new vscode5.ThemeColor(
+      new vscode3.ThemeColor(
         session.status === "active" ? "testing.runAction" : session.status === "finished" ? "testing.iconPassed" : "disabledForeground"
       )
     );
   }
 };
-var DetailItem = class extends vscode5.TreeItem {
+var DetailItem = class extends vscode3.TreeItem {
   constructor(label, detail, icon) {
-    super(label, vscode5.TreeItemCollapsibleState.None);
+    super(label, vscode3.TreeItemCollapsibleState.None);
     this.description = detail;
     if (icon) {
-      this.iconPath = new vscode5.ThemeIcon(icon);
+      this.iconPath = new vscode3.ThemeIcon(icon);
     }
   }
 };
@@ -13448,7 +13286,7 @@ var SessionTreeProvider = class {
     this.getClient = getClient;
     this.refreshTimer = setInterval(() => this._onDidChangeTreeData.fire(), 3e4);
   }
-  _onDidChangeTreeData = new vscode5.EventEmitter();
+  _onDidChangeTreeData = new vscode3.EventEmitter();
   onDidChangeTreeData = this._onDidChangeTreeData.event;
   sessions = /* @__PURE__ */ new Map();
   refreshTimer;
@@ -13567,7 +13405,7 @@ var SessionTreeProvider = class {
         );
       }
       if (s.progress > 0) {
-        const bar = progressBar2(s.progress);
+        const bar = progressBar(s.progress);
         children.push(
           new DetailItem("Progress", `${bar} ${s.progress}%`, "graph")
         );
@@ -13587,13 +13425,13 @@ var SessionTreeProvider = class {
     this._onDidChangeTreeData.dispose();
   }
 };
-function progressBar2(pct) {
+function progressBar(pct) {
   const filled = Math.round(pct / 12.5);
   return "\u2588".repeat(filled) + "\u2591".repeat(8 - filled);
 }
 
 // src/panelView.ts
-var vscode6 = __toESM(require("vscode"));
+var vscode4 = __toESM(require("vscode"));
 function shortName3(agent) {
   return agent.includes("/") ? agent.split("/").pop() : agent;
 }
@@ -13638,7 +13476,7 @@ var PanelViewProvider = class {
     });
     view.webview.onDidReceiveMessage((msg) => {
       if (msg.type === "inject") {
-        vscode6.commands.executeCommand("eywa.injectContext");
+        vscode4.commands.executeCommand("eywa.injectContext");
       }
     });
     this.render();
@@ -13864,7 +13702,7 @@ var PanelViewProvider = class {
     const ago = timeAgo3(a.ts);
     const actionText = a.lastAction ? `${a.lastAction}${a.lastScope ? " " + a.lastScope.slice(0, 40) : ""}` : a.lastContent.slice(0, 50);
     const systemTags = a.systems.size > 0 ? `<div class="systems">${[...a.systems].map((s) => `<span class="sys-tag">${s}</span>`).join("")}</div>` : "";
-    const progressBar3 = a.progress > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width:${a.progress}%;background:${color}"></div></div>` : "";
+    const progressBar2 = a.progress > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width:${a.progress}%;background:${color}"></div></div>` : "";
     return `<div class="card ${a.status}" style="--agent-color:${color}">
   <div class="header">
     <span class="dot ${a.status}"></span>
@@ -13872,7 +13710,7 @@ var PanelViewProvider = class {
     <span class="time">${ago}</span>
   </div>
   ${a.task ? `<div class="task">${this.esc(a.task.slice(0, 60))}</div>` : ""}
-  ${progressBar3}
+  ${progressBar2}
   ${actionText ? `<div class="action">${this.esc(actionText)}</div>` : ""}
   ${systemTags}
 </div>`;
@@ -13949,7 +13787,7 @@ function startLoginFlow(openUrl) {
 }
 
 // src/liveView.ts
-var vscode7 = __toESM(require("vscode"));
+var vscode5 = __toESM(require("vscode"));
 
 // src/avatars.ts
 var AVATARS = [
@@ -14437,9 +14275,22 @@ var LiveViewProvider = class {
     view.webview.options = { enableScripts: true };
     view.webview.html = this.getHtml();
     view.webview.onDidReceiveMessage(async (msg) => {
-      if (msg.type === "setRoom") vscode7.commands.executeCommand("eywa.setRoom");
-      else if (msg.type === "inject") vscode7.commands.executeCommand("eywa.injectContext");
-      else if (msg.type === "openDashboard") vscode7.commands.executeCommand("eywa.openDashboard");
+      if (msg.type === "setRoom") vscode5.commands.executeCommand("eywa.setRoom");
+      else if (msg.type === "inject") {
+        if (msg.targetAgent) {
+          const client2 = this.getClient();
+          if (!client2) return;
+          const content = await vscode5.window.showInputBox({
+            prompt: `Inject context to ${msg.targetAgent}`,
+            placeHolder: "Context or instructions..."
+          });
+          if (!content) return;
+          await client2.inject("vscode-user", msg.targetAgent, content, "normal");
+          vscode5.window.showInformationMessage(`Injected to ${msg.targetAgent}`);
+        } else {
+          vscode5.commands.executeCommand("eywa.injectContext");
+        }
+      } else if (msg.type === "openDashboard") vscode5.commands.executeCommand("eywa.openDashboard");
       else if (msg.type === "refresh") this.loadInitial();
       else if (msg.type === "attentionReply") {
         const client2 = this.getClient();
@@ -14448,7 +14299,7 @@ var LiveViewProvider = class {
         this.attentionItems = this.attentionItems.filter((a) => a.agent !== msg.agent);
         this.onAttentionChange?.(this.attentionItems);
         this.pushState();
-        vscode7.window.showInformationMessage(`Sent to ${msg.agent}`);
+        vscode5.window.showInformationMessage(`Sent to ${msg.agent}`);
       } else if (msg.type === "attentionDismiss") {
         this.attentionItems = this.attentionItems.filter((a) => a.agent !== msg.agent);
         this.onAttentionChange?.(this.attentionItems);
@@ -14497,8 +14348,8 @@ var LiveViewProvider = class {
           }
         }
       }
-      const historyHours = vscode7.workspace.getConfiguration("eywa").get("historyHours") ?? 24;
-      const logLevel = vscode7.workspace.getConfiguration("eywa").get("logLevel") ?? "all";
+      const historyHours = vscode5.workspace.getConfiguration("eywa").get("historyHours") ?? 24;
+      const logLevel = vscode5.workspace.getConfiguration("eywa").get("logLevel") ?? "all";
       const since = new Date(Date.now() - historyHours * 60 * 60 * 1e3).toISOString();
       const events = await client2.getRecentEvents(since, 50);
       this.activity = events.filter((e) => {
@@ -14600,7 +14451,7 @@ var LiveViewProvider = class {
       a.lastSeen = mem.ts;
       a.memoryCount++;
     }
-    const logLevel = vscode7.workspace.getConfiguration("eywa").get("logLevel") ?? "all";
+    const logLevel = vscode5.workspace.getConfiguration("eywa").get("logLevel") ?? "all";
     if (passesLogFilter(mem.message_type || "assistant", event, logLevel)) {
       const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
       this.activity.unshift({
@@ -14693,9 +14544,10 @@ var LiveViewProvider = class {
   .agent-chip {
     display: flex; flex-direction: column; align-items: center;
     padding: 4px 6px; border-radius: 4px; min-width: 52px;
-    cursor: default;
+    cursor: pointer;
   }
   .agent-chip:hover { background: var(--vscode-list-hoverBackground); }
+  .agent-chip.selected { background: var(--vscode-list-activeSelectionBackground); }
   .agent-chip .av-wrap {
     position: relative; width: 32px; height: 32px; margin-bottom: 3px;
   }
@@ -14744,8 +14596,44 @@ var LiveViewProvider = class {
     display: -webkit-box; -webkit-line-clamp: 2;
     -webkit-box-orient: vertical; overflow: hidden;
     line-height: 1.35;
+    cursor: pointer;
+  }
+  .feed-text.expanded {
+    -webkit-line-clamp: unset; display: block;
   }
   .feed-time { font-size: 9px; opacity: 0.3; margin-top: 2px; }
+
+  /* Agent detail panel (shown below strip on click) */
+  .agent-detail {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-editor-background);
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .agent-detail .detail-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
+  .agent-detail .detail-body { flex: 1; min-width: 0; }
+  .agent-detail .detail-name { font-size: 12px; font-weight: 600; }
+  .agent-detail .detail-status {
+    display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px;
+    margin-left: 6px; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .agent-detail .detail-status.active { background: rgba(63,185,80,0.15); color: #3fb950; }
+  .agent-detail .detail-status.idle { background: rgba(210,153,34,0.15); color: #d29922; }
+  .agent-detail .detail-status.finished { background: rgba(139,148,158,0.15); color: #8b949e; }
+  .agent-detail .detail-task { font-size: 11px; opacity: 0.7; margin-top: 3px; line-height: 1.35; }
+  .agent-detail .detail-progress {
+    margin-top: 4px; height: 3px; background: rgba(128,128,128,0.15);
+    border-radius: 2px; overflow: hidden;
+  }
+  .agent-detail .detail-progress-fill { height: 100%; border-radius: 2px; }
+  .agent-detail .detail-meta { font-size: 10px; opacity: 0.4; margin-top: 3px; }
+  .agent-detail .detail-actions { display: flex; gap: 4px; margin-top: 5px; }
+  .agent-detail .detail-btn {
+    font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
+    border: 1px solid var(--vscode-input-border, rgba(128,128,128,0.3));
+    background: transparent; color: var(--vscode-foreground); font-family: inherit;
+  }
+  .agent-detail .detail-btn:hover { background: var(--vscode-toolbar-hoverBackground); }
 
   /* States */
   .state-msg { text-align: center; padding: 32px 16px; }
@@ -14861,6 +14749,18 @@ function timeAgo(ts) {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+let selectedAgent = null;
+let lastData = null;
+
+function selectAgent(name) {
+  selectedAgent = selectedAgent === name ? null : name;
+  if (lastData) render(lastData);
+}
+
+function toggleFeedItem(el) {
+  el.classList.toggle('expanded');
+}
+
 function sendAttn(input) {
   const agent = input.dataset.agent;
   const content = input.value.trim();
@@ -14887,6 +14787,7 @@ function render(data) {
     return;
   }
 
+  lastData = data;
   const { agents, activity, room, avatars, destination, agentProgress, attention } = data;
   const active = agents.filter(a => a.status === 'active').length;
   const progressMap = {};
@@ -15028,7 +14929,8 @@ function render(data) {
       const src = avatars[a.name] || '';
       const ap = progressMap[a.name];
       const progTitle = ap ? '\\n' + ap.percent + '% ' + (ap.status || '') : '';
-      html += '<div class="agent-chip ' + a.status + '" title="' + esc(a.name) + '\\n' + esc(a.task) + progTitle + '">'
+      const isSelected = selectedAgent === a.name;
+      html += '<div class="agent-chip ' + a.status + (isSelected ? ' selected' : '') + '" onclick="selectAgent(\\'' + esc(a.name).replace(/'/g, "\\\\'") + '\\')" title="' + esc(a.name) + '">'
         + '<div class="av-wrap"><img class="av-img" src="' + src + '" alt="' + esc(shortName(a.name)) + '"/><span class="dot"></span></div>'
         + '<div class="name">' + esc(shortName(a.name)) + '</div>';
       if (ap) {
@@ -15038,6 +14940,33 @@ function render(data) {
       html += '</div>';
     }
     html += '</div>';
+
+    // Agent detail panel (expanded below strip when an agent is selected)
+    if (selectedAgent) {
+      const sa = agents.find(a => a.name === selectedAgent);
+      if (sa) {
+        const src = avatars[sa.name] || '';
+        const ap = progressMap[sa.name];
+        html += '<div class="agent-detail">';
+        html += '<img class="detail-avatar" src="' + src + '" alt=""/>';
+        html += '<div class="detail-body">';
+        html += '<span class="detail-name">' + esc(sa.name) + '</span>';
+        html += '<span class="detail-status ' + sa.status + '">' + sa.status + '</span>';
+        if (sa.task) {
+          html += '<div class="detail-task">' + esc(sa.task) + '</div>';
+        }
+        if (ap) {
+          html += '<div class="detail-progress"><div class="detail-progress-fill" style="width:' + ap.percent + '%;background:' + (ap.status === 'blocked' ? '#d29922' : '#7946FF') + '"></div></div>';
+          html += '<div class="detail-meta">' + ap.percent + '% ' + (ap.status || 'working') + (ap.detail ? ' - ' + esc(ap.detail) : '') + '</div>';
+        }
+        html += '<div class="detail-meta">' + sa.memoryCount + ' memories, last seen ' + timeAgo(sa.lastSeen) + '</div>';
+        html += '<div class="detail-actions">';
+        html += '<button class="detail-btn" onclick="vscode.postMessage({type:\\'inject\\', targetAgent:\\'' + esc(sa.name).replace(/'/g, "\\\\'") + '\\'})">Inject</button>';
+        html += '<button class="detail-btn" onclick="vscode.postMessage({type:\\'openDashboard\\'})">Dashboard</button>';
+        html += '</div>';
+        html += '</div></div>';
+      }
+    }
   }
 
   // Activity feed
@@ -15054,7 +14983,7 @@ function render(data) {
       + '<span class="feed-agent">' + esc(shortName(ev.agent)) + '</span>'
       + '<span class="feed-type" style="background:' + dotColor + '" title="' + esc(ev.type) + '"></span>'
       + (ev.opTag ? '<span style="font-size:9px;opacity:0.5;margin-left:4px">' + esc(ev.opTag) + '</span>' : '')
-      + (ev.content ? '<div class="feed-text">' + esc(ev.content) + '</div>' : '')
+      + (ev.content ? '<div class="feed-text" onclick="toggleFeedItem(this)">' + esc(ev.content) + '</div>' : '')
       + '<div class="feed-time">' + timeAgo(ev.ts) + '</div>'
       + '</div></div>';
   }
@@ -15106,14 +15035,12 @@ var statusBarItem;
 var realtime;
 var terminalAgentMap = /* @__PURE__ */ new Map();
 function activate(context) {
-  statusBarItem = vscode8.window.createStatusBarItem(vscode8.StatusBarAlignment.Left, 50);
+  statusBarItem = vscode6.window.createStatusBarItem(vscode6.StatusBarAlignment.Left, 50);
   statusBarItem.command = "eywa.showStatus";
   statusBarItem.text = "$(cloud) Eywa";
   statusBarItem.tooltip = "Click for Eywa quick actions";
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
-  const codeLensProvider = new KnowledgeCodeLensProvider(() => client);
-  const courseProvider = new CourseCodeLensProvider(() => client);
   const decorationManager = new AgentDecorationManager(() => client);
   const sessionTree = new SessionTreeProvider(() => client);
   const panelView = new PanelViewProvider(() => client);
@@ -15123,7 +15050,7 @@ function activate(context) {
     const count = items.length;
     if (count > 0) {
       statusBarItem.text = `$(bell) Eywa: ${count} need${count === 1 ? "s" : ""} you`;
-      statusBarItem.backgroundColor = new vscode8.ThemeColor("statusBarItem.warningBackground");
+      statusBarItem.backgroundColor = new vscode6.ThemeColor("statusBarItem.warningBackground");
     } else {
       updateStatusBar();
       statusBarItem.backgroundColor = void 0;
@@ -15134,13 +15061,13 @@ function activate(context) {
       if (item.reason === "distress" || item.reason === "blocked") {
         const short = item.agent.includes("/") ? item.agent.split("/").pop() : item.agent;
         const label = item.reason === "distress" ? "DISTRESS" : "BLOCKED";
-        vscode8.window.showWarningMessage(
+        vscode6.window.showWarningMessage(
           `${label}: ${short} - ${item.summary.slice(0, 80)}`,
           "Open Eywa",
           "Dismiss"
         ).then((choice) => {
           if (choice === "Open Eywa") {
-            vscode8.commands.executeCommand("eywaLive.focus");
+            vscode6.commands.executeCommand("eywaLive.focus");
           }
         });
       }
@@ -15150,30 +15077,24 @@ function activate(context) {
   function handleRealtimeEvent(mem) {
     const meta = mem.metadata ?? {};
     const event = meta.event;
-    if (event === "knowledge_stored" || mem.message_type === "knowledge") {
-      codeLensProvider.refreshCache();
-    }
-    if (event === "destination" || event === "progress") {
-      courseProvider.refresh();
-    }
     if (event === "context_injection") {
       const priority = meta.priority || "normal";
       if (priority === "urgent") {
         const from = meta.from_agent || mem.agent;
         const target = meta.target_agent || "all";
         const msg = `${from} injected context${target !== "all" ? ` to ${target}` : ""}`;
-        vscode8.window.showWarningMessage(`URGENT: ${msg}`, "Open Eywa").then((choice) => {
-          if (choice === "Open Eywa") vscode8.commands.executeCommand("eywaLive.focus");
+        vscode6.window.showWarningMessage(`URGENT: ${msg}`, "Open Eywa").then((choice) => {
+          if (choice === "Open Eywa") vscode6.commands.executeCommand("eywaLive.focus");
         });
       }
     }
     if (event === "distress") {
       const short = mem.agent.includes("/") ? mem.agent.split("/").pop() : mem.agent;
-      vscode8.window.showErrorMessage(
+      vscode6.window.showErrorMessage(
         `Agent ${short} sent a distress signal and needs direction`,
         "Open Eywa"
       ).then((choice) => {
-        if (choice === "Open Eywa") vscode8.commands.executeCommand("eywaLive.focus");
+        if (choice === "Open Eywa") vscode6.commands.executeCommand("eywaLive.focus");
       });
     }
     decorationManager.handleEvent(mem);
@@ -15182,28 +15103,26 @@ function activate(context) {
     liveProvider.handleEvent(mem);
     updateStatusBar();
   }
-  initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
+  initClient(decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
   if (!getConfig("room")) {
     showWelcome();
   }
   context.subscriptions.push(
-    vscode8.window.registerWebviewViewProvider(LiveViewProvider.viewType, liveProvider, {
+    vscode6.window.registerWebviewViewProvider(LiveViewProvider.viewType, liveProvider, {
       webviewOptions: { retainContextWhenHidden: true }
     }),
-    vscode8.window.registerWebviewViewProvider(PanelViewProvider.viewType, panelView, {
+    vscode6.window.registerWebviewViewProvider(PanelViewProvider.viewType, panelView, {
       webviewOptions: { retainContextWhenHidden: true }
     }),
-    vscode8.window.registerTreeDataProvider("eywaSessions", sessionTree),
-    vscode8.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider),
-    vscode8.languages.registerCodeLensProvider({ scheme: "file" }, courseProvider),
+    vscode6.window.registerTreeDataProvider("eywaSessions", sessionTree),
     // Agent decoration lifecycle
-    vscode8.window.onDidChangeActiveTextEditor((editor) => {
+    vscode6.window.onDidChangeActiveTextEditor((editor) => {
       if (editor) decorationManager.updateDecorations(editor);
     }),
-    vscode8.window.onDidChangeVisibleTextEditors(() => {
+    vscode6.window.onDidChangeVisibleTextEditors(() => {
       decorationManager.updateAllVisibleEditors();
     }),
-    vscode8.languages.registerHoverProvider({ scheme: "file" }, {
+    vscode6.languages.registerHoverProvider({ scheme: "file" }, {
       provideHover(doc, pos) {
         return decorationManager.getHoverContent(doc, pos);
       }
@@ -15213,23 +15132,21 @@ function activate(context) {
     { dispose: () => panelView.dispose() }
   );
   context.subscriptions.push(
-    vscode8.commands.registerCommand("eywa.refreshAgents", () => {
-      codeLensProvider.refreshCache();
-      courseProvider.refresh();
+    vscode6.commands.registerCommand("eywa.refreshAgents", () => {
       decorationManager.seed();
       sessionTree.seed();
       panelView.seed();
       liveProvider.loadInitial();
     }),
-    vscode8.commands.registerCommand("eywa.openDashboard", () => {
+    vscode6.commands.registerCommand("eywa.openDashboard", () => {
       const room = getConfig("room");
-      vscode8.env.openExternal(vscode8.Uri.parse(room ? `https://eywa-ai.dev/r/${room}` : "https://eywa-ai.dev"));
+      vscode6.env.openExternal(vscode6.Uri.parse(room ? `https://eywa-ai.dev/r/${room}` : "https://eywa-ai.dev"));
     }),
-    vscode8.commands.registerCommand("eywa.login", async () => {
-      const result = await vscode8.window.withProgress(
-        { location: vscode8.ProgressLocation.Notification, title: "Waiting for browser login...", cancellable: true },
+    vscode6.commands.registerCommand("eywa.login", async () => {
+      const result = await vscode6.window.withProgress(
+        { location: vscode6.ProgressLocation.Notification, title: "Waiting for browser login...", cancellable: true },
         (_progress, token) => {
-          const loginPromise = startLoginFlow((url) => vscode8.env.openExternal(vscode8.Uri.parse(url)));
+          const loginPromise = startLoginFlow((url) => vscode6.env.openExternal(vscode6.Uri.parse(url)));
           return new Promise((resolve) => {
             token.onCancellationRequested(() => resolve(null));
             loginPromise.then(resolve);
@@ -15237,69 +15154,69 @@ function activate(context) {
         }
       );
       if (!result) return;
-      const config = vscode8.workspace.getConfiguration("eywa");
+      const config = vscode6.workspace.getConfiguration("eywa");
       await config.update("supabaseUrl", result.supabaseUrl, true);
       await config.update("supabaseKey", result.supabaseKey, true);
       await config.update("room", result.room, true);
-      vscode8.window.showInformationMessage(`Connected to Eywa room: ${result.room}`);
+      vscode6.window.showInformationMessage(`Connected to Eywa room: ${result.room}`);
     }),
-    vscode8.commands.registerCommand("eywa.connectAgent", async () => {
-      const room = await vscode8.window.showInputBox({ prompt: "Room slug", placeHolder: "my-project", value: getConfig("room") });
+    vscode6.commands.registerCommand("eywa.connectAgent", async () => {
+      const room = await vscode6.window.showInputBox({ prompt: "Room slug", placeHolder: "my-project", value: getConfig("room") });
       if (!room) return;
-      const agent = await vscode8.window.showInputBox({ prompt: "Agent name", placeHolder: "claude-code" });
+      const agent = await vscode6.window.showInputBox({ prompt: "Agent name", placeHolder: "claude-code" });
       if (!agent) return;
       const mcpUrl = `https://mcp.eywa-ai.dev/mcp?room=${room}&agent=${agent}`;
-      await vscode8.env.clipboard.writeText(mcpUrl);
-      vscode8.window.showInformationMessage(`MCP URL copied! Add to your MCP config:
+      await vscode6.env.clipboard.writeText(mcpUrl);
+      vscode6.window.showInformationMessage(`MCP URL copied! Add to your MCP config:
 ${mcpUrl}`, "Open Terminal").then((action) => {
         if (action === "Open Terminal") {
-          const terminal = vscode8.window.createTerminal("Eywa");
+          const terminal = vscode6.window.createTerminal("Eywa");
           terminal.sendText(`claude mcp add --transport http eywa "${mcpUrl}"`);
           terminal.show();
         }
       });
-      await vscode8.workspace.getConfiguration("eywa").update("room", room, true);
+      await vscode6.workspace.getConfiguration("eywa").update("room", room, true);
     }),
-    vscode8.commands.registerCommand("eywa.injectContext", async () => {
+    vscode6.commands.registerCommand("eywa.injectContext", async () => {
       if (!client) {
-        const action = await vscode8.window.showWarningMessage("Not connected to Eywa.", "Login");
-        if (action === "Login") vscode8.commands.executeCommand("eywa.login");
+        const action = await vscode6.window.showWarningMessage("Not connected to Eywa.", "Login");
+        if (action === "Login") vscode6.commands.executeCommand("eywa.login");
         return;
       }
       const agents = await client.getAgents();
-      const target = await vscode8.window.showQuickPick([...agents.map((a) => a.name), "all"], { placeHolder: "Target agent (or 'all' for broadcast)" });
+      const target = await vscode6.window.showQuickPick([...agents.map((a) => a.name), "all"], { placeHolder: "Target agent (or 'all' for broadcast)" });
       if (!target) return;
-      const content = await vscode8.window.showInputBox({ prompt: "Context/instructions to inject", placeHolder: "Focus on the auth module, the schema changed to use UUIDs" });
+      const content = await vscode6.window.showInputBox({ prompt: "Context/instructions to inject", placeHolder: "Focus on the auth module, the schema changed to use UUIDs" });
       if (!content) return;
-      const priority = await vscode8.window.showQuickPick(["normal", "high", "urgent"], { placeHolder: "Priority" });
+      const priority = await vscode6.window.showQuickPick(["normal", "high", "urgent"], { placeHolder: "Priority" });
       if (!priority) return;
       await client.inject("vscode-user", target, content, priority);
-      vscode8.window.showInformationMessage(`Injected context for ${target} (${priority})`);
+      vscode6.window.showInformationMessage(`Injected context for ${target} (${priority})`);
     }),
-    vscode8.commands.registerCommand("eywa.injectSelection", () => injectSelection(() => client)),
-    vscode8.commands.registerCommand("eywa.setRoom", async () => {
-      const room = await vscode8.window.showInputBox({
+    vscode6.commands.registerCommand("eywa.injectSelection", () => injectSelection(() => client)),
+    vscode6.commands.registerCommand("eywa.setRoom", async () => {
+      const room = await vscode6.window.showInputBox({
         prompt: "Enter room slug",
         placeHolder: "my-project",
         value: getConfig("room"),
         validateInput: (v) => /^[a-zA-Z0-9_-]{1,64}$/.test(v) ? null : "Letters, numbers, hyphens, underscores only"
       });
       if (!room) return;
-      await vscode8.workspace.getConfiguration("eywa").update("room", room, true);
+      await vscode6.workspace.getConfiguration("eywa").update("room", room, true);
     }),
-    vscode8.commands.registerCommand("eywa.showStatus", async () => {
+    vscode6.commands.registerCommand("eywa.showStatus", async () => {
       const room = getConfig("room");
       const tabTitlesOn = fs.existsSync(TAB_TITLE_FLAG);
       const items = [
         { label: `$(folder) ${room || "(no room)"}`, description: "Switch room", detail: room ? `Connected to /${room}` : "Click to set a room" },
-        { label: "", kind: vscode8.QuickPickItemKind.Separator }
+        { label: "", kind: vscode6.QuickPickItemKind.Separator }
       ];
       if (client) {
         const agents = await client.getAgents();
         if (agents.length > 0) {
           items.push(
             ...agents.map((a) => ({ label: `$(${a.isActive ? "circle-filled" : "circle-outline"}) ${a.name}`, description: a.isActive ? "active" : "idle" })),
-            { label: "", kind: vscode8.QuickPickItemKind.Separator }
+            { label: "", kind: vscode6.QuickPickItemKind.Separator }
           );
         }
         items.push({ label: "$(arrow-right) Inject context to agent...", description: "" });
@@ -15310,34 +15227,34 @@ ${mcpUrl}`, "Open Terminal").then((action) => {
         { label: "$(link-external) Open web dashboard", description: room || "" },
         { label: "$(log-in) Login with browser", description: "" }
       );
-      const pick = await vscode8.window.showQuickPick(items, { placeHolder: room ? `Eywa: /${room}` : "Eywa: set up your room" });
+      const pick = await vscode6.window.showQuickPick(items, { placeHolder: room ? `Eywa: /${room}` : "Eywa: set up your room" });
       if (!pick) return;
-      if (pick.label.includes(room || "(no room)")) vscode8.commands.executeCommand("eywa.setRoom");
-      else if (pick.label.includes("Inject context")) vscode8.commands.executeCommand("eywa.injectContext");
-      else if (pick.label.includes("Agent tab titles")) vscode8.commands.executeCommand("eywa.toggleTabTitles");
-      else if (pick.label.includes("Open web dashboard")) vscode8.commands.executeCommand("eywa.openDashboard");
-      else if (pick.label.includes("Connect new agent")) vscode8.commands.executeCommand("eywa.connectAgent");
-      else if (pick.label.includes("Login")) vscode8.commands.executeCommand("eywa.login");
+      if (pick.label.includes(room || "(no room)")) vscode6.commands.executeCommand("eywa.setRoom");
+      else if (pick.label.includes("Inject context")) vscode6.commands.executeCommand("eywa.injectContext");
+      else if (pick.label.includes("Agent tab titles")) vscode6.commands.executeCommand("eywa.toggleTabTitles");
+      else if (pick.label.includes("Open web dashboard")) vscode6.commands.executeCommand("eywa.openDashboard");
+      else if (pick.label.includes("Connect new agent")) vscode6.commands.executeCommand("eywa.connectAgent");
+      else if (pick.label.includes("Login")) vscode6.commands.executeCommand("eywa.login");
     }),
-    vscode8.commands.registerCommand("eywa.toggleTabTitles", () => {
+    vscode6.commands.registerCommand("eywa.toggleTabTitles", () => {
       const dir = path.dirname(TAB_TITLE_FLAG);
       if (fs.existsSync(TAB_TITLE_FLAG)) {
         fs.unlinkSync(TAB_TITLE_FLAG);
-        vscode8.window.showInformationMessage("Agent tab titles disabled");
+        vscode6.window.showInformationMessage("Agent tab titles disabled");
       } else {
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(TAB_TITLE_FLAG, "1");
-        vscode8.window.showInformationMessage("Agent tab titles enabled");
+        vscode6.window.showInformationMessage("Agent tab titles enabled");
       }
     }),
-    vscode8.commands.registerCommand("eywa.tagTerminal", async () => {
-      const terminal = vscode8.window.activeTerminal;
+    vscode6.commands.registerCommand("eywa.tagTerminal", async () => {
+      const terminal = vscode6.window.activeTerminal;
       if (!terminal) {
-        vscode8.window.showWarningMessage("No active terminal to tag.");
+        vscode6.window.showWarningMessage("No active terminal to tag.");
         return;
       }
       if (!client) {
-        vscode8.window.showWarningMessage("Not connected to Eywa.");
+        vscode6.window.showWarningMessage("Not connected to Eywa.");
         return;
       }
       const agents = await client.getAgents();
@@ -15346,37 +15263,36 @@ ${mcpUrl}`, "Open Terminal").then((action) => {
         description: a.isActive ? "active" : "idle"
       }));
       items.push({ label: "Custom name...", description: "" });
-      const pick = await vscode8.window.showQuickPick(items, { placeHolder: "Associate this terminal with an agent" });
+      const pick = await vscode6.window.showQuickPick(items, { placeHolder: "Associate this terminal with an agent" });
       if (!pick) return;
       let agentName = pick.label;
       if (agentName === "Custom name...") {
-        const custom = await vscode8.window.showInputBox({ prompt: "Agent name for this terminal" });
+        const custom = await vscode6.window.showInputBox({ prompt: "Agent name for this terminal" });
         if (!custom) return;
         agentName = custom;
       }
       terminalAgentMap.set(terminal, agentName);
       const short = agentName.includes("/") ? agentName.split("/").pop() : agentName;
       terminal.sendText(`# Tagged: ${agentName}`, false);
-      vscode8.window.showInformationMessage(`Terminal tagged as ${short}`);
+      vscode6.window.showInformationMessage(`Terminal tagged as ${short}`);
     })
   );
   context.subscriptions.push(
-    vscode8.window.onDidCloseTerminal((t) => {
+    vscode6.window.onDidCloseTerminal((t) => {
       terminalAgentMap.delete(t);
     })
   );
   context.subscriptions.push(
-    vscode8.window.onDidOpenTerminal((terminal) => {
+    vscode6.window.onDidOpenTerminal((terminal) => {
       const name = terminal.name.toLowerCase();
       if (name.includes("claude") || name.includes("eywa")) {
       }
     })
   );
-  registerKnowledgeForFileCommand(context);
   context.subscriptions.push(
-    vscode8.workspace.onDidChangeConfiguration((e) => {
+    vscode6.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
-        initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
+        initClient(decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
         liveProvider.setRoom(getConfig("room"));
         updateStatusBar();
       }
@@ -15384,19 +15300,19 @@ ${mcpUrl}`, "Open Terminal").then((action) => {
   );
 }
 async function showWelcome() {
-  const action = await vscode8.window.showInformationMessage(
+  const action = await vscode6.window.showInformationMessage(
     "Welcome to Eywa. Set a room to start monitoring your agents.",
     "Get Started",
     "Set Room"
   );
   if (action === "Get Started") {
-    vscode8.commands.executeCommand("workbench.action.openWalkthrough", "curvilinear.eywa-agents#eywa.welcome");
+    vscode6.commands.executeCommand("workbench.action.openWalkthrough", "curvilinear.eywa-agents#eywa.welcome");
   } else if (action === "Set Room") {
-    vscode8.commands.executeCommand("eywa.setRoom");
+    vscode6.commands.executeCommand("eywa.setRoom");
   }
 }
 function getConfig(key) {
-  return vscode8.workspace.getConfiguration("eywa").get(key) ?? "";
+  return vscode6.workspace.getConfiguration("eywa").get(key) ?? "";
 }
 function updateStatusBar() {
   const room = getConfig("room");
@@ -15406,7 +15322,7 @@ function updateStatusBar() {
   }
   statusBarItem.text = `$(cloud) Eywa: /${room}`;
 }
-function initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, panelView, onEvent, context) {
+function initClient(decorationManager, sessionTree, panelView, onEvent, context) {
   const url = getConfig("supabaseUrl");
   const key = getConfig("supabaseKey");
   const room = getConfig("room");
@@ -15416,8 +15332,6 @@ function initClient(codeLensProvider, courseProvider, decorationManager, session
   if (url && key && room) {
     client = new EywaClient(url, key, room);
     updateStatusBar();
-    codeLensProvider.refreshCache();
-    courseProvider.refresh();
     decorationManager.seed();
     sessionTree.seed();
     panelView.seed();
