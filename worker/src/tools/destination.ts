@@ -106,6 +106,29 @@ export function registerDestinationTools(
           };
         }
 
+        // Check if a destination already exists - redirect to update if so
+        const existing = await db.select<MemoryRow>("memories", {
+          select: "id,metadata",
+          room_id: `eq.${ctx.roomId}`,
+          message_type: "eq.knowledge",
+          "metadata->>event": "eq.destination",
+          order: "ts.desc",
+          limit: "1",
+        });
+
+        if (existing.length > 0) {
+          const meta = (existing[0].metadata ?? {}) as Record<string, unknown>;
+          const currentMs = (meta.milestones as string[]) || [];
+          const currentProg = (meta.progress as Record<string, boolean>) || {};
+          const done = currentMs.filter((m) => currentProg[m]).length;
+          return {
+            content: [{
+              type: "text" as const,
+              text: `A destination already exists (${done}/${currentMs.length} milestones done). Use action=update to modify it. Creating duplicates breaks progress tracking.`,
+            }],
+          };
+        }
+
         const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
         const initialProgress: Record<string, boolean> = {};
         if (milestones) {
