@@ -730,7 +730,6 @@ export function ThreadTree() {
 
   // Unified input mode: talk to Gemini or inject to agents
   const [inputMode, setInputMode] = useState<"gemini" | "inject">("gemini");
-  const [steeringOpen, setSteeringOpen] = useState(false);
   const {
     messages: chatMessages,
     loading: chatLoading,
@@ -746,12 +745,7 @@ export function ThreadTree() {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
-  // Auto-open steering if Gemini posts proactive alerts
-  useEffect(() => {
-    if (chatMessages.length > 0 && chatMessages[0]?.role === "model") {
-      setSteeringOpen(true);
-    }
-  }, [chatMessages]);
+
 
   const handleChatSend = useCallback(() => {
     if (!chatInput.trim()) return;
@@ -930,7 +924,119 @@ export function ThreadTree() {
   }
 
   return (
-    <div className="hub-view">
+    <div className="hub-view hub-two-col">
+      {/* LEFT: Gemini chat panel */}
+      <div className="hub-chat-panel">
+        <div className="hub-chat-header">
+          <span className="hub-chat-title">Gemini</span>
+          {chatMessages.length > 0 && (
+            <button onClick={clearChat} className="hub-chat-clear" title="Clear">Clear</button>
+          )}
+        </div>
+        <div className="hub-chat-messages">
+          {chatMessages.length === 0 && !chatLoading && (
+            <div className="hub-steering-empty">
+              Ask about agent status, patterns, progress, or course corrections.
+            </div>
+          )}
+          {chatMessages.map((msg: ChatMessage, i: number) => (
+            <div
+              key={i}
+              className={`hub-steering-msg hub-steering-${msg.role}`}
+            >
+              <div className="hub-steering-msg-role">
+                {msg.role === "user" ? "You" : "Gemini"}
+              </div>
+              {msg.toolCalls && msg.toolCalls.length > 0 && (
+                <div className="hub-steering-tools">
+                  {msg.toolCalls.map((t, j) => (
+                    <span key={j} className="hub-steering-tool-pill">{t}</span>
+                  ))}
+                </div>
+              )}
+              <div className="hub-steering-msg-content">{msg.content}</div>
+            </div>
+          ))}
+          {chatLoading && (
+            <div className="hub-steering-msg hub-steering-model">
+              <div className="hub-steering-msg-role">Gemini</div>
+              <div className="hub-steering-msg-content hub-steering-typing">Thinking...</div>
+            </div>
+          )}
+          {chatError && (
+            <div className="hub-steering-error">{chatError}</div>
+          )}
+          <div ref={chatBottomRef} />
+        </div>
+        <div className="hub-chat-input-area">
+          <div className="hub-chat-mode-row">
+            <button
+              className={`hub-mode-btn ${inputMode === "gemini" ? "hub-mode-active" : ""}`}
+              onClick={() => setInputMode("gemini")}
+            >Gemini</button>
+            <button
+              className={`hub-mode-btn ${inputMode === "inject" ? "hub-mode-active" : ""}`}
+              onClick={() => setInputMode("inject")}
+            >Inject</button>
+            {inputMode === "inject" && (
+              <>
+                <select
+                  className="hub-inject-target"
+                  value={injectTarget}
+                  onChange={(e) => setInjectTarget(e.target.value)}
+                >
+                  <option value="all">All agents</option>
+                  {allAgentNames.map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+                <div className="hub-inject-priority">
+                  {(["normal", "high", "urgent"] as const).map((p) => (
+                    <button
+                      key={p}
+                      className={`hub-priority-btn ${injectPriority === p ? `hub-priority-${p}` : ""}`}
+                      onClick={() => setInjectPriority(p)}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="hub-chat-input-row">
+            <input
+              className="hub-command-input"
+              placeholder={inputMode === "gemini"
+                ? "Ask Gemini about agents, patterns, progress..."
+                : "Send instructions to agents..."
+              }
+              value={inputMode === "gemini" ? chatInput : injectContent}
+              onChange={(e) => inputMode === "gemini" ? setChatInput(e.target.value) : setInjectContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (inputMode === "gemini") handleChatSend();
+                  else handleInject();
+                }
+              }}
+            />
+            <button
+              className="hub-command-send"
+              onClick={inputMode === "gemini" ? handleChatSend : handleInject}
+              disabled={inputMode === "gemini"
+                ? (chatLoading || !chatInput.trim())
+                : (injectSending || !injectContent.trim())
+              }
+            >
+              {(chatLoading || injectSending) ? "..." : "\u2192"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT: Dashboard content */}
+      <div className="hub-dashboard">
       {/* Header: time range + stats */}
       <div className="hub-header">
         <div className="hub-time-range">
@@ -1033,49 +1139,7 @@ export function ThreadTree() {
         <AgentTopologyMap agents={sortedAgents} destination={destination} />
       )}
 
-      {/* Gemini conversation (collapsible, above the unified input bar) */}
-      {steeringOpen && (
-        <div className="hub-steering-body">
-          <div className="hub-steering-messages">
-            {chatMessages.length === 0 && !chatLoading && (
-              <div className="hub-steering-empty">
-                Ask Gemini about agent status, patterns, or progress.
-              </div>
-            )}
-            {chatMessages.map((msg: ChatMessage, i: number) => (
-              <div
-                key={i}
-                className={`hub-steering-msg hub-steering-${msg.role}`}
-              >
-                <div className="hub-steering-msg-role">
-                  {msg.role === "user" ? "You" : "Gemini"}
-                </div>
-                {msg.toolCalls && msg.toolCalls.length > 0 && (
-                  <div className="hub-steering-tools">
-                    {msg.toolCalls.map((t, j) => (
-                      <span key={j} className="hub-steering-tool-pill">{t}</span>
-                    ))}
-                  </div>
-                )}
-                <div className="hub-steering-msg-content">{msg.content}</div>
-              </div>
-            ))}
-            {chatLoading && (
-              <div className="hub-steering-msg hub-steering-model">
-                <div className="hub-steering-msg-role">Gemini</div>
-                <div className="hub-steering-msg-content hub-steering-typing">Thinking...</div>
-              </div>
-            )}
-            {chatError && (
-              <div className="hub-steering-error">{chatError}</div>
-            )}
-            <div ref={chatBottomRef} />
-          </div>
-          {chatMessages.length > 0 && (
-            <button onClick={clearChat} className="hub-steering-clear" title="Clear chat">Clear</button>
-          )}
-        </div>
-      )}
+      {/* (Gemini chat is now in the left panel) */}
 
       {/* Distress alerts */}
       {unresolvedDistress.map((d) => (
@@ -1169,79 +1233,7 @@ export function ThreadTree() {
         </div>
       </div>
 
-      {/* Unified input bar: Gemini steering or agent inject */}
-      <div className="hub-command-bar">
-        <div className="hub-command-mode">
-          <button
-            className={`hub-mode-btn ${inputMode === "gemini" ? "hub-mode-active" : ""}`}
-            onClick={() => { setInputMode("gemini"); setSteeringOpen(true); }}
-            title="Ask Gemini"
-          >
-            Gemini
-            {chatMessages.length > 0 && (
-              <span className="hub-steering-count">{chatMessages.length}</span>
-            )}
-          </button>
-          <button
-            className={`hub-mode-btn ${inputMode === "inject" ? "hub-mode-active" : ""}`}
-            onClick={() => { setInputMode("inject"); setSteeringOpen(false); }}
-            title="Send to agents"
-          >
-            Inject
-          </button>
-        </div>
-        {inputMode === "inject" && (
-          <>
-            <select
-              className="hub-inject-target"
-              value={injectTarget}
-              onChange={(e) => setInjectTarget(e.target.value)}
-            >
-              <option value="all">All agents</option>
-              {allAgentNames.map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-            <div className="hub-inject-priority">
-              {(["normal", "high", "urgent"] as const).map((p) => (
-                <button
-                  key={p}
-                  className={`hub-priority-btn ${injectPriority === p ? `hub-priority-${p}` : ""}`}
-                  onClick={() => setInjectPriority(p)}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-        <input
-          className="hub-command-input"
-          placeholder={inputMode === "gemini"
-            ? "Ask Gemini about agents, patterns, progress..."
-            : "Send instructions to agents..."
-          }
-          value={inputMode === "gemini" ? chatInput : injectContent}
-          onChange={(e) => inputMode === "gemini" ? setChatInput(e.target.value) : setInjectContent(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              if (inputMode === "gemini") handleChatSend();
-              else handleInject();
-            }
-          }}
-        />
-        <button
-          className="hub-command-send"
-          onClick={inputMode === "gemini" ? handleChatSend : handleInject}
-          disabled={inputMode === "gemini"
-            ? (chatLoading || !chatInput.trim())
-            : (injectSending || !injectContent.trim())
-          }
-        >
-          {(chatLoading || injectSending) ? "..." : "\u2192"}
-        </button>
-      </div>
+      </div>{/* end hub-dashboard */}
     </div>
   );
 }
