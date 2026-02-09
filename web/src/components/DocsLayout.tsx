@@ -60,6 +60,16 @@ export function DocsLayout() {
               </Link>
             ))}
           </div>
+
+          <div className="docs-sidebar-section">
+            <h3>Resources</h3>
+            <a href="/llms.txt" target="_blank" rel="noopener noreferrer">
+              LLM Docs (llms.txt)
+            </a>
+            <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer">
+              GitHub
+            </a>
+          </div>
         </aside>
 
         <main className="docs-content">
@@ -75,25 +85,105 @@ export function DocsOverview() {
     <article className="docs-article">
       <h1>Eywa Documentation</h1>
       <p className="docs-lead">
-        Eywa gives your AI coding agents shared memory. When agents work together on a codebase,
-        Eywa captures their context, decisions, and progress so nothing gets lost.
+        Eywa is an observability and coordination layer for human + AI teams. Each person on your
+        team directs AI agents that code, decide, and ship autonomously. Eywa makes all of that
+        work visible so the humans stay aligned.
       </p>
 
       <h2>What is Eywa?</h2>
       <p>
-        Eywa is an MCP server that provides persistent, shared memory for AI coding agents.
-        It works with any agent that supports the Model Context Protocol, including Claude Code,
-        Cursor, Windsurf, Gemini CLI, and more.
+        Eywa is an MCP server that gives your team shared visibility across every AI agent session.
+        When everyone runs AI, small misalignments between people compound at machine speed. Eywa
+        gives one shared view of what all agents are building so you know what to sync on.
+        It works with any agent that supports the Model Context Protocol: Claude Code, Cursor,
+        Windsurf, Gemini CLI, Codex, Cline, and more.
       </p>
 
-      <h2>Key Features</h2>
+      <h2>Core Features</h2>
+
+      <h3>Destination & Progress</h3>
+      <p>
+        Set a target state for your team, define milestones, and track completion as agents ship.
+        Agents report progress with percentage and status. The destination is visible on every
+        surface: web dashboard, VS Code sidebar, Discord, and MCP auto-context.
+      </p>
+
+      <h3>Live Agent Map</h3>
+      <p>
+        See what every agent across your team is working on in real time. Each agent's status,
+        task, systems touched, and progress are visible on the HubView dashboard. Active agents
+        are highlighted, with operation metadata (system, action, scope, outcome) for full observability.
+      </p>
+
+      <h3>Context Injection</h3>
+      <p>
+        Push decisions or corrections into any agent mid-session. Agents see injections on their
+        next tool call through automatic piggyback delivery. Supports normal, high, and urgent
+        priority levels.
+      </p>
+
+      <h3>Team Knowledge</h3>
+      <p>
+        Persistent memory that survives across all sessions. Store architecture decisions, API
+        conventions, gotchas, and patterns with <code>eywa_learn</code>. Knowledge is searchable
+        by tags and content, and surfaces in agent auto-context at session start.
+      </p>
+
+      <h3>Timeline & Branching</h3>
+      <p>
+        Git-like version control for agent work. Rewind to any point with <code>eywa_rewind</code>,
+        fork alternate timelines with <code>eywa_fork</code>, cherry-pick moments across branches
+        with <code>eywa_pick</code>, and merge back with <code>eywa_merge</code>. Bookmark
+        important decisions for easy navigation.
+      </p>
+
+      <h3>Global Insights Network</h3>
+      <p>
+        Publish anonymized patterns from your room with <code>eywa_publish_insight</code>.
+        Query cross-room intelligence with <code>eywa_query_network</code> so your agents
+        learn from what worked in other teams. Lane recommendations suggest relevant insights
+        based on your current task.
+      </p>
+
+      <h3>Context Recovery</h3>
+      <p>
+        Agents checkpoint their progress with <code>eywa_checkpoint</code> and send distress
+        signals with <code>eywa_distress</code> when context runs low. New sessions auto-recover
+        where the last one left off. Baton passing lets agents hand off work mid-session.
+      </p>
+
+      <h3>Work Claiming</h3>
+      <p>
+        Agents declare what they're working on with <code>eywa_claim</code> to prevent duplicate
+        effort. Active claims are visible in session snapshots and MCP instructions. Claims
+        auto-release when sessions end.
+      </p>
+
+      <h3>Gemini Steering</h3>
+      <p>
+        Built-in Gemini chat panel with 6 tools for querying agent status, detecting patterns,
+        analyzing distress signals, and steering the team. Proactively alerts on detected issues
+        and agent distress.
+      </p>
+
+      <h2>Interaction Surfaces</h2>
+      <p>
+        The same navigation model (destination, course, steering) works on every surface:
+      </p>
       <ul>
-        <li><strong>Shared Memory</strong> - Agents can read and write to a shared context</li>
-        <li><strong>Session Tracking</strong> - See what each agent is working on in real-time</li>
-        <li><strong>Knowledge Base</strong> - Persistent project knowledge that survives across sessions</li>
-        <li><strong>Context Injection</strong> - Push context to agents when they need it</li>
-        <li><strong>Timeline</strong> - Rewind and fork from any point in your project history</li>
+        <li><strong>Web Dashboard</strong> - HubView with agent map, destination banner, Gemini chat, activity stream, and inject bar</li>
+        <li><strong>VS Code Extension</strong> - Sidebar with agent avatars, activity feed, attention notifications, and agent detail panel next to terminals</li>
+        <li><strong>Discord Bot</strong> - 14 slash commands for team steering: <code>/destination</code>, <code>/course</code>, <code>/status</code>, <code>/inject</code>, and more</li>
+        <li><strong>CLI</strong> - <code>npx eywa-ai init</code> for zero-auth room setup, plus status, inject, and log commands</li>
+        <li><strong>Spectacles AR</strong> - Activity log, Gemini chat, and destination progress as floating AR panels via Supabase Realtime</li>
       </ul>
+
+      <h2>LLM Documentation</h2>
+      <p>
+        For AI agents that need to understand Eywa's full API surface, point them
+        at <a href="/llms.txt" target="_blank" rel="noopener noreferrer"><code>llms.txt</code></a> which
+        describes all available tools, integration guides, and common workflows.
+      </p>
 
       <h2>Getting Started</h2>
       <p>
@@ -112,7 +202,7 @@ export function DocsOverview() {
         </Link>
         <Link to="/docs/integrations/windsurf" className="docs-cta-card">
           <h3>Windsurf</h3>
-          <p>Codeium's IDE</p>
+          <p>AI-powered IDE</p>
         </Link>
       </div>
     </article>

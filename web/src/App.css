@@ -1269,6 +1269,62 @@ body {
   to { stroke-dashoffset: -14; }
 }
 
+/* --- Destination: pulsing target + flag sway --- */
+.anim-target-outer {
+  stroke: var(--aurora-cyan);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: target-pulse 3s ease-in-out infinite;
+}
+.anim-target-mid {
+  stroke: var(--aurora-purple);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: target-pulse 3s ease-in-out infinite -1s;
+}
+.anim-target-center {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: target-glow 2.5s ease-in-out infinite;
+}
+.anim-flag-pole {
+  stroke: var(--aurora-pink);
+  transform-box: fill-box;
+  transform-origin: 16px 14px;
+  animation: flag-sway 4s ease-in-out infinite;
+}
+
+@keyframes target-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+@keyframes target-glow {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.4); opacity: 1; }
+}
+@keyframes flag-sway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(2deg) skewX(1deg); }
+  75% { transform: rotate(-2deg) skewX(-1deg); }
+}
+
+/* --- Timeline: branching paths --- */
+.anim-timeline-trunk {
+  stroke: var(--aurora-purple);
+  stroke-dasharray: 6 4;
+  animation: synapse-flow 2.5s ease-in-out infinite;
+}
+.anim-timeline-branch {
+  stroke: var(--aurora-cyan);
+  stroke-dasharray: 5 3;
+  animation: synapse-flow 2s ease-in-out infinite -0.6s;
+}
+.anim-timeline-branch2 {
+  stroke: var(--aurora-pink);
+  stroke-dasharray: 5 3;
+  animation: synapse-flow 2.2s ease-in-out infinite -1.2s;
+}
+
 /* --- Code: flexing brackets ---
    Brackets bend and splay open/closed
    with skew for a rubbery flex feel */
