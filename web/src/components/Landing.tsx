@@ -121,7 +121,7 @@ const IconDiscord = () => (
 );
 
 export function Landing() {
-  const { createRoom, creating, error } = useRoom();
+  const { createRoom, createDemoRoom, creating, error } = useRoom();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -143,7 +143,7 @@ export function Landing() {
           </nav>
           <div className="landing-header-actions">
             <a href="/docs" className="landing-nav-link">Docs</a>
-            <a href="/r/demo" className="landing-nav-link">Try Demo</a>
+            <button className="landing-nav-link" onClick={() => createDemoRoom()} disabled={creating}>Try Demo</button>
             <button
               className="btn-landing-primary"
               onClick={() => createRoom()}
@@ -175,7 +175,7 @@ export function Landing() {
         <a href="/docs" onClick={() => setMenuOpen(false)}>Docs</a>
         <a href="#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
         <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Contact</a>
-        <a href="/r/demo" onClick={() => setMenuOpen(false)}>Try Demo</a>
+        <button onClick={() => { createDemoRoom(); setMenuOpen(false); }} disabled={creating}>Try Demo</button>
         <button
           onClick={() => { createRoom(); setMenuOpen(false); }}
           disabled={creating}
@@ -199,10 +199,14 @@ export function Landing() {
             <span className="highlight">One shared view</span> of every agent session, decision, and insight across your team.
           </p>
           <div className="landing-hero-actions">
-            <a href="/r/demo" className="btn-landing-primary btn-large">
-              Try the Demo
-              <IconArrowRight />
-            </a>
+            <button
+              className="btn-landing-primary btn-large"
+              onClick={() => createDemoRoom()}
+              disabled={creating}
+            >
+              {creating ? "Creating..." : "Try the Demo"}
+              {!creating && <IconArrowRight />}
+            </button>
             <button
               className="btn-landing-secondary"
               onClick={() => createRoom()}
@@ -583,9 +587,9 @@ export function Landing() {
               <li>VS Code + Discord integrations</li>
               <li>All agent types supported</li>
             </ul>
-            <a href="/r/demo" className="btn-landing-secondary" style={{ width: "100%" }}>
+            <button className="btn-landing-secondary" style={{ width: "100%" }} onClick={() => createDemoRoom()} disabled={creating}>
               Get Started Free
-            </a>
+            </button>
           </div>
           <div className="landing-pricing-card landing-pricing-featured">
             <div className="landing-pricing-badge">For Teams</div>
@@ -624,10 +628,10 @@ export function Landing() {
         <h2>See what your whole team is building.</h2>
         <p>One shared view of every agent session across your team. Connect any MCP agent in one line.</p>
         <div className="landing-hero-actions">
-          <a href="/r/demo" className="btn-landing-primary btn-large">
-            Try the Demo
-            <IconArrowRight />
-          </a>
+          <button className="btn-landing-primary btn-large" onClick={() => createDemoRoom()} disabled={creating}>
+            {creating ? "Creating..." : "Try the Demo"}
+            {!creating && <IconArrowRight />}
+          </button>
           <a href="https://discord.gg/c7V2Ze58" className="btn-landing-secondary" target="_blank" rel="noopener noreferrer">
             Join Discord
           </a>
@@ -649,7 +653,7 @@ export function Landing() {
               <h4>Product</h4>
               <a href="#features">Features</a>
               <a href="#pricing">Pricing</a>
-              <a href="/r/demo">Demo</a>
+              <button className="landing-footer-link-btn" onClick={() => createDemoRoom()} disabled={creating}>Demo</button>
               <a href="/slides">Slides</a>
             </div>
             <div className="landing-footer-col">
