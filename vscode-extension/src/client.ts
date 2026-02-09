@@ -31,6 +31,24 @@ export interface MemoryEvent {
   message_type: string;
 }
 
+export interface DestinationInfo {
+  destination: string;
+  milestones: string[];
+  progress: Record<string, boolean>;
+  notes: string | null;
+  setBy: string;
+  ts: string;
+}
+
+export interface AgentProgress {
+  agent: string;
+  percent: number;
+  status: string;
+  detail: string | null;
+  task: string;
+  ts: string;
+}
+
 /**
  * Session info grouped by user for the agent tree.
  * Status is derived from session lifecycle events and a 30-minute active threshold.
@@ -277,6 +295,65 @@ export class EywaClient {
     }
 
     return userSessions;
+  }
+
+  async getDestination(): Promise<DestinationInfo | null> {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return null;
+
+    const { data: rows } = await this.supabase
+      .from("memories")
+      .select("agent,content,metadata,ts")
+      .eq("room_id", roomId)
+      .eq("message_type", "knowledge")
+      .eq("metadata->>event", "destination")
+      .order("ts", { ascending: false })
+      .limit(1);
+
+    if (!rows?.length) return null;
+
+    const meta = (rows[0].metadata ?? {}) as Record<string, unknown>;
+    return {
+      destination: (meta.destination as string) || "",
+      milestones: (meta.milestones as string[]) || [],
+      progress: (meta.progress as Record<string, boolean>) || {},
+      notes: (meta.notes as string) || null,
+      setBy: (meta.set_by as string) || rows[0].agent,
+      ts: rows[0].ts,
+    };
+  }
+
+  async getAgentProgress(): Promise<AgentProgress[]> {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return [];
+
+    const { data: rows } = await this.supabase
+      .from("memories")
+      .select("agent,metadata,ts")
+      .eq("room_id", roomId)
+      .eq("metadata->>event", "progress")
+      .order("ts", { ascending: false })
+      .limit(50);
+
+    if (!rows?.length) return [];
+
+    // Latest progress per agent
+    const seen = new Set<string>();
+    const results: AgentProgress[] = [];
+    for (const row of rows) {
+      if (seen.has(row.agent)) continue;
+      seen.add(row.agent);
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      results.push({
+        agent: row.agent,
+        percent: (meta.percent as number) ?? 0,
+        status: (meta.status as string) || "working",
+        detail: (meta.detail as string) || null,
+        task: (meta.task as string) || "",
+        ts: row.ts,
+      });
+    }
+    return results;
   }
 
   async inject(
