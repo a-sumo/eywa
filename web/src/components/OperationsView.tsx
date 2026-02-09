@@ -55,6 +55,14 @@ interface AgentOp {
   isNew?: boolean;
 }
 
+interface AgentProgress {
+  percent: number;
+  task: string;
+  status: string;
+  detail: string | null;
+  ts: string;
+}
+
 interface AgentState {
   agent: string;
   user: string;
@@ -67,6 +75,7 @@ interface AgentState {
   outcomes: { success: number; failure: number; blocked: number };
   lastSeen: string;
   recentOps: AgentOp[];
+  progress: AgentProgress | null;
 }
 
 // --- Helpers ---
@@ -181,6 +190,7 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
         outcomes: { success: 0, failure: 0, blocked: 0 },
         lastSeen: m.ts,
         recentOps: [],
+        progress: null,
       };
       agents.set(m.agent, state);
     }
@@ -191,6 +201,17 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
     if (meta.outcome === "success") state.outcomes.success++;
     else if (meta.outcome === "failure") state.outcomes.failure++;
     else if (meta.outcome === "blocked") state.outcomes.blocked++;
+
+    // Capture latest progress event
+    if (meta.event === "progress" && !state.progress) {
+      state.progress = {
+        percent: (meta.percent as number) ?? 0,
+        task: (meta.task as string) || "",
+        status: (meta.status as string) || "working",
+        detail: (meta.detail as string) || null,
+        ts: m.ts,
+      };
+    }
 
     state.opCount++;
 
@@ -352,6 +373,45 @@ function AgentCard({ state, expanded, onToggle }: {
           {expanded ? "\u25B2" : "\u25BC"}
         </span>
       </div>
+
+      {/* Progress bar */}
+      {state.progress && (
+        <div style={{ padding: "0 10px 4px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{
+            flex: 1,
+            height: "3px",
+            background: "rgba(255,255,255,0.06)",
+            borderRadius: "2px",
+            overflow: "hidden",
+          }}>
+            <div style={{
+              width: `${state.progress.percent}%`,
+              height: "100%",
+              background: state.progress.status === "blocked"
+                ? "#fcd34d"
+                : state.progress.percent === 100
+                  ? "#34d399"
+                  : "#8b5cf6",
+              borderRadius: "2px",
+              transition: "width 0.5s ease-in-out",
+            }} />
+          </div>
+          <span style={{ fontSize: "10px", fontWeight: 600, color: "#a78bfa", flexShrink: 0 }}>
+            {state.progress.percent}%
+          </span>
+          {state.progress.status !== "working" && (
+            <OpBadge
+              label={state.progress.status}
+              color={state.progress.status === "blocked" ? "#fcd34d" : state.progress.status === "testing" ? "#22c55e" : "#67e8f9"}
+            />
+          )}
+          {state.progress.detail && (
+            <span style={{ fontSize: "10px", opacity: 0.4, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {state.progress.detail}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Systems + outcomes bar */}
       <div style={{ display: "flex", gap: "4px", padding: "0 10px 6px", flexWrap: "wrap", alignItems: "center" }}>
