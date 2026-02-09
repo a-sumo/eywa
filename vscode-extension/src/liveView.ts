@@ -3,7 +3,7 @@
  * Uses Kurzgesagt-style SVG avatars matching the mini/eink displays.
  */
 import * as vscode from "vscode";
-import type { EywaClient } from "./client";
+import type { EywaClient, DestinationInfo, AgentProgress } from "./client";
 import type { MemoryPayload } from "./realtime";
 import { getAvatarDataUri } from "./avatars";
 
@@ -58,6 +58,8 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   private agents = new Map<string, AgentState>();
   private activity: ActivityItem[] = [];
+  private destination: DestinationInfo | null = null;
+  private agentProgress: AgentProgress[] = [];
   private getClient: () => EywaClient | undefined;
   private room: string;
 
@@ -70,6 +72,8 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     this.room = room;
     this.agents.clear();
     this.activity = [];
+    this.destination = null;
+    this.agentProgress = [];
     this.postMessage({ type: "loading", room });
     this.loadInitial();
   }
@@ -108,8 +112,14 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     }
 
     try {
-      // Load agents from sessions (Map<string, SessionInfo[]>)
-      const sessionMap = await client.getSessions();
+      // Load destination and progress in parallel with sessions
+      const [sessionMap, dest, prog] = await Promise.all([
+        client.getSessions(),
+        client.getDestination(),
+        client.getAgentProgress(),
+      ]);
+      this.destination = dest;
+      this.agentProgress = prog;
       this.agents.clear();
       for (const [, sessions] of sessionMap) {
         for (const s of sessions) {
@@ -158,6 +168,37 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   handleEvent(mem: MemoryPayload) {
     const meta = mem.metadata ?? {};
     const event = meta.event as string | undefined;
+
+    // Update destination if a new one comes in
+    if (event === "destination" && mem.message_type === "knowledge") {
+      const dest = meta as Record<string, unknown>;
+      this.destination = {
+        destination: (dest.destination as string) || "",
+        milestones: (dest.milestones as string[]) || [],
+        progress: (dest.progress as Record<string, boolean>) || {},
+        notes: (dest.notes as string) || null,
+        setBy: (dest.set_by as string) || mem.agent,
+        ts: mem.ts,
+      };
+    }
+
+    // Update progress
+    if (event === "progress") {
+      const existing = this.agentProgress.findIndex((p) => p.agent === mem.agent);
+      const prog = {
+        agent: mem.agent,
+        percent: (meta.percent as number) ?? 0,
+        status: (meta.status as string) || "working",
+        detail: (meta.detail as string) || null,
+        task: (meta.task as string) || "",
+        ts: mem.ts,
+      };
+      if (existing >= 0) {
+        this.agentProgress[existing] = prog;
+      } else {
+        this.agentProgress.push(prog);
+      }
+    }
 
     // Update agent state
     if (event === "session_start") {
@@ -222,6 +263,8 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
       activity: this.activity,
       room: this.room,
       avatars: avatarMap,
+      destination: this.destination,
+      agentProgress: this.agentProgress,
     });
   }
 
@@ -391,8 +434,12 @@ function render(data) {
     return;
   }
 
-  const { agents, activity, room, avatars } = data;
+  const { agents, activity, room, avatars, destination, agentProgress } = data;
   const active = agents.filter(a => a.status === 'active').length;
+  const progressMap = {};
+  if (agentProgress) {
+    for (const p of agentProgress) progressMap[p.agent] = p;
+  }
 
   // Header
   let html = '<div class="header">' + LOGO
@@ -403,6 +450,44 @@ function render(data) {
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'inject\\'})" title="Inject context"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 3L14 8l-3.5 5h-2l3-4.5H2V7.5h9.5l-3-4.5h2z"/></svg></button>'
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'openDashboard\\'})" title="Web dashboard"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h13l.5.5v13l-.5.5h-13l-.5-.5v-13l.5-.5zM2 5v9h12V5H2zm0-1h12V2H2v2z"/></svg></button>'
     + '</div></div>';
+
+  // Destination banner
+  if (destination && destination.destination) {
+    const ms = destination.milestones || [];
+    const prog = destination.progress || {};
+    const done = ms.filter(m => prog[m]).length;
+    const total = ms.length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    html += '<div style="padding:8px 12px;border-bottom:1px solid var(--vscode-panel-border)">';
+    html += '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;opacity:0.5;margin-bottom:4px">Destination</div>';
+    html += '<div style="font-size:11px;font-weight:600;margin-bottom:4px;line-height:1.3">' + esc(destination.destination).slice(0, 200) + '</div>';
+
+    if (total > 0) {
+      html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">';
+      html += '<div style="flex:1;height:3px;background:rgba(128,128,128,0.2);border-radius:2px;overflow:hidden">';
+      html += '<div style="width:' + pct + '%;height:100%;background:' + (pct === 100 ? '#3fb950' : '#7946FF') + ';border-radius:2px;transition:width 0.5s ease-in-out"></div>';
+      html += '</div>';
+      html += '<span style="font-size:10px;font-weight:600;opacity:0.7">' + done + '/' + total + '</span>';
+      html += '</div>';
+
+      html += '<div style="display:flex;flex-wrap:wrap;gap:3px">';
+      for (const m of ms) {
+        const isDone = prog[m];
+        html += '<span style="font-size:9px;padding:1px 5px;border-radius:2px;'
+          + 'background:' + (isDone ? 'rgba(63,185,80,0.15)' : 'rgba(128,128,128,0.1)') + ';'
+          + 'color:' + (isDone ? '#3fb950' : 'inherit') + ';opacity:' + (isDone ? '0.7' : '0.4') + ';'
+          + (isDone ? 'text-decoration:line-through;' : '')
+          + '">' + (isDone ? '\\u2713 ' : '') + esc(m) + '</span>';
+      }
+      html += '</div>';
+    }
+
+    if (destination.notes) {
+      html += '<div style="font-size:10px;opacity:0.4;margin-top:4px">' + esc(destination.notes).slice(0, 150) + '</div>';
+    }
+    html += '</div>';
+  }
 
   // Mascot: cross-body between header and agent strip
   const mascotMood = agents.filter(a => a.status === 'active').length > 0 ? 'active' : (agents.length > 0 ? 'idle' : 'sleeping');
@@ -463,9 +548,16 @@ function render(data) {
     html += '<div class="strip">';
     for (const a of agents) {
       const src = avatars[a.name] || '';
-      html += '<div class="agent-chip ' + a.status + '" title="' + esc(a.name) + '\\n' + esc(a.task) + '">'
+      const ap = progressMap[a.name];
+      const progTitle = ap ? '\\n' + ap.percent + '% ' + (ap.status || '') : '';
+      html += '<div class="agent-chip ' + a.status + '" title="' + esc(a.name) + '\\n' + esc(a.task) + progTitle + '">'
         + '<div class="av-wrap"><img class="av-img" src="' + src + '" alt="' + esc(shortName(a.name)) + '"/><span class="dot"></span></div>'
-        + '<div class="name">' + esc(shortName(a.name)) + '</div></div>';
+        + '<div class="name">' + esc(shortName(a.name)) + '</div>';
+      if (ap) {
+        html += '<div style="width:100%;height:2px;background:rgba(128,128,128,0.15);border-radius:1px;overflow:hidden;margin-top:2px">'
+          + '<div style="width:' + ap.percent + '%;height:100%;background:' + (ap.status === 'blocked' ? '#d29922' : '#7946FF') + ';border-radius:1px"></div></div>';
+      }
+      html += '</div>';
     }
     html += '</div>';
   }
