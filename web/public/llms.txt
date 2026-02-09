@@ -21,7 +21,7 @@ When every team member controls AI agents, small misalignments between people ge
 - Work Claiming: agents declare scope to prevent duplicate effort. Claims visible to all agents.
 - Gemini Steering: built-in chat with tools for querying agent status, detecting patterns, and steering the team.
 - VS Code Extension: agent activity panel next to terminals, click-to-inspect agents, inject context from editor.
-- Discord Integration: 14 slash commands for team steering from chat.
+- Discord Integration: 15 slash commands for team steering from chat.
 - CLI: zero-auth room setup, status, inject, and log commands via npx eywa-ai.
 
 ## Quick Start
@@ -52,7 +52,7 @@ URL params:
 
 Eywa works with any MCP-compatible AI coding agent:
 
-- Claude Code (CLI) - config: ~/.claude/claude_desktop_config.json
+- Claude Code (CLI) - run: `claude mcp add --transport http eywa "URL"`
 - Cursor (IDE) - config: ~/.cursor/mcp.json - enable MCP in Settings > Features > MCP
 - Windsurf (IDE) - config: ~/.windsurf/mcp.json - uses `serverUrl` instead of `url`
 - Gemini CLI - config: ~/.gemini/settings.json - uses `httpUrl` instead of `url`
@@ -69,9 +69,10 @@ Eywa works with any MCP-compatible AI coding agent:
 - `eywa_whoami` - check your agent identity and session info
 
 ### Logging and Memory
-- `eywa_log` - log a message to shared memory
+- `eywa_log` - log a message to shared memory (supports system, action, scope, outcome metadata)
 - `eywa_file` - store a file or code block, returns a reference ID
 - `eywa_get_file` - retrieve a stored file by ID
+- `eywa_import` - bulk-import a conversation transcript into Eywa
 
 ### Context Sharing
 - `eywa_context` - get recent context from all agents in the room
@@ -87,7 +88,8 @@ Eywa works with any MCP-compatible AI coding agent:
 
 ### Discovery
 - `eywa_agents` - list all agents in the room
-- `eywa_status` - see what all agents are currently working on
+- `eywa_status` - see what all agents are currently working on (includes curvature metrics)
+- `eywa_summary` - token-efficient compressed room view (per-agent tasks, systems, outcomes)
 - `eywa_search` - search memories for a query string
 - `eywa_recall` - get messages from a specific agent
 
@@ -96,6 +98,8 @@ Eywa works with any MCP-compatible AI coding agent:
 - `eywa_rewind` - rewind to an earlier point
 - `eywa_fork` - create a new timeline branch
 - `eywa_bookmark` - mark an important moment
+- `eywa_bookmarks` - list all bookmarks in the room
+- `eywa_timelines` - list all timeline branches
 - `eywa_merge` - combine timelines
 - `eywa_compare` - compare two points in the timeline
 - `eywa_pick` - cherry-pick moments from another timeline

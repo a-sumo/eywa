@@ -67,43 +67,43 @@ function ThreeViewsDiagram() {
   const views = [
     {
       icon: <SlideIconThreads />,
-      title: "Overview",
+      title: "Hub",
       color: "var(--color-accent-secondary)",
       body: (
         <>
-          Tree of all active threads.
+          Live agent map with progress bars.
           <br />
-          Who's working on what.
+          Destination banner and milestones.
           <br />
-          <strong className="text-error">Divergence alerts</strong> when threads diverge.
+          <strong className="text-error">Pattern detection</strong> across the swarm.
         </>
       ),
     },
     {
       icon: <SlideIconChat />,
-      title: "Thread View",
+      title: "Agent Detail",
       color: "var(--success)",
       body: (
         <>
-          Full conversation history.
+          Full session history and artifacts.
           <br />
-          Each memory is a <strong>draggable card</strong>.
+          Systems touched, operations, outcomes.
           <br />
-          Select decisions, code, context. Drag into Eywa.
+          Inject context mid-session.
         </>
       ),
     },
     {
       icon: <SlideIconBrain />,
-      title: "Workspace",
+      title: "Gemini Chat",
       color: "var(--color-accent)",
       body: (
         <>
-          Browse memories, build context, <strong>chat with Gemini</strong>.
+          Ask Gemini about the swarm.
           <br />
-          Git-like history: rewind, fork, branch.
+          Cross-session analysis and steering.
           <br />
-          Output becomes a new thread.
+          Proactive alerts on drift and conflicts.
         </>
       ),
     },
@@ -166,7 +166,7 @@ function DivergenceDiagram() {
         {" \u00b7 "}
         <span style={{ color: "var(--error)" }}>High (&gt;70%)</span>
         <br />
-        Alerts surface on the thread tree before integration conflicts happen.
+        Alerts surface on the hub before integration conflicts happen.
       </div>
     </div>
   );
@@ -195,7 +195,7 @@ function ArchitectureDiagram() {
           <div className="dia-arch-label">Cloudflare Worker</div>
           <div className="dia-arch-box dia-arch-worker">
             <div className="dia-arch-box-title">eywa-mcp</div>
-            <div className="dia-arch-box-detail">20 MCP tools</div>
+            <div className="dia-arch-box-detail">45 MCP tools</div>
             <div className="dia-arch-box-detail">Streamable HTTP + SSE</div>
             <div className="dia-arch-box-detail">Stateless</div>
           </div>
@@ -223,7 +223,7 @@ function ArchitectureDiagram() {
         <div className="dia-arch-dashboard">
           <div className="dia-arch-box-title">React Dashboard</div>
           <div className="dia-arch-box-detail">
-            Thread Tree {"\u00b7"} Thread View {"\u00b7"} Workspace + Gemini {"\u00b7"} 3D / XR
+            Hub {"\u00b7"} Agent Detail {"\u00b7"} Gemini Chat {"\u00b7"} Spectacles AR
           </div>
         </div>
         <div className="dia-arch-dashboard" style={{ marginTop: 8 }}>
@@ -474,7 +474,6 @@ export function SlidePresentation() {
             <FlowBackground />
           </div>
           <div className="slide-title-content">
-            <div className="slide-logo"><EywaLogoStatic size={80} /></div>
             <h1 className="slide-h1">{slidesData.closing.title}</h1>
             <p className="slide-subtitle-main">{slidesData.closing.subtitle}</p>
           </div>

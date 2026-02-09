@@ -118,6 +118,47 @@ export class SupabaseClient {
    * @param onConflict Comma-separated column names for conflict resolution
    * @returns          Upserted row(s)
    */
+  /**
+   * INSERT multiple rows into a table.
+   * @param table Table name
+   * @param rows  Array of objects to insert
+   * @returns     Inserted rows
+   */
+  async insertMany<T = Record<string, unknown>>(
+    table: string,
+    rows: Record<string, unknown>[],
+  ): Promise<T[]> {
+    const res = await fetch(`${this.baseUrl}/${table}`, {
+      method: "POST",
+      headers: this.headers({ Prefer: "return=representation" }),
+      body: JSON.stringify(rows),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Supabase insertMany ${table} failed (${res.status}): ${body}`);
+    }
+    return res.json() as Promise<T[]>;
+  }
+
+  /**
+   * COUNT rows matching filters using HEAD + Prefer: count=exact.
+   * Returns the count from the Content-Range header.
+   */
+  async count(
+    table: string,
+    filters: Record<string, string>,
+  ): Promise<number> {
+    const qs = new URLSearchParams({ select: "id", ...filters }).toString();
+    const res = await fetch(`${this.baseUrl}/${table}?${qs}`, {
+      method: "HEAD",
+      headers: this.headers({ Prefer: "count=exact" }),
+    });
+    // Content-Range: 0-N/TOTAL or */TOTAL
+    const range = res.headers.get("content-range") || "";
+    const match = range.match(/\/(\d+)$/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
   async upsert<T = Record<string, unknown>>(
     table: string,
     row: Record<string, unknown>,

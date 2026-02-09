@@ -17,6 +17,7 @@ import { registerNetworkTools } from "./tools/network.js";
 import { registerRecoveryTools } from "./tools/recovery.js";
 import { registerDestinationTools } from "./tools/destination.js";
 import { registerClaimTools, getActiveClaims } from "./tools/claim.js";
+import { rateLimit, checkMemoryCap } from "./lib/ratelimit.js";
 
 export default {
   async fetch(request: Request, env: Env, execCtx: ExecutionContext): Promise<Response> {
@@ -32,6 +33,30 @@ export default {
       });
     }
 
+    // Clone demo room endpoint
+    if (url.pathname === "/clone-demo") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        });
+      }
+      if (request.method === "POST") {
+        try {
+          return await handleCloneDemo(request, env);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          return Response.json({ error: message }, {
+            status: 500,
+            headers: { "Access-Control-Allow-Origin": "*" },
+          });
+        }
+      }
+    }
+
     // MCP endpoint
     if (url.pathname === "/mcp") {
       try {
@@ -44,7 +69,119 @@ export default {
 
     return Response.json({ error: "Not found" }, { status: 404 });
   },
+
+  // Scheduled cleanup: delete demo COPIES older than 24 hours.
+  // The source /demo room is NEVER touched.
+  async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    // Only target demo copies (slug starts with "demo-"), never the source "demo" room
+    const oldRooms = await db.select<RoomRow>("rooms", {
+      select: "id,slug",
+      is_demo: "eq.true",
+      created_at: `lt.${cutoff}`,
+      slug: "like.demo-*",
+      limit: "50",
+    });
+
+    for (const room of oldRooms) {
+      await db.delete("memories", { room_id: `eq.${room.id}` });
+      await db.delete("links", { room_id: `eq.${room.id}` });
+      await db.delete("messages", { room_id: `eq.${room.id}` });
+      await db.delete("rooms", { id: `eq.${room.id}` });
+    }
+
+    if (oldRooms.length > 0) {
+      console.log(`Cleaned up ${oldRooms.length} expired demo copies`);
+    }
+  },
 } satisfies ExportedHandler<Env>;
+
+async function handleCloneDemo(request: Request, env: Env): Promise<Response> {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limit: 5 demo rooms per IP per hour
+  const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
+  const rl = rateLimit(`clone-demo:${ip}`, 5, 60 * 60 * 1000);
+  if (!rl.allowed) {
+    return Response.json(
+      { error: "Rate limit exceeded. Try again later." },
+      { status: 429, headers: { ...corsHeaders, "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } },
+    );
+  }
+
+  const body = await request.json() as { slug?: string; source_slug?: string };
+  const newSlug = body.slug;
+  const sourceSlug = body.source_slug || "demo";
+
+  if (!newSlug) {
+    return Response.json({ error: "slug is required" }, { status: 400, headers: corsHeaders });
+  }
+
+  const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+
+  // Find source room
+  const sourceRooms = await db.select<RoomRow>("rooms", {
+    select: "id",
+    slug: `eq.${sourceSlug}`,
+    limit: "1",
+  });
+  if (!sourceRooms.length) {
+    return Response.json({ error: `Source room '${sourceSlug}' not found` }, { status: 404, headers: corsHeaders });
+  }
+  const sourceRoomId = sourceRooms[0].id;
+
+  // Create new room
+  const newRooms = await db.insert<RoomRow>("rooms", {
+    slug: newSlug,
+    name: "Demo Room",
+    created_by: "demo",
+    is_demo: true,
+  });
+  const newRoom = newRooms[0];
+
+  // Fetch source memories
+  const sourceMemories = await db.select<MemoryRow>("memories", {
+    select: "agent,session_id,message_type,content,token_count,metadata,ts",
+    room_id: `eq.${sourceRoomId}`,
+    order: "ts.asc",
+    limit: "500",
+  });
+
+  // Clone memories into new room
+  if (sourceMemories.length > 0) {
+    // Insert in batches of 50 to avoid payload limits
+    const batchSize = 50;
+    for (let i = 0; i < sourceMemories.length; i += batchSize) {
+      const batch = sourceMemories.slice(i, i + batchSize).map((m) => ({
+        room_id: newRoom.id,
+        agent: m.agent,
+        session_id: m.session_id,
+        message_type: m.message_type,
+        content: m.content,
+        token_count: m.token_count,
+        metadata: m.metadata,
+        ts: m.ts,
+      }));
+      await db.insertMany("memories", batch);
+    }
+  }
+
+  return Response.json({
+    id: newRoom.id,
+    slug: newSlug,
+    cloned: sourceMemories.length,
+  }, { headers: corsHeaders });
+}
 
 const ADJECTIVES = [
   "swift","quiet","bold","warm","cool","bright","dark","wild","calm","sharp",
@@ -71,6 +208,16 @@ async function handleMcp(
   env: Env,
   execCtx: ExecutionContext,
 ): Promise<Response> {
+  // Rate limit MCP connections: 20 per minute per IP
+  const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
+  const rl = rateLimit(`mcp:${ip}`, 20, 60 * 1000);
+  if (!rl.allowed) {
+    return Response.json(
+      { error: "Rate limit exceeded. Too many connections." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } },
+    );
+  }
+
   const roomSlug = url.searchParams.get("room");
   const baseAgent = url.searchParams.get("agent");
   const baton = url.searchParams.get("baton"); // optional: agent name to load context from
@@ -106,7 +253,7 @@ async function handleMcp(
 
   // Resolve room slug → room row
   const rooms = await db.select<RoomRow>("rooms", {
-    select: "id,name,slug",
+    select: "id,name,slug,is_demo",
     slug: `eq.${roomSlug}`,
     limit: "1",
   });
@@ -148,6 +295,17 @@ async function handleMcp(
   // warnings on every tool response. Agents see both without explicit polling.
   const inbox = new InboxTracker();
   const pressure = new ContextPressureMonitor();
+  const isDemo = room.is_demo === true;
+  // Demo rooms: 500 memories on top of the ~272 base clone = 772 total cap
+  const DEMO_MEMORY_CAP = 800;
+  // Read-only tools that never insert memories (exempt from cap)
+  const READ_ONLY_TOOLS = new Set([
+    "eywa_context", "eywa_status", "eywa_recall", "eywa_pull", "eywa_sync",
+    "eywa_search", "eywa_summary", "eywa_agents", "eywa_inbox",
+    "eywa_knowledge", "eywa_history", "eywa_bookmarks", "eywa_timelines",
+    "eywa_compare", "eywa_fetch", "eywa_get_file", "eywa_links",
+    "eywa_query_network", "eywa_route", "eywa_recover",
+  ]);
   const SKIP_INBOX = new Set(["eywa_inject", "eywa_inbox"]);
   const origTool = server.tool.bind(server) as Function;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -158,6 +316,20 @@ async function handleMcp(
 
     if (typeof originalHandler === "function") {
       args[handlerIdx] = async function (...handlerArgs: any[]) {
+        // Memory cap for demo rooms: block write tools when over limit
+        if (isDemo && !READ_ONLY_TOOLS.has(toolName)) {
+          try {
+            const { allowed, current } = await checkMemoryCap(db, ctx.roomId, DEMO_MEMORY_CAP);
+            if (!allowed) {
+              return {
+                content: [{ type: "text" as const, text: `Demo room memory limit reached (${current}/${DEMO_MEMORY_CAP}). Create your own room at eywa-ai.dev to continue.` }],
+              };
+            }
+          } catch {
+            // Don't block on cap check failure
+          }
+        }
+
         const result = await originalHandler(...handlerArgs);
 
         // Context pressure warning (tool-call counter as proxy for token usage)

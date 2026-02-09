@@ -9,7 +9,7 @@
 <h1 align="center">Eywa</h1>
 
 <p align="center">
-  <strong>See what your whole team's AI agents are building.</strong><br/>
+  <strong>Agentic stewardship at scale.</strong><br/>
   <em>Shared context and observability for human + AI teams.</em>
 </p>
 
@@ -441,7 +441,7 @@ cd discord-bot && npm install && npm start
 | MCP Server | Cloudflare Workers, `@modelcontextprotocol/sdk` |
 | Database | Supabase (PostgreSQL + Realtime) |
 | Dashboard | React 19, TypeScript, Vite |
-| AI Chat | Gemini (gemini-3-flash-preview) |
+| AI Chat | Gemini (gemini-2.5-flash) |
 | CLI | Node.js, `@supabase/supabase-js` |
 | Discord Bot | discord.js, direct Supabase |
 | VS Code | Extension API, Supabase realtime |

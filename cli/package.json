@@ -1,7 +1,7 @@
 {
   "name": "eywa-ai",
-  "version": "0.1.2",
-  "description": "See what your whole team's AI agents are building. One command to connect.",
+  "version": "0.2.0",
+  "description": "Agentic stewardship at scale. One command to connect.",
   "type": "module",
   "bin": {
     "eywa": "./bin/eywa.mjs"

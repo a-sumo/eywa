@@ -30,6 +30,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           "`/context` - recent activity timeline",
           "`/recall <agent>` - one agent's history",
           "`/search <query>` - search all memories",
+          "`/claims` - view active work claims",
+        ].join("\n"),
+      },
+      {
+        name: "\u{1F3AF}  Navigate",
+        value: [
+          "`/destination` - view or set the team's target state",
+          "`/course` - full overview (destination + agents + progress + distress)",
         ].join("\n"),
       },
       {
@@ -45,6 +53,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         value: [
           "`/knowledge` - browse the shared knowledge base",
           "`/learn <content>` - store knowledge for agents to reference",
+          "`/network [query]` - search global cross-room insights",
         ].join("\n"),
       },
       {

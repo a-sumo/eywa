@@ -44,6 +44,7 @@ const yellow = (s) => `\x1b[33m${s}\x1b[0m`;
 const red = (s) => `\x1b[31m${s}\x1b[0m`;
 const cyan = (s) => `\x1b[36m${s}\x1b[0m`;
 const magenta = (s) => `\x1b[35m${s}\x1b[0m`;
+const blue = (s) => `\x1b[34m${s}\x1b[0m`;
 
 function timeAgo(ts) {
   const diff = Date.now() - new Date(ts).getTime();
@@ -63,6 +64,17 @@ function openBrowser(url) {
         ? "start"
         : "xdg-open";
   exec(`${cmd} "${url}"`);
+}
+
+function progressBar(done, total, width = 20) {
+  if (total === 0) return dim("[" + ".".repeat(width) + "]");
+  const filled = Math.round((done / total) * width);
+  const empty = width - filled;
+  return `[${"█".repeat(filled)}${"░".repeat(empty)}] ${done}/${total}`;
+}
+
+function estimateTokens(text) {
+  return Math.floor(text.length / 4);
 }
 
 // ── Room helpers ───────────────────────────────────────
@@ -108,6 +120,10 @@ async function resolveRoom(slugArg) {
     process.exit(1);
   }
   return room;
+}
+
+function cliAgent() {
+  return `cli/${process.env.USER || "user"}`;
 }
 
 // ── MCP config generators ──────────────────────────────
@@ -363,7 +379,7 @@ async function cmdLog(slugArg, limit = 30) {
 
 async function cmdInject(slugArg, target, message) {
   const room = await resolveRoom(slugArg);
-  const fromAgent = `cli/${process.env.USER || "user"}`;
+  const fromAgent = cliAgent();
 
   const { error } = await supabase.from("memories").insert({
     room_id: room.id,
@@ -371,7 +387,7 @@ async function cmdInject(slugArg, target, message) {
     session_id: `cli_${Date.now()}`,
     message_type: "injection",
     content: `[INJECT -> ${target}]: ${message}`,
-    token_count: Math.floor(message.length / 4),
+    token_count: estimateTokens(message),
     metadata: {
       event: "context_injection",
       from_agent: fromAgent,
@@ -395,6 +411,363 @@ async function cmdDashboard(slugArg) {
   openBrowser(url);
 }
 
+// ── Destination ────────────────────────────────────────
+
+async function fetchDestination(roomId) {
+  const { data } = await supabase
+    .from("memories")
+    .select("content,ts,metadata")
+    .eq("room_id", roomId)
+    .eq("message_type", "knowledge")
+    .filter("metadata->>event", "eq", "destination")
+    .order("ts", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
+async function cmdDestView(slugArg) {
+  const room = await resolveRoom(slugArg);
+  const dest = await fetchDestination(room.id);
+
+  if (!dest) {
+    console.log(dim("\n  No destination set. Use: eywa dest set \"target state\"\n"));
+    return;
+  }
+
+  const meta = dest.metadata ?? {};
+  const milestones = meta.milestones || [];
+  const progress = meta.progress || {};
+  const done = milestones.filter(m => progress[m]).length;
+
+  console.log(`\n  ${bold("Destination")} ${dim("/" + room.slug)}\n`);
+  console.log(`  ${cyan(meta.destination || dest.content)}\n`);
+
+  if (milestones.length) {
+    console.log(`  ${progressBar(done, milestones.length)}\n`);
+    for (const m of milestones) {
+      const check = progress[m] ? green("  [x]") : dim("  [ ]");
+      console.log(`${check} ${progress[m] ? m : dim(m)}`);
+    }
+    console.log();
+  }
+
+  if (meta.notes) {
+    console.log(`  ${dim("Notes:")} ${meta.notes}\n`);
+  }
+
+  console.log(dim(`  Set by ${meta.set_by || "unknown"}, ${timeAgo(dest.ts)}\n`));
+}
+
+async function cmdDestSet(target, milestonesStr) {
+  if (!target) {
+    console.error(`Usage: ${bold('eywa dest set "target state" ["milestone1,milestone2"]')}`);
+    process.exit(1);
+  }
+
+  const room = await resolveRoom(null);
+  const fromAgent = cliAgent();
+  const milestones = milestonesStr
+    ? milestonesStr.split(",").map(s => s.trim()).filter(Boolean)
+    : [];
+  const progress = {};
+  for (const m of milestones) progress[m] = false;
+
+  const { error } = await supabase.from("memories").insert({
+    room_id: room.id,
+    agent: fromAgent,
+    session_id: `cli_${Date.now()}`,
+    message_type: "knowledge",
+    content: `DESTINATION: ${target}`,
+    token_count: estimateTokens(target),
+    metadata: {
+      event: "destination",
+      destination: target,
+      milestones,
+      progress,
+      notes: null,
+      set_by: fromAgent,
+    },
+  });
+
+  if (error) {
+    console.error(red("Failed to set destination:"), error.message);
+    process.exit(1);
+  }
+
+  console.log(green(`\n  ✓ Destination set: ${target}`));
+  if (milestones.length) {
+    console.log(dim(`  ${milestones.length} milestones: ${milestones.join(", ")}`));
+  }
+  console.log();
+}
+
+async function cmdDestCheck(milestoneName) {
+  if (!milestoneName) {
+    console.error(`Usage: ${bold('eywa dest check "milestone name"')}`);
+    process.exit(1);
+  }
+
+  const room = await resolveRoom(null);
+  const dest = await fetchDestination(room.id);
+
+  if (!dest) {
+    console.error(red("  No destination set."));
+    process.exit(1);
+  }
+
+  const meta = dest.metadata ?? {};
+  const milestones = meta.milestones || [];
+  const progress = { ...(meta.progress || {}) };
+  const needle = milestoneName.toLowerCase();
+
+  const match = milestones.find(m => m.toLowerCase().includes(needle));
+  if (!match) {
+    console.error(red(`  No milestone matching "${milestoneName}".`));
+    console.error(dim(`  Available: ${milestones.join(", ")}`));
+    process.exit(1);
+  }
+
+  if (progress[match]) {
+    console.log(yellow(`  Already done: ${match}`));
+    return;
+  }
+
+  progress[match] = true;
+  const fromAgent = cliAgent();
+
+  const { error } = await supabase.from("memories").insert({
+    room_id: room.id,
+    agent: fromAgent,
+    session_id: `cli_${Date.now()}`,
+    message_type: "knowledge",
+    content: `DESTINATION: ${meta.destination}`,
+    token_count: estimateTokens(meta.destination || ""),
+    metadata: { ...meta, progress, set_by: fromAgent },
+  });
+
+  if (error) {
+    console.error(red("Failed to update milestone:"), error.message);
+    process.exit(1);
+  }
+
+  const done = milestones.filter(m => progress[m]).length;
+  console.log(green(`  ✓ Completed: ${match}`));
+  console.log(`  ${progressBar(done, milestones.length)}\n`);
+}
+
+// ── Course ─────────────────────────────────────────────
+
+async function cmdCourse(slugArg) {
+  const room = await resolveRoom(slugArg);
+
+  const [destResult, activityResult, distressResult, progressResult] = await Promise.all([
+    fetchDestination(room.id),
+    supabase
+      .from("memories")
+      .select("agent,content,ts,metadata")
+      .eq("room_id", room.id)
+      .order("ts", { ascending: false })
+      .limit(200),
+    supabase
+      .from("memories")
+      .select("agent,content,ts,metadata")
+      .eq("room_id", room.id)
+      .filter("metadata->>event", "eq", "distress")
+      .filter("metadata->>resolved", "eq", "false")
+      .order("ts", { ascending: false })
+      .limit(5),
+    supabase
+      .from("memories")
+      .select("agent,content,ts,metadata")
+      .eq("room_id", room.id)
+      .filter("metadata->>event", "eq", "progress")
+      .order("ts", { ascending: false })
+      .limit(50),
+  ]);
+
+  console.log(`\n  ${bold("Course")} ${dim("/" + room.slug)}\n`);
+
+  // Destination
+  if (destResult) {
+    const meta = destResult.metadata ?? {};
+    const milestones = meta.milestones || [];
+    const progress = meta.progress || {};
+    const done = milestones.filter(m => progress[m]).length;
+    console.log(`  ${bold("Destination:")} ${cyan(meta.destination || destResult.content)}`);
+    if (milestones.length) {
+      console.log(`  ${progressBar(done, milestones.length)}`);
+    }
+    console.log();
+  } else {
+    console.log(dim("  No destination set.\n"));
+  }
+
+  // Agent progress
+  const rows = activityResult.data || [];
+  const progressRows = progressResult.data || [];
+  const now = Date.now();
+
+  // Build latest progress per agent
+  const agentProgress = new Map();
+  for (const r of progressRows) {
+    if (!agentProgress.has(r.agent)) {
+      agentProgress.set(r.agent, r.metadata ?? {});
+    }
+  }
+
+  // Build agent status
+  const agentMap = new Map();
+  for (const row of rows) {
+    if (agentMap.has(row.agent)) continue;
+    const meta = row.metadata ?? {};
+    const ageMin = (now - new Date(row.ts).getTime()) / 60000;
+    let status = "idle";
+    let task = (row.content ?? "").slice(0, 80);
+
+    if (meta.event === "session_start") {
+      status = ageMin < 30 ? "active" : "idle";
+      task = meta.task || task;
+    } else if (meta.event === "session_done" || meta.event === "session_end") {
+      status = "finished";
+      task = meta.summary || task;
+    }
+
+    agentMap.set(row.agent, { status, task, ts: row.ts });
+  }
+
+  const active = [];
+  const finished = [];
+  const idle = [];
+
+  for (const [name, info] of agentMap) {
+    const prog = agentProgress.get(name);
+    const entry = { name, ...info, progress: prog };
+    if (info.status === "active") active.push(entry);
+    else if (info.status === "finished") finished.push(entry);
+    else idle.push(entry);
+  }
+
+  if (active.length) {
+    console.log(bold("  Active agents:"));
+    for (const a of active) {
+      const pct = a.progress?.percent != null ? ` ${a.progress.percent}%` : "";
+      const phase = a.progress?.status ? dim(` [${a.progress.status}]`) : "";
+      console.log(`  ${green("●")} ${bold(a.name)}${cyan(pct)}${phase}`);
+      console.log(`    ${dim(a.task)}`);
+    }
+    console.log();
+  }
+
+  // Distress signals
+  const distressRows = distressResult.data || [];
+  if (distressRows.length) {
+    console.log(red(bold("  Distress signals:")));
+    for (const d of distressRows) {
+      const meta = d.metadata ?? {};
+      console.log(`  ${red("!")} ${bold(d.agent)} ${dim(timeAgo(d.ts))}`);
+      console.log(`    ${dim(meta.task || d.content?.slice(0, 100) || "")}`);
+    }
+    console.log();
+  }
+
+  // Summary line
+  console.log(
+    dim(`  ${active.length} active, ${finished.length} finished, ${idle.length} idle\n`),
+  );
+}
+
+// ── Knowledge ──────────────────────────────────────────
+
+async function cmdKnowledge(slugArg, searchTerm) {
+  const room = await resolveRoom(slugArg);
+
+  let query = supabase
+    .from("memories")
+    .select("id,agent,content,ts,metadata")
+    .eq("room_id", room.id)
+    .eq("message_type", "knowledge")
+    .order("ts", { ascending: false })
+    .limit(15);
+
+  if (searchTerm) {
+    query = query.ilike("content", `%${searchTerm}%`);
+  }
+
+  const { data: rows, error } = await query;
+
+  if (error) {
+    console.error(red("Query failed:"), error.message);
+    process.exit(1);
+  }
+
+  // Filter out destination entries
+  const entries = (rows || []).filter(r => {
+    const meta = r.metadata ?? {};
+    return meta.event !== "destination";
+  });
+
+  if (!entries.length) {
+    console.log(dim(`\n  No knowledge found${searchTerm ? ` for "${searchTerm}"` : ""}.\n`));
+    return;
+  }
+
+  console.log(`\n  ${bold("Knowledge")} ${dim("/" + room.slug)}${searchTerm ? dim(` matching "${searchTerm}"`) : ""}\n`);
+
+  for (const k of entries) {
+    const meta = k.metadata ?? {};
+    const title = meta.title || null;
+    const tags = (meta.tags || []).map(t => blue(`#${t}`)).join(" ");
+    const storedBy = meta.stored_by || k.agent;
+
+    console.log(`  ${title ? bold(title) : dim("(untitled)")}`);
+    console.log(`  ${dim((k.content ?? "").slice(0, 200))}`);
+    if (tags) console.log(`  ${tags}`);
+    console.log(`  ${dim(`by ${storedBy}, ${timeAgo(k.ts)}`)}`);
+    console.log();
+  }
+}
+
+async function cmdLearn(content, title, tagsStr) {
+  if (!content) {
+    console.error(`Usage: ${bold('eywa learn "knowledge content" ["title"] ["tag1,tag2"]')}`);
+    process.exit(1);
+  }
+
+  const room = await resolveRoom(null);
+  const fromAgent = cliAgent();
+  const tags = tagsStr
+    ? tagsStr.split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
+    : [];
+
+  const fullContent = title ? `[${title}] ${content}` : content;
+
+  const { error } = await supabase.from("memories").insert({
+    room_id: room.id,
+    agent: fromAgent,
+    session_id: `cli_${Date.now()}`,
+    message_type: "knowledge",
+    content: fullContent,
+    token_count: estimateTokens(content),
+    metadata: {
+      event: "knowledge_stored",
+      tags,
+      title: title ?? null,
+      stored_by: fromAgent,
+      source: "cli",
+    },
+  });
+
+  if (error) {
+    console.error(red("Failed to store knowledge:"), error.message);
+    process.exit(1);
+  }
+
+  console.log(green(`  ✓ Knowledge stored${title ? `: ${title}` : ""}`));
+  if (tags.length) console.log(dim(`  Tags: ${tags.join(", ")}`));
+  console.log();
+}
+
 // ── CLI Router ─────────────────────────────────────────
 
 const args = process.argv.slice(2);
@@ -402,32 +775,48 @@ const command = args[0];
 
 function banner() {
   console.log(`
-  ${magenta("◆")} ${bold("eywa")} ${dim("- shared memory for AI agent swarms")}
+  ${magenta("◆")} ${bold("eywa")} ${dim("- observability for human + AI teams")}
 `);
 }
 
 function usage() {
   banner();
   console.log(`${bold("  Quick start:")}
-    ${cyan("npx eywa-ai init my-hackathon")}    Create a room and get MCP configs
-    ${cyan("npx eywa-ai join cosmic-fox-a1b2")} Join an existing room
+    ${cyan("npx eywa-ai init my-team")}              Create a room and get MCP configs
+    ${cyan("npx eywa-ai join cosmic-fox-a1b2")}       Join an existing room
 
-${bold("  Commands:")}
-    init [name]               Create a new room (opens dashboard)
-    join <room-slug>          Join an existing room
-    status [room]             Show agent status
-    log [room] [limit]        Recent activity feed
-    inject <target> <msg>     Send context to an agent
-    dashboard [room]          Open the web dashboard
-    help                      Show this help
+${bold("  Observe:")}
+    status [room]                         Show agent status with systems
+    log [room] [limit]                    Recent activity feed
+    course [room]                         Destination progress, agents, distress
+
+${bold("  Navigate:")}
+    dest [room]                           View current destination
+    dest set "target" ["m1,m2,m3"]        Set destination with milestones
+    dest check "milestone"                Mark a milestone done
+
+${bold("  Interact:")}
+    inject <target> <msg>                 Send context to an agent
+    learn "content" ["title"] ["tags"]    Store team knowledge
+    knowledge [search]                    Browse the knowledge base
+
+${bold("  Setup:")}
+    init [name]                           Create a new room (opens dashboard)
+    join <room-slug>                      Join an existing room
+    dashboard [room]                      Open the web dashboard
+    help                                  Show this help
 
 ${bold("  Examples:")}
-    ${dim("$")} npx eywa-ai init                         ${dim("# random room name")}
-    ${dim("$")} npx eywa-ai init my-team                  ${dim("# named room")}
-    ${dim("$")} npx eywa-ai status                        ${dim("# check your agents")}
-    ${dim("$")} npx eywa-ai inject agent-beta "use REST"  ${dim("# push context")}
+    ${dim("$")} npx eywa-ai init                                       ${dim("# random room name")}
+    ${dim("$")} npx eywa-ai status                                     ${dim("# check your agents")}
+    ${dim("$")} npx eywa-ai dest set "Ship auth" "JWT,RBAC,Migration"  ${dim("# set destination")}
+    ${dim("$")} npx eywa-ai dest check JWT                             ${dim("# mark milestone done")}
+    ${dim("$")} npx eywa-ai course                                     ${dim("# full overview")}
+    ${dim("$")} npx eywa-ai inject all "deploy freeze until 3pm"       ${dim("# push context")}
+    ${dim("$")} npx eywa-ai learn "API uses JWT" "Auth" "api,auth"     ${dim("# store knowledge")}
+    ${dim("$")} npx eywa-ai knowledge auth                             ${dim("# search knowledge")}
 
-  ${dim("Docs: https://github.com/a-sumo/eywa")}
+  ${dim("Docs: https://eywa-ai.dev/docs")}
 `);
 }
 
@@ -460,6 +849,33 @@ ${bold("  Examples:")}
         await cmdInject(null, args[1], args.slice(2).join(" "));
         break;
       }
+
+      case "dest":
+      case "destination": {
+        const sub = args[1];
+        if (sub === "set") {
+          await cmdDestSet(args[2], args[3]);
+        } else if (sub === "check") {
+          await cmdDestCheck(args.slice(2).join(" "));
+        } else {
+          // "dest" or "dest <room-slug>" -- view destination
+          await cmdDestView(sub);
+        }
+        break;
+      }
+
+      case "course":
+        await cmdCourse(args[1]);
+        break;
+
+      case "knowledge":
+      case "kb":
+        await cmdKnowledge(null, args[1]);
+        break;
+
+      case "learn":
+        await cmdLearn(args[1], args[2], args[3]);
+        break;
 
       case "dashboard":
       case "dash":

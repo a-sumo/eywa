@@ -38,7 +38,7 @@ export function ArchitectureDocs() {
           <tr><td>MCP Server</td><td>Cloudflare Workers, <code>@modelcontextprotocol/sdk</code></td></tr>
           <tr><td>Database</td><td>Supabase (PostgreSQL + Realtime)</td></tr>
           <tr><td>Dashboard</td><td>React 19, TypeScript, Vite</td></tr>
-          <tr><td>AI Chat</td><td>Gemini (gemini-3-flash-preview)</td></tr>
+          <tr><td>AI Chat</td><td>Gemini (gemini-2.5-flash)</td></tr>
           <tr><td>CLI</td><td>Node.js, <code>@supabase/supabase-js</code></td></tr>
           <tr><td>Discord Bot</td><td>discord.js, direct Supabase</td></tr>
           <tr><td>VS Code</td><td>Extension API, Supabase Realtime</td></tr>

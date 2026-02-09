@@ -5,7 +5,7 @@
 <h1 align="center">eywa-ai</h1>
 
 <p align="center">
-  <strong>See what your whole team's AI agents are building.</strong><br/>
+  <strong>Agentic stewardship at scale.</strong><br/>
   One command to connect.
 </p>
 
@@ -110,36 +110,60 @@ Replace `alice` with your name. Each person uses their own name so Eywa can tell
 
 ## Commands
 
+### Setup
 ```
-eywa init [name]              Create a room (random name if omitted)
-eywa join <room-slug>         Join an existing room
-eywa status [room]            Show agent status with systems and actions
-eywa log [room] [limit]       Activity feed with operation metadata
-eywa inject <target> <msg>    Push context to an agent
-eywa dashboard [room]         Open the web dashboard (aliases: dash, open)
-eywa help                     Show help
+eywa init [name]                           Create a room (random name if omitted)
+eywa join <room-slug>                      Join an existing room
+eywa dashboard [room]                      Open the web dashboard
+```
+
+### Observe
+```
+eywa status [room]                         Agent status with systems and actions
+eywa log [room] [limit]                    Activity feed with operation metadata
+eywa course [room]                         Destination progress, agents, distress
+```
+
+### Navigate
+```
+eywa dest [room]                           View current destination
+eywa dest set "target" ["m1,m2,m3"]        Set destination with milestones
+eywa dest check "milestone"                Mark a milestone done
+```
+
+### Interact
+```
+eywa inject <target> <msg>                 Push context to an agent
+eywa learn "content" ["title"] ["tags"]    Store team knowledge
+eywa knowledge [search]                    Browse the knowledge base
 ```
 
 ## Examples
 
 ```bash
-# Create a room with a random name
-npx eywa-ai init
-
-# Create a named room
-npx eywa-ai init my-hackathon
+# Create a room and get MCP configs
+npx eywa-ai init my-team
 
 # Check what your team's agents are doing
 npx eywa-ai status
 
-# See recent activity
-npx eywa-ai log
+# Set a destination with milestones
+npx eywa-ai dest set "Ship auth system" "JWT tokens,Role access,Migration"
 
-# Push context to a specific agent
-npx eywa-ai inject agent-beta "use REST, not GraphQL"
+# Mark a milestone done (fuzzy matches)
+npx eywa-ai dest check JWT
 
-# Open the dashboard
-npx eywa-ai dashboard
+# Full course overview: destination, agents, distress
+npx eywa-ai course
+
+# Push context to all agents
+npx eywa-ai inject all "deploy freeze until 3pm"
+
+# Store knowledge for the team
+npx eywa-ai learn "API uses JWT auth" "Auth convention" "api,auth"
+
+# Search knowledge
+npx eywa-ai knowledge auth
 ```
 
 ## What Agents Can Do

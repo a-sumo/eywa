@@ -214,68 +214,36 @@ export function useRoom() {
 
     const slug = "demo-" + Math.random().toString(36).substring(2, 6);
 
-    const { data, error: insertError } = await supabase
-      .from("rooms")
-      .insert({
-        slug,
-        name: "Demo Room",
-        created_by: "demo",
-        is_demo: true,
-      })
-      .select()
-      .single();
+    try {
+      const res = await fetch("https://mcp.eywa-ai.dev/clone-demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, source_slug: "demo" }),
+      });
 
-    if (insertError || !data) {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error((err as { error?: string }).error || `HTTP ${res.status}`);
+      }
+
+      const result = await res.json() as { id: string; slug: string; cloned: number };
+
+      // Fetch the full room record for the return value
+      const { data } = await supabase
+        .from("rooms")
+        .select("*")
+        .eq("id", result.id)
+        .single();
+
+      setCreating(false);
+      navigate(`/r/${slug}`);
+      return data;
+    } catch (err) {
+      console.warn("Clone demo failed:", err);
       setCreating(false);
       setError("Failed to create demo room");
       return null;
     }
-
-    // Clone memories from the source demo room
-    const { data: sourceRoom } = await supabase
-      .from("rooms")
-      .select("id")
-      .eq("slug", "demo")
-      .single();
-
-    if (sourceRoom) {
-      const { data: sourceMemories } = await supabase
-        .from("memories")
-        .select("agent, session_id, message_type, content, metadata, ts")
-        .eq("room_id", sourceRoom.id)
-        .order("ts", { ascending: true })
-        .limit(500);
-
-      if (sourceMemories && sourceMemories.length > 0) {
-        const cloned = sourceMemories.map((m) => ({
-          room_id: data.id,
-          agent: m.agent,
-          session_id: m.session_id,
-          message_type: m.message_type,
-          content: m.content,
-          metadata: m.metadata,
-          ts: m.ts,
-        }));
-        const { error: cloneError } = await supabase.from("memories").insert(cloned);
-        if (cloneError) {
-          console.warn("Demo clone failed, falling back to seed:", cloneError);
-          const seeds = buildSeedMemories(data.id);
-          await supabase.from("memories").insert(seeds);
-        }
-      } else {
-        // Source room empty, use generated seed data
-        const seeds = buildSeedMemories(data.id);
-        await supabase.from("memories").insert(seeds);
-      }
-    } else {
-      // No source demo room found, use generated seed data
-      const seeds = buildSeedMemories(data.id);
-      await supabase.from("memories").insert(seeds);
-    }
-
-    setCreating(false);
-    navigate(`/r/${slug}`);
-    return data;
   }, [navigate]);
 
   const joinRoom = useCallback(async (slug: string): Promise<Room | null> => {

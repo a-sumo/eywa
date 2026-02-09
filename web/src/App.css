@@ -60,20 +60,20 @@ body {
 .global-header-inner {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0.6rem 1.5rem;
+  padding: 0.85rem 2rem;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .global-header-logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   text-decoration: none;
   color: var(--aurora-cyan, #15D1FF);
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   flex-shrink: 0;
@@ -82,14 +82,14 @@ body {
 .global-header-nav {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
   flex: 1;
 }
 
 .global-header-nav a {
   color: rgba(240, 240, 245, 0.5);
   text-decoration: none;
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   font-weight: 500;
   transition: color 0.15s;
 }
@@ -101,7 +101,7 @@ body {
 
 .global-header-room {
   font-family: var(--font-sans);
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: rgba(240, 240, 245, 0.4);
   font-weight: 600;
 }
@@ -109,7 +109,7 @@ body {
 .global-header-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   flex-shrink: 0;
 }
 
@@ -118,7 +118,7 @@ body {
   border: none;
   padding: 0;
   color: rgba(240, 240, 245, 0.6);
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
@@ -130,11 +130,11 @@ body {
 }
 
 .global-header-cta {
-  padding: 0.4rem 1rem;
-  font-size: 0.8rem;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
   font-weight: 600;
   font-family: inherit;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid rgba(139, 92, 246, 0.4);
   background: rgba(139, 92, 246, 0.12);
   color: #c4b5fd;
@@ -149,8 +149,8 @@ body {
 
 @media (max-width: 600px) {
   .global-header-inner {
-    padding: 0.5rem 1rem;
-    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    gap: 1rem;
   }
 
   .global-header-link {
@@ -158,8 +158,8 @@ body {
   }
 
   .global-header-cta {
-    font-size: 0.75rem;
-    padding: 0.35rem 0.75rem;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
   }
 }
 
@@ -802,9 +802,9 @@ body {
 .btn-landing-primary {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9rem;
+  gap: 0.6rem;
+  padding: 1.1rem 2.2rem;
+  font-size: 1.15rem;
   font-weight: 600;
   border: 1px solid var(--aurora-blue);
   border-radius: var(--radius-lg);
@@ -822,8 +822,8 @@ body {
 }
 
 .btn-landing-primary.btn-large {
-  padding: 1rem 2rem;
-  font-size: 1rem;
+  padding: 1.25rem 3rem;
+  font-size: 1.3rem;
 }
 
 .btn-landing-primary:disabled {
@@ -835,9 +835,9 @@ body {
 .btn-landing-secondary {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9rem;
+  gap: 0.6rem;
+  padding: 1.1rem 2.2rem;
+  font-size: 1.15rem;
   font-weight: 500;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
@@ -1981,15 +1981,15 @@ body {
 
 .landing-cta-section h2 {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 3rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   margin: 0 0 1rem;
   color: #f0f0f5;
 }
 
 .landing-cta-section p {
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   color: rgba(240, 240, 245, 0.6);
   margin: 0 0 2rem;
 }
@@ -2012,7 +2012,7 @@ body {
 }
 
 .landing-footer-brand p {
-  font-size: 0.9rem;
+  font-size: 1.15rem;
   color: rgba(240, 240, 245, 0.5);
   margin: 0.5rem 0 0;
 }
@@ -2023,7 +2023,7 @@ body {
 }
 
 .landing-footer-col h4 {
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #f0f0f5;
   margin: 0 0 1rem;
@@ -2033,7 +2033,7 @@ body {
 
 .landing-footer-col a {
   display: block;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   color: rgba(240, 240, 245, 0.6);
   text-decoration: none;
   padding: 0.25rem 0;
@@ -2067,7 +2067,7 @@ body {
 }
 
 .landing-footer-bottom p {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: rgba(240, 240, 245, 0.4);
   margin: 0;
   text-align: center;
