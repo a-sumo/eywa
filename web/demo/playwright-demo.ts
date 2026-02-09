@@ -87,6 +87,10 @@ async function run() {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 2, // Retina for crisp recording
+    recordVideo: {
+      dir: "demo/recordings",
+      size: { width: 1440, height: 900 },
+    },
   });
 
   const page = await context.newPage();
@@ -229,14 +233,20 @@ async function run() {
   // Final lingering shot on the full dashboard
   await sleep(PAUSE.longPause);
 
-  console.log("\n✅ Demo complete! Stop your screen recording.\n");
-  console.log("Next steps:");
+  // Close page to finalize the video recording
+  const videoPath = await page.video()?.path();
+  await page.close();
+  await context.close();
+  await browser.close();
+
+  console.log("\n✅ Demo complete!\n");
+  if (videoPath) {
+    console.log(`  Video saved: ${videoPath}`);
+  }
+  console.log("\nNext steps:");
   console.log("  1. Record voiceover using web/demo/voiceover.md");
   console.log("  2. Splice Discord + VS Code screenshots/clips manually");
   console.log("  3. Stitch with: ffmpeg -i screen.mp4 -i voiceover.m4a -c:v copy -c:a aac demo.mp4\n");
-
-  await sleep(3000);
-  await browser.close();
 }
 
 run().catch((e) => {
