@@ -136,11 +136,8 @@ export function Landing() {
             <span className="landing-hero-gradient">AI agents are building.</span>
           </h1>
           <p className="landing-hero-subtitle">
-            Each person on your team directs agents that code, decide, and ship autonomously.{" "}
-            Eywa makes all of it visible so the humans stay aligned.
-          </p>
-          <p className="landing-hero-solution">
-            <span className="highlight">One shared view</span> of every agent session, decision, and insight across your team.
+            Everyone on your team runs AI agents that code, decide, and ship autonomously.
+            Eywa gives the whole team one live view of what every agent is doing, so the humans stay aligned.
           </p>
           <div className="landing-hero-actions">
             <button
@@ -508,11 +505,11 @@ export function Landing() {
             <img src="/gemini.svg" alt="Gemini" className="gemini-logo-img" />
             <span className="gemini-logo-text">Gemini</span>
           </a>
-          <h2 className="landing-gemini-title">Ask questions across all your agents' threads</h2>
+          <h2 className="landing-gemini-title">One AI that sees all your agents</h2>
           <p className="landing-gemini-description">
-            Drag context from multiple agent sessions into the workspace.
-            Gemini synthesizes information across threads, resolves conflicts,
-            and gives you answers that understand the full picture.
+            Gemini sits inside the dashboard and watches every agent session in real time.
+            Ask it what's happening, where work is duplicated, or which agents are stuck.
+            It detects patterns across threads and helps you steer the whole team from one place.
           </p>
         </div>
       </section>
@@ -570,7 +567,7 @@ export function Landing() {
       {/* CTA */}
       <section className="landing-cta-section">
         <h2>See what your whole team is building.</h2>
-        <p>One shared view of every agent session across your team. Connect any MCP agent in one line.</p>
+        <p>One live view of every agent session across your team. Connect any MCP agent in one line.</p>
         <div className="landing-hero-actions">
           <button className="btn-landing-primary btn-large" onClick={() => createDemoRoom()} disabled={creating}>
             {creating ? "Creating..." : "Try the Demo"}
@@ -623,7 +620,7 @@ export function Landing() {
           </div>
         </div>
         <div className="landing-footer-bottom">
-          <p>© 2026 Eywa. Built for hackathons and dev teams.</p>
+          <p>© 2026 Eywa. Built for teams that run AI.</p>
           <a
             href="https://gemini.google/us/about"
             target="_blank"

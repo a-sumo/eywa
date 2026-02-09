@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 import { useRoomContext } from "../context/RoomContext";
 import { AgentList } from "./AgentList";
 
@@ -9,7 +9,14 @@ interface RoomLayoutProps {
 
 export function RoomLayout({ children }: RoomLayoutProps) {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const { room, loading, error } = useRoomContext();
+
+  const basePath = `/r/${slug}`;
+  const isTabActive = (path: string) => {
+    if (path === basePath) return location.pathname === basePath;
+    return location.pathname.startsWith(path);
+  };
 
   if (loading) {
     return (
@@ -42,9 +49,9 @@ export function RoomLayout({ children }: RoomLayoutProps) {
         </main>
       </div>
       <nav className="mobile-tabs">
-        <Link to={`/r/${slug}`}>Hub</Link>
-        <Link to={`/r/${slug}/knowledge`}>Knowledge</Link>
-        <Link to={`/r/${slug}/graph`}>Graph</Link>
+        <Link to={basePath} className={isTabActive(basePath) ? "active" : ""}>Hub</Link>
+        <Link to={`${basePath}/knowledge`} className={isTabActive(`${basePath}/knowledge`) ? "active" : ""}>Knowledge</Link>
+        <Link to={`${basePath}/graph`} className={isTabActive(`${basePath}/graph`) ? "active" : ""}>Graph</Link>
       </nav>
     </div>
   );
