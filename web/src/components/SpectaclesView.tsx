@@ -21,7 +21,7 @@ import { useVoiceInput } from "../hooks/useVoiceInput";
 import { supabase, type Memory } from "../lib/supabase";
 import { TileScene } from "../lib/tileScene";
 import { RENDERERS } from "../lib/tileRenderers";
-import { computeLayout, tileHash, MEMORIES_PER_PAGE, type AgentInfo, type ContextItem, type GroupLayout } from "../lib/tileLayout";
+import { computeLayout, computeMapLayout, tileHash, MEMORIES_PER_PAGE, type AgentInfo, type MapAgentInfo, type ContextItem, type GroupLayout } from "../lib/tileLayout";
 
 // --- Colors ---
 const C = {
@@ -60,6 +60,9 @@ export function SpectaclesView() {
   const { room } = useRoomContext();
   const { memories } = useRealtimeMemories(room?.id ?? null, 100);
   const manualDeviceId = useDeviceId();
+
+  // View mode: "map" (spacetime navigation) or "grid" (tile grid)
+  const [viewMode, setViewMode] = useState<"map" | "grid">("map");
 
   // Interaction state
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
@@ -217,6 +220,90 @@ export function SpectaclesView() {
   // Track active count for mascot mood (used in render loop without re-renders)
   activeCountRef.current = agents.filter(a => a.isActive).length;
 
+  // Flow offset for spacetime map animation (advances continuously)
+  const flowOffsetRef = useRef(0);
+
+  // Build MapAgentInfo from memories (extract systems, ops, curvature for map mode)
+  const mapAgents = useMemo((): MapAgentInfo[] => {
+    if (viewMode !== "map") return [];
+    const byAgent = new Map<string, { mems: typeof memories; systems: Set<string>; opCount: number; ops: Array<{ action?: string; outcome?: string }> }>();
+    for (const m of memories) {
+      if (!byAgent.has(m.agent)) {
+        byAgent.set(m.agent, { mems: [], systems: new Set(), opCount: 0, ops: [] });
+      }
+      const info = byAgent.get(m.agent)!;
+      info.mems.push(m);
+      const meta = (m.metadata ?? {}) as Record<string, string>;
+      if (meta.system) info.systems.add(meta.system);
+      if (meta.system || meta.action) {
+        info.opCount++;
+        info.ops.push({ action: meta.action, outcome: meta.outcome });
+      }
+    }
+    const now = Date.now();
+    const result: MapAgentInfo[] = [];
+    for (const [name, info] of byAgent) {
+      const sorted = info.mems.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
+      const lastTs = sorted[0]?.ts ?? "";
+      const isActive = now - new Date(lastTs).getTime() < 5 * 60 * 1000;
+      // Simple curvature: (weighted ops - failures) / minutes
+      const firstTs = sorted[sorted.length - 1]?.ts;
+      const durationMin = firstTs ? (now - new Date(firstTs).getTime()) / 60000 : 1;
+      let weightedSum = 0;
+      let failCount = 0;
+      let highImpact = 0;
+      const highActions = new Set(["deploy", "create", "write", "test", "delete", "review"]);
+      const weights: Record<string, number> = { deploy: 5, create: 4, write: 3, test: 3, delete: 2, review: 2, debug: 2, configure: 1.5, read: 1, monitor: 0.5 };
+      const outcomes: Record<string, number> = { success: 1, in_progress: 0.5, failure: -1, blocked: -2 };
+      for (const op of info.ops) {
+        const w = weights[op.action ?? ""] ?? 0;
+        const m = outcomes[op.outcome ?? ""] ?? 0.5;
+        weightedSum += w * m;
+        if (op.outcome === "failure" || op.outcome === "blocked") failCount++;
+        if (highActions.has(op.action ?? "")) highImpact++;
+      }
+      const mins = Math.max(durationMin, 1);
+      const momentum = weightedSum / mins;
+      const drag = failCount / mins;
+      const signal = highImpact / Math.max(info.ops.length, 1);
+      const curvature = info.ops.length > 0 ? Math.round((momentum - drag) * signal * 100) / 100 : 0;
+
+      result.push({
+        name,
+        isActive,
+        lastTs,
+        memoryCount: info.mems.length,
+        systems: Array.from(info.systems),
+        opCount: info.opCount,
+        curvature,
+      });
+    }
+    result.sort((a, b) => {
+      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+      return new Date(b.lastTs).getTime() - new Date(a.lastTs).getTime();
+    });
+    return result;
+  }, [memories, viewMode]);
+
+  // Extract destination from memories (knowledge entry with event=destination)
+  const destinationInfo = useMemo(() => {
+    for (const m of memories) {
+      const meta = (m.metadata ?? {}) as Record<string, unknown>;
+      if (meta.event === "destination") {
+        const dest = (meta.destination as string) || m.content || "";
+        const ms = (meta.milestones as string[]) || [];
+        const prog = (meta.progress as Record<string, boolean>) || {};
+        const done = ms.filter(x => prog[x]).length;
+        return {
+          text: dest,
+          progress: ms.length > 0 ? Math.round((done / ms.length) * 100) : 0,
+          milestones: ms.map(x => ({ text: x, done: !!prog[x] })),
+        };
+      }
+    }
+    return { text: "", progress: 0, milestones: [] as Array<{ text: string; done: boolean }> };
+  }, [memories]);
+
   // Total memory pages
   const totalMemoryPages = useMemo(() => {
     const filtered = selectedAgent ? memories.filter(m => m.agent === selectedAgent) : memories;
@@ -224,7 +311,8 @@ export function SpectaclesView() {
   }, [memories, selectedAgent]);
 
   // --- Compute layout (memoized) ---
-  const { tiles: desiredTiles, groups: desiredGroups } = useMemo(() => computeLayout({
+  // Grid mode: original 3-column tile layout
+  const gridLayout = useMemo(() => viewMode === "grid" ? computeLayout({
     agents,
     memories,
     contextItems,
@@ -238,7 +326,26 @@ export function SpectaclesView() {
     room: room?.slug ?? "demo",
     channelReady,
     deviceId,
-  }), [agents, memories, contextItems, chatMessages, chatLoading, chatError, memoryPage, selectedAgent, isListening, voiceTranscript, room?.slug, channelReady, deviceId]);
+  }) : { tiles: [], groups: [] }, [viewMode, agents, memories, contextItems, chatMessages, chatLoading, chatError, memoryPage, selectedAgent, isListening, voiceTranscript, room?.slug, channelReady, deviceId]);
+
+  // Map mode: spacetime navigation map (flowOffset updated in render loop)
+  const mapLayout = useMemo(() => viewMode === "map" ? computeMapLayout({
+    agents: mapAgents,
+    destination: destinationInfo.text,
+    progress: destinationInfo.progress,
+    milestones: destinationInfo.milestones,
+    chatMessages,
+    chatLoading,
+    chatError,
+    isListening,
+    voiceTranscript,
+    room: room?.slug ?? "demo",
+    channelReady,
+    deviceId,
+    flowOffset: flowOffsetRef.current,
+  }) : { tiles: [], groups: [] }, [viewMode, mapAgents, destinationInfo, chatMessages, chatLoading, chatError, isListening, voiceTranscript, room?.slug, channelReady, deviceId]);
+
+  const { tiles: desiredTiles, groups: desiredGroups } = viewMode === "map" ? mapLayout : gridLayout;
 
   // Browser layout is static. All spatial movement (camera tracking,
   // comfort-zone repositioning) happens on Spectacles, not here.
@@ -440,6 +547,17 @@ export function SpectaclesView() {
         const mood = activeCountRef.current > 0 ? "happy" : "okay";
         mascotTile.setData({ mood, time: t, blinking: false, bg: "#0c0c18" });
         mascotTile.updateHash(`mascot-${Math.floor(t * 5)}`);
+      }
+
+      // 2.6. Animate spacetime map (advance flowOffset, update map tile)
+      const mapTile = scene.getTile("agent-map");
+      if (mapTile) {
+        flowOffsetRef.current += 0.3;
+        const mapData = mapTile.getData() as Record<string, unknown>;
+        mapData.flowOffset = flowOffsetRef.current;
+        mapTile.setData(mapData);
+        // Update hash every ~250ms for smooth animation without excessive re-renders
+        mapTile.updateHash(`map-${Math.floor(flowOffsetRef.current / 2)}`);
       }
 
       // 3. Render dirty tiles
@@ -681,6 +799,17 @@ export function SpectaclesView() {
       </div>
 
       <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
+        <button
+          onClick={() => setViewMode(v => v === "map" ? "grid" : "map")}
+          style={{
+            ...btnStyle,
+            background: viewMode === "map" ? "#1a2a3a" : "#1a1a2e",
+            color: viewMode === "map" ? "#15D1FF" : "#e6edf3",
+            borderColor: viewMode === "map" ? "#15D1FF" : "#30363d",
+          }}
+        >
+          {viewMode === "map" ? "\u25C9 Map" : "\u25CB Grid"}
+        </button>
         <button
           onClick={() => { setSelectedAgent(null); setMemoryPage(0); }}
           style={btnStyle}

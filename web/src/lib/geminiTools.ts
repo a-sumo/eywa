@@ -376,17 +376,100 @@ async function handleGetKnowledge(
 }
 
 // ---------------------------------------------------------------------------
-// detect_patterns
+// detect_patterns (intent vector cosine similarity)
 // ---------------------------------------------------------------------------
 
+/** All known dimensions for intent vectors. */
+const INTENT_SYSTEMS = ["git", "database", "api", "deploy", "infra", "browser", "filesystem", "communication", "terminal", "editor", "ci", "cloud"];
+const INTENT_ACTIONS = ["read", "write", "create", "delete", "deploy", "test", "review", "debug", "configure", "monitor"];
+
+/** Build an intent vector from agent operation metadata. */
+function buildIntentVector(mems: Memory[]): number[] {
+  // Vector dimensions: [systems...12, actions...10, create_bias, fix_bias, refactor_bias]
+  const systemCounts = new Array(INTENT_SYSTEMS.length).fill(0);
+  const actionCounts = new Array(INTENT_ACTIONS.length).fill(0);
+  let createBias = 0;
+  let fixBias = 0;
+  let refactorBias = 0;
+
+  for (const m of mems) {
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    const system = meta.system as string | undefined;
+    const action = meta.action as string | undefined;
+    const content = (m.content ?? "").toLowerCase();
+
+    if (system) {
+      const idx = INTENT_SYSTEMS.indexOf(system);
+      if (idx >= 0) systemCounts[idx]++;
+    }
+    if (action) {
+      const idx = INTENT_ACTIONS.indexOf(action);
+      if (idx >= 0) actionCounts[idx]++;
+    }
+
+    // Direction heuristics from content
+    if (/\b(add|creat|implement|build|new|ship)\b/.test(content)) createBias++;
+    if (/\b(fix|bug|error|broken|repair|patch)\b/.test(content)) fixBias++;
+    if (/\b(refactor|clean|reorganiz|restructur|simplif)\b/.test(content)) refactorBias++;
+  }
+
+  return [...systemCounts, ...actionCounts, createBias, fixBias, refactorBias];
+}
+
+/** Extract scope keywords from agent activity for overlap detection. */
+function extractScopeSignature(mems: Memory[]): Set<string> {
+  const scopes = new Set<string>();
+  for (const m of mems) {
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    const scope = meta.scope as string | undefined;
+    if (scope) {
+      // Split scope into normalized tokens (file paths, component names)
+      for (const token of scope.toLowerCase().split(/[,\s/]+/)) {
+        if (token.length > 2) scopes.add(token);
+      }
+    }
+    // Also extract from task descriptions in session_start events
+    if (meta.event === "session_start" || meta.event === "session_done") {
+      const task = ((meta.task as string) || (meta.summary as string) || "").toLowerCase();
+      for (const token of task.split(/\W+/)) {
+        if (token.length > 3) scopes.add(token);
+      }
+    }
+  }
+  return scopes;
+}
+
+/** Cosine similarity between two vectors. */
+function cosineSimilarity(a: number[], b: number[]): number {
+  let dot = 0, magA = 0, magB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    magA += a[i] * a[i];
+    magB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(magA) * Math.sqrt(magB);
+  return denom > 0 ? dot / denom : 0;
+}
+
+/** Scope overlap ratio (Jaccard on scope tokens, not raw content). */
+function scopeOverlap(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let intersection = 0;
+  for (const w of a) {
+    if (b.has(w)) intersection++;
+  }
+  const union = a.size + b.size - intersection;
+  return union > 0 ? intersection / union : 0;
+}
+
 async function handleDetectPatterns(roomId: string): Promise<string> {
-  const fiveMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
     .eq("room_id", roomId)
-    .gte("ts", fiveMinAgo)
+    .gte("ts", thirtyMinAgo)
     .order("ts", { ascending: false })
     .limit(300);
 
@@ -402,68 +485,110 @@ async function handleDetectPatterns(roomId: string): Promise<string> {
     byAgent.set(row.agent, arr);
   }
 
-  const sections: string[] = [];
+  // Build intent vectors and scope signatures per agent
+  const intentVectors = new Map<string, number[]>();
+  const scopeSigs = new Map<string, Set<string>>();
+  const agentTasks = new Map<string, string>();
 
-  // --- Redundancy detection ---
-  // Look for agents working on similar content (simple keyword overlap)
-  const redundancies: string[] = [];
-  const agentSummaries = new Map<string, string>();
   for (const [agent, mems] of byAgent) {
-    const combined = mems
-      .map((m) => m.content?.toLowerCase() || "")
-      .join(" ")
-      .slice(0, 500);
-    agentSummaries.set(agent, combined);
+    intentVectors.set(agent, buildIntentVector(mems));
+    scopeSigs.set(agent, extractScopeSignature(mems));
+    // Extract task description
+    const taskMem = mems.find((m) => {
+      const meta = (m.metadata ?? {}) as Record<string, unknown>;
+      return meta.event === "session_start";
+    });
+    const taskMeta = taskMem ? (taskMem.metadata as Record<string, unknown>) : null;
+    agentTasks.set(agent, (taskMeta?.task as string) || (mems[0]?.content ?? "").slice(0, 100));
   }
 
-  const agents = Array.from(agentSummaries.keys());
+  const sections: string[] = [];
+  const agents = Array.from(byAgent.keys());
+
+  // --- Redundancy detection (intent cosine > 0.8 AND scope overlap > 0.3) ---
+  const redundancies: string[] = [];
   for (let i = 0; i < agents.length; i++) {
     for (let j = i + 1; j < agents.length; j++) {
-      const similarity = computeWordOverlap(
-        agentSummaries.get(agents[i])!,
-        agentSummaries.get(agents[j])!
+      const intentSim = cosineSimilarity(
+        intentVectors.get(agents[i])!,
+        intentVectors.get(agents[j])!
       );
-      if (similarity > 0.4) {
+      const scopeSim = scopeOverlap(
+        scopeSigs.get(agents[i])!,
+        scopeSigs.get(agents[j])!
+      );
+
+      if (intentSim > 0.8 && scopeSim > 0.3) {
+        const shortA = agents[i].split("/")[1] || agents[i];
+        const shortB = agents[j].split("/")[1] || agents[j];
         redundancies.push(
-          `${agents[i]} and ${agents[j]} have ${Math.round(similarity * 100)}% keyword overlap`
+          `${shortA} and ${shortB}: intent ${Math.round(intentSim * 100)}% similar, scope ${Math.round(scopeSim * 100)}% overlap\n    ${shortA}: ${agentTasks.get(agents[i])?.slice(0, 80)}\n    ${shortB}: ${agentTasks.get(agents[j])?.slice(0, 80)}`
         );
       }
     }
   }
 
   if (redundancies.length > 0) {
-    sections.push(`REDUNDANCY:\n${redundancies.map((r) => `  - ${r}`).join("\n")}`);
+    sections.push(`REDUNDANCY (agents with very similar intent and scope):\n${redundancies.map((r) => `  - ${r}`).join("\n")}`);
   }
 
-  // --- Divergence detection ---
-  // Look for conflicting operations on the same files/resources
-  const fileOps = new Map<string, string[]>();
-  for (const [agent, mems] of byAgent) {
-    for (const mem of mems) {
-      const paths = extractFilePaths(mem.content || "");
-      for (const path of paths) {
-        const existing = fileOps.get(path) ?? [];
-        if (!existing.includes(agent)) existing.push(agent);
-        fileOps.set(path, existing);
+  // --- Divergence detection (same scope but low intent similarity) ---
+  const divergences: string[] = [];
+  for (let i = 0; i < agents.length; i++) {
+    for (let j = i + 1; j < agents.length; j++) {
+      const intentSim = cosineSimilarity(
+        intentVectors.get(agents[i])!,
+        intentVectors.get(agents[j])!
+      );
+      const scopeSim = scopeOverlap(
+        scopeSigs.get(agents[i])!,
+        scopeSigs.get(agents[j])!
+      );
+
+      // Same scope (>0.3) but different intent (<0.4) = pulling in different directions
+      if (scopeSim > 0.3 && intentSim < 0.4) {
+        const shortA = agents[i].split("/")[1] || agents[i];
+        const shortB = agents[j].split("/")[1] || agents[j];
+        divergences.push(
+          `${shortA} and ${shortB}: same scope (${Math.round(scopeSim * 100)}% overlap) but different intent (${Math.round(intentSim * 100)}% similar)\n    ${shortA}: ${agentTasks.get(agents[i])?.slice(0, 80)}\n    ${shortB}: ${agentTasks.get(agents[j])?.slice(0, 80)}`
+        );
       }
     }
   }
 
-  const conflicts: string[] = [];
-  for (const [path, agentList] of fileOps) {
-    if (agentList.length > 1) {
-      conflicts.push(`${path} touched by: ${agentList.join(", ")}`);
+  if (divergences.length > 0) {
+    sections.push(`DIVERGENCE (same scope, different direction):\n${divergences.map((d) => `  - ${d}`).join("\n")}`);
+  }
+
+  // --- Alignment detection (same scope AND similar intent = good) ---
+  const alignments: string[] = [];
+  for (let i = 0; i < agents.length; i++) {
+    for (let j = i + 1; j < agents.length; j++) {
+      const intentSim = cosineSimilarity(
+        intentVectors.get(agents[i])!,
+        intentVectors.get(agents[j])!
+      );
+      const scopeSim = scopeOverlap(
+        scopeSigs.get(agents[i])!,
+        scopeSigs.get(agents[j])!
+      );
+
+      // Same scope AND same intent but not redundant (0.5 < intent < 0.8) = aligned
+      if (scopeSim > 0.3 && intentSim > 0.5 && intentSim <= 0.8) {
+        const shortA = agents[i].split("/")[1] || agents[i];
+        const shortB = agents[j].split("/")[1] || agents[j];
+        alignments.push(
+          `${shortA} and ${shortB}: aligned (intent ${Math.round(intentSim * 100)}%, scope ${Math.round(scopeSim * 100)}%)`
+        );
+      }
     }
   }
 
-  if (conflicts.length > 0) {
-    sections.push(
-      `DIVERGENCE (multiple agents touching same files):\n${conflicts.map((c) => `  - ${c}`).join("\n")}`
-    );
+  if (alignments.length > 0) {
+    sections.push(`ALIGNMENT (agents working in the same direction):\n${alignments.map((a) => `  - ${a}`).join("\n")}`);
   }
 
   // --- Idleness detection ---
-  // Agents in the room with no activity in the last 5 minutes
   const idle: string[] = [];
   for (const [agent, mems] of byAgent) {
     const lastTs = new Date(mems[0].ts).getTime();
@@ -638,48 +763,6 @@ function formatTimeAgo(ts: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   return `${days}d ago`;
-}
-
-/** Simple word-level Jaccard similarity. */
-function computeWordOverlap(a: string, b: string): number {
-  const stopWords = new Set([
-    "the", "a", "an", "is", "are", "was", "were", "be", "been",
-    "being", "have", "has", "had", "do", "does", "did", "will",
-    "would", "could", "should", "may", "might", "shall", "can",
-    "to", "of", "in", "for", "on", "with", "at", "by", "from",
-    "as", "into", "through", "during", "before", "after", "and",
-    "but", "or", "nor", "not", "so", "yet", "both", "either",
-    "neither", "each", "every", "all", "any", "few", "more",
-    "most", "other", "some", "such", "no", "only", "own",
-    "same", "than", "too", "very", "just", "because", "if",
-    "that", "this", "it", "its", "i", "we", "you", "he", "she",
-    "they", "me", "him", "her", "us", "them", "my", "your",
-  ]);
-
-  const wordsA = new Set(
-    a.split(/\W+/).filter((w) => w.length > 2 && !stopWords.has(w))
-  );
-  const wordsB = new Set(
-    b.split(/\W+/).filter((w) => w.length > 2 && !stopWords.has(w))
-  );
-
-  if (wordsA.size === 0 || wordsB.size === 0) return 0;
-
-  let intersection = 0;
-  for (const w of wordsA) {
-    if (wordsB.has(w)) intersection++;
-  }
-
-  const union = wordsA.size + wordsB.size - intersection;
-  return union > 0 ? intersection / union : 0;
-}
-
-/** Extract file paths from content (simple heuristic). */
-function extractFilePaths(text: string): string[] {
-  const matches = text.match(/(?:\/[\w.-]+)+(?:\.[\w]+)?/g);
-  if (!matches) return [];
-  // Only keep paths that look like source files (have extensions)
-  return [...new Set(matches.filter((p) => /\.\w+$/.test(p)))];
 }
 
 // ---------------------------------------------------------------------------
