@@ -186,6 +186,74 @@ The web dashboard at `/r/{room-slug}/spectacles` serves as the broadcaster. It m
 
 Channel format: `spectacles:{room}:{deviceId}` (default deviceId: "editor").
 
+## Voice Interface (EywaGeminiLive)
+
+Spectacles have a bidirectional voice interface powered by Gemini Live. The user speaks, Gemini responds with audio, and transcriptions relay to the web dashboard in real time. Gemini can also inject messages to the room, letting users steer the agent swarm by voice.
+
+**How it works:**
+1. On init, `EywaGeminiLive.ts` fetches recent memories and the destination from Supabase
+2. That context becomes Gemini's system instructions ("You are Eywa, a voice assistant for navigating an agent swarm")
+3. Mic audio streams to Gemini Live via Snap's WebSocket proxy (no API key needed)
+4. Gemini responds with audio (played on the glasses) and text transcription
+5. Transcriptions relay to the web via the broadcast channel (`voice_input`, `voice_response`, `voice_inject` events)
+6. Gemini has an `inject_message` tool that writes directly to the Supabase memories table
+
+**Lens Studio setup:**
+1. Add `EywaGeminiLive` component to a SceneObject
+2. Wire inputs in the inspector:
+   - `websocketRequirementsObj` - the RemoteServiceGateway SceneObject
+   - `dynamicAudioOutput` - DynamicAudioOutput component
+   - `microphoneRecorder` - MicrophoneRecorder component
+   - `textDisplay` - a Text component (shows transcription on glasses)
+   - `realtimeReceiver` - the existing RealtimeTextureReceiver
+   - `snapCloudRequirements` - the existing SnapCloudRequirements
+3. Set `roomSlug` to your room (e.g. "demo")
+4. Set `voice` to a Gemini voice (Kore, Puck, Aoede, or Zephyr)
+
+**Testing without Spectacles:**
+
+Run the web app and open the Spectacles broadcast page:
+
+```bash
+cd web && npm run dev
+# Open http://localhost:5173/r/demo/spectacles
+```
+
+Simulate voice events from the browser console. First, import Supabase and create a channel:
+
+```js
+const {supabase} = await import('/src/lib/supabase.ts')
+const ch = supabase.channel('spectacles:demo:editor', {config:{broadcast:{self:true}}})
+ch.subscribe(s => console.log('channel:', s))
+```
+
+Once the channel prints "SUBSCRIBED", send test events:
+
+```js
+// Simulate user speaking through Spectacles
+ch.send({type:'broadcast', event:'voice_input', payload:{text:'What are the agents working on?', timestamp:Date.now()}})
+
+// Simulate Gemini responding
+ch.send({type:'broadcast', event:'voice_response', payload:{text:'12 active agents, mostly working on demo polish and VS Code extensions.', timestamp:Date.now()}})
+
+// Simulate a voice-triggered injection to the room
+ch.send({type:'broadcast', event:'voice_inject', payload:{message:'Focus on the Spectacles milestone', timestamp:Date.now()}})
+```
+
+The voice feed should appear in the chat panel with color-coded entries: purple for user speech, white for Gemini responses, yellow for injections.
+
+**Broadcast channel events (Spectacles to Web):**
+
+| Event | Direction | Payload | Description |
+|---|---|---|---|
+| `voice_input` | glasses -> web | `{text, timestamp}` | User speech transcription |
+| `voice_response` | glasses -> web | `{text, timestamp}` | Gemini response transcription |
+| `voice_inject` | glasses -> web | `{message, priority, timestamp}` | Message injected to room |
+| `interact` | glasses -> web | `{id, type, x, y, u, v, timestamp}` | Tap/hover on AR panel |
+| `scene` | web -> glasses | `{ops: [...]}` | Quad create/move/destroy |
+| `tex` | web -> glasses | `{id, image}` | JPEG base64 texture update |
+| `cursor` | web -> glasses | `{col, row, u, v}` | Mouse position from web |
+
 ## Dependencies
 
 - Lens Studio (latest)
