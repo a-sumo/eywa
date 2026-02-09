@@ -212,7 +212,7 @@ export function useRoom() {
     setCreating(true);
     setError(null);
 
-    const slug = "try-" + Math.random().toString(36).substring(2, 8);
+    const slug = "demo-" + Math.random().toString(36).substring(2, 6);
 
     const { data, error: insertError } = await supabase
       .from("rooms")
