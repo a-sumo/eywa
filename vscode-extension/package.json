@@ -1,8 +1,8 @@
 {
   "name": "eywa-agents",
-  "displayName": "Eywa - Agent Memory",
-  "description": "See what your team's AI agents are building, right in VS Code",
-  "version": "0.3.0",
+  "displayName": "Eywa - Agent Monitor",
+  "description": "See what your AI agents are doing, right next to your terminals",
+  "version": "0.4.0",
   "publisher": "curvilinear",
   "icon": "icon.png",
   "repository": {

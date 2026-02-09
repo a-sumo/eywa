@@ -1,878 +1,516 @@
 /**
  * SpectaclesView.tsx
  *
- * Micro-tile Spectacles renderer. The UI is decomposed into many small
- * independent tiles - each memory card, button, and status element is its
- * own OffscreenCanvas + quad on Spectacles. Only dirty tiles re-render
- * and re-broadcast. Most tiles broadcast exactly once.
- *
- * Protocol:
- *   Scene ops:  { event: "scene", payload: { op, id, ... } }  (JSON, batched)
- *   Textures:   { event: "tex",   payload: { id, image } }    (JPEG base64)
- *   Interaction: { event: "interact", payload: { id, type } }  (from Spectacles)
- *   Legacy:     { event: "tile", payload: { col, row, image } } (backward compat)
+ * Simplified XR companion view: activity log + Gemini chat + destination status.
+ * Keeps the Supabase broadcast channel alive for Spectacles devices but drops
+ * the tile rendering engine. The web page shows useful content directly.
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRoomContext } from "../context/RoomContext";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useGeminiChat } from "../hooks/useGeminiChat";
+import { useGeminiChat, type ChatMessage } from "../hooks/useGeminiChat";
 import { useVoiceInput } from "../hooks/useVoiceInput";
 import { supabase, type Memory } from "../lib/supabase";
-import { TileScene } from "../lib/tileScene";
-import { RENDERERS } from "../lib/tileRenderers";
-import { computeLayout, computeMapLayout, tileHash, MEMORIES_PER_PAGE, type AgentInfo, type MapAgentInfo, type ContextItem, type GroupLayout } from "../lib/tileLayout";
+import { agentColor } from "../lib/agentColor";
 
-// --- Colors ---
-const C = {
-  accent: "#15D1FF",
-  pink: "#e879f9",
-  green: "#4ade80",
-  text: "#e6edf3",
-  muted: "#8b949e",
-  border: "#30363d",
+// --- Helpers ---
+
+function timeAgo(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
+
+function shortName(agent: string): string {
+  return agent.includes("/") ? agent.split("/").pop()! : agent;
+}
+
+const NOISE_EVENTS = new Set(["agent_connected"]);
+
+function isNoise(m: Memory): boolean {
+  const meta = (m.metadata ?? {}) as Record<string, unknown>;
+  if (NOISE_EVENTS.has(meta.event as string)) return true;
+  if (m.message_type === "resource" && (!m.content || m.content.length < 20)) return true;
+  return false;
+}
+
+const SYSTEM_COLORS: Record<string, string> = {
+  git: "#f97316", database: "#06b6d4", api: "#8b5cf6", deploy: "#22c55e",
+  infra: "#ec4899", browser: "#3b82f6", test: "#eab308", filesystem: "#64748b",
+  communication: "#f472b6", terminal: "#a3e635", editor: "#38bdf8",
+  ci: "#fb923c", cloud: "#818cf8", monitor: "#2dd4bf",
 };
 
-// Max scene ops per broadcast batch (high enough for initial burst of ~20 tiles)
-const MAX_OPS_PER_FRAME = 30;
-// Max textures per broadcast frame
-const MAX_TEX_PER_FRAME = 4;
-// Broadcast interval for scene ops (ms)
-const SCENE_BROADCAST_INTERVAL = 100; // 10fps
-// Broadcast interval for cursor updates (ms)
-const CURSOR_BROADCAST_INTERVAL = 50; // 20fps
-const PIXELS_PER_CM = 16;
+const OUTCOME_COLORS: Record<string, string> = {
+  success: "#6ee7b7", failure: "#fca5a5", blocked: "#fcd34d", in_progress: "#93c5fd",
+};
 
-interface ConnectedDevice {
-  deviceId: string;
-  channelName: string;
-  gridCols: number;
-  gridRows: number;
-  lastSeen: number;
-}
-
-function useDeviceId(): string {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("device") || "editor";
-}
+// --- Main Component ---
 
 export function SpectaclesView() {
   const { room } = useRoomContext();
-  const { memories } = useRealtimeMemories(room?.id ?? null, 100);
-  const manualDeviceId = useDeviceId();
+  const { memories } = useRealtimeMemories(room?.id ?? null, 200);
 
-  // View mode: "map" (spacetime navigation) or "grid" (tile grid)
-  const [viewMode, setViewMode] = useState<"map" | "grid">("map");
-
-  // Interaction state
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  const [contextItems, setContextItems] = useState<ContextItem[]>([]);
-  const [memoryPage, setMemoryPage] = useState(0);
-  const [broadcasting, setBroadcasting] = useState(true);
+  // Broadcast channel (kept alive for Spectacles devices)
   const [channelReady, setChannelReady] = useState(false);
-  const [hoveredTileId, setHoveredTileId] = useState<string | null>(null);
-
-  // Auto-discovery
-  const [devices, setDevices] = useState<Map<string, ConnectedDevice>>(new Map());
-  const [activeDeviceId, setActiveDeviceId] = useState<string>(manualDeviceId);
-  const lobbyRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-
-  const deviceId = activeDeviceId || "default";
-
-  // Refs
-  const previewRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const sceneRef = useRef<TileScene | null>(null);
-  const lastSceneBroadcast = useRef(0);
-  const lastCursorBroadcast = useRef(0);
-  const cursorRef = useRef<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
-  const activeCountRef = useRef(0);
-
-  // --- Initialize TileScene ---
-  useEffect(() => {
-    if (!sceneRef.current) {
-      const scene = new TileScene();
-      for (const [type, fn] of Object.entries(RENDERERS)) {
-        scene.registerRenderer(type, fn);
-      }
-      sceneRef.current = scene;
-    }
+  const deviceId = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("device") || "editor";
   }, []);
 
-  // --- Lobby: auto-discover Spectacles devices ---
-  useEffect(() => {
-    if (!room?.slug || manualDeviceId) return;
+  // Chat input
+  const [chatInput, setChatInput] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const logEndRef = useRef<HTMLDivElement>(null);
 
-    const lobbyKey = `spectacles:${room.slug}:lobby`;
-    const lobby = supabase.channel(lobbyKey, {
-      config: { broadcast: { ack: false, self: false } },
-    });
-
-    const handleDevice = (event: string, payload: any) => {
-      if (!payload?.deviceId) return;
-      const dev: ConnectedDevice = {
-        deviceId: payload.deviceId,
-        channelName: payload.channelName || room.slug,
-        gridCols: payload.gridCols || 3,
-        gridRows: payload.gridRows || 2,
-        lastSeen: Date.now(),
-      };
-
-      if (event === "device_disconnect") {
-        setDevices(prev => {
-          const next = new Map(prev);
-          next.delete(dev.deviceId);
-          return next;
-        });
-        setActiveDeviceId(prev => prev === dev.deviceId ? "" : prev);
-      } else {
-        setDevices(prev => {
-          const next = new Map(prev);
-          next.set(dev.deviceId, dev);
-          return next;
-        });
-        setActiveDeviceId(prev => prev || dev.deviceId);
-        setBroadcasting(true);
-
-        // If channel is already live, resync so the new device gets all tiles.
-        // Without this, restarting the Lens requires reloading the web page.
-        if (event === "device_connect" && channelRef.current && sceneRef.current) {
-          sceneRef.current.resync();
-        }
-      }
-    };
-
-    lobby.on("broadcast", { event: "device_connect" }, ({ payload }) => handleDevice("device_connect", payload));
-    lobby.on("broadcast", { event: "device_heartbeat" }, ({ payload }) => handleDevice("device_heartbeat", payload));
-    lobby.on("broadcast", { event: "device_disconnect" }, ({ payload }) => handleDevice("device_disconnect", payload));
-    lobby.subscribe();
-    lobbyRef.current = lobby;
-
-    return () => {
-      supabase.removeChannel(lobby);
-      lobbyRef.current = null;
-    };
-  }, [room?.slug, manualDeviceId]);
-
-  // Prune stale devices
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setDevices(prev => {
-        const next = new Map(prev);
-        let changed = false;
-        for (const [id, dev] of next) {
-          if (now - dev.lastSeen > 30000) {
-            next.delete(id);
-            changed = true;
-          }
-        }
-        return changed ? next : prev;
-      });
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Build context summary for Gemini
+  // Build context from recent memories for Gemini
   const contextSummary = useMemo(() => {
-    if (contextItems.length === 0) return "";
-    return contextItems.map(item => {
-      const mem = memories.find(m => m.id === item.memoryId);
-      if (!mem) return `[${item.agent}]: ${item.content}`;
-      return `[${mem.agent}] ${mem.message_type}: ${mem.content?.slice(0, 500)}`;
-    }).join("\n\n");
-  }, [contextItems, memories]);
+    const recent = memories.filter(m => !isNoise(m)).slice(0, 20);
+    return recent.map(m => {
+      const meta = (m.metadata ?? {}) as Record<string, string>;
+      const sys = meta.system ? `[${meta.system}]` : "";
+      return `[${shortName(m.agent)}] ${sys} ${m.content?.slice(0, 300)}`;
+    }).join("\n");
+  }, [memories]);
 
-  const { messages: chatMessages, loading: chatLoading, error: chatError, send: sendChat, clear: clearChat } = useGeminiChat(contextSummary, room?.id);
+  const { messages: chatMessages, loading: chatLoading, send: sendChat, clear: clearChat } = useGeminiChat(contextSummary, room?.id);
 
-  // Voice input
+  // Voice
   const voiceResultHandler = useCallback((text: string) => {
     if (text.trim()) sendChat(text.trim());
   }, [sendChat]);
-  const { isListening, isSupported: voiceSupported, transcript: voiceTranscript, toggleListening } = useVoiceInput({
+  const { isListening, isSupported: voiceSupported, toggleListening } = useVoiceInput({
     onResult: voiceResultHandler,
   });
 
-  // Build agent list
-  const agents = useMemo((): AgentInfo[] => {
-    const byAgent = new Map<string, Memory[]>();
-    for (const m of memories) {
-      const arr = byAgent.get(m.agent) ?? [];
-      arr.push(m);
-      byAgent.set(m.agent, arr);
-    }
-    const now = Date.now();
-    const result: AgentInfo[] = [];
-    for (const [name, mems] of byAgent) {
-      const sorted = mems.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
-      const lastTs = sorted[0]?.ts ?? "";
-      const isActive = now - new Date(lastTs).getTime() < 5 * 60 * 1000;
-      result.push({ name, isActive, lastTs, memoryCount: mems.length });
-    }
-    result.sort((a, b) => {
-      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-      return new Date(b.lastTs).getTime() - new Date(a.lastTs).getTime();
-    });
-    return result;
-  }, [memories]);
-
-  // Track active count for mascot mood (used in render loop without re-renders)
-  activeCountRef.current = agents.filter(a => a.isActive).length;
-
-  // Flow offset for spacetime map animation (advances continuously)
-  const flowOffsetRef = useRef(0);
-
-  // Build MapAgentInfo from memories (extract systems, ops, curvature for map mode)
-  const mapAgents = useMemo((): MapAgentInfo[] => {
-    if (viewMode !== "map") return [];
-    const byAgent = new Map<string, { mems: typeof memories; systems: Set<string>; opCount: number; ops: Array<{ action?: string; outcome?: string }> }>();
-    for (const m of memories) {
-      if (!byAgent.has(m.agent)) {
-        byAgent.set(m.agent, { mems: [], systems: new Set(), opCount: 0, ops: [] });
-      }
-      const info = byAgent.get(m.agent)!;
-      info.mems.push(m);
-      const meta = (m.metadata ?? {}) as Record<string, string>;
-      if (meta.system) info.systems.add(meta.system);
-      if (meta.system || meta.action) {
-        info.opCount++;
-        info.ops.push({ action: meta.action, outcome: meta.outcome });
-      }
-    }
-    const now = Date.now();
-    const result: MapAgentInfo[] = [];
-    for (const [name, info] of byAgent) {
-      const sorted = info.mems.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
-      const lastTs = sorted[0]?.ts ?? "";
-      const isActive = now - new Date(lastTs).getTime() < 5 * 60 * 1000;
-      // Simple curvature: (weighted ops - failures) / minutes
-      const firstTs = sorted[sorted.length - 1]?.ts;
-      const durationMin = firstTs ? (now - new Date(firstTs).getTime()) / 60000 : 1;
-      let weightedSum = 0;
-      let failCount = 0;
-      let highImpact = 0;
-      const highActions = new Set(["deploy", "create", "write", "test", "delete", "review"]);
-      const weights: Record<string, number> = { deploy: 5, create: 4, write: 3, test: 3, delete: 2, review: 2, debug: 2, configure: 1.5, read: 1, monitor: 0.5 };
-      const outcomes: Record<string, number> = { success: 1, in_progress: 0.5, failure: -1, blocked: -2 };
-      for (const op of info.ops) {
-        const w = weights[op.action ?? ""] ?? 0;
-        const m = outcomes[op.outcome ?? ""] ?? 0.5;
-        weightedSum += w * m;
-        if (op.outcome === "failure" || op.outcome === "blocked") failCount++;
-        if (highActions.has(op.action ?? "")) highImpact++;
-      }
-      const mins = Math.max(durationMin, 1);
-      const momentum = weightedSum / mins;
-      const drag = failCount / mins;
-      const signal = highImpact / Math.max(info.ops.length, 1);
-      const curvature = info.ops.length > 0 ? Math.round((momentum - drag) * signal * 100) / 100 : 0;
-
-      result.push({
-        name,
-        isActive,
-        lastTs,
-        memoryCount: info.mems.length,
-        systems: Array.from(info.systems),
-        opCount: info.opCount,
-        curvature,
-      });
-    }
-    result.sort((a, b) => {
-      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-      return new Date(b.lastTs).getTime() - new Date(a.lastTs).getTime();
-    });
-    return result;
-  }, [memories, viewMode]);
-
-  // Extract destination from memories (knowledge entry with event=destination)
-  const destinationInfo = useMemo(() => {
+  // Extract destination
+  const destination = useMemo(() => {
     for (const m of memories) {
       const meta = (m.metadata ?? {}) as Record<string, unknown>;
-      if (meta.event === "destination") {
-        const dest = (meta.destination as string) || m.content || "";
+      if (meta.event === "destination" && m.message_type === "knowledge") {
         const ms = (meta.milestones as string[]) || [];
         const prog = (meta.progress as Record<string, boolean>) || {};
         const done = ms.filter(x => prog[x]).length;
         return {
-          text: dest,
-          progress: ms.length > 0 ? Math.round((done / ms.length) * 100) : 0,
-          milestones: ms.map(x => ({ text: x, done: !!prog[x] })),
+          text: (meta.destination as string) || "",
+          milestones: ms,
+          progress: prog,
+          done,
+          total: ms.length,
         };
       }
     }
-    return { text: "", progress: 0, milestones: [] as Array<{ text: string; done: boolean }> };
+    return null;
   }, [memories]);
 
-  // Total memory pages
-  const totalMemoryPages = useMemo(() => {
-    const filtered = selectedAgent ? memories.filter(m => m.agent === selectedAgent) : memories;
-    return Math.max(1, Math.ceil(filtered.length / MEMORIES_PER_PAGE));
-  }, [memories, selectedAgent]);
+  // Filtered activity log
+  const activityLog = useMemo(() => {
+    return memories
+      .filter(m => !isNoise(m))
+      .slice(0, 100);
+  }, [memories]);
 
-  // --- Compute layout (memoized) ---
-  // Grid mode: original 3-column tile layout
-  const gridLayout = useMemo(() => viewMode === "grid" ? computeLayout({
-    agents,
-    memories,
-    contextItems,
-    chatMessages,
-    chatLoading,
-    chatError,
-    memoryPage,
-    selectedAgent,
-    isListening,
-    voiceTranscript,
-    room: room?.slug ?? "demo",
-    channelReady,
-    deviceId,
-  }) : { tiles: [], groups: [] }, [viewMode, agents, memories, contextItems, chatMessages, chatLoading, chatError, memoryPage, selectedAgent, isListening, voiceTranscript, room?.slug, channelReady, deviceId]);
-
-  // Map mode: spacetime navigation map (flowOffset updated in render loop)
-  const mapLayout = useMemo(() => viewMode === "map" ? computeMapLayout({
-    agents: mapAgents,
-    destination: destinationInfo.text,
-    progress: destinationInfo.progress,
-    milestones: destinationInfo.milestones,
-    chatMessages,
-    chatLoading,
-    chatError,
-    isListening,
-    voiceTranscript,
-    room: room?.slug ?? "demo",
-    channelReady,
-    deviceId,
-    flowOffset: flowOffsetRef.current,
-  }) : { tiles: [], groups: [] }, [viewMode, mapAgents, destinationInfo, chatMessages, chatLoading, chatError, isListening, voiceTranscript, room?.slug, channelReady, deviceId]);
-
-  const { tiles: desiredTiles, groups: desiredGroups } = viewMode === "map" ? mapLayout : gridLayout;
-
-  // Browser layout is static. All spatial movement (camera tracking,
-  // comfort-zone repositioning) happens on Spectacles, not here.
-
-  // --- Interaction handler: map tile IDs to actions ---
-  const handleTileInteraction = useCallback((tileId: string, type: string) => {
-    // Agent dots
-    if (tileId.startsWith("agent-")) {
-      const idx = parseInt(tileId.split("-")[1], 10);
-      if (agents[idx]) {
-        setSelectedAgent(prev => prev === agents[idx].name ? null : agents[idx].name);
-        setMemoryPage(0);
-      }
-      return;
-    }
-
-    // Memory cards - tap to add to context
-    if (tileId.startsWith("mem-")) {
-      const memId = tileId.slice(4); // "mem-{uuid}" -> uuid
-      const mem = memories.find(m => m.id === memId);
-      if (mem && !contextItems.find(c => c.memoryId === mem.id)) {
-        setContextItems(prev => [...prev, {
-          memoryId: mem.id,
-          agent: mem.agent,
-          content: mem.content.slice(0, 50),
-        }]);
-      }
-      return;
-    }
-
-    // Context cards - tap to remove
-    if (tileId.startsWith("ctx-") && tileId !== "ctx-header" && tileId !== "ctx-empty") {
-      const memId = tileId.slice(4);
-      setContextItems(prev => prev.filter(c => c.memoryId !== memId));
-      return;
-    }
-
-    // Page nav
-    if (tileId === "page-nav") {
-      // Determine prev/next from interaction position (simplified: cycle forward)
-      setMemoryPage(p => (p + 1) % totalMemoryPages);
-      return;
-    }
-
-    // Prompt buttons
-    if (tileId.startsWith("prompt-")) {
-      if (contextItems.length === 0 || chatLoading) return;
-      const idx = parseInt(tileId.split("-")[1], 10);
-      const prompts = ["Summarize", "Explain", "Compare", "Key Points"];
-      if (prompts[idx]) {
-        sendChat(prompts[idx] + " the context.");
-      }
-      return;
-    }
-  }, [agents, memories, contextItems, totalMemoryPages, chatLoading, sendChat]);
-
-  const findTileAt = useCallback((x: number, y: number) => {
-    const scene = sceneRef.current;
-    if (!scene) return null;
-    for (const tile of scene.getAllTiles()) {
-      if (!tile.visible || !tile.interactive) continue;
-      const pos = scene.getTileWorldPosition(tile.id) ?? { x: tile.x, y: tile.y };
-      const wCm = (tile.w / PIXELS_PER_CM) * tile.scale;
-      const hCm = (tile.h / PIXELS_PER_CM) * tile.scale;
-      if (x >= pos.x - wCm / 2 && x <= pos.x + wCm / 2 && y >= pos.y - hCm / 2 && y <= pos.y + hCm / 2) {
-        return tile.id;
-      }
-    }
-    return null;
-  }, []);
-
-  const broadcastCursor = useCallback((x: number, y: number, visible: boolean) => {
-    const channel = channelRef.current;
-    if (!channel || !channelReady) return;
-    const now = performance.now();
-    if (now - lastCursorBroadcast.current < CURSOR_BROADCAST_INTERVAL) return;
-    lastCursorBroadcast.current = now;
-    channel.send({
-      type: "broadcast",
-      event: "cursor",
-      payload: { x, y, visible },
-    }).catch(() => {});
-  }, [channelReady]);
-
-  // --- Supabase broadcast channel ---
+  // Auto-scroll chat
   useEffect(() => {
-    if (!broadcasting || !room?.slug) {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-        setChannelReady(false);
-      }
-      return;
-    }
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
-    const channelKey = deviceId === "default"
-      ? `spectacles:${room.slug}`
-      : `spectacles:${room.slug}:${deviceId}`;
-
+  // Supabase broadcast channel
+  useEffect(() => {
+    if (!room?.slug) return;
+    const channelKey = `spectacles:${room.slug}:${deviceId}`;
     const channel = supabase.channel(channelKey, {
       config: { broadcast: { ack: false, self: false } },
     });
-
-    // Listen for micro-tile interaction events from Spectacles
-    channel.on("broadcast", { event: "interact" }, ({ payload }) => {
-      if (!payload?.id || !payload?.type) return;
-      const { id, type, x, y } = payload as { id: string; type: string; x?: number; y?: number };
-
-      if (type === "hover" || type === "hover_move") {
-        if (x !== undefined && y !== undefined) {
-          cursorRef.current = { x, y, visible: true };
-          broadcastCursor(x, y, true);
-          const hovered = findTileAt(x, y);
-          setHoveredTileId(hovered);
-        } else {
-          setHoveredTileId(id);
-        }
-        return;
-      }
-
-      if (type === "hover_exit") {
-        cursorRef.current = { x: 0, y: 0, visible: false };
-        broadcastCursor(0, 0, false);
-        setHoveredTileId(null);
-        return;
-      }
-
-      if (type === "tap") {
-        const cursor = cursorRef.current;
-        const targetId = cursor.visible ? (findTileAt(cursor.x, cursor.y) ?? id) : id;
-        handleTileInteraction(targetId, type);
-      }
-    });
-
-    // Legacy interaction events (from old RealtimePanel)
-    channel.on("broadcast", { event: "interaction" }, ({ payload }) => {
-      if (!payload) return;
-      // Old format uses col/row/u/v - convert to tile ID
-      // For backward compat, just handle the basics
-      if (payload.type === "pointer_exit") {
-        setHoveredTileId(null);
-      }
-    });
-
-    // Spectacles can request a full resync after connecting
-    channel.on("broadcast", { event: "sync_request" }, () => {
-      console.log("[SpectaclesView] sync_request received, resyncing");
-      if (sceneRef.current) {
-        sceneRef.current.resync();
-      }
-    });
-
     channel.subscribe((status) => {
-      console.log("[SpectaclesView] channel status:", status, "key:", channelKey);
-      if (status === "SUBSCRIBED") {
-        setChannelReady(true);
-        // Resync: re-send all create ops + textures for tiles that already exist.
-        // The Spectacles side may connect after the initial burst was sent.
-        if (sceneRef.current) {
-          sceneRef.current.resync();
-        }
-      }
+      if (status === "SUBSCRIBED") setChannelReady(true);
     });
-
     channelRef.current = channel;
     return () => {
       supabase.removeChannel(channel);
       channelRef.current = null;
       setChannelReady(false);
     };
-  }, [broadcasting, room?.slug, deviceId, handleTileInteraction]);
+  }, [room?.slug, deviceId]);
 
-  // Track last hovered tile to avoid spamming visibility ops
-  const lastHoveredRef = useRef<string | null>(null);
-
-  // --- Render loop ---
-  useEffect(() => {
-    let animId: number;
-    const scene = sceneRef.current;
-    if (!scene) return;
-
-    const loop = () => {
-      // 1. Reconcile desired state with current tiles
-      scene.reconcile(desiredTiles, desiredGroups);
-
-      // 2. Update content hashes so dirty tiles get flagged
-      for (const desc of desiredTiles) {
-        const tile = scene.getTile(desc.id);
-        if (tile) {
-          tile.setData(desc.data);
-          tile.updateHash(tileHash(desc));
-        }
-      }
-
-      // 2.5. Animate mascot tile (outside memoized layout to avoid full recompute)
-      const mascotTile = scene.getTile("mascot");
-      if (mascotTile) {
-        const t = performance.now() / 1000;
-        const mood = activeCountRef.current > 0 ? "happy" : "okay";
-        mascotTile.setData({ mood, time: t, blinking: false, bg: "#0c0c18" });
-        mascotTile.updateHash(`mascot-${Math.floor(t * 5)}`);
-      }
-
-      // 2.6. Animate spacetime map (advance flowOffset, update map tile)
-      const mapTile = scene.getTile("agent-map");
-      if (mapTile) {
-        flowOffsetRef.current += 0.3;
-        const mapData = mapTile.getData() as Record<string, unknown>;
-        mapData.flowOffset = flowOffsetRef.current;
-        mapTile.setData(mapData);
-        // Update hash every ~250ms for smooth animation without excessive re-renders
-        mapTile.updateHash(`map-${Math.floor(flowOffsetRef.current / 2)}`);
-      }
-
-      // 3. Render dirty tiles
-      scene.renderDirty();
-
-      // 4. Handle hover glow positioning (only on change)
-      if (hoveredTileId !== lastHoveredRef.current) {
-        lastHoveredRef.current = hoveredTileId;
-        if (hoveredTileId) {
-          const pos = scene.getTileWorldPosition(hoveredTileId);
-          if (pos) {
-            scene.queueVisibilityOp("hover-glow", true);
-            scene.queueMoveOp("hover-glow", pos.x, pos.y);
-          }
-        } else {
-          scene.queueVisibilityOp("hover-glow", false);
-        }
-      }
-
-      // 5. Draw preview to visible canvas
-      drawPreview(scene);
-
-      // 6. Broadcast to Spectacles (throttled)
-      broadcastScene(scene);
-
-      animId = requestAnimationFrame(loop);
-    };
-
-    animId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animId);
-  }, [desiredTiles, desiredGroups, hoveredTileId, channelReady]);
-
-  // --- Draw composite preview to visible canvas ---
-  const previewCtxRef = useRef<CanvasRenderingContext2D | null>(null);
-
-  const drawPreview = useCallback((scene: TileScene) => {
-    const canvas = previewRef.current;
-    if (!canvas) return;
-    if (!previewCtxRef.current) {
-      previewCtxRef.current = canvas.getContext("2d");
-    }
-    const ctx = previewCtxRef.current;
-    if (!ctx) return;
-
-    const W = canvas.width;
-    const H = canvas.height;
-
-    // Clear
-    ctx.fillStyle = "#050508";
-    ctx.fillRect(0, 0, W, H);
-
-    // Map tile positions (cm) to preview pixels
-    // Scene coordinates: x and y in cm, origin at center
-    // Preview: origin at center, scale to fit
-    const scale = 12; // pixels per cm
-    const cx = W / 2;
-    const cy = H / 2;
-
-    const allTiles = scene.getAllTiles();
-    for (const tile of allTiles) {
-      if (!tile.visible || tile.type === "hover-glow") continue;
-
-      const pos = scene.getTileWorldPosition(tile.id) ?? { x: tile.x, y: tile.y };
-      // Convert tile pixel size to cm, then to preview pixels (consistent with position scale)
-      const drawW = (tile.w / PIXELS_PER_CM) * tile.scale * scale;
-      const drawH = (tile.h / PIXELS_PER_CM) * tile.scale * scale;
-      const px = cx + pos.x * scale - (drawW / 2);
-      const py = cy - pos.y * scale - (drawH / 2); // flip Y
-
-      ctx.drawImage(tile.canvas, px, py, drawW, drawH);
-
-      // Hover highlight
-      if (tile.id === hoveredTileId) {
-        ctx.strokeStyle = C.accent;
-        ctx.lineWidth = 2;
-        ctx.shadowColor = C.accent;
-        ctx.shadowBlur = 8;
-        ctx.strokeRect(px - 1, py - 1, drawW + 2, drawH + 2);
-        ctx.shadowBlur = 0;
-      }
-    }
-  }, [hoveredTileId]);
-
-  // --- Broadcast scene ops and textures ---
-  const broadcastScene = useCallback((scene: TileScene) => {
-    const channel = channelRef.current;
-    if (!channel || !channelReady) return;
-
-    const now = performance.now();
-
-    // Throttle scene ops to 10fps. Only take from queue when we're ready to send.
-    if (scene.pendingOpCount > 0 && now - lastSceneBroadcast.current >= SCENE_BROADCAST_INTERVAL) {
-      lastSceneBroadcast.current = now;
-
-      const ops = scene.takeOps(MAX_OPS_PER_FRAME);
-      console.log("[SpectaclesView] sending", ops.length, "ops,", scene.pendingTexCount, "tex pending");
-      if (ops.length === 1) {
-        channel.send({
-          type: "broadcast",
-          event: "scene",
-          payload: ops[0],
-        }).catch(() => {});
-      } else if (ops.length > 1) {
-        channel.send({
-          type: "broadcast",
-          event: "scene",
-          payload: { ops },
-        }).catch(() => {});
-      }
-    }
-
-    // Send textures when available (up to MAX_TEX_PER_FRAME per broadcast)
-    if (scene.pendingTexCount > 0) {
-      const textures = scene.takeTextures(MAX_TEX_PER_FRAME);
-      for (const tex of textures) {
-        channel.send({
-          type: "broadcast",
-          event: "tex",
-          payload: tex,
-        }).catch(() => {});
-      }
-    }
-  }, [channelReady]);
-
-  // --- Preview mouse interaction (for web testing) ---
-  const handlePreviewMouseMove = useCallback((e: React.MouseEvent) => {
-    const canvas = previewRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const px = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const py = (e.clientY - rect.top) * (canvas.height / rect.height);
-
-    const scene = sceneRef.current;
-    if (!scene) return;
-
-    const scale = 12;
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-
-    // Find tile under cursor (using consistent cm-to-pixel scaling)
-    let found: string | null = null;
-    for (const tile of scene.getAllTiles()) {
-      if (!tile.visible || !tile.interactive) continue;
-      const pos = scene.getTileWorldPosition(tile.id) ?? { x: tile.x, y: tile.y };
-      const drawW = (tile.w / PIXELS_PER_CM) * tile.scale * scale;
-      const drawH = (tile.h / PIXELS_PER_CM) * tile.scale * scale;
-      const tx = cx + pos.x * scale - drawW / 2;
-      const ty = cy - pos.y * scale - drawH / 2;
-      if (px >= tx && px <= tx + drawW && py >= ty && py <= ty + drawH) {
-        found = tile.id;
-        break;
-      }
-    }
-    setHoveredTileId(found);
-  }, []);
-
-  const handlePreviewClick = useCallback((e: React.MouseEvent) => {
-    if (hoveredTileId) {
-      handleTileInteraction(hoveredTileId, "tap");
-    }
-  }, [hoveredTileId, handleTileInteraction]);
-
-  const handlePreviewLeave = useCallback(() => {
-    setHoveredTileId(null);
-  }, []);
-
-  // --- UI ---
-  // Preview canvas sized to show all tiles comfortably
-  const previewW = 800;
-  const previewH = 600;
+  const handleSend = () => {
+    const text = chatInput.trim();
+    if (!text || chatLoading) return;
+    sendChat(text);
+    setChatInput("");
+  };
 
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "100vh",
-      background: "#050508",
-      padding: "1rem",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-        <div style={{
-          width: 12, height: 12, borderRadius: "50%",
-          background: channelReady ? "#4ade80" : (devices.size > 0 ? "#fbbf24" : "#333"),
-        }} />
-        <h1 style={{ color: C.accent, fontSize: "1.25rem", margin: 0 }}>
-          Spectacles Renderer
-        </h1>
-        <span style={{ color: C.muted, fontSize: "0.7rem", marginLeft: "0.5rem" }}>
-          micro-tile
-        </span>
-      </div>
-
-      {/* Device discovery bar */}
-      {!manualDeviceId && (
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
-          {devices.size === 0 ? (
-            <span style={{ color: C.muted, fontSize: "0.8rem" }}>
-              Waiting for Spectacles devices...
-            </span>
-          ) : (
-            Array.from(devices.values()).map(dev => (
-              <button
-                key={dev.deviceId}
-                onClick={() => { setActiveDeviceId(dev.deviceId); setBroadcasting(true); }}
-                style={{
-                  ...btnStyle,
-                  background: activeDeviceId === dev.deviceId ? "#1a3a2e" : "#1a1a2e",
-                  color: activeDeviceId === dev.deviceId ? "#4ade80" : C.text,
-                  borderColor: activeDeviceId === dev.deviceId ? "#4ade80" : C.border,
-                }}
-              >
-                {dev.deviceId}
-              </button>
-            ))
-          )}
+    <div style={styles.root}>
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={styles.headerLeft}>
+          <div style={{
+            ...styles.statusDot,
+            background: channelReady ? "#4ade80" : "#333",
+          }} />
+          <span style={styles.title}>Spectacles</span>
+          <span style={styles.roomSlug}>/{room?.slug || "..."}</span>
         </div>
-      )}
-
-      <div
-        ref={containerRef}
-        style={{ position: "relative", cursor: "crosshair" }}
-      >
-        <canvas
-          ref={previewRef}
-          width={previewW}
-          height={previewH}
-          onMouseMove={handlePreviewMouseMove}
-          onClick={handlePreviewClick}
-          onMouseLeave={handlePreviewLeave}
-          style={{
-            border: "2px solid #30363d",
-            borderRadius: "12px",
-            maxWidth: "100%",
-            height: "auto",
-          }}
-        />
-      </div>
-
-      <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
-        <button
-          onClick={() => setViewMode(v => v === "map" ? "grid" : "map")}
-          style={{
-            ...btnStyle,
-            background: viewMode === "map" ? "#1a2a3a" : "#1a1a2e",
-            color: viewMode === "map" ? "#15D1FF" : "#e6edf3",
-            borderColor: viewMode === "map" ? "#15D1FF" : "#30363d",
-          }}
-        >
-          {viewMode === "map" ? "\u25C9 Map" : "\u25CB Grid"}
-        </button>
-        <button
-          onClick={() => { setSelectedAgent(null); setMemoryPage(0); }}
-          style={btnStyle}
-        >
-          Clear Filter
-        </button>
-        <button
-          onClick={() => setContextItems([])}
-          style={btnStyle}
-        >
-          Clear Context
-        </button>
-        <button
-          onClick={() => clearChat()}
-          style={btnStyle}
-        >
-          Clear Chat
-        </button>
         {voiceSupported && (
           <button
             onClick={toggleListening}
             style={{
-              ...btnStyle,
-              background: isListening ? "#3a1a1a" : "#1a1a2e",
-              color: isListening ? "#f87171" : "#e6edf3",
+              ...styles.btn,
+              background: isListening ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.05)",
+              color: isListening ? "#f87171" : "#8b949e",
               borderColor: isListening ? "#f87171" : "#30363d",
             }}
           >
-            {isListening ? "\u25CF Listening..." : "\u25CB Mic"}
+            {isListening ? "Listening..." : "Mic"}
           </button>
         )}
-        <button
-          onClick={() => setBroadcasting(!broadcasting)}
-          style={{
-            ...btnStyle,
-            background: channelReady ? "#1a3a2e" : (broadcasting ? "#2a2a1e" : "#1a1a2e"),
-            color: channelReady ? "#4ade80" : (broadcasting ? "#fbbf24" : "#e6edf3"),
-            borderColor: channelReady ? "#4ade80" : (broadcasting ? "#fbbf24" : "#30363d"),
-          }}
-        >
-          {channelReady ? "\u25C9 Live" : (broadcasting ? "\u25D0 Connecting..." : "\u25CB Broadcast")}
-        </button>
       </div>
 
-      <p style={{
-        color: "#484f58",
-        fontSize: "0.7rem",
-        marginTop: "1rem",
-        textAlign: "center",
-      }}>
-        {sceneRef.current?.size ?? 0} tiles | {devices.size} device{devices.size !== 1 ? "s" : ""} | {contextItems.length} ctx | {chatMessages.length} msgs
-        {channelReady && ` | spectacles:${room?.slug}:${deviceId}`}
-      </p>
+      {/* Destination bar */}
+      {destination && (
+        <div style={styles.destBar}>
+          <div style={styles.destText}>
+            {destination.text.slice(0, 80)}
+          </div>
+          <div style={styles.destProgress}>
+            <div style={styles.destTrack}>
+              <div style={{
+                ...styles.destFill,
+                width: `${destination.total > 0 ? (destination.done / destination.total) * 100 : 0}%`,
+              }} />
+            </div>
+            <span style={styles.destLabel}>{destination.done}/{destination.total}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Main content: logs + chat side by side */}
+      <div style={styles.main}>
+        {/* Activity log */}
+        <div style={styles.logPanel}>
+          <div style={styles.panelHeader}>Activity</div>
+          <div style={styles.logScroll}>
+            {activityLog.map((m) => {
+              const meta = (m.metadata ?? {}) as Record<string, string>;
+              const color = agentColor(m.agent);
+              return (
+                <div key={m.id} style={styles.logEntry}>
+                  <div style={styles.logMeta}>
+                    <span style={{ color, fontWeight: 600 }}>{shortName(m.agent)}</span>
+                    {meta.system && (
+                      <span style={{
+                        ...styles.pill,
+                        background: `${SYSTEM_COLORS[meta.system] || "#8b5cf6"}18`,
+                        color: SYSTEM_COLORS[meta.system] || "#8b5cf6",
+                      }}>{meta.system}</span>
+                    )}
+                    {meta.action && (
+                      <span style={styles.actionLabel}>{meta.action}</span>
+                    )}
+                    {meta.outcome && (
+                      <span style={{
+                        ...styles.pill,
+                        background: `${OUTCOME_COLORS[meta.outcome] || "#888"}18`,
+                        color: OUTCOME_COLORS[meta.outcome] || "#888",
+                      }}>{meta.outcome}</span>
+                    )}
+                    <span style={styles.timeLabel}>{timeAgo(m.ts)}</span>
+                  </div>
+                  <div style={styles.logContent}>
+                    {(m.content ?? "").slice(0, 200)}
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={logEndRef} />
+          </div>
+        </div>
+
+        {/* Chat panel */}
+        <div style={styles.chatPanel}>
+          <div style={styles.panelHeader}>
+            Gemini
+            {chatMessages.length > 0 && (
+              <button onClick={clearChat} style={styles.clearBtn}>Clear</button>
+            )}
+          </div>
+          <div style={styles.chatScroll}>
+            {chatMessages.length === 0 && (
+              <div style={styles.chatEmpty}>
+                Ask Gemini about agent activity, destination progress, or patterns.
+              </div>
+            )}
+            {chatMessages.map((msg, i) => (
+              <div
+                key={i}
+                style={{
+                  ...styles.chatMsg,
+                  alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                  background: msg.role === "user" ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.04)",
+                  borderColor: msg.role === "user" ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.06)",
+                }}
+              >
+                {msg.toolCalls && msg.toolCalls.length > 0 && (
+                  <div style={styles.toolCalls}>
+                    {msg.toolCalls.map((tc, j) => (
+                      <span key={j} style={styles.toolPill}>{tc}</span>
+                    ))}
+                  </div>
+                )}
+                <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{msg.content}</div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div style={{ ...styles.chatMsg, alignSelf: "flex-start", color: "#8b949e" }}>
+                Thinking...
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+          <div style={styles.chatInputRow}>
+            <input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Ask Gemini..."
+              style={styles.chatInputField}
+            />
+            <button
+              onClick={handleSend}
+              disabled={chatLoading || !chatInput.trim()}
+              style={{
+                ...styles.btn,
+                opacity: chatLoading || !chatInput.trim() ? 0.4 : 1,
+              }}
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-const btnStyle: React.CSSProperties = {
-  padding: "0.5rem 1rem",
-  background: "#1a1a2e",
-  color: "#e6edf3",
-  border: "1px solid #30363d",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontSize: "0.75rem",
+// --- Styles ---
+
+const styles: Record<string, React.CSSProperties> = {
+  root: {
+    display: "flex",
+    flexDirection: "column",
+    height: "100vh",
+    background: "var(--bg-primary, #050508)",
+    color: "#e6edf3",
+    fontFamily: "var(--font-sans, Inter, system-ui, sans-serif)",
+    overflow: "hidden",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "10px 16px",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    flexShrink: 0,
+  },
+  headerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+  },
+  title: {
+    fontSize: "0.95rem",
+    fontWeight: 600,
+    color: "#15D1FF",
+    fontFamily: "var(--font-display, 'Plus Jakarta Sans', system-ui, sans-serif)",
+  },
+  roomSlug: {
+    fontSize: "0.7rem",
+    color: "#8b949e",
+  },
+  destBar: {
+    padding: "8px 16px",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(139,92,246,0.04)",
+    flexShrink: 0,
+  },
+  destText: {
+    fontSize: "0.75rem",
+    color: "#c4b5fd",
+    marginBottom: 4,
+  },
+  destProgress: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  destTrack: {
+    flex: 1,
+    height: 4,
+    background: "rgba(139,92,246,0.15)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  destFill: {
+    height: "100%",
+    background: "#8b5cf6",
+    borderRadius: 2,
+    transition: "width 0.5s ease-in-out",
+  },
+  destLabel: {
+    fontSize: "0.65rem",
+    color: "#8b949e",
+    flexShrink: 0,
+  },
+  main: {
+    display: "flex",
+    flex: 1,
+    overflow: "hidden",
+    gap: 0,
+  },
+  logPanel: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    borderRight: "1px solid rgba(255,255,255,0.06)",
+    minWidth: 0,
+  },
+  chatPanel: {
+    width: 380,
+    display: "flex",
+    flexDirection: "column",
+    flexShrink: 0,
+  },
+  panelHeader: {
+    padding: "8px 16px",
+    fontSize: "0.7rem",
+    fontWeight: 600,
+    color: "#8b949e",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.5px",
+    borderBottom: "1px solid rgba(255,255,255,0.04)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  logScroll: {
+    flex: 1,
+    overflowY: "auto" as const,
+    padding: "4px 0",
+  },
+  logEntry: {
+    padding: "6px 16px",
+    borderBottom: "1px solid rgba(255,255,255,0.02)",
+  },
+  logMeta: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: "0.7rem",
+    flexWrap: "wrap" as const,
+  },
+  pill: {
+    padding: "1px 6px",
+    borderRadius: 3,
+    fontSize: "0.6rem",
+    fontWeight: 500,
+  },
+  actionLabel: {
+    color: "#8b949e",
+    fontSize: "0.6rem",
+  },
+  timeLabel: {
+    color: "#484f58",
+    fontSize: "0.6rem",
+    marginLeft: "auto",
+  },
+  logContent: {
+    fontSize: "0.7rem",
+    color: "rgba(255,255,255,0.5)",
+    marginTop: 2,
+    lineHeight: 1.4,
+    wordBreak: "break-word" as const,
+  },
+  chatScroll: {
+    flex: 1,
+    overflowY: "auto" as const,
+    padding: "8px 12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  chatEmpty: {
+    color: "#484f58",
+    fontSize: "0.75rem",
+    textAlign: "center" as const,
+    padding: "2rem 1rem",
+  },
+  chatMsg: {
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: "1px solid",
+    fontSize: "0.75rem",
+    maxWidth: "90%",
+    wordBreak: "break-word" as const,
+  },
+  toolCalls: {
+    display: "flex",
+    gap: 4,
+    flexWrap: "wrap" as const,
+    marginBottom: 4,
+  },
+  toolPill: {
+    fontSize: "0.55rem",
+    padding: "1px 5px",
+    borderRadius: 3,
+    background: "rgba(139,92,246,0.15)",
+    color: "#c4b5fd",
+  },
+  chatInputRow: {
+    display: "flex",
+    gap: 6,
+    padding: "8px 12px",
+    borderTop: "1px solid rgba(255,255,255,0.06)",
+    flexShrink: 0,
+  },
+  chatInputField: {
+    flex: 1,
+    padding: "6px 10px",
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 6,
+    color: "#e6edf3",
+    fontSize: "0.75rem",
+    outline: "none",
+  },
+  btn: {
+    padding: "5px 12px",
+    background: "rgba(255,255,255,0.05)",
+    color: "#e6edf3",
+    border: "1px solid #30363d",
+    borderRadius: 6,
+    cursor: "pointer",
+    fontSize: "0.7rem",
+    flexShrink: 0,
+  },
+  clearBtn: {
+    background: "none",
+    border: "none",
+    color: "#484f58",
+    fontSize: "0.6rem",
+    cursor: "pointer",
+    padding: "0 4px",
+  },
 };
