@@ -49,12 +49,15 @@ export function registerSessionTools(
   server.tool(
     "eywa_start",
     "Start logging this session. Call this when beginning work on a task. Returns a room snapshot so you land with full situational awareness.",
-    { task_description: z.string().describe("Brief description of what you're working on") },
+    {
+      task_description: z.string().describe("Brief description of what you're working on"),
+      continue_from: z.string().optional().describe("Agent name to load context from (baton handoff, e.g. 'armand/quiet-oak')"),
+    },
     {
       readOnlyHint: false,
       idempotentHint: false,
     },
-    async ({ task_description }) => {
+    async ({ task_description, continue_from }) => {
       const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
         room_id: ctx.roomId,
@@ -64,7 +67,7 @@ export function registerSessionTools(
         message_type: "resource",
         content: `SESSION START: ${task_description}`,
         token_count: estimateTokens(task_description),
-        metadata: { event: "session_start", task: task_description, user: ctx.user },
+        metadata: { event: "session_start", task: task_description, user: ctx.user, ...(continue_from ? { continue_from } : {}) },
       });
 
       // Auto-context: fetch room snapshot so agent lands aware
@@ -221,6 +224,30 @@ export function registerSessionTools(
 
       if (recoveryBlock) {
         lines.push(recoveryBlock);
+      }
+
+      // Mid-session baton: load another agent's context
+      if (continue_from) {
+        const batonRows = await db.select<MemoryRow>("memories", {
+          select: "message_type,content,metadata,ts",
+          room_id: `eq.${ctx.roomId}`,
+          agent: `eq.${continue_from}`,
+          order: "ts.desc",
+          limit: "20",
+        });
+
+        if (batonRows.length > 0) {
+          lines.push(`\n=== Baton: ${continue_from} (${batonRows.length} items) ===`);
+          for (const m of [...batonRows].reverse()) {
+            const meta = (m.metadata ?? {}) as Record<string, string>;
+            const prefix = meta.event ? `[${meta.event}]` : `[${m.message_type}]`;
+            const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+            const opTag = opParts.length > 0 ? ` [${opParts.join(":")}]` : "";
+            lines.push(`${prefix}: ${(m.content ?? "").slice(0, 300)}${opTag}`);
+          }
+        } else {
+          lines.push(`\nBaton: no memories found for ${continue_from} in this room.`);
+        }
       }
 
       return {

@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createMcpHandler } from "agents/mcp";
 import { SupabaseClient } from "./lib/supabase.js";
 import { InboxTracker } from "./lib/inbox.js";
-import type { Env, EywaContext, RoomRow } from "./lib/types.js";
+import type { Env, EywaContext, MemoryRow, RoomRow } from "./lib/types.js";
 import { registerSessionTools } from "./tools/session.js";
 import { registerMemoryTools } from "./tools/memory.js";
 import { registerContextTools } from "./tools/context.js";
@@ -69,6 +69,7 @@ async function handleMcp(
 ): Promise<Response> {
   const roomSlug = url.searchParams.get("room");
   const baseAgent = url.searchParams.get("agent");
+  const baton = url.searchParams.get("baton"); // optional: agent name to load context from
 
   if (!roomSlug || !baseAgent) {
     return Response.json(
@@ -144,12 +145,20 @@ async function handleMcp(
       message_type: "resource",
       content: `Agent ${ctx.agent} connected to room ${ctx.roomName}`,
       token_count: 0,
-      metadata: { event: "agent_connected", room_slug: ctx.roomSlug, user: ctx.user },
+      metadata: { event: "agent_connected", room_slug: ctx.roomSlug, user: ctx.user, ...(baton ? { baton_from: baton } : {}) },
     });
   }
 
+  // Build instructions string with room context + baton (delivered at MCP init, no tool call needed)
+  let instructions: string;
+  try {
+    instructions = await buildInstructions(db, ctx, baton);
+  } catch {
+    instructions = `You are ${ctx.agent} in room /${ctx.roomSlug} (${ctx.roomName}).\nUser: ${ctx.user} | Session: ${ctx.sessionId}\n\nCall eywa_start to get room context.`;
+  }
+
   // Create MCP server and register all tools
-  const server = new McpServer({ name: "eywa", version: "1.0.0" });
+  const server = new McpServer({ name: "eywa", version: "1.0.0" }, { instructions });
 
   // Wrap server.tool to piggyback pending injections on every tool response.
   // This ensures agents see injections without explicitly calling eywa_inbox.
@@ -194,4 +203,171 @@ async function handleMcp(
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);
   return handler(request, env, execCtx);
+}
+
+/** Build MCP instructions string with room context + baton. Delivered at connection time, no tool call needed. */
+async function buildInstructions(
+  db: SupabaseClient,
+  ctx: EywaContext,
+  baton: string | null,
+): Promise<string> {
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+
+  const queries: Promise<MemoryRow[]>[] = [
+    // Active agents
+    db.select<MemoryRow>("memories", {
+      select: "agent,content,metadata,ts",
+      room_id: `eq.${ctx.roomId}`,
+      order: "ts.desc",
+      limit: "200",
+    }),
+    // Recent activity
+    db.select<MemoryRow>("memories", {
+      select: "agent,message_type,content,metadata,ts",
+      room_id: `eq.${ctx.roomId}`,
+      order: "ts.desc",
+      limit: "8",
+    }),
+    // Pending injections
+    db.select<MemoryRow>("memories", {
+      select: "id",
+      room_id: `eq.${ctx.roomId}`,
+      message_type: "eq.injection",
+      "metadata->>target_agent": `in.(${ctx.agent},${ctx.user},all)`,
+      limit: "50",
+    }),
+    // Knowledge count
+    db.select<MemoryRow>("memories", {
+      select: "id",
+      room_id: `eq.${ctx.roomId}`,
+      message_type: "eq.knowledge",
+      limit: "100",
+    }),
+    // Distress signals (unresolved, same user)
+    db.select<MemoryRow>("memories", {
+      select: "id,agent,content,metadata,ts",
+      room_id: `eq.${ctx.roomId}`,
+      "metadata->>event": "eq.distress",
+      "metadata->>resolved": "eq.false",
+      "metadata->>user": `eq.${ctx.user}`,
+      order: "ts.desc",
+      limit: "1",
+    }),
+    // Recent checkpoints (same user, last 2h)
+    db.select<MemoryRow>("memories", {
+      select: "id,agent,content,metadata,ts",
+      room_id: `eq.${ctx.roomId}`,
+      "metadata->>event": "eq.checkpoint",
+      "metadata->>user": `eq.${ctx.user}`,
+      ts: `gte.${twoHoursAgo}`,
+      order: "ts.desc",
+      limit: "1",
+    }),
+  ];
+
+  // Baton: load target agent's recent session
+  if (baton) {
+    queries.push(
+      db.select<MemoryRow>("memories", {
+        select: "message_type,content,metadata,ts",
+        room_id: `eq.${ctx.roomId}`,
+        agent: `eq.${baton}`,
+        order: "ts.desc",
+        limit: "20",
+      }),
+    );
+  }
+
+  const results = await Promise.all(queries);
+  const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows] = results;
+  const batonRows = baton ? results[6] : [];
+
+  // Build agent status map
+  const agents = new Map<string, { status: string; task: string; systems: Set<string> }>();
+  for (const row of agentRows) {
+    if (row.agent === ctx.agent) continue;
+    if (agents.has(row.agent)) {
+      const meta = (row.metadata ?? {}) as Record<string, string>;
+      if (meta.system) agents.get(row.agent)!.systems.add(meta.system);
+      continue;
+    }
+    const meta = (row.metadata ?? {}) as Record<string, string>;
+    const event = meta.event ?? "";
+    let status = "idle";
+    let task = (row.content ?? "").slice(0, 100);
+    if (event === "session_start") { status = "active"; task = meta.task || task; }
+    else if (event === "session_end" || event === "session_done") { status = "finished"; task = meta.summary || task; }
+    const systems = new Set<string>();
+    if (meta.system) systems.add(meta.system);
+    agents.set(row.agent, { status, task, systems });
+  }
+
+  // Compose instructions
+  const lines: string[] = [
+    `You are ${ctx.agent} in room /${ctx.roomSlug} (${ctx.roomName}).`,
+    `User: ${ctx.user} | Session: ${ctx.sessionId}`,
+  ];
+
+  // Agents
+  if (agents.size > 0) {
+    lines.push(`\nAgents (${agents.size}):`);
+    for (const [name, info] of agents) {
+      const sysStr = info.systems.size > 0 ? ` {${Array.from(info.systems).join(", ")}}` : "";
+      lines.push(`  ${name} [${info.status}] ${info.task}${sysStr}`);
+    }
+  }
+
+  // Recent activity
+  const recentLines: string[] = [];
+  for (const m of recentRows) {
+    if (m.agent === ctx.agent) continue;
+    const meta = (m.metadata ?? {}) as Record<string, string>;
+    const opTag = meta.system || meta.action
+      ? ` [${[meta.system, meta.action, meta.outcome].filter(Boolean).join(":")}]`
+      : "";
+    recentLines.push(`  ${m.agent} ${m.message_type}: ${(m.content ?? "").slice(0, 120)}${opTag}`);
+  }
+  if (recentLines.length > 0) {
+    lines.push(`\nRecent:`);
+    lines.push(...recentLines.slice(0, 5));
+  }
+
+  // Counts
+  const ic = injectionRows.length;
+  const kc = knowledgeRows.length;
+  if (ic > 0 || kc > 0) {
+    const parts: string[] = [];
+    if (ic > 0) parts.push(`Pending injections: ${ic}`);
+    if (kc > 0) parts.push(`Knowledge: ${kc}`);
+    lines.push(`\n${parts.join(" | ")}`);
+  }
+
+  // Recovery (read-only, don't resolve distress here)
+  if (distressRows.length > 0) {
+    const d = distressRows[0];
+    lines.push(`\n=== DISTRESS: ${d.agent} ran out of context at ${d.ts} ===`);
+    lines.push(d.content ?? "");
+    lines.push("Call eywa_start to claim recovery and continue their work.");
+  } else if (checkpointRows.length > 0) {
+    const cp = checkpointRows[0];
+    lines.push(`\n=== CHECKPOINT from ${cp.agent} at ${cp.ts} ===`);
+    lines.push(cp.content ?? "");
+  }
+
+  // Baton context
+  if (baton && batonRows.length > 0) {
+    lines.push(`\n=== Baton: ${baton} (${batonRows.length} items) ===`);
+    for (const m of [...batonRows].reverse()) {
+      const meta = (m.metadata ?? {}) as Record<string, string>;
+      const prefix = meta.event ? `[${meta.event}]` : `[${m.message_type}]`;
+      const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+      const opTag = opParts.length > 0 ? ` [${opParts.join(":")}]` : "";
+      lines.push(`${prefix}: ${(m.content ?? "").slice(0, 200)}${opTag}`);
+    }
+  } else if (baton) {
+    lines.push(`\nBaton: no memories found for ${baton} in this room.`);
+  }
+
+  lines.push("\nCall eywa_start to begin logging. Use eywa_log with system/action/outcome fields.");
+  return lines.join("\n");
 }
