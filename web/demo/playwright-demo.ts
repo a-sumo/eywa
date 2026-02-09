@@ -218,7 +218,7 @@ async function run() {
   await typeHuman(
     page,
     ".hub-inject-input",
-    "Focus on the Spectacles milestone. It's the last remaining blocker for the demo."
+    "Focus on the global insights network. It's the last remaining milestone for the demo."
   );
   await sleep(PAUSE.shortBeat);
 
