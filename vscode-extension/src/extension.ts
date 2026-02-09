@@ -9,8 +9,6 @@ import * as os from "os";
 import { EywaClient } from "./client";
 import { RealtimeManager, type MemoryPayload } from "./realtime";
 import { injectSelection } from "./injectCommand";
-import { KnowledgeCodeLensProvider, registerKnowledgeForFileCommand } from "./knowledgeLens";
-import { CourseCodeLensProvider } from "./courseAwareness";
 import { AgentDecorationManager } from "./agentDecorations";
 import { SessionTreeProvider } from "./sessionTree";
 import { PanelViewProvider } from "./panelView";
@@ -37,8 +35,6 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(statusBarItem);
 
   // Providers
-  const codeLensProvider = new KnowledgeCodeLensProvider(() => client);
-  const courseProvider = new CourseCodeLensProvider(() => client);
   const decorationManager = new AgentDecorationManager(() => client);
   const sessionTree = new SessionTreeProvider(() => client);
   const panelView = new PanelViewProvider(() => client);
@@ -88,15 +84,6 @@ export function activate(context: vscode.ExtensionContext) {
     const meta = mem.metadata ?? {};
     const event = meta.event as string | undefined;
 
-    if (event === "knowledge_stored" || mem.message_type === "knowledge") {
-      codeLensProvider.refreshCache();
-    }
-
-    // Update course awareness on destination or progress changes
-    if (event === "destination" || event === "progress") {
-      courseProvider.refresh();
-    }
-
     // Urgent injections get a native popup
     if (event === "context_injection") {
       const priority = (meta.priority as string) || "normal";
@@ -129,7 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   // Initialize client
-  initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
+  initClient(decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
 
   if (!getConfig("room")) {
     showWelcome();
@@ -143,8 +130,6 @@ export function activate(context: vscode.ExtensionContext) {
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.window.registerTreeDataProvider("eywaSessions", sessionTree),
-    vscode.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider),
-    vscode.languages.registerCodeLensProvider({ scheme: "file" }, courseProvider),
     // Agent decoration lifecycle
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (editor) decorationManager.updateDecorations(editor);
@@ -163,8 +148,6 @@ export function activate(context: vscode.ExtensionContext) {
   // Commands
   context.subscriptions.push(
     vscode.commands.registerCommand("eywa.refreshAgents", () => {
-      codeLensProvider.refreshCache();
-      courseProvider.refresh();
       decorationManager.seed();
       sessionTree.seed();
       panelView.seed();
@@ -339,13 +322,11 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-  registerKnowledgeForFileCommand(context);
-
   // Config changes
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
-        initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
+        initClient(decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
         liveProvider.setRoom(getConfig("room"));
         updateStatusBar();
       }
@@ -377,8 +358,6 @@ function updateStatusBar() {
 }
 
 function initClient(
-  codeLensProvider: KnowledgeCodeLensProvider,
-  courseProvider: CourseCodeLensProvider,
   decorationManager: AgentDecorationManager,
   sessionTree: SessionTreeProvider,
   panelView: PanelViewProvider,
@@ -396,8 +375,6 @@ function initClient(
   if (url && key && room) {
     client = new EywaClient(url, key, room);
     updateStatusBar();
-    codeLensProvider.refreshCache();
-    courseProvider.refresh();
     decorationManager.seed();
     sessionTree.seed();
     panelView.seed();
