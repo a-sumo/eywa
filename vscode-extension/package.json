@@ -87,10 +87,6 @@
         "title": "Eywa: Show Status"
       },
       {
-        "command": "eywa.showKnowledgeForFile",
-        "title": "Eywa: Show Knowledge for File"
-      },
-      {
         "command": "eywa.toggleTabTitles",
         "title": "Eywa: Toggle Agent Tab Titles",
         "icon": "$(terminal)"
