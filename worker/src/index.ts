@@ -3,7 +3,8 @@ import { createMcpHandler } from "agents/mcp";
 import { SupabaseClient } from "./lib/supabase.js";
 import { InboxTracker } from "./lib/inbox.js";
 import { ContextPressureMonitor } from "./lib/pressure.js";
-import type { Env, EywaContext, MemoryRow, RoomRow } from "./lib/types.js";
+import type { Env, EywaContext, MemoryRow, GlobalInsightRow, RoomRow } from "./lib/types.js";
+import { matchKnowledge, matchInsights, milestonesToQuery } from "./lib/relevance.js";
 import { registerSessionTools } from "./tools/session.js";
 import { registerMemoryTools } from "./tools/memory.js";
 import { registerContextTools } from "./tools/context.js";
@@ -239,12 +240,13 @@ async function buildInstructions(
       "metadata->>target_agent": `in.(${ctx.agent},${ctx.user},all)`,
       limit: "50",
     }),
-    // Knowledge count
+    // Knowledge entries with full content (for proactive surfacing)
     db.select<MemoryRow>("memories", {
-      select: "id",
+      select: "id,agent,content,metadata,ts",
       room_id: `eq.${ctx.roomId}`,
       message_type: "eq.knowledge",
-      limit: "100",
+      order: "ts.desc",
+      limit: "50",
     }),
     // Distress signals (unresolved, same user)
     db.select<MemoryRow>("memories", {
@@ -286,6 +288,13 @@ async function buildInstructions(
     }),
   ];
 
+  // Global insights (separate query, different return type)
+  const insightsPromise = db.select<GlobalInsightRow>("global_insights", {
+    select: "id,insight,domain_tags,source_hash,upvotes,ts",
+    order: "ts.desc",
+    limit: "50",
+  });
+
   // Baton: load target agent's recent session
   if (baton) {
     queries.push(
@@ -299,7 +308,7 @@ async function buildInstructions(
     );
   }
 
-  const results = await Promise.all(queries);
+  const [results, insightRows] = await Promise.all([Promise.all(queries), insightsPromise]);
   const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows, destRows, claimRows] = results;
   const batonRows = baton ? results[8] : [];
 
@@ -391,6 +400,24 @@ async function buildInstructions(
       }
     }
     if (dMeta.notes) lines.push(`Notes: ${dMeta.notes as string}`);
+
+    // Proactive guidance: surface knowledge relevant to remaining milestones
+    try {
+      const milestoneQuery = milestonesToQuery(ms, prog);
+      if (milestoneQuery) {
+        const relevantK = matchKnowledge(milestoneQuery, knowledgeRows, 3, 0.2);
+        const relevantI = matchInsights(milestoneQuery, insightRows ?? [], 2, 0.2);
+        const relevant = [...relevantK, ...relevantI];
+        if (relevant.length > 0) {
+          lines.push("\nGuidance for remaining milestones:");
+          for (const entry of relevant) {
+            lines.push(`  ${entry.text.slice(0, 200)}`);
+          }
+        }
+      }
+    } catch {
+      // Don't break instructions if relevance matching fails
+    }
   }
 
   // Active claims (work dedup)

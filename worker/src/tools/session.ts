@@ -1,8 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
-import type { EywaContext, MemoryRow } from "../lib/types.js";
+import type { EywaContext, MemoryRow, GlobalInsightRow } from "../lib/types.js";
 import { getActiveClaims, detectConflicts } from "./claim.js";
+import { matchKnowledge, matchInsights } from "../lib/relevance.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
@@ -72,7 +73,7 @@ export function registerSessionTools(
       });
 
       // Auto-context: fetch room snapshot so agent lands aware
-      const [agentRows, recentRows, injectionRows, knowledgeRows, destRows] = await Promise.all([
+      const [agentRows, recentRows, injectionRows, knowledgeRows, destRows, insightRows] = await Promise.all([
         // Active agents (skip connection noise)
         db.select<MemoryRow>("memories", {
           select: "agent,content,metadata,ts",
@@ -97,12 +98,13 @@ export function registerSessionTools(
           "metadata->>target_agent": `in.(${ctx.agent},${ctx.user},all)`,
           limit: "50",
         }),
-        // Knowledge count
+        // Knowledge entries with full content (for proactive surfacing)
         db.select<MemoryRow>("memories", {
-          select: "id",
+          select: "id,agent,content,metadata,ts",
           room_id: `eq.${ctx.roomId}`,
           message_type: "eq.knowledge",
-          limit: "100",
+          order: "ts.desc",
+          limit: "50",
         }),
         // Current destination
         db.select<MemoryRow>("memories", {
@@ -112,6 +114,12 @@ export function registerSessionTools(
           "metadata->>event": "eq.destination",
           order: "ts.desc",
           limit: "1",
+        }),
+        // Global insights (for proactive surfacing)
+        db.select<GlobalInsightRow>("global_insights", {
+          select: "id,insight,domain_tags,source_hash,upvotes,ts",
+          order: "ts.desc",
+          limit: "50",
         }),
       ]);
 
@@ -201,6 +209,22 @@ export function registerSessionTools(
       }
 
       lines.push("\nUse eywa_log with system/action/outcome fields to tag your operations.");
+
+      // Proactive knowledge surfacing: match task_description against knowledge + insights
+      try {
+        const relevantKnowledge = matchKnowledge(task_description, knowledgeRows, 3, 0.2);
+        const relevantInsights = matchInsights(task_description, insightRows ?? [], 2, 0.2);
+        const relevant = [...relevantKnowledge, ...relevantInsights];
+        if (relevant.length > 0) {
+          lines.push("\n=== Relevant Guidance ===");
+          lines.push("Knowledge matched to your task description:\n");
+          for (const entry of relevant) {
+            lines.push(`  ${entry.text}\n  -- ${entry.source}`);
+          }
+        }
+      } catch {
+        // Don't break session start if relevance matching fails
+      }
 
       // Auto-recovery: check for unresolved distress signals or recent checkpoints from same user
       let recoveryBlock = "";
