@@ -11,13 +11,18 @@ MCP Server: https://mcp.eywa-ai.dev/mcp
 
 When every team member controls AI agents, small misalignments between people get amplified at machine speed. Eywa gives the team visibility across every agent session so the humans know what to sync on.
 
-- Thread Tree: live view of what every person's agents are doing. Filter by teammate, status, or file.
-- Cross-Session Links: connect decisions and context across agent boundaries with reference, inject, or fork links.
-- Context Injection: push decisions or corrections into a teammate's agent mid-session. They see it on their next tool call.
-- Knowledge Base: persistent team memory that survives across sessions. Architecture decisions, conventions, gotchas.
-- VS Code Extension: see what your teammates' agents are doing without leaving your editor. Activity feed, inject shortcuts, CodeLens.
-- Discord Integration: team sync from Discord. See what agents are doing, inject context, share knowledge.
-- Timeline: rewind, fork, and merge agent session timelines.
+- Destination & Progress: set a target state for your team, define milestones, and track completion as agents ship.
+- Live Agent Map: see what every agent across your team is working on in real time with status, systems, and progress.
+- Context Injection: push decisions or corrections into any agent mid-session. They see it on their next tool call.
+- Team Knowledge: persistent memory that survives across all sessions. Architecture decisions, conventions, gotchas.
+- Timeline & Branching: git-like version control for agent work. Rewind, fork, cherry-pick, merge.
+- Global Insights Network: publish anonymized patterns, query cross-room intelligence and lane recommendations.
+- Context Recovery: checkpoint progress, send distress signals, auto-recover in new sessions.
+- Work Claiming: agents declare scope to prevent duplicate effort. Claims visible to all agents.
+- Gemini Steering: built-in chat with tools for querying agent status, detecting patterns, and steering the team.
+- VS Code Extension: agent activity panel next to terminals, click-to-inspect agents, inject context from editor.
+- Discord Integration: 14 slash commands for team steering from chat.
+- CLI: zero-auth room setup, status, inject, and log commands via npx eywa-ai.
 
 ## Quick Start
 
@@ -100,6 +105,24 @@ Eywa works with any MCP-compatible AI coding agent:
 - `eywa_links` - list existing links
 - `eywa_unlink` - remove a link
 - `eywa_fetch` - fetch a specific memory by ID
+
+### Destination & Progress
+- `eywa_destination` - set, update, or view the room's target state (point B) with milestones and completion tracking
+- `eywa_progress` - report task completion percentage and current phase (working/blocked/reviewing/testing/deploying)
+
+### Recovery
+- `eywa_checkpoint` - save working state so another session can pick up if this one dies
+- `eywa_distress` - signal that context is nearly exhausted, saves state and broadcasts urgent alert
+- `eywa_recover` - check for unresolved distress signals or checkpoints from previous sessions
+
+### Work Claiming
+- `eywa_claim` - declare what scope and files you're working on to prevent duplicate effort
+- `eywa_unclaim` - release your current work claim
+
+### Network
+- `eywa_publish_insight` - publish an anonymized insight to the global knowledge network
+- `eywa_query_network` - search the global network for insights from other rooms
+- `eywa_route` - get lane recommendations for a task based on cross-room intelligence
 
 ### Messaging
 - `eywa_msg` - send a message to teammates via Eywa

@@ -137,10 +137,12 @@ export function Landing() {
           </a>
           <nav className="landing-nav">
             <a href="#features">Features</a>
+            <a href="/docs">Docs</a>
             <a href="#pricing">Pricing</a>
             <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer">Contact</a>
           </nav>
           <div className="landing-header-actions">
+            <a href="/docs" className="landing-nav-link">Docs</a>
             <a href="/r/demo" className="landing-nav-link">Try Demo</a>
             <button
               className="btn-landing-primary"
@@ -170,6 +172,7 @@ export function Landing() {
           ×
         </button>
         <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
+        <a href="/docs" onClick={() => setMenuOpen(false)}>Docs</a>
         <a href="#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
         <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Contact</a>
         <a href="/r/demo" onClick={() => setMenuOpen(false)}>Try Demo</a>
@@ -651,7 +654,8 @@ export function Landing() {
             </div>
             <div className="landing-footer-col">
               <h4>Resources</h4>
-              <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer">Documentation</a>
+              <a href="/docs">Documentation</a>
+              <a href="/llms.txt" target="_blank" rel="noopener noreferrer">LLM Docs (llms.txt)</a>
               <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer">GitHub</a>
               <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer">Discord</a>
             </div>
