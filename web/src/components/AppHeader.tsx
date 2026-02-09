@@ -4,7 +4,7 @@ import { useRoom } from "../hooks/useRoom";
 
 export function AppHeader() {
   const location = useLocation();
-  const { createRoom, createDemoRoom, creating } = useRoom();
+  const { createDemoRoom, creating } = useRoom();
 
   const isDocs = location.pathname.startsWith("/docs");
   const isRoom = location.pathname.startsWith("/r/");
@@ -43,13 +43,9 @@ export function AppHeader() {
               >
                 Try Demo
               </button>
-              <button
-                className="global-header-cta"
-                onClick={() => createRoom()}
-                disabled={creating}
-              >
-                {creating ? "Creating..." : "Get Started"}
-              </button>
+              <Link to="/docs" className="global-header-cta">
+                Get Started
+              </Link>
             </>
           )}
         </div>

@@ -587,7 +587,7 @@ export function Landing() {
               <EywaLogo size={32} />
               <span>Eywa</span>
             </div>
-            <p>Coordination layer for human + AI teams</p>
+            <p>by <a href="https://curvilinear.space" target="_blank" rel="noopener noreferrer">Curvilinear</a></p>
           </div>
           <div className="landing-footer-links">
             <div className="landing-footer-col">
@@ -606,8 +606,8 @@ export function Landing() {
             </div>
             <div className="landing-footer-col">
               <h4>Company</h4>
-              <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">Contact</a>
-              <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">Support</a>
+              <a href="https://curvilinear.space/about" target="_blank" rel="noopener noreferrer">About</a>
+              <a href="https://curvilinear.space/contact" target="_blank" rel="noopener noreferrer">Contact</a>
             </div>
           </div>
           <div className="landing-footer-social">
@@ -620,7 +620,7 @@ export function Landing() {
           </div>
         </div>
         <div className="landing-footer-bottom">
-          <p>© 2026 Eywa. Built for teams that run AI.</p>
+          <p>© 2026 <a href="https://curvilinear.space" target="_blank" rel="noopener noreferrer">Curvilinear</a></p>
           <a
             href="https://gemini.google/us/about"
             target="_blank"

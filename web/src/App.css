@@ -2073,6 +2073,18 @@ body {
   text-align: center;
 }
 
+.landing-footer-bottom a,
+.landing-footer-brand a {
+  color: rgba(240, 240, 245, 0.5);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.landing-footer-bottom a:hover,
+.landing-footer-brand a:hover {
+  color: rgba(240, 240, 245, 0.8);
+}
+
 /* Powered by Gemini badge */
 .powered-by-gemini {
   display: inline-flex;
