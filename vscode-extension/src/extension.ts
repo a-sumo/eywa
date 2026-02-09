@@ -10,6 +10,7 @@ import { EywaClient } from "./client";
 import { RealtimeManager, type MemoryPayload } from "./realtime";
 import { injectSelection } from "./injectCommand";
 import { KnowledgeCodeLensProvider, registerKnowledgeForFileCommand } from "./knowledgeLens";
+import { CourseCodeLensProvider } from "./courseAwareness";
 import { startLoginFlow } from "./authServer";
 import { LiveViewProvider } from "./liveView";
 import type { AttentionItem } from "./client";
@@ -34,6 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Providers
   const codeLensProvider = new KnowledgeCodeLensProvider(() => client);
+  const courseProvider = new CourseCodeLensProvider(() => client);
   const liveProvider = new LiveViewProvider(() => client, getConfig("room"));
 
   // Track attention items for badge and notifications
@@ -84,6 +86,11 @@ export function activate(context: vscode.ExtensionContext) {
       codeLensProvider.refreshCache();
     }
 
+    // Update course awareness on destination or progress changes
+    if (event === "destination" || event === "progress") {
+      courseProvider.refresh();
+    }
+
     // Urgent injections get a native popup
     if (event === "context_injection") {
       const priority = (meta.priority as string) || "normal";
@@ -113,7 +120,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   // Initialize client
-  initClient(codeLensProvider, handleRealtimeEvent, context);
+  initClient(codeLensProvider, courseProvider, handleRealtimeEvent, context);
 
   if (!getConfig("room")) {
     showWelcome();
@@ -124,12 +131,14 @@ export function activate(context: vscode.ExtensionContext) {
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider),
+    vscode.languages.registerCodeLensProvider({ scheme: "file" }, courseProvider),
   );
 
   // Commands
   context.subscriptions.push(
     vscode.commands.registerCommand("eywa.refreshAgents", () => {
       codeLensProvider.refreshCache();
+      courseProvider.refresh();
       liveProvider.loadInitial();
     }),
 
@@ -307,7 +316,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
-        initClient(codeLensProvider, handleRealtimeEvent, context);
+        initClient(codeLensProvider, courseProvider, handleRealtimeEvent, context);
         liveProvider.setRoom(getConfig("room"));
         updateStatusBar();
       }
@@ -340,6 +349,7 @@ function updateStatusBar() {
 
 function initClient(
   codeLensProvider: KnowledgeCodeLensProvider,
+  courseProvider: CourseCodeLensProvider,
   onEvent: (mem: MemoryPayload) => void,
   context: vscode.ExtensionContext,
 ) {
@@ -355,6 +365,7 @@ function initClient(
     client = new EywaClient(url, key, room);
     updateStatusBar();
     codeLensProvider.refreshCache();
+    courseProvider.refresh();
 
     realtime = new RealtimeManager();
     const unsub = realtime.on(onEvent);
