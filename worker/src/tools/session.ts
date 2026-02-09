@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
 import type { EywaContext, MemoryRow } from "../lib/types.js";
+import { getActiveClaims, detectConflicts } from "./claim.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
@@ -280,6 +281,28 @@ export function registerSessionTools(
         } else {
           lines.push(`\nBaton: no memories found for ${continue_from} in this room.`);
         }
+      }
+
+      // Conflict detection: check active claims against this task
+      try {
+        const activeClaims = await getActiveClaims(db, ctx.roomId, ctx.agent);
+        if (activeClaims.length > 0) {
+          const conflicts = detectConflicts(task_description, [], activeClaims);
+          if (conflicts.length > 0) {
+            lines.push("\n=== CONFLICT WARNING ===");
+            lines.push(...conflicts);
+            lines.push("Call eywa_claim to declare your scope, or pick different work.");
+          } else {
+            // Show active claims for awareness even if no conflict
+            lines.push("\nActive claims (do not duplicate):");
+            for (const c of activeClaims) {
+              const short = c.agent.includes("/") ? c.agent.split("/").pop()! : c.agent;
+              lines.push(`  ${short}: ${c.scope}${c.files.length > 0 ? ` [${c.files.join(", ")}]` : ""}`);
+            }
+          }
+        }
+      } catch {
+        // Don't break session start if claim check fails
       }
 
       return {
