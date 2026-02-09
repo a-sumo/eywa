@@ -76,6 +76,10 @@ export class Tile {
     this.renderFn = fn;
   }
 
+  getData(): Record<string, unknown> {
+    return this.data;
+  }
+
   setData(data: Record<string, unknown>) {
     this.data = data;
   }
