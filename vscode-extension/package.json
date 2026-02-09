@@ -42,6 +42,11 @@
           "type": "webview",
           "id": "eywaLive",
           "name": "Eywa"
+        },
+        {
+          "type": "tree",
+          "id": "eywaSessions",
+          "name": "Sessions"
         }
       ],
       "eywaPanel": [
