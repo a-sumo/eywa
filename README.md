@@ -245,18 +245,33 @@ Eywa can project agent activity into the physical world through Raspberry Pi dis
 
 ### How it works
 
-A physical display (e-ink or phone) shows agent status and a tracking marker. Spectacles detect the marker, anchor an AR interface at that position, then stream live tile textures from the web dashboard.
+The web dashboard has a **Spectacles Broadcast** page at `/r/{room-slug}/spectacles` that livestreams room activity, destination progress, and Gemini chat to any Spectacles device running the Eywa lens. The glasses render this content as floating AR panels in world space.
 
 ```
-E-ink display                  Spectacles
-┌──────────────┐              ┌──────────────┐
-│ Agent status │◄─ Supabase ──│ AR tile UI   │
-│ Activity feed│              │ Hand tracking │
-│ [QR] [MARKER]│──── sees ───▶│ Pinch to tap │
-└──────────────┘              └──────────────┘
+Web Dashboard                  Spectacles
+┌──────────────────┐          ┌──────────────┐
+│ /r/demo/         │          │ AR panels    │
+│   spectacles     │─Realtime─│ Activity log │
+│ [Start Broadcast]│          │ Gemini chat  │
+│ Activity + Chat  │          │ Destination  │
+└──────────────────┘          └──────────────┘
 ```
 
-### Why two display types
+**No marker required.** The AR panel appears at a default position (65cm forward, 3cm below eye level) within 3 seconds. If a tracking marker is detected later, the panel repositions to the marker location.
+
+### Broadcasting to Spectacles
+
+1. Open the Eywa lens on Spectacles
+2. Navigate to `/r/{room-slug}/spectacles` in a browser
+3. Click "Start Broadcast"
+4. The AR panel appears in front of you automatically
+5. Optional: point at a tracking marker to anchor the panel to a surface
+
+The broadcast uses Supabase Realtime on channel `spectacles:{room}:{deviceId}`.
+
+### Physical displays (optional)
+
+A physical display (e-ink or phone) can show agent status alongside a tracking marker for Spectacles to anchor to.
 
 | | E-ink | TFT Touch |
 |---|---|---|
@@ -265,8 +280,6 @@ E-ink display                  Spectacles
 | **Role** | AR anchor + ambient status | Direct touch interaction |
 | **Interaction** | Through Spectacles (hand tracking) | Touch screen |
 | **Power** | Low (refreshes every 60s) | Continuous |
-
-The tracking marker is a fixed pattern shared across all rooms. It provides position. Spectacles' IMU provides orientation. A separate QR code encodes the room slug for joining.
 
 ### Setup
 
