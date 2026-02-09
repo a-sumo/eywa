@@ -101,7 +101,7 @@ Add to `~/.gemini/settings.json`:
 </details>
 
 <details>
-<summary><img src="https://cdn.simpleicons.org/codeium/white" width="16" height="16" /> <strong>Windsurf</strong></summary>
+<summary><img src="https://cdn.simpleicons.org/windsurf/white" width="16" height="16" /> <strong>Windsurf</strong></summary>
 
 Add to `~/.codeium/windsurf/mcp_config.json`:
 ```json
@@ -131,7 +131,7 @@ Add to `~/.codex/config.json`:
 </details>
 
 <details>
-<summary><strong>Cline (VS Code)</strong></summary>
+<summary><img src="https://cdn.simpleicons.org/visualstudiocode/white" width="16" height="16" /> <strong>Cline (VS Code)</strong></summary>
 
 Add to VS Code MCP settings:
 ```json

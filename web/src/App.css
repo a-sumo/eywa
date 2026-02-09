@@ -1004,6 +1004,51 @@ body {
   background: var(--bg-surface-hover);
 }
 
+/* Surfaces strip */
+.landing-surfaces-strip {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.landing-surface-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  transition: all var(--transition-normal);
+  min-width: 100px;
+}
+
+.landing-surface-item:hover {
+  border-color: var(--border-default);
+  background: var(--bg-surface-hover);
+}
+
+.landing-surface-item svg {
+  opacity: 0.7;
+  stroke: var(--aurora-cyan, #4eeaff);
+}
+
+.landing-surface-item:hover svg {
+  opacity: 1;
+}
+
+.landing-surface-item span {
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0.6;
+}
+
+.landing-surface-item:hover span {
+  opacity: 0.9;
+}
+
 .landing-feature-icon {
   width: 48px;
   height: 48px;
@@ -2950,7 +2995,7 @@ body {
   width: 100%;
 }
 
-/* Two-column layout: Gemini chat (left) + Dashboard (right) */
+/* Two-column layout: Dashboard (left) + Gemini chat (right) */
 .hub-two-col {
   display: flex;
   gap: 0;
@@ -2958,14 +3003,14 @@ body {
   overflow: hidden;
 }
 
-/* Left: Gemini chat panel */
+/* Right: Gemini chat + activity panel */
 .hub-chat-panel {
   width: 45%;
   min-width: 340px;
   max-width: 560px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.12);
 }
 
@@ -3003,9 +3048,17 @@ body {
 }
 
 .hub-chat-messages {
-  flex: 1;
+  flex: 2;
   overflow-y: auto;
   padding: 10px 14px;
+  min-height: 0;
+}
+
+.hub-chat-activity {
+  flex: 1;
+  overflow-y: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 0;
 }
 
 .hub-chat-messages::-webkit-scrollbar {
@@ -3039,7 +3092,7 @@ body {
   flex: 1;
 }
 
-/* Right: Dashboard content */
+/* Left: Dashboard content */
 .hub-dashboard {
   flex: 1;
   overflow-y: auto;
@@ -4770,8 +4823,8 @@ body {
     max-width: none;
     min-width: 0;
     height: 50vh;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .hub-dashboard {
@@ -6921,17 +6974,18 @@ body {
 }
 
 .session-graph-canvas {
-  overflow: auto;
-  max-height: calc(100vh - 160px);
+  overflow: hidden;
+  height: calc(100vh - 180px);
   border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-bg);
-  min-width: 400px;
   position: relative;
 }
 
 .session-graph-canvas svg {
   display: block;
+  width: 100%;
+  height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -7021,6 +7075,47 @@ body {
   color: var(--color-text-muted);
   font-size: 0.62rem;
   margin-top: 0.2rem;
+}
+
+.graph-tooltip-meta {
+  color: var(--color-text-secondary);
+  font-size: 0.65rem;
+  margin-top: 0.1rem;
+}
+
+.graph-tooltip-ops {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+
+.graph-tooltip-pill {
+  font-size: 0.6rem;
+  font-weight: 600;
+}
+
+/* Graph event type filter toolbar */
+.graph-type-filters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.graph-type-filter {
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.graph-type-filter:hover {
+  opacity: 0.85;
 }
 
 /* MCP Compatibility Section */
