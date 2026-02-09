@@ -412,41 +412,18 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   .ibtn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
   .ibtn svg { width: 14px; height: 14px; }
 
-  /* Agent strip */
-  .strip {
-    display: flex; gap: 2px; padding: 8px 10px;
-    overflow-x: auto; scrollbar-width: none;
+  /* Agent graph (horizontal timeline) */
+  .agent-graph {
     border-bottom: 1px solid var(--vscode-panel-border);
+    overflow: hidden;
   }
-  .strip::-webkit-scrollbar { display: none; }
-  .agent-chip {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 4px 6px; border-radius: 4px; min-width: 52px;
-    cursor: pointer;
-  }
-  .agent-chip:hover { background: var(--vscode-list-hoverBackground); }
-  .agent-chip.selected { background: var(--vscode-list-activeSelectionBackground); }
-  .agent-chip .av-wrap {
-    position: relative; width: 32px; height: 32px; margin-bottom: 3px;
-  }
-  .agent-chip .av-img {
-    width: 32px; height: 32px; border-radius: 50%; overflow: hidden;
-  }
-  .agent-chip .dot {
-    position: absolute; bottom: 0; right: 0;
-    width: 8px; height: 8px; border-radius: 50%;
-    border: 2px solid var(--vscode-sideBar-background, #1e1e1e);
-  }
-  .agent-chip.active .dot { background: #3fb950; }
-  .agent-chip.idle .dot { background: #d29922; }
-  .agent-chip.finished .dot { background: var(--vscode-disabledForeground); }
-  .agent-chip .name {
-    font-size: 9px; opacity: 0.7; max-width: 52px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    text-align: center;
-  }
-  .agent-chip.active .name { opacity: 1; font-weight: 600; }
-  .agent-chip.finished { opacity: 0.45; }
+  .agent-graph svg { display: block; width: 100%; }
+  .agent-graph .track-row { cursor: pointer; }
+  .agent-graph .track-bg { transition: opacity 0.12s ease-in-out; }
+  .agent-graph .track-row:hover .track-bg { opacity: 0.08 !important; }
+  .agent-graph .track-row.selected .track-bg { opacity: 0.12 !important; }
+  @keyframes pulse-dot { 0%,100% { opacity: 0.9; } 50% { opacity: 0.4; } }
+  .agent-graph .active-dot { animation: pulse-dot 2s ease-in-out infinite; }
 
   /* Activity feed */
   .feed-header {
@@ -654,6 +631,17 @@ function dismissAttn(agent) {
   vscode.postMessage({ type: 'attentionDismiss', agent: agent });
 }
 
+function graphClick(e) {
+  var el = e.target;
+  while (el) {
+    if (el.dataset && el.dataset.agent) {
+      selectAgent(el.dataset.agent);
+      return;
+    }
+    el = el.parentNode;
+  }
+}
+
 const LOGO = '<svg class="logo" viewBox="0 0 250 250" fill="none"><path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/><path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/><path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/><path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/><rect width="69.09" height="37.63" rx="18.81" transform="matrix(-0.682 -0.731 0.715 -0.7 165.13 184.31)"/><rect width="69.09" height="37.47" rx="18.73" transform="matrix(-0.682 0.731 -0.714 -0.7 182.38 88.9)"/><rect width="75.28" height="37.98" rx="18.99" transform="matrix(0.679 0.734 -0.717 0.697 95.87 64.43)"/><rect width="71.22" height="41.64" rx="20.82" transform="matrix(0.799 -0.601 0.583 0.813 55 149.83)"/></svg>';
 
 function render(data) {
@@ -800,24 +788,75 @@ function render(data) {
     + tendrils + bodyRects + eyeSvg
     + '</svg></div>';
 
-  // Agent strip
+  // Agent graph (horizontal timeline)
   if (agents.length > 0) {
-    html += '<div class="strip">';
-    for (const a of agents) {
-      const src = avatars[a.name] || '';
-      const ap = progressMap[a.name];
-      const progTitle = ap ? '\\n' + ap.percent + '% ' + (ap.status || '') : '';
-      const isSelected = selectedAgent === a.name;
-      html += '<div class="agent-chip ' + a.status + (isSelected ? ' selected' : '') + '" onclick="selectAgent(\\'' + esc(a.name).replace(/'/g, "\\\\'") + '\\')" title="' + esc(a.name) + '">'
-        + '<div class="av-wrap"><img class="av-img" src="' + src + '" alt="' + esc(shortName(a.name)) + '"/><span class="dot"></span></div>'
-        + '<div class="name">' + esc(shortName(a.name)) + '</div>';
-      if (ap) {
-        html += '<div style="width:100%;height:2px;background:rgba(128,128,128,0.15);border-radius:1px;overflow:hidden;margin-top:2px">'
-          + '<div style="width:' + ap.percent + '%;height:100%;background:' + (ap.status === 'blocked' ? '#d29922' : '#7946FF') + ';border-radius:1px"></div></div>';
-      }
-      html += '</div>';
+    const TH = 22, GP = 4, LW = 48, VW = 280, NR = 2.5;
+    const gh = GP * 2 + agents.length * TH;
+    const tw = VW - LW - GP;
+    // Time range from activity
+    let tMin = Infinity, tMax = -Infinity;
+    for (const ev of activity) {
+      const t = new Date(ev.ts).getTime();
+      if (t < tMin) tMin = t;
+      if (t > tMax) tMax = t;
     }
-    html += '</div>';
+    const nowT = Date.now();
+    if (!isFinite(tMin)) { tMin = nowT - 3600000; tMax = nowT; }
+    if (tMax <= tMin) tMax = tMin + 1;
+    const tRange = tMax - tMin;
+
+    const agentIdx = {};
+    for (let ai = 0; ai < agents.length; ai++) agentIdx[agents[ai].name] = ai;
+    const SC = { active: '#3fb950', idle: '#d29922', finished: '#8b949e' };
+
+    let gSvg = '<svg viewBox="0 0 ' + VW + ' ' + gh + '">';
+
+    for (let gi = 0; gi < agents.length; gi++) {
+      const ag = agents[gi];
+      const cy = GP + gi * TH + TH / 2;
+      const c = SC[ag.status] || '#8b949e';
+      const sel = selectedAgent === ag.name;
+      const asrc = avatars[ag.name] || '';
+      let sn = shortName(ag.name);
+      if (sn.length > 8) sn = sn.slice(0, 7) + '..';
+
+      gSvg += '<g class="track-row' + (sel ? ' selected' : '') + '" data-agent="' + esc(ag.name) + '">';
+      gSvg += '<rect class="track-bg" x="0" y="' + (GP + gi * TH) + '" width="' + VW + '" height="' + TH + '" fill="' + c + '" opacity="0" rx="2"/>';
+      gSvg += '<image href="' + asrc + '" x="' + GP + '" y="' + (cy - 6) + '" width="12" height="12" style="image-rendering:pixelated"/>';
+      gSvg += '<text x="' + (GP + 16) + '" y="' + cy + '" font-size="7.5" fill="var(--vscode-foreground)" dominant-baseline="middle" opacity="' + (ag.status === 'active' ? '0.9' : '0.4') + '" font-weight="' + (ag.status === 'active' ? '600' : '400') + '">' + esc(sn) + '</text>';
+
+      // Track line
+      const dash = ag.status === 'idle' ? ' stroke-dasharray="4 2"' : (ag.status === 'finished' ? ' stroke-dasharray="2 2"' : '');
+      const lop = ag.status === 'finished' ? '0.12' : (ag.status === 'idle' ? '0.2' : '0.35');
+      gSvg += '<line x1="' + LW + '" y1="' + cy + '" x2="' + (VW - GP) + '" y2="' + cy + '" stroke="' + c + '" stroke-width="1.5" opacity="' + lop + '"' + dash + '/>';
+
+      // Status dot at track start
+      gSvg += '<circle cx="' + LW + '" cy="' + cy + '" r="2.5" fill="' + c + '"' + (ag.status === 'active' ? ' class="active-dot"' : ' opacity="0.5"') + '/>';
+
+      // Progress bar
+      const gp = progressMap[ag.name];
+      if (gp && gp.percent > 0) {
+        const bw = tw * (gp.percent / 100);
+        gSvg += '<rect x="' + LW + '" y="' + (cy + 5) + '" width="' + bw.toFixed(1) + '" height="1.5" fill="' + (gp.status === 'blocked' ? '#d29922' : '#7946FF') + '" rx="0.75" opacity="0.5"/>';
+      }
+      gSvg += '</g>';
+    }
+
+    // Activity dots on tracks
+    for (const ev of activity) {
+      const tidx = agentIdx[ev.agent];
+      if (tidx === undefined) continue;
+      const dx = LW + ((new Date(ev.ts).getTime() - tMin) / tRange) * tw;
+      const dy = GP + tidx * TH + TH / 2;
+      const dc = TYPE_COLORS[ev.type] || '#888';
+      gSvg += '<circle cx="' + dx.toFixed(1) + '" cy="' + dy + '" r="' + NR + '" fill="' + dc + '" opacity="0.7"><title>' + esc(ev.type) + ': ' + esc(ev.content.slice(0, 60)) + '</title></circle>';
+    }
+
+    // Now marker
+    gSvg += '<line x1="' + (VW - GP) + '" y1="' + GP + '" x2="' + (VW - GP) + '" y2="' + (gh - GP) + '" stroke="var(--vscode-foreground)" stroke-width="0.5" opacity="0.1"/>';
+    gSvg += '</svg>';
+
+    html += '<div class="agent-graph" onclick="graphClick(event)">' + gSvg + '</div>';
 
     // Agent detail panel (expanded below strip when an agent is selected)
     if (selectedAgent) {
