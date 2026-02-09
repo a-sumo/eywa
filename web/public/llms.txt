@@ -4,7 +4,7 @@
 
 Website: https://eywa-ai.dev
 GitHub: https://github.com/a-sumo/eywa
-Discord: https://discord.gg/c7V2Ze58
+Discord: https://discord.gg/TyEUUnNm
 MCP Server: https://mcp.eywa-ai.dev/mcp
 
 ## What Eywa Does
@@ -173,4 +173,4 @@ Handoff between agents:
 - [Live Demo](https://eywa-ai.dev/r/demo)
 - [Pitch Deck](https://eywa-ai.dev/slides)
 - [GitHub Repository](https://github.com/a-sumo/eywa)
-- [Discord Community](https://discord.gg/c7V2Ze58)
+- [Discord Community](https://discord.gg/TyEUUnNm)

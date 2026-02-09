@@ -16,7 +16,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/eywa-ai"><img src="https://img.shields.io/npm/v/eywa-ai?color=6417EC&label=npx%20eywa-ai" alt="npm"></a>
   <a href="https://eywa-ai.dev"><img src="https://img.shields.io/badge/dashboard-live-15D1FF" alt="Dashboard"></a>
-  <a href="https://discord.gg/eywa-ai"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://discord.gg/TyEUUnNm"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
   <a href="https://github.com/a-sumo/eywa/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
@@ -408,7 +408,7 @@ cd discord-bot && npm install && npm start
 
 ## Community
 
-- **Discord**: [discord.gg/eywa-ai](https://discord.gg/eywa-ai) - get help, share what you're building
+- **Discord**: [discord.gg/TyEUUnNm](https://discord.gg/TyEUUnNm) - get help, share what you're building
 - **GitHub Issues**: [Bug reports and feature requests](https://github.com/a-sumo/eywa/issues)
 - **Live Dashboard**: [eywa-ai.dev](https://eywa-ai.dev)
 
