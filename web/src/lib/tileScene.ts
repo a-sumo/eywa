@@ -72,6 +72,7 @@ export class TileScene {
     "voice-transcript": 0.5,
     "hover-glow": 0.3,
     "mascot": 0.7,
+    "agent-map": 0.75,
   };
 
   /**

@@ -19,6 +19,16 @@ export interface AgentInfo {
   memoryCount: number;
 }
 
+export interface MapAgentInfo {
+  name: string;
+  isActive: boolean;
+  lastTs: string;
+  memoryCount: number;
+  systems: string[];
+  opCount: number;
+  curvature: number;
+}
+
 export interface ContextItem {
   memoryId: string;
   agent: string;
@@ -1254,6 +1264,367 @@ export function computeLayout(params: {
 }
 
 /**
+ * Compute agent positions for the spacetime map.
+ * Simple force-directed: agents orbit the center, cluster by shared systems.
+ * Returns pixel positions within the map canvas.
+ */
+function computeAgentPositions(
+  agents: MapAgentInfo[],
+  mapW: number,
+  mapH: number,
+): Array<{ x: number; y: number }> {
+  if (agents.length === 0) return [];
+  const cx = mapW / 2;
+  const cy = mapH / 2;
+  const orbitR = Math.min(mapW, mapH) * 0.34;
+
+  // Initial circular placement
+  const positions = agents.map((_, i) => {
+    const angle = -Math.PI / 2 + (i / agents.length) * Math.PI * 2;
+    return { x: cx + Math.cos(angle) * orbitR, y: cy + Math.sin(angle) * orbitR };
+  });
+
+  // Simple force iterations: shared systems attract, all repel
+  for (let iter = 0; iter < 30; iter++) {
+    for (let i = 0; i < agents.length; i++) {
+      let fx = 0, fy = 0;
+
+      // Attract to orbit ring (stay near orbitR from center)
+      const dx = positions[i].x - cx;
+      const dy = positions[i].y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+        const pullStrength = (dist - orbitR) * 0.05;
+        fx -= (dx / dist) * pullStrength;
+        fy -= (dy / dist) * pullStrength;
+      }
+
+      // Repel from other agents
+      for (let j = 0; j < agents.length; j++) {
+        if (i === j) continue;
+        const ddx = positions[i].x - positions[j].x;
+        const ddy = positions[i].y - positions[j].y;
+        const dd = Math.sqrt(ddx * ddx + ddy * ddy);
+        if (dd < 1) continue;
+        const repel = 200 / (dd * dd);
+        fx += (ddx / dd) * repel;
+        fy += (ddy / dd) * repel;
+      }
+
+      // Attract to agents with shared systems
+      for (let j = 0; j < agents.length; j++) {
+        if (i === j) continue;
+        const shared = agents[i].systems.filter(s => agents[j].systems.includes(s)).length;
+        if (shared > 0) {
+          const ddx = positions[j].x - positions[i].x;
+          const ddy = positions[j].y - positions[i].y;
+          const dd = Math.sqrt(ddx * ddx + ddy * ddy);
+          if (dd < 1) continue;
+          const attract = shared * 0.5;
+          fx += (ddx / dd) * attract;
+          fy += (ddy / dd) * attract;
+        }
+      }
+
+      positions[i].x += fx;
+      positions[i].y += fy;
+    }
+  }
+
+  // Clamp to canvas bounds with margin
+  const margin = 40;
+  for (const p of positions) {
+    p.x = Math.max(margin, Math.min(mapW - margin, p.x));
+    p.y = Math.max(margin, Math.min(mapH - margin, p.y));
+  }
+
+  return positions;
+}
+
+/**
+ * Build edge list for the spacetime map.
+ * Spawn edges (parent-child), shared system edges.
+ */
+function computeMapEdges(
+  agents: MapAgentInfo[],
+): Array<{ from: number; to: number; type: string }> {
+  const edges: Array<{ from: number; to: number; type: string }> = [];
+
+  for (let i = 0; i < agents.length; i++) {
+    for (let j = i + 1; j < agents.length; j++) {
+      const shared = agents[i].systems.filter(s => agents[j].systems.includes(s));
+      if (shared.length > 0) {
+        edges.push({ from: i, to: j, type: "system" });
+      }
+    }
+  }
+
+  // Spawn edges: agents whose names share a base (e.g. armand/foo and armand/bar)
+  // are in the same "swarm" - connect them if they share systems
+  // (spawn edges are already captured by system edges above)
+
+  return edges;
+}
+
+/**
+ * Compute tile set for the 2D spacetime navigation map.
+ * Alcubierre-warped grid, agents as curvature sources, flowing spacetime.
+ */
+export function computeMapLayout(params: {
+  agents: MapAgentInfo[];
+  destination: string;
+  progress: number;
+  milestones: Array<{ text: string; done: boolean }>;
+  chatMessages: ChatMessage[];
+  chatLoading: boolean;
+  chatError: string | null;
+  isListening: boolean;
+  voiceTranscript: string;
+  room: string;
+  channelReady: boolean;
+  deviceId: string;
+  flowOffset: number;
+}): { tiles: TileDescriptor[]; groups: GroupLayout[] } {
+  const {
+    agents, destination, progress, milestones,
+    chatMessages, chatLoading, chatError,
+    isListening, voiceTranscript, room,
+    channelReady, deviceId, flowOffset,
+  } = params;
+
+  const tiles: TileDescriptor[] = [];
+  const groups: GroupLayout[] = [];
+  const layer: TileLayer = 0;
+
+  const MAP_W = 640;
+  const MAP_H = 480;
+
+  // Compute agent positions (force-directed, clusters by shared systems)
+  const positions = computeAgentPositions(agents, MAP_W, MAP_H);
+
+  // Compute edges (shared systems, spawn connections)
+  const edges = computeMapEdges(agents);
+
+  // --- Main map tile (large, center) ---
+  tiles.push({
+    id: "agent-map",
+    type: "agent-map",
+    x: 0,
+    y: 2,
+    z: 0.5,
+    w: MAP_W,
+    h: MAP_H,
+    scale: 1,
+    layer,
+    interactive: false,
+    draggable: false,
+    visible: true,
+    data: {
+      agents: agents.map((a, i) => ({
+        name: a.name,
+        isActive: a.isActive,
+        systems: a.systems,
+        opCount: a.opCount,
+        curvature: a.curvature,
+        x: positions[i]?.x ?? MAP_W / 2,
+        y: positions[i]?.y ?? MAP_H / 2,
+      })),
+      edges,
+      destination,
+      progress,
+      milestones: milestones.map(m => ({ text: m.text, done: m.done })),
+      flowOffset,
+      room,
+    },
+  });
+
+  // --- Status text (top, above map) ---
+  const statusY = 2 + MAP_H / (2 * PIXELS_PER_CM) + 1.5;
+
+  const statusLine = channelReady
+    ? `LIVE | /${room} | ${deviceId}`
+    : `LOCAL | /${room}`;
+
+  const statusTile = textTile({
+    id: "map-status",
+    text: statusLine,
+    fontPx: 9,
+    fontWeight: "bold",
+    color: channelReady ? "#4ade80" : "#8b949e",
+    bg: "#050510",
+    align: "center",
+    x: 0,
+    y: statusY,
+    layer,
+  });
+  tiles.push(statusTile);
+
+  // --- Mascot (top-right of map) ---
+  tiles.push({
+    id: "mascot",
+    type: "mascot",
+    x: MAP_W / (2 * PIXELS_PER_CM) + 1,
+    y: statusY,
+    z: 0.6,
+    w: 64,
+    h: 64,
+    scale: 1,
+    layer,
+    interactive: false,
+    draggable: false,
+    visible: true,
+    data: { mood: "okay", time: 0, blinking: false, bg: "#050510" },
+  });
+
+  // --- Chat / Gemini response area (below map) ---
+  const chatBaseY = 2 - MAP_H / (2 * PIXELS_PER_CM) - 1.5;
+
+  if (chatLoading) {
+    tiles.push({
+      id: "chat-loading",
+      type: "chat-loading",
+      x: 0,
+      y: chatBaseY,
+      z: 0.6,
+      ...SIZES.chatLoading,
+      scale: 1,
+      layer,
+      interactive: false,
+      draggable: false,
+      visible: true,
+      data: { dotPhase: Math.floor(Date.now() / 400) },
+    });
+  } else if (chatMessages.length > 0) {
+    // Show last Gemini response
+    const lastMsg = chatMessages[chatMessages.length - 1];
+    const bubbleWpx = 320;
+    const bubbleHpx = 60;
+    const isUser = lastMsg.role === "user";
+    const roleColor = isUser ? "#15D1FF" : "#e879f9";
+    const groupId = `g-chat-last`;
+
+    groups.push({ id: groupId, x: 0, y: chatBaseY, z: 0.7, zone: "chat" });
+
+    tiles.push({
+      id: `chat-last`,
+      type: "chat-bg",
+      group: groupId,
+      x: 0,
+      y: 0,
+      z: 0,
+      w: bubbleWpx,
+      h: bubbleHpx,
+      scale: 1,
+      layer,
+      interactive: false,
+      draggable: false,
+      visible: true,
+      data: { isUser },
+    });
+
+    const roleTile = textTile({
+      id: `chat-last-role`,
+      text: isUser ? "You" : "Gemini",
+      fontPx: CHAT_ROLE_PX,
+      fontWeight: "bold",
+      color: roleColor,
+      bg: isUser ? "#1a2a3a" : "#1a1a2e",
+      x: 0,
+      y: 0,
+      layer,
+    });
+    const rolePos = placeInCard({
+      cardX: 0, cardY: 0, cardWpx: bubbleWpx, cardHpx: bubbleHpx,
+      leftPx: 8, topPx: 6,
+      tileWpx: roleTile.w, tileHpx: roleTile.h,
+    });
+    roleTile.x = rolePos.x;
+    roleTile.y = rolePos.y;
+    roleTile.z = 0.04;
+    roleTile.group = groupId;
+    tiles.push(roleTile);
+
+    const bodyTile = textBlockTile({
+      id: `chat-last-body`,
+      text: lastMsg.content,
+      fontPx: CHAT_BODY_PX,
+      fontWeight: "normal",
+      color: "#e6edf3",
+      bg: isUser ? "#1a2a3a" : "#1a1a2e",
+      maxWidthPx: bubbleWpx - 16,
+      lineHeightPx: 12,
+      maxLines: 3,
+      x: 0,
+      y: 0,
+      layer,
+    });
+    const bodyPos = placeInCard({
+      cardX: 0, cardY: 0, cardWpx: bubbleWpx, cardHpx: bubbleHpx,
+      leftPx: 8, topPx: 20,
+      tileWpx: bodyTile.w, tileHpx: bodyTile.h,
+    });
+    bodyTile.x = bodyPos.x;
+    bodyTile.y = bodyPos.y;
+    bodyTile.z = 0.04;
+    bodyTile.group = groupId;
+    tiles.push(bodyTile);
+  }
+
+  // --- Voice indicators ---
+  if (isListening) {
+    tiles.push({
+      id: "mic",
+      type: "mic-indicator",
+      x: MAP_W / (2 * PIXELS_PER_CM) - 2,
+      y: chatBaseY,
+      z: 0.8,
+      ...SIZES.mic,
+      scale: 1,
+      layer,
+      interactive: false,
+      draggable: false,
+      visible: true,
+      data: { isListening },
+    });
+
+    if (voiceTranscript) {
+      tiles.push({
+        id: "voice-transcript",
+        type: "voice-transcript",
+        x: 0,
+        y: chatBaseY - 2,
+        z: 0.8,
+        ...SIZES.transcript,
+        scale: 1,
+        layer,
+        interactive: false,
+        draggable: false,
+        visible: true,
+        data: { transcript: voiceTranscript },
+      });
+    }
+  }
+
+  // --- Hover glow (always exists, hidden by default) ---
+  tiles.push({
+    id: "hover-glow",
+    type: "hover-glow",
+    x: -100,
+    y: -100,
+    z: 1.5,
+    ...SIZES.hoverGlow,
+    scale: 1,
+    layer: 1,
+    interactive: false,
+    draggable: false,
+    visible: false,
+    data: {},
+  });
+
+  return { tiles, groups };
+}
+
+/**
  * Build a content hash for a tile descriptor.
  * Used for dirty tracking - if hash changes, tile needs re-render.
  */
@@ -1296,6 +1667,9 @@ export function tileHash(desc: TileDescriptor): string {
       return `${desc.data.transcript}`;
     case "ctx-header":
       return `ctx-${desc.data.count}`;
+    case "agent-map":
+      // Update every ~500ms (flowOffset changes continuously, throttle hash)
+      return `map-${Math.floor((desc.data.flowOffset as number) / 4)}|${(desc.data.agents as unknown[])?.length}`;
     case "panel-bg":
       return "bg"; // never changes
     case "mascot":

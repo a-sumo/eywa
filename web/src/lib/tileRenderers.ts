@@ -666,6 +666,407 @@ export const renderMascot: RenderFn = (ctx, w, h, data) => {
   }
 };
 
+// --- Spacetime Map: Alcubierre-warped grid with agents as curvature sources ---
+// Adapted from Curvilinear WarpGrid for dark aurora theme.
+// Agents bend the grid. Destination pulls everything toward center.
+// Sub-agent spawning = spanning tree branches. Flowing dashes scroll spacetime.
+//
+// data: {
+//   agents: Array<{ name, isActive, systems, opCount, curvature, x, y, parentIdx? }>,
+//   edges: Array<{ from, to, type }>,
+//   destination: string,
+//   progress: number (0-100),
+//   milestones: Array<{ text, done }>,
+//   flowOffset: number (continuous, advances each frame),
+//   room: string,
+// }
+
+// Alcubierre shape function (from Curvilinear)
+function alcubierre(r: number, R: number, sig: number): number {
+  const denom = 2 * Math.tanh(sig * R);
+  if (denom < 0.001) return 0;
+  return (Math.tanh(sig * (r + R)) - Math.tanh(sig * (r - R))) / denom;
+}
+
+// Reusable point buffers for smooth curve drawing
+const _ptsX = new Float64Array(512);
+const _ptsY = new Float64Array(512);
+
+function drawSmooth(
+  ctx: OffscreenCanvasRenderingContext2D,
+  n: number,
+) {
+  if (n < 2) return;
+  ctx.beginPath();
+  ctx.moveTo(_ptsX[0], _ptsY[0]);
+  if (n === 2) {
+    ctx.lineTo(_ptsX[1], _ptsY[1]);
+  } else {
+    for (let i = 1; i < n - 1; i++) {
+      const xc = (_ptsX[i] + _ptsX[i + 1]) * 0.5;
+      const yc = (_ptsY[i] + _ptsY[i + 1]) * 0.5;
+      ctx.quadraticCurveTo(_ptsX[i], _ptsY[i], xc, yc);
+    }
+    ctx.lineTo(_ptsX[n - 1], _ptsY[n - 1]);
+  }
+  ctx.stroke();
+}
+
+export const renderAgentMap: RenderFn = (ctx, w, h, data) => {
+  const agents = (data.agents as Array<Record<string, unknown>>) || [];
+  const edges = (data.edges as Array<Record<string, unknown>>) || [];
+  const destination = (data.destination as string) || "";
+  const progress = (data.progress as number) || 0;
+  const milestones = (data.milestones as Array<Record<string, unknown>>) || [];
+  const flowOffset = (data.flowOffset as number) || 0;
+  const room = (data.room as string) || "";
+
+  const cw = w;
+  const ch = h;
+  const cx = cw / 2;
+  const cy = ch / 2;
+
+  // --- Background ---
+  ctx.fillStyle = "#050510";
+  ctx.fillRect(0, 0, cw, ch);
+
+  // --- Build warp sources from agents + destination ---
+  interface WarpSource { x: number; y: number; strength: number; bubbleR: number }
+  const sources: WarpSource[] = [];
+
+  // Destination: strongest warp source at center
+  const destBubbleR = Math.min(cw, ch) * 0.12;
+  sources.push({ x: cx, y: cy, strength: 0.8, bubbleR: destBubbleR });
+
+  // Agents as warp sources (strength proportional to curvature)
+  for (const agent of agents) {
+    const ax = (agent.x as number) ?? cx;
+    const ay = (agent.y as number) ?? cy;
+    const kappa = Math.abs((agent.curvature as number) || 0);
+    const isActive = agent.isActive as boolean;
+    if (isActive && kappa > 0) {
+      sources.push({
+        x: ax, y: ay,
+        strength: Math.min(kappa / 4, 0.6),
+        bubbleR: Math.min(cw, ch) * 0.06,
+      });
+    }
+  }
+
+  // Warp displacement function
+  const spacing = Math.max(24, Math.min(40, cw / 18));
+  const ambientScale = spacing * 1.0;
+  const maxDisp = spacing * 1.0;
+
+  const warp = (x: number, y: number): [number, number] => {
+    let tx = 0;
+    for (const src of sources) {
+      const dx = x - src.x;
+      const dy = y - src.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 1) continue;
+      const sig = 6.0 / src.bubbleR;
+      const f = alcubierre(dist, src.bubbleR, sig);
+      const softCore = 60;
+      const soft = dist * dist / (dist * dist + softCore * softCore);
+      tx += -ambientScale * 0.6 * src.strength * f * soft;
+    }
+    if (tx > maxDisp) tx = maxDisp;
+    else if (tx < -maxDisp) tx = -maxDisp;
+    return [x + tx, y];
+  };
+
+  // --- Draw warped grid ---
+  const pad = 10;
+  const step = 6;
+  const gridExtend = spacing * 2;
+  const gridAlpha = 0.12;
+
+  ctx.lineWidth = 0.6;
+  ctx.strokeStyle = `rgba(21, 209, 255, ${gridAlpha})`;
+
+  // Horizontal lines (flow with flowOffset)
+  for (let gy = pad; gy <= ch - pad; gy += spacing) {
+    let n = 0;
+    for (let gx = pad - gridExtend; gx <= cw - pad + gridExtend; gx += step) {
+      const flowedX = gx + (flowOffset % spacing);
+      const [wx, wy] = warp(flowedX, gy);
+      _ptsX[n] = wx; _ptsY[n] = wy; n++;
+      if (n >= 510) break;
+    }
+    drawSmooth(ctx, n);
+  }
+
+  // Vertical lines (flow with flowOffset)
+  for (let gx = pad - gridExtend; gx <= cw - pad + gridExtend; gx += spacing) {
+    let n = 0;
+    for (let gy = pad; gy <= ch - pad; gy += step) {
+      const flowedX = gx + (flowOffset % spacing);
+      const [wx, wy] = warp(flowedX, gy);
+      _ptsX[n] = wx; _ptsY[n] = wy; n++;
+      if (n >= 510) break;
+    }
+    drawSmooth(ctx, n);
+  }
+
+  // --- Edge fade (aurora-tinted) ---
+  const fadeW = 18;
+  const lG = ctx.createLinearGradient(0, 0, fadeW, 0);
+  lG.addColorStop(0, "rgba(5, 5, 16, 1)"); lG.addColorStop(1, "rgba(5, 5, 16, 0)");
+  ctx.fillStyle = lG; ctx.fillRect(0, 0, fadeW, ch);
+  const rG = ctx.createLinearGradient(cw - fadeW, 0, cw, 0);
+  rG.addColorStop(0, "rgba(5, 5, 16, 0)"); rG.addColorStop(1, "rgba(5, 5, 16, 1)");
+  ctx.fillStyle = rG; ctx.fillRect(cw - fadeW, 0, fadeW, ch);
+  const tG = ctx.createLinearGradient(0, 0, 0, fadeW);
+  tG.addColorStop(0, "rgba(5, 5, 16, 1)"); tG.addColorStop(1, "rgba(5, 5, 16, 0)");
+  ctx.fillStyle = tG; ctx.fillRect(0, 0, cw, fadeW);
+  const bG = ctx.createLinearGradient(0, ch - fadeW, 0, ch);
+  bG.addColorStop(0, "rgba(5, 5, 16, 0)"); bG.addColorStop(1, "rgba(5, 5, 16, 1)");
+  ctx.fillStyle = bG; ctx.fillRect(0, ch - fadeW, cw, fadeW);
+
+  // --- Room label ---
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "8px system-ui";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText(`/${room}`, 20, 20);
+  const activeCount = agents.filter(a => a.isActive).length;
+  ctx.textAlign = "right";
+  ctx.fillText(`${agents.length} agents (${activeCount} active)`, cw - 20, 20);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+
+  // --- Edges: spanning tree connections + shared-system links ---
+  // Draw warped curves between connected agents
+  for (const edge of edges) {
+    const fi = edge.from as number;
+    const ti = edge.to as number;
+    if (fi >= agents.length || ti >= agents.length) continue;
+    const fromA = agents[fi];
+    const toA = agents[ti];
+    const fx = (fromA.x as number) ?? cx;
+    const fy = (fromA.y as number) ?? cy;
+    const tx = (toA.x as number) ?? cx;
+    const ty = (toA.y as number) ?? cy;
+    const edgeType = (edge.type as string) || "system";
+
+    // Draw warped curve between the two agents
+    const segs = 16;
+    let n = 0;
+    for (let s = 0; s <= segs; s++) {
+      const t = s / segs;
+      const rawX = fx + (tx - fx) * t;
+      const rawY = fy + (ty - fy) * t;
+      const [wx, wy] = warp(rawX, rawY);
+      _ptsX[n] = wx; _ptsY[n] = wy; n++;
+    }
+
+    if (edgeType === "spawn") {
+      // Sub-agent spawn: solid line, aurora pink
+      ctx.strokeStyle = "rgba(232, 121, 249, 0.25)";
+      ctx.lineWidth = 1.2;
+    } else {
+      // Shared system: dashed, subtle
+      ctx.strokeStyle = "rgba(21, 209, 255, 0.08)";
+      ctx.lineWidth = 0.6;
+      ctx.setLineDash([3, 4]);
+    }
+    drawSmooth(ctx, n);
+    ctx.setLineDash([]);
+
+    // Flow particles along spawn edges
+    if (edgeType === "spawn") {
+      for (let p = 0; p < 2; p++) {
+        const t = ((flowOffset * 0.01 + p * 0.5 + fi * 0.1) % 1);
+        const [px, py] = warp(fx + (tx - fx) * t, fy + (ty - fy) * t);
+        const alpha = Math.sin(t * Math.PI) * 0.5;
+        ctx.fillStyle = `rgba(232, 121, 249, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // --- Agent paths toward destination (warped curves) ---
+  for (let i = 0; i < agents.length; i++) {
+    const agent = agents[i];
+    const ax = (agent.x as number) ?? cx;
+    const ay = (agent.y as number) ?? cy;
+    const isActive = agent.isActive as boolean;
+
+    // Warped curve from agent to destination center
+    const segs = 20;
+    let n = 0;
+    for (let s = 0; s <= segs; s++) {
+      const t = s / segs;
+      const rawX = ax + (cx - ax) * t;
+      const rawY = ay + (cy - ay) * t;
+      const [wx, wy] = warp(rawX, rawY);
+      _ptsX[n] = wx; _ptsY[n] = wy; n++;
+    }
+
+    ctx.strokeStyle = isActive
+      ? `rgba(74, 222, 128, 0.15)`
+      : "rgba(139, 148, 158, 0.04)";
+    ctx.lineWidth = isActive ? 1.0 : 0.4;
+    drawSmooth(ctx, n);
+
+    // Flow particles toward destination (active agents only)
+    if (isActive) {
+      for (let p = 0; p < 3; p++) {
+        const t = ((flowOffset * 0.008 + p / 3 + i * 0.13) % 1);
+        const rawX = ax + (cx - ax) * t;
+        const rawY = ay + (cy - ay) * t;
+        const [px, py] = warp(rawX, rawY);
+        const alpha = Math.sin(t * Math.PI) * 0.5;
+        ctx.fillStyle = `rgba(74, 222, 128, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // --- Destination node at center ---
+  const destR = 22;
+  const [destWx, destWy] = warp(cx, cy);
+
+  // Progress ring
+  if (progress > 0) {
+    ctx.strokeStyle = "rgba(74, 222, 128, 0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(destWx, destWy, destR + 6, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#4ade80";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.arc(destWx, destWy, destR + 6, -Math.PI / 2, -Math.PI / 2 + (progress / 100) * Math.PI * 2);
+    ctx.stroke();
+    ctx.lineCap = "butt";
+  }
+
+  // Milestone dots
+  if (milestones.length > 0) {
+    const msR = destR + 14;
+    const msStep = (Math.PI * 2) / milestones.length;
+    for (let i = 0; i < milestones.length; i++) {
+      const ms = milestones[i];
+      const angle = -Math.PI / 2 + i * msStep;
+      ctx.fillStyle = ms.done ? "#4ade80" : "#30363d";
+      ctx.beginPath();
+      ctx.arc(destWx + Math.cos(angle) * msR, destWy + Math.sin(angle) * msR, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Destination glow
+  const destGlow = ctx.createRadialGradient(destWx, destWy, 0, destWx, destWy, destR * 3);
+  destGlow.addColorStop(0, "rgba(21, 209, 255, 0.2)");
+  destGlow.addColorStop(0.4, "rgba(21, 209, 255, 0.05)");
+  destGlow.addColorStop(1, "rgba(21, 209, 255, 0)");
+  ctx.fillStyle = destGlow;
+  ctx.beginPath();
+  ctx.arc(destWx, destWy, destR * 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Destination circle
+  ctx.fillStyle = "#15D1FF";
+  ctx.beginPath();
+  ctx.arc(destWx, destWy, destR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Destination label
+  ctx.fillStyle = "#0b1220";
+  ctx.font = "bold 10px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(destination ? `${progress}%` : "?", destWx, destWy);
+  ctx.textBaseline = "alphabetic";
+
+  // Destination text below
+  if (destination) {
+    ctx.fillStyle = "rgba(21, 209, 255, 0.7)";
+    ctx.font = "8px system-ui";
+    const text = destination.length > 45 ? destination.slice(0, 42) + "..." : destination;
+    ctx.fillText(text, destWx, destWy + destR + 14);
+  }
+  ctx.textAlign = "left";
+
+  // --- Agent nodes ---
+  for (let i = 0; i < agents.length; i++) {
+    const agent = agents[i];
+    const rawX = (agent.x as number) ?? cx;
+    const rawY = (agent.y as number) ?? cy;
+    const [ax, ay] = warp(rawX, rawY);
+    const isActive = agent.isActive as boolean;
+    const kappa = (agent.curvature as number) || 0;
+    const opCount = (agent.opCount as number) || 0;
+    const color = agentColor(agent.name as string);
+    const nodeR = isActive ? (5 + Math.min(opCount, 6)) : 4;
+
+    // Curvature glow
+    if (kappa !== 0) {
+      const glowRGB = kappa > 0 ? "74, 222, 128" : "248, 113, 113";
+      const intensity = Math.min(Math.abs(kappa) / 4, 0.35);
+      const aGlow = ctx.createRadialGradient(ax, ay, 0, ax, ay, nodeR * 3);
+      aGlow.addColorStop(0, `rgba(${glowRGB}, ${intensity})`);
+      aGlow.addColorStop(1, `rgba(${glowRGB}, 0)`);
+      ctx.fillStyle = aGlow;
+      ctx.beginPath();
+      ctx.arc(ax, ay, nodeR * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Node
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(ax, ay, nodeR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Active ring
+    if (isActive) {
+      ctx.strokeStyle = "#4ade80";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(ax, ay, nodeR + 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Name
+    ctx.fillStyle = isActive ? "#e6edf3" : "#6b7280";
+    ctx.font = isActive ? "bold 7px system-ui" : "7px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(shortAgent(agent.name as string), ax, ay + nodeR + 9);
+
+    // Curvature label
+    if (kappa !== 0) {
+      ctx.fillStyle = kappa > 0 ? "#4ade80" : "#f87171";
+      ctx.font = "bold 6px system-ui";
+      ctx.fillText(`\u03BA=${kappa}`, ax, ay + nodeR + 17);
+    }
+
+    ctx.textAlign = "left";
+  }
+
+  // --- Bottom status ---
+  const done = milestones.filter(m => m.done).length;
+  const total = milestones.length;
+  ctx.fillStyle = "#4b5563";
+  ctx.font = "7px system-ui";
+  ctx.textAlign = "center";
+  if (total > 0) {
+    ctx.fillText(`${done}/${total} milestones`, cx, ch - 14);
+  }
+  if (!destination) {
+    ctx.fillText("No destination set", cx, ch - 14);
+  }
+  ctx.textAlign = "left";
+};
+
 // --- Registry of active renderers ---
 // Atomic primitives used by the new layout system
 export const RENDERERS: Record<string, RenderFn> = {
@@ -688,4 +1089,5 @@ export const RENDERERS: Record<string, RenderFn> = {
   "ctx-empty": renderContextEmpty,
   "ctx-header": renderContextHeader,
   "mem-header": renderMemoriesHeader,
+  "agent-map": renderAgentMap,
 };
