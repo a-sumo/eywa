@@ -6,7 +6,7 @@ import type { Env, EywaContext, MemoryRow, RoomRow } from "./lib/types.js";
 import { registerSessionTools } from "./tools/session.js";
 import { registerMemoryTools } from "./tools/memory.js";
 import { registerContextTools } from "./tools/context.js";
-import { registerCollaborationTools } from "./tools/collaboration.js";
+import { registerCollaborationTools, computeCurvature } from "./tools/collaboration.js";
 import { registerInjectTools } from "./tools/inject.js";
 import { registerKnowledgeTools } from "./tools/knowledge.js";
 import { registerLinkTools } from "./tools/link.js";
@@ -275,16 +275,22 @@ async function buildInstructions(
   const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows, destRows] = results;
   const batonRows = baton ? results[7] : [];
 
-  // Build agent status map
-  const agents = new Map<string, { status: string; task: string; systems: Set<string> }>();
+  // Build agent status map with curvature
+  const agents = new Map<string, {
+    status: string; task: string; systems: Set<string>;
+    ops: Array<{ action?: string; outcome?: string }>; firstTs: string; lastTs: string;
+  }>();
   for (const row of agentRows) {
     if (row.agent === ctx.agent) continue;
+    const meta = (row.metadata ?? {}) as Record<string, string>;
     if (agents.has(row.agent)) {
-      const meta = (row.metadata ?? {}) as Record<string, string>;
       if (meta.system) agents.get(row.agent)!.systems.add(meta.system);
+      if (meta.system || meta.action) {
+        agents.get(row.agent)!.ops.push({ action: meta.action, outcome: meta.outcome });
+      }
+      agents.get(row.agent)!.firstTs = row.ts;
       continue;
     }
-    const meta = (row.metadata ?? {}) as Record<string, string>;
     const event = meta.event ?? "";
     let status = "idle";
     let task = (row.content ?? "").slice(0, 100);
@@ -292,7 +298,9 @@ async function buildInstructions(
     else if (event === "session_end" || event === "session_done") { status = "finished"; task = meta.summary || task; }
     const systems = new Set<string>();
     if (meta.system) systems.add(meta.system);
-    agents.set(row.agent, { status, task, systems });
+    const ops: Array<{ action?: string; outcome?: string }> = [];
+    if (meta.system || meta.action) ops.push({ action: meta.action, outcome: meta.outcome });
+    agents.set(row.agent, { status, task, systems, ops, firstTs: row.ts, lastTs: row.ts });
   }
 
   // Compose instructions
@@ -301,12 +309,15 @@ async function buildInstructions(
     `User: ${ctx.user} | Session: ${ctx.sessionId}`,
   ];
 
-  // Agents
+  // Agents with curvature
   if (agents.size > 0) {
     lines.push(`\nAgents (${agents.size}):`);
     for (const [name, info] of agents) {
       const sysStr = info.systems.size > 0 ? ` {${Array.from(info.systems).join(", ")}}` : "";
-      lines.push(`  ${name} [${info.status}] ${info.task}${sysStr}`);
+      const durationMin = (new Date(info.lastTs).getTime() - new Date(info.firstTs).getTime()) / 60000;
+      const kappa = computeCurvature(info.ops, durationMin);
+      const kappaStr = info.ops.length > 0 ? ` κ=${kappa}` : "";
+      lines.push(`  ${name} [${info.status}]${kappaStr} ${info.task}${sysStr}`);
     }
   }
 

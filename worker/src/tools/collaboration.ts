@@ -3,6 +3,43 @@ import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
 import type { EywaContext, MemoryRow } from "../lib/types.js";
 
+// Curvature: how much an agent's work bends toward the destination
+const ACTION_WEIGHTS: Record<string, number> = {
+  deploy: 5, create: 4, write: 3, test: 3,
+  delete: 2, review: 2, debug: 2, configure: 1.5,
+  read: 1, monitor: 0.5,
+};
+const OUTCOME_MULT: Record<string, number> = {
+  success: 1.0, in_progress: 0.5, failure: -1.0, blocked: -2.0,
+};
+const HIGH_IMPACT_ACTIONS = new Set(["deploy", "create", "write", "test", "delete", "review"]);
+
+export function computeCurvature(
+  ops: Array<{ action?: string; outcome?: string }>,
+  durationMinutes: number,
+): number {
+  if (ops.length === 0 || durationMinutes <= 0) return 0;
+  const mins = Math.max(durationMinutes, 1); // avoid division by tiny numbers
+
+  let weightedSum = 0;
+  let failBlockCount = 0;
+  let highImpact = 0;
+
+  for (const op of ops) {
+    const w = ACTION_WEIGHTS[op.action ?? ""] ?? 0;
+    const m = OUTCOME_MULT[op.outcome ?? ""] ?? 0.5;
+    weightedSum += w * m;
+    if (op.outcome === "failure" || op.outcome === "blocked") failBlockCount++;
+    if (HIGH_IMPACT_ACTIONS.has(op.action ?? "")) highImpact++;
+  }
+
+  const momentum = weightedSum / mins;
+  const drag = failBlockCount / mins;
+  const signal = highImpact / Math.max(ops.length, 1);
+
+  return Math.round((momentum - drag) * signal * 100) / 100;
+}
+
 export function registerCollaborationTools(
   server: McpServer,
   db: SupabaseClient,
@@ -40,6 +77,7 @@ export function registerCollaborationTools(
           actions: Set<string>;
           opCount: number;
           outcomes: { success: number; failure: number; blocked: number };
+          ops: Array<{ action?: string; outcome?: string }>;
         }
       >();
 
@@ -70,6 +108,7 @@ export function registerCollaborationTools(
             actions: new Set(),
             opCount: 0,
             outcomes: { success: 0, failure: 0, blocked: 0 },
+            ops: [],
           });
         }
 
@@ -79,7 +118,10 @@ export function registerCollaborationTools(
         // Accumulate operation metadata
         if (meta.system) info.systems.add(meta.system);
         if (meta.action) info.actions.add(meta.action);
-        if (meta.system || meta.action) info.opCount++;
+        if (meta.system || meta.action) {
+          info.opCount++;
+          info.ops.push({ action: meta.action, outcome: meta.outcome });
+        }
         if (meta.outcome === "success") info.outcomes.success++;
         if (meta.outcome === "failure") info.outcomes.failure++;
         if (meta.outcome === "blocked") info.outcomes.blocked++;
@@ -97,16 +139,20 @@ export function registerCollaborationTools(
         if (info.outcomes.blocked > 0) outcomesParts.push(`${info.outcomes.blocked} blocked`);
         const outStr = outcomesParts.length > 0 ? ` (${outcomesParts.join(", ")})` : "";
 
-        // Duration
+        // Duration + curvature
         const startMs = new Date(info.firstSeen).getTime();
         const endMs = new Date(info.lastSeen).getTime();
         const durationMs = endMs - startMs;
+        const durationMin = durationMs / 60000;
         const durationStr = durationMs > 60000
-          ? ` (${Math.round(durationMs / 60000)}m)`
+          ? ` (${Math.round(durationMin)}m)`
           : durationMs > 0 ? ` (${Math.round(durationMs / 1000)}s)` : "";
 
+        const kappa = computeCurvature(info.ops, durationMin);
+        const kappaStr = info.ops.length > 0 ? `\n    Curvature: κ=${kappa}` : "";
+
         lines.push(
-          `  ${name} [${info.status}]${durationStr} - ${info.description}${sysStr}${actStr}${opsStr}${outStr}\n    Last seen: ${info.lastSeen}`,
+          `  ${name} [${info.status}]${durationStr} - ${info.description}${sysStr}${actStr}${opsStr}${outStr}${kappaStr}\n    Last seen: ${info.lastSeen}`,
         );
       }
 

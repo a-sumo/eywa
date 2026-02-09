@@ -228,4 +228,48 @@ export function registerRecoveryTools(
       };
     },
   );
+
+  server.tool(
+    "eywa_progress",
+    "Report progress on your current task. Call this periodically so the dashboard and other agents can see real-time completion. Updates are lightweight and designed for frequent use.",
+    {
+      task: z.string().describe("What you're working on (1 sentence)"),
+      percent: z.number().min(0).max(100).describe("Estimated completion percentage (0-100)"),
+      status: z.enum(["working", "blocked", "reviewing", "testing", "deploying"]).optional().describe("Current phase of work"),
+      detail: z.string().optional().describe("Brief description of what you're doing right now"),
+    },
+    {
+      readOnlyHint: false,
+      idempotentHint: true,
+    },
+    async ({ task, percent, status, detail }) => {
+      const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
+      const content = `PROGRESS [${percent}%${status ? ` ${status}` : ""}]: ${task}${detail ? ` - ${detail}` : ""}`;
+
+      await db.insert("memories", {
+        room_id: ctx.roomId,
+        agent: ctx.agent,
+        session_id: ctx.sessionId,
+        parent_id: parentId,
+        message_type: "resource",
+        content,
+        token_count: estimateTokens(content),
+        metadata: {
+          event: "progress",
+          task,
+          percent,
+          status: status ?? "working",
+          detail: detail ?? null,
+          user: ctx.user,
+        },
+      });
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Progress logged: ${percent}%${status ? ` (${status})` : ""}`,
+        }],
+      };
+    },
+  );
 }

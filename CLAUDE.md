@@ -44,7 +44,7 @@ Key rules for any UI work:
 
 - Lives in `discord-bot/`. Run with `npm start`, deploy commands with `npm run deploy -- <guild_id>`.
 - Uses direct Supabase queries, not MCP. Messages from Discord show as `discord/<username>`.
-- Slash commands: help, room, status, agents, context, search, recall, inject, inbox, knowledge, learn, msg.
+- Slash commands: help, room, status, agents, context, search, recall, inject, inbox, knowledge, learn, msg, destination, course.
 
 ## Worker (MCP Server)
 
@@ -60,6 +60,8 @@ Key rules for any UI work:
 - **Context recovery**: Three tools for surviving context exhaustion. `eywa_checkpoint` saves periodic state dumps (task, done, remaining, context, files_changed). `eywa_distress` fires an SOS when context is nearly full, saving state and broadcasting an urgent injection to the room. `eywa_recover` manually checks for unresolved distress signals or checkpoints. `eywa_start` auto-detects distress signals and recent checkpoints (last 2 hours) from the same user, injecting recovery state into the new session.
 - **Zero-friction auto-context**: Room context (agents, activity, injections, knowledge, recovery state) is pushed via MCP `instructions` at connection time. Agents get full situational awareness before any tool call, no approval needed.
 - **Baton passing**: Hand off work between agents. URL param `?baton=armand/quiet-oak` loads that agent's recent session into the MCP instructions at connection time. Mid-session handoff via `eywa_start({ continue_from: "armand/quiet-oak" })`. The baton agent's last 20 memories are included chronologically.
+- **Destination tracking**: `eywa_destination` sets/updates/views the room's target state (point B). Supports milestones with completion tracking. Destination is surfaced in `eywa_start` auto-context, MCP instructions, Gemini steering, OperationsView banner, and Discord `/destination` + `/course` commands.
+- **Progress reporting**: `eywa_progress` lets agents report task completion percentage and current phase (working/blocked/reviewing/testing/deploying). Progress bars display in OperationsView agent cards. Designed for frequent calls during long tasks.
 
 ## Supabase
 
