@@ -202,21 +202,26 @@ class MascotAnimator:
                 py = oy + round(sy) * cell
                 pygame.draw.rect(surface, _MC_TENDRIL, (px, py, cell, cell))
 
-        # Body
+        # Body (projected through Y-axis rotation)
+        cos_y = math.cos(y_rot)
         by_r = round(by)
         for (bpx, dy, color) in _MC_BODY:
-            px = ox + bpx * cell
+            dx = bpx - 15.5
+            proj_x = round(15.5 + dx * cos_y)
+            px = ox + proj_x * cell
             py = oy + (by_r + dy) * cell
             pygame.draw.rect(surface, color, (px, py, cell, cell))
 
-        # Eyes
+        # Eyes (projected through Y-axis rotation)
+        eye_lx = round(15.5 + (14 - 15.5) * cos_y)
+        eye_rx = round(15.5 + (17 - 15.5) * cos_y)
         if self.mood == "sleeping":
-            for ex in (14, 17):
+            for ex in (eye_lx, eye_rx):
                 px = ox + ex * cell
                 py = oy + (by_r - 1) * cell
                 pygame.draw.rect(surface, _MC_EYE, (px, py, cell, cell))
         else:
-            for ex in (14, 17):
+            for ex in (eye_lx, eye_rx):
                 px = ox + ex * cell
                 py1 = oy + (by_r - 1) * cell
                 py2 = oy + by_r * cell

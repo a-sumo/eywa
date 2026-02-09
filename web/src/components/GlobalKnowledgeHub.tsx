@@ -212,9 +212,25 @@ export function GlobalKnowledgeHub() {
 }
 
 function InsightCard({ insight }: { insight: GlobalInsight }) {
+  const [expanded, setExpanded] = useState(false);
+  const text = insight.insight || "";
+  const truncateLen = 200;
+  const isLong = text.length > truncateLen;
+
   return (
-    <div className="insight-card">
-      <div className="insight-card-body">{insight.insight}</div>
+    <div
+      className={`insight-card ${expanded ? "insight-card-expanded" : ""}`}
+      onClick={() => { if (isLong) setExpanded(!expanded); }}
+      style={isLong ? { cursor: "pointer" } : undefined}
+    >
+      <div className="insight-card-body">
+        {expanded || !isLong ? text : text.slice(0, truncateLen) + "..."}
+      </div>
+      {isLong && (
+        <span className="insight-expand-hint">
+          {expanded ? "Show less" : "Show more"}
+        </span>
+      )}
       <div className="insight-card-meta">
         <div className="insight-card-tags">
           {insight.domain_tags.map((tag) => (

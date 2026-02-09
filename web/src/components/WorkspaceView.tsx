@@ -321,7 +321,7 @@ export function WorkspaceView() {
     error: chatError,
     send: sendChat,
     clear: clearChat,
-  } = useGeminiChat(contextSummary);
+  } = useGeminiChat(contextSummary, room?.id);
 
   const [chatInput, setChatInput] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);

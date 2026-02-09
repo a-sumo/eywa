@@ -538,6 +538,9 @@ export function ThreadTree() {
     }));
   }, [filteredThreads]);
 
+  // Expanded memory tiles (inline content expansion)
+  const [expandedMemoryId, setExpandedMemoryId] = useState<string | null>(null);
+
   // Empty state
   if (!filteredThreads.length && memories.length === 0) {
     return (
@@ -653,34 +656,53 @@ export function ThreadTree() {
             <span className="pane-count">{memories.length}</span>
           </div>
           <div className="memories-feed">
-            {memories.map((m) => (
-              <div
-                key={m.id}
-                className={`memory-tile ${
-                  selectedThread &&
-                  m.agent === selectedThread.agent &&
-                  m.session_id === selectedThread.sessionId
-                    ? "memory-tile-active"
-                    : ""
-                }`}
-                title={`${m.agent} - ${m.message_type}\n${m.content?.slice(0, 200)}`}
-                onClick={() => {
-                  const thread = displayThreads.find(
-                    (t) => t.agent === m.agent && t.sessionId === m.session_id
-                  );
-                  if (thread) {
-                    setSelectedThread({ agent: thread.agent, sessionId: thread.sessionId });
-                  }
-                }}
-              >
-                <span className="mt-dot" style={{ background: agentColor(m.agent) }} />
-                <span className={`mt-type mt-type-${m.message_type}`}>
-                  {TYPE_CHAR[m.message_type] || "\u00B7"}
-                </span>
-                <span className="mt-text">{m.content?.slice(0, 50) || ""}</span>
-                <span className="mt-time">{timeAgo(m.ts)}</span>
-              </div>
-            ))}
+            {memories.map((m) => {
+              const isExpanded = expandedMemoryId === m.id;
+              const content = m.content || "";
+              const isLong = content.length > 50;
+              return (
+                <div key={m.id} className={`memory-tile-wrapper ${isExpanded ? "memory-tile-expanded" : ""}`}>
+                  <div
+                    className={`memory-tile ${
+                      selectedThread &&
+                      m.agent === selectedThread.agent &&
+                      m.session_id === selectedThread.sessionId
+                        ? "memory-tile-active"
+                        : ""
+                    }`}
+                    title={`${m.agent} - ${m.message_type}\n${content.slice(0, 200)}`}
+                    onClick={() => {
+                      if (isLong) {
+                        setExpandedMemoryId(isExpanded ? null : m.id);
+                      }
+                      const thread = displayThreads.find(
+                        (t) => t.agent === m.agent && t.sessionId === m.session_id
+                      );
+                      if (thread) {
+                        setSelectedThread({ agent: thread.agent, sessionId: thread.sessionId });
+                      }
+                    }}
+                  >
+                    <span className="mt-dot" style={{ background: agentColor(m.agent) }} />
+                    <span className={`mt-type mt-type-${m.message_type}`}>
+                      {TYPE_CHAR[m.message_type] || "\u00B7"}
+                    </span>
+                    <span className="mt-text">
+                      {isExpanded ? content : (content.slice(0, 50) + (isLong ? "..." : ""))}
+                    </span>
+                    <span className="mt-time">{timeAgo(m.ts)}</span>
+                    {isLong && (
+                      <span className="mt-expand-indicator">{isExpanded ? "\u25B4" : "\u25BE"}</span>
+                    )}
+                  </div>
+                  {isExpanded && (
+                    <div className="mt-expanded-content">
+                      <pre>{content}</pre>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 

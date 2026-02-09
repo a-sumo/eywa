@@ -2700,6 +2700,18 @@ body {
   color: var(--color-text);
 }
 
+.memory-expand-hint {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  opacity: 0.4;
+  margin-left: 4px;
+}
+
+.memory-card {
+  cursor: pointer;
+}
+
 .memory-metadata {
   margin-top: 0.5rem;
   display: flex;
@@ -3089,6 +3101,52 @@ body {
   color: var(--text-secondary);
   font-size: 0.65rem;
   opacity: 0.6;
+}
+
+.mt-expand-indicator {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  opacity: 0.4;
+  width: 12px;
+  text-align: center;
+}
+
+.memory-tile-wrapper {
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
+}
+
+.memory-tile-wrapper .memory-tile {
+  border-bottom: none;
+}
+
+.memory-tile-expanded .memory-tile {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.memory-tile-expanded .mt-text {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.mt-expanded-content {
+  padding: 4px 8px 8px 28px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
+}
+
+.mt-expanded-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  font-family: inherit;
+  color: var(--text-primary);
+  opacity: 0.85;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 /* Time range toggle */
@@ -8205,4 +8263,17 @@ body {
 
 .insight-card-time {
   margin-left: auto;
+}
+
+.insight-card-expanded {
+  border-color: var(--aurora-cyan-dim, rgba(21, 209, 255, 0.3));
+  background: var(--bg-surface-active, rgba(255, 255, 255, 0.04));
+}
+
+.insight-expand-hint {
+  font-size: var(--text-xs);
+  color: var(--aurora-cyan, #15D1FF);
+  opacity: 0.6;
+  margin-bottom: var(--space-2);
+  display: block;
 }

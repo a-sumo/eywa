@@ -1,0 +1,512 @@
+/**
+ * Real-time operations dashboard. Shows per-agent live operation streams
+ * with system/action/scope/outcome tags. Built for scale: incremental
+ * state updates, no full refetch, handles thousands of agents.
+ */
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
+import { useRoomContext } from "../context/RoomContext";
+import { agentColor } from "../lib/agentColor";
+import { getAvatar } from "./avatars";
+import type { Memory } from "../lib/supabase";
+
+// --- Types ---
+
+interface AgentOp {
+  id: string;
+  content: string;
+  system?: string;
+  action?: string;
+  scope?: string;
+  outcome?: string;
+  event?: string;
+  type: string;
+  ts: string;
+  isNew?: boolean;
+}
+
+interface AgentState {
+  agent: string;
+  user: string;
+  status: "active" | "idle" | "finished";
+  task: string;
+  sessionId: string;
+  systems: Set<string>;
+  actions: Set<string>;
+  opCount: number;
+  outcomes: { success: number; failure: number; blocked: number };
+  lastSeen: string;
+  recentOps: AgentOp[];
+}
+
+// --- Helpers ---
+
+const ACTIVE_THRESHOLD = 30 * 60 * 1000; // 30 min
+
+function timeAgo(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
+
+function extractOp(m: Memory): AgentOp {
+  const meta = (m.metadata ?? {}) as Record<string, unknown>;
+  return {
+    id: m.id,
+    content: (m.content ?? "").slice(0, 200),
+    system: meta.system as string | undefined,
+    action: meta.action as string | undefined,
+    scope: meta.scope as string | undefined,
+    outcome: meta.outcome as string | undefined,
+    event: meta.event as string | undefined,
+    type: m.message_type,
+    ts: m.ts,
+  };
+}
+
+function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
+  const agents = new Map<string, AgentState>();
+
+  // Process newest first (memories come sorted desc)
+  for (const m of memories) {
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    const user = (meta.user as string) ?? m.agent.split("/")[0];
+
+    let state = agents.get(m.agent);
+    if (!state) {
+      // First (most recent) memory for this agent
+      let status: "active" | "idle" | "finished" = "idle";
+      let task = "";
+
+      if (meta.event === "session_start") {
+        const age = Date.now() - new Date(m.ts).getTime();
+        status = age < ACTIVE_THRESHOLD ? "active" : "idle";
+        task = (meta.task as string) || "";
+      } else if (meta.event === "session_done" || meta.event === "session_end") {
+        status = "finished";
+        task = (meta.summary as string) || "";
+      } else if (Date.now() - new Date(m.ts).getTime() < ACTIVE_THRESHOLD) {
+        status = "active";
+      }
+
+      state = {
+        agent: m.agent,
+        user,
+        status,
+        task: task || (m.content ?? "").slice(0, 100),
+        sessionId: m.session_id,
+        systems: new Set(),
+        actions: new Set(),
+        opCount: 0,
+        outcomes: { success: 0, failure: 0, blocked: 0 },
+        lastSeen: m.ts,
+        recentOps: [],
+      };
+      agents.set(m.agent, state);
+    }
+
+    // Accumulate operation metadata
+    if (meta.system) state.systems.add(meta.system as string);
+    if (meta.action) state.actions.add(meta.action as string);
+    if (meta.outcome === "success") state.outcomes.success++;
+    else if (meta.outcome === "failure") state.outcomes.failure++;
+    else if (meta.outcome === "blocked") state.outcomes.blocked++;
+
+    state.opCount++;
+
+    // Keep last 10 ops for this agent
+    if (state.recentOps.length < 10) {
+      state.recentOps.push(extractOp(m));
+    }
+  }
+
+  return agents;
+}
+
+function AgentAvatar({ name, size = 24 }: { name: string; size?: number }) {
+  const { avatar, hueRotate, saturate } = useMemo(() => getAvatar(name), [name]);
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        flexShrink: 0,
+        borderRadius: "50%",
+        overflow: "hidden",
+        filter: `hue-rotate(${hueRotate}deg) saturate(${saturate}%)`,
+      }}
+      dangerouslySetInnerHTML={{ __html: avatar.svg }}
+    />
+  );
+}
+
+const OUTCOME_COLORS: Record<string, string> = {
+  success: "#6ee7b7",
+  failure: "#fca5a5",
+  blocked: "#fcd34d",
+};
+
+const SYSTEM_COLORS: Record<string, string> = {
+  git: "#f97316",
+  database: "#06b6d4",
+  api: "#8b5cf6",
+  deploy: "#22c55e",
+  infra: "#ec4899",
+  browser: "#3b82f6",
+  test: "#eab308",
+  build: "#a855f7",
+  file: "#64748b",
+};
+
+// --- Components ---
+
+function OpBadge({ label, color }: { label: string; color: string }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "1px 6px",
+        borderRadius: "3px",
+        fontSize: "10px",
+        fontWeight: 600,
+        background: `${color}18`,
+        color,
+        marginRight: "3px",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function OpLine({ op }: { op: AgentOp }) {
+  const time = op.ts.slice(11, 19);
+  return (
+    <div
+      className={`op-line ${op.isNew ? "op-line-new" : ""}`}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "3px 8px",
+        fontSize: "11px",
+        borderLeft: `2px solid ${op.outcome ? OUTCOME_COLORS[op.outcome] || "#666" : "#333"}`,
+        animation: op.isNew ? "op-slide-in 0.3s ease-out" : undefined,
+      }}
+    >
+      <span style={{ opacity: 0.3, fontFamily: "monospace", fontSize: "10px", flexShrink: 0 }}>
+        {time}
+      </span>
+      {op.system && (
+        <OpBadge label={op.system} color={SYSTEM_COLORS[op.system] || "#a78bfa"} />
+      )}
+      {op.action && (
+        <OpBadge label={op.action} color="#67e8f9" />
+      )}
+      {op.outcome && (
+        <OpBadge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#888"} />
+      )}
+      {op.scope && (
+        <span style={{ opacity: 0.4, fontSize: "10px" }}>({op.scope})</span>
+      )}
+      <span style={{ opacity: 0.6, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {op.content}
+      </span>
+    </div>
+  );
+}
+
+function AgentCard({ state, expanded, onToggle }: {
+  state: AgentState;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const systemsList = Array.from(state.systems);
+  const totalOutcomes = state.outcomes.success + state.outcomes.failure + state.outcomes.blocked;
+  const successRate = totalOutcomes > 0 ? Math.round((state.outcomes.success / totalOutcomes) * 100) : null;
+
+  return (
+    <div
+      className={`agent-ops-card agent-ops-${state.status}`}
+      style={{
+        border: `1px solid ${state.status === "active" ? "rgba(52, 211, 153, 0.3)" : "rgba(255,255,255,0.06)"}`,
+        borderRadius: "6px",
+        marginBottom: "6px",
+        background: state.status === "active" ? "rgba(52, 211, 153, 0.04)" : "rgba(255,255,255,0.02)",
+      }}
+    >
+      {/* Header */}
+      <div
+        onClick={onToggle}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "8px 10px",
+          cursor: "pointer",
+        }}
+      >
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: state.status === "active" ? "#34d399" : state.status === "finished" ? "#64748b" : "#eab308",
+            flexShrink: 0,
+          }}
+        />
+        <AgentAvatar name={state.user} size={20} />
+        <span style={{ color: agentColor(state.agent), fontWeight: 600, fontSize: "12px" }}>
+          {state.agent}
+        </span>
+        <span style={{ opacity: 0.4, fontSize: "10px", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {state.task}
+        </span>
+        <span style={{ opacity: 0.3, fontSize: "10px", flexShrink: 0 }}>
+          {state.opCount} ops
+        </span>
+        <span style={{ opacity: 0.3, fontSize: "10px", flexShrink: 0 }}>
+          {timeAgo(state.lastSeen)}
+        </span>
+        <span style={{ fontSize: "10px", opacity: 0.3 }}>
+          {expanded ? "\u25B2" : "\u25BC"}
+        </span>
+      </div>
+
+      {/* Systems + outcomes bar */}
+      <div style={{ display: "flex", gap: "4px", padding: "0 10px 6px", flexWrap: "wrap", alignItems: "center" }}>
+        {systemsList.map((s) => (
+          <OpBadge key={s} label={s} color={SYSTEM_COLORS[s] || "#a78bfa"} />
+        ))}
+        {successRate !== null && (
+          <span style={{
+            fontSize: "10px",
+            marginLeft: "auto",
+            color: successRate > 80 ? "#6ee7b7" : successRate > 50 ? "#fcd34d" : "#fca5a5",
+          }}>
+            {successRate}% success
+            {state.outcomes.failure > 0 && ` (${state.outcomes.failure} fail)`}
+            {state.outcomes.blocked > 0 && ` (${state.outcomes.blocked} blocked)`}
+          </span>
+        )}
+      </div>
+
+      {/* Expanded: recent operations */}
+      {expanded && (
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", maxHeight: "300px", overflow: "auto" }}>
+          {state.recentOps.map((op) => (
+            <OpLine key={op.id} op={op} />
+          ))}
+          {state.recentOps.length === 0 && (
+            <div style={{ padding: "12px", opacity: 0.3, fontSize: "11px", textAlign: "center" }}>
+              No operations logged yet
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Main ---
+
+export function OperationsView() {
+  const { room } = useRoomContext();
+  const { memories, loading } = useRealtimeMemories(room?.id ?? null, 500);
+  const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
+  const [showIdle, setShowIdle] = useState(false);
+  const prevCountRef = useRef(0);
+
+  const agentStates = useMemo(() => buildAgentStates(memories), [memories]);
+
+  // Mark new operations when count increases
+  useEffect(() => {
+    if (memories.length > prevCountRef.current && prevCountRef.current > 0) {
+      // New memory arrived - it's already at index 0
+    }
+    prevCountRef.current = memories.length;
+  }, [memories.length]);
+
+  // Auto-expand active agents
+  useEffect(() => {
+    const active = new Set<string>();
+    for (const [agent, state] of agentStates) {
+      if (state.status === "active") active.add(agent);
+    }
+    setExpandedAgents((prev) => new Set([...prev, ...active]));
+  }, [agentStates]);
+
+  // Sort: active first, then by recency
+  const sortedAgents = useMemo(() => {
+    const arr = Array.from(agentStates.values());
+    arr.sort((a, b) => {
+      const order = { active: 0, idle: 1, finished: 2 };
+      const diff = order[a.status] - order[b.status];
+      if (diff !== 0) return diff;
+      return new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime();
+    });
+    return arr;
+  }, [agentStates]);
+
+  const activeAgents = sortedAgents.filter((a) => a.status === "active");
+  const recentAgents = sortedAgents.filter((a) => a.status !== "active" && (showIdle || Date.now() - new Date(a.lastSeen).getTime() < 2 * 60 * 60 * 1000));
+  const idleCount = sortedAgents.length - activeAgents.length - recentAgents.length;
+
+  // Global stats
+  const totalOps = sortedAgents.reduce((sum, a) => sum + a.opCount, 0);
+  const allSystems = new Set<string>();
+  for (const a of sortedAgents) {
+    for (const s of a.systems) allSystems.add(s);
+  }
+
+  if (loading) {
+    return <div className="ops-view" style={{ padding: "2rem", opacity: 0.4 }}>Loading operations...</div>;
+  }
+
+  return (
+    <div className="ops-view" style={{ padding: "0 12px" }}>
+      <style>{`
+        @keyframes op-slide-in {
+          from { opacity: 0; transform: translateX(-8px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        .ops-header {
+          display: flex; align-items: center; gap: 12px;
+          padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+          margin-bottom: 8px; flex-wrap: wrap;
+        }
+        .ops-stat { font-size: 11px; opacity: 0.5; }
+        .ops-stat b { color: #34d399; opacity: 1; }
+        .ops-section-label {
+          font-size: 10px; font-weight: 600; text-transform: uppercase;
+          letter-spacing: 0.5px; opacity: 0.3; padding: 8px 0 4px;
+        }
+        .ops-global-feed {
+          border-top: 1px solid rgba(255,255,255,0.06);
+          margin-top: 12px; padding-top: 8px;
+          max-height: 400px; overflow-y: auto;
+        }
+        .ops-feed-item {
+          display: flex; align-items: center; gap: 6px;
+          padding: 2px 0; font-size: 11px;
+        }
+        .ops-feed-agent {
+          font-weight: 600; font-size: 10px; flex-shrink: 0;
+          max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .ops-feed-content {
+          opacity: 0.5; flex: 1; overflow: hidden;
+          text-overflow: ellipsis; white-space: nowrap;
+        }
+        .ops-feed-time { opacity: 0.25; font-size: 10px; flex-shrink: 0; font-family: monospace; }
+      `}</style>
+
+      {/* Header stats */}
+      <div className="ops-header">
+        <h2 style={{ margin: 0, fontSize: "16px" }}>Operations</h2>
+        <span className="ops-stat"><b>{activeAgents.length}</b> active</span>
+        <span className="ops-stat">{sortedAgents.length} agents</span>
+        <span className="ops-stat">{totalOps} ops</span>
+        <span className="ops-stat">{allSystems.size} systems</span>
+        {allSystems.size > 0 && (
+          <span style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}>
+            {Array.from(allSystems).map((s) => (
+              <OpBadge key={s} label={s} color={SYSTEM_COLORS[s] || "#a78bfa"} />
+            ))}
+          </span>
+        )}
+      </div>
+
+      {/* Active agents */}
+      {activeAgents.length > 0 && (
+        <>
+          <div className="ops-section-label">Active ({activeAgents.length})</div>
+          {activeAgents.map((a) => (
+            <AgentCard
+              key={a.agent}
+              state={a}
+              expanded={expandedAgents.has(a.agent)}
+              onToggle={() => {
+                setExpandedAgents((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(a.agent)) next.delete(a.agent);
+                  else next.add(a.agent);
+                  return next;
+                });
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* Recent agents */}
+      {recentAgents.length > 0 && (
+        <>
+          <div className="ops-section-label">Recent ({recentAgents.length})</div>
+          {recentAgents.map((a) => (
+            <AgentCard
+              key={a.agent}
+              state={a}
+              expanded={expandedAgents.has(a.agent)}
+              onToggle={() => {
+                setExpandedAgents((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(a.agent)) next.delete(a.agent);
+                  else next.add(a.agent);
+                  return next;
+                });
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* Idle count */}
+      {idleCount > 0 && !showIdle && (
+        <button
+          onClick={() => setShowIdle(true)}
+          style={{
+            background: "none",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.4)",
+            padding: "6px 12px",
+            borderRadius: "4px",
+            fontSize: "11px",
+            cursor: "pointer",
+            marginTop: "8px",
+          }}
+        >
+          +{idleCount} idle agents
+        </button>
+      )}
+
+      {/* Global live feed */}
+      <div className="ops-global-feed">
+        <div className="ops-section-label">Live Feed</div>
+        {memories.slice(0, 50).map((m) => {
+          const meta = (m.metadata ?? {}) as Record<string, unknown>;
+          const op = extractOp(m);
+          return (
+            <div key={m.id} className="ops-feed-item">
+              <span className="ops-feed-time">{m.ts.slice(11, 19)}</span>
+              <span
+                className="ops-feed-agent"
+                style={{ color: agentColor(m.agent) }}
+              >
+                {m.agent.split("/")[1] || m.agent}
+              </span>
+              {op.system && <OpBadge label={op.system} color={SYSTEM_COLORS[op.system] || "#a78bfa"} />}
+              {op.action && <OpBadge label={op.action} color="#67e8f9" />}
+              {op.outcome && <OpBadge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#888"} />}
+              <span className="ops-feed-content">{op.content}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
