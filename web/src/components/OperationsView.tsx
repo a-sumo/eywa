@@ -68,11 +68,54 @@ function extractOp(m: Memory): AgentOp {
   };
 }
 
+// Skip noise events that add no signal
+const NOISE_EVENTS = new Set(["agent_connected"]);
+
+function isNoise(m: Memory): boolean {
+  const meta = (m.metadata ?? {}) as Record<string, unknown>;
+  return NOISE_EVENTS.has(meta.event as string);
+}
+
+interface DistressSignal {
+  id: string;
+  agent: string;
+  task: string;
+  done: string;
+  remaining: string;
+  context: string;
+  filesChanged: string[];
+  resolved: boolean;
+  ts: string;
+}
+
+function extractDistress(memories: Memory[]): DistressSignal[] {
+  const signals: DistressSignal[] = [];
+  for (const m of memories) {
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    if (meta.event === "distress") {
+      signals.push({
+        id: m.id,
+        agent: m.agent,
+        task: (meta.task as string) || "",
+        done: (meta.done as string) || "",
+        remaining: (meta.remaining as string) || "",
+        context: (meta.context as string) || "",
+        filesChanged: (meta.files_changed as string[]) || [],
+        resolved: meta.resolved === true,
+        ts: m.ts,
+      });
+    }
+  }
+  return signals;
+}
+
 function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
   const agents = new Map<string, AgentState>();
 
-  // Process newest first (memories come sorted desc)
+  // Process newest first (memories come sorted desc), skip noise
   for (const m of memories) {
+    if (isNoise(m)) continue;
+
     const meta = (m.metadata ?? {}) as Record<string, unknown>;
     const user = (meta.user as string) ?? m.agent.split("/")[0];
 
@@ -89,6 +132,9 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
       } else if (meta.event === "session_done" || meta.event === "session_end") {
         status = "finished";
         task = (meta.summary as string) || "";
+      } else if (meta.event === "distress") {
+        status = "finished";
+        task = `DISTRESS: ${(meta.task as string) || ""}`;
       } else if (Date.now() - new Date(m.ts).getTime() < ACTIVE_THRESHOLD) {
         status = "active";
       }
@@ -322,6 +368,8 @@ export function OperationsView() {
   const prevCountRef = useRef(0);
 
   const agentStates = useMemo(() => buildAgentStates(memories), [memories]);
+  const distressSignals = useMemo(() => extractDistress(memories), [memories]);
+  const unresolvedDistress = distressSignals.filter((d) => !d.resolved);
 
   // Mark new operations when count increases
   useEffect(() => {
@@ -421,6 +469,40 @@ export function OperationsView() {
         )}
       </div>
 
+      {/* Distress alerts */}
+      {unresolvedDistress.length > 0 && unresolvedDistress.map((d) => (
+        <div
+          key={d.id}
+          style={{
+            background: "rgba(239, 68, 68, 0.08)",
+            border: "1px solid rgba(239, 68, 68, 0.4)",
+            borderRadius: "6px",
+            padding: "10px 12px",
+            marginBottom: "8px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+            <span style={{ color: "#ef4444", fontWeight: 700, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Distress
+            </span>
+            <span style={{ color: agentColor(d.agent), fontWeight: 600, fontSize: "12px" }}>{d.agent}</span>
+            <span style={{ opacity: 0.4, fontSize: "10px", marginLeft: "auto" }}>{timeAgo(d.ts)}</span>
+          </div>
+          <div style={{ fontSize: "12px", marginBottom: "4px" }}>{d.task}</div>
+          <div style={{ fontSize: "11px", opacity: 0.6 }}>
+            <span style={{ color: "#6ee7b7" }}>Done: </span>{d.done.slice(0, 150)}
+          </div>
+          <div style={{ fontSize: "11px", opacity: 0.8 }}>
+            <span style={{ color: "#fca5a5" }}>Remaining: </span>{d.remaining.slice(0, 200)}
+          </div>
+          {d.filesChanged.length > 0 && (
+            <div style={{ fontSize: "10px", opacity: 0.4, marginTop: "4px" }}>
+              Files: {d.filesChanged.join(", ")}
+            </div>
+          )}
+        </div>
+      ))}
+
       {/* Active agents */}
       {activeAgents.length > 0 && (
         <>
@@ -487,8 +569,7 @@ export function OperationsView() {
       {/* Global live feed */}
       <div className="ops-global-feed">
         <div className="ops-section-label">Live Feed</div>
-        {memories.slice(0, 50).map((m) => {
-          const meta = (m.metadata ?? {}) as Record<string, unknown>;
+        {memories.filter((m) => !isNoise(m)).slice(0, 50).map((m) => {
           const op = extractOp(m);
           return (
             <div key={m.id} className="ops-feed-item">
