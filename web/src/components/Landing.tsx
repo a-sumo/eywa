@@ -59,6 +59,48 @@ const IconChat = () => (
   </svg>
 );
 
+const IconDestination = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <circle className="anim-target-outer" cx="16" cy="14" r="11" strokeWidth="2.5"/>
+    <circle className="anim-target-mid" cx="16" cy="14" r="6" strokeWidth="2"/>
+    <circle className="anim-target-center" cx="16" cy="14" r="2" strokeWidth="0" fill="var(--aurora-cyan, #4eeaff)"/>
+    <line className="anim-flag-pole" x1="16" y1="14" x2="16" y2="29" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+
+const IconTimeline = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <line className="anim-timeline-trunk" x1="8" y1="4" x2="8" y2="28" strokeWidth="2.5" strokeLinecap="round"/>
+    <path className="anim-timeline-branch" d="M8 12 C12 12 16 8 20 8" strokeWidth="2.5" strokeLinecap="round"/>
+    <path className="anim-timeline-branch2" d="M8 22 C12 22 18 18 24 18" strokeWidth="2.5" strokeLinecap="round"/>
+    <circle className="anim-neuron n1" cx="8" cy="12" r="2.5" strokeWidth="2"/>
+    <circle className="anim-neuron n2" cx="20" cy="8" r="2.5" strokeWidth="2"/>
+    <circle className="anim-neuron n3" cx="8" cy="22" r="2.5" strokeWidth="2"/>
+    <circle className="anim-neuron n4" cx="24" cy="18" r="2.5" strokeWidth="2"/>
+  </svg>
+);
+
+const IconNetwork = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <circle className="anim-neuron n1" cx="16" cy="6" r="3" strokeWidth="2"/>
+    <circle className="anim-neuron n2" cx="6" cy="26" r="3" strokeWidth="2"/>
+    <circle className="anim-neuron n3" cx="26" cy="26" r="3" strokeWidth="2"/>
+    <line className="anim-synapse sy1" x1="16" y1="9" x2="6" y2="23" strokeWidth="2"/>
+    <line className="anim-synapse sy2" x1="16" y1="9" x2="26" y2="23" strokeWidth="2"/>
+    <line className="anim-synapse sy3" x1="9" y1="26" x2="23" y2="26" strokeWidth="2"/>
+    <circle className="anim-target-center" cx="16" cy="18" r="2" strokeWidth="0" fill="var(--aurora-pink, #f472b6)"/>
+  </svg>
+);
+
+const IconSurfaces = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <rect className="anim-cube-back" x="3" y="4" width="14" height="10" rx="2" strokeWidth="2"/>
+    <rect className="anim-cube-mid" x="15" y="8" width="14" height="10" rx="2" strokeWidth="2"/>
+    <rect className="anim-stream s1" x="6" y="18" width="10" height="10" rx="2" strokeWidth="2"/>
+    <rect className="anim-stream s2" x="18" y="20" width="10" height="8" rx="2" strokeWidth="2"/>
+  </svg>
+);
+
 const IconArrowRight = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="5" y1="12" x2="19" y2="12" />
@@ -260,34 +302,95 @@ export function Landing() {
         <h2 className="landing-section-title">Built for teams where every member runs AI</h2>
         <div className="landing-features-grid">
           <div className="landing-feature">
-            <div className="landing-feature-icon"><IconThreads /></div>
-            <h3>Thread Tree</h3>
-            <p>Live view of what every person's agents are doing. Filter by teammate, status, or file.</p>
+            <div className="landing-feature-icon"><IconDestination /></div>
+            <h3>Destination & Progress</h3>
+            <p>Set a target state for your team, define milestones, and track completion as agents ship. Everyone converges on the same goal.</p>
           </div>
           <div className="landing-feature">
-            <div className="landing-feature-icon"><IconLink /></div>
-            <h3>Cross-Session Links</h3>
-            <p>Connect decisions and context across agent boundaries with reference, inject, or fork links</p>
+            <div className="landing-feature-icon"><IconThreads /></div>
+            <h3>Live Agent Map</h3>
+            <p>See what every agent across your team is working on right now. Status, systems, progress bars, and operation metadata in real time.</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconInject /></div>
             <h3>Context Injection</h3>
-            <p>Push decisions or corrections into a teammate's agent mid-session. They see it on their next tool call.</p>
+            <p>Push decisions or corrections into any agent mid-session. They see it on their next tool call. Prioritize urgent messages.</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconBrain /></div>
-            <h3>Knowledge Base</h3>
-            <p>Persistent team memory that survives across sessions. Architecture decisions, conventions, gotchas.</p>
+            <h3>Team Knowledge</h3>
+            <p>Persistent memory that survives across all sessions. Architecture decisions, API conventions, gotchas. Agents learn once, the whole team benefits.</p>
+          </div>
+          <div className="landing-feature">
+            <div className="landing-feature-icon"><IconTimeline /></div>
+            <h3>Timeline & Branching</h3>
+            <p>Git-like version control for agent work. Rewind to any point, fork alternate timelines, cherry-pick across branches, merge back.</p>
+          </div>
+          <div className="landing-feature">
+            <div className="landing-feature-icon"><IconNetwork /></div>
+            <h3>Global Insights Network</h3>
+            <p>Publish anonymized patterns from your room. Query cross-room intelligence so your agents learn from what worked elsewhere.</p>
+          </div>
+          <div className="landing-feature">
+            <div className="landing-feature-icon"><IconLink /></div>
+            <h3>Context Recovery</h3>
+            <p>Agents checkpoint their progress and send distress signals when context runs low. New sessions auto-recover where the last one left off.</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconCode /></div>
             <h3>VS Code Extension</h3>
-            <p>See what your teammates' agents are doing without leaving your editor. Activity feed, inject shortcuts, CodeLens.</p>
+            <p>Agent activity panel next to your terminals. Click any agent to see their task, progress, and status. Inject context without leaving your editor.</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconChat /></div>
-            <h3>Discord Integration</h3>
-            <p>Keep your team in sync from Discord. See what agents are doing, inject context, share knowledge.</p>
+            <h3>Discord & CLI</h3>
+            <p>12 slash commands for team steering from Discord. Zero-auth CLI for room setup, status checks, and context injection from your terminal.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Surfaces */}
+      <section className="landing-section landing-section-alt">
+        <h2 className="landing-section-title">One view, every surface</h2>
+        <p style={{ textAlign: "center", maxWidth: 620, margin: "0 auto 2rem", opacity: 0.6, fontSize: "0.95rem", lineHeight: 1.6 }}>
+          The same navigation model (destination, course, steering) works everywhere your team does.
+          Web dashboard, editor, chat, terminal, and AR glasses all show the same live picture.
+        </p>
+        <div className="landing-surfaces-strip">
+          <div className="landing-surface-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <span>Web Dashboard</span>
+          </div>
+          <div className="landing-surface-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16,18 22,12 16,6"/>
+              <polyline points="8,6 2,12 8,18"/>
+            </svg>
+            <span>VS Code</span>
+          </div>
+          <div className="landing-surface-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+            <span>Discord</span>
+          </div>
+          <div className="landing-surface-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="4,17 10,11 4,5"/>
+              <line x1="12" y1="19" x2="20" y2="19"/>
+            </svg>
+            <span>CLI</span>
+          </div>
+          <div className="landing-surface-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span>Spectacles AR</span>
           </div>
         </div>
       </section>
