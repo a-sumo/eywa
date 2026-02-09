@@ -199,16 +199,22 @@ Spectacles have a bidirectional voice interface powered by Gemini Live. The user
 6. Gemini has an `inject_message` tool that writes directly to the Supabase memories table
 
 **Lens Studio setup:**
-1. Add `EywaGeminiLive` component to a SceneObject
-2. Wire inputs in the inspector:
-   - `websocketRequirementsObj` - the RemoteServiceGateway SceneObject
-   - `dynamicAudioOutput` - DynamicAudioOutput component
-   - `microphoneRecorder` - MicrophoneRecorder component
-   - `textDisplay` - a Text component (shows transcription on glasses)
-   - `realtimeReceiver` - the existing RealtimeTextureReceiver
-   - `snapCloudRequirements` - the existing SnapCloudRequirements
-3. Set `roomSlug` to your room (e.g. "demo")
-4. Set `voice` to a Gemini voice (Kore, Puck, Aoede, or Zephyr)
+
+The scene already has the required dependencies: `MicrophoneRecorder`, `DynamicAudioOutput`, `SnapCloudRequirements`, `Websocket requirements`, and `RealtimeTextureReceiver` (on the TilePanel). You just need to add EywaGeminiLive and wire them together.
+
+1. Create a new SceneObject (right-click scene hierarchy, Add Empty)
+2. Name it "EywaVoice"
+3. Add `EywaGeminiLive` as a script component (Add Component, Script, select `Assets/EywaGeminiLive.ts`)
+4. Wire inputs in the inspector:
+   - `websocketRequirementsObj` - drag the "Websocket requirements" SceneObject from the scene hierarchy
+   - `dynamicAudioOutput` - drag one of the existing `DynamicAudioOutput` objects
+   - `microphoneRecorder` - drag one of the existing `MicrophoneRecorder` objects
+   - `textDisplay` - drag a Text component (create one under EywaVoice if needed, or use an existing `TextOutput`)
+   - `realtimeReceiver` - drag the `RealtimeTextureReceiver` component from the `TilePanel` object
+   - `snapCloudRequirements` - drag the `SnapCloudRequirements` object from the scene
+5. Set `voice` to a Gemini voice (Kore, Puck, Aoede, or Zephyr)
+
+The room slug is derived automatically from the `RealtimeTextureReceiver`'s channel name (defaults to "demo"), so there is no separate room slug to configure.
 
 **Testing without Spectacles:**
 
