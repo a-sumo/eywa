@@ -105,6 +105,15 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
       properties: {},
     },
   },
+  {
+    name: "get_destination",
+    description:
+      "Get the room's current destination (point B) and progress toward it. Returns the target state, milestones, completion percentage, and notes. Use this to answer questions about where the team is headed and how far along they are.",
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
 ];
 
 /** Wrapped for the Gemini REST API tools array. */
@@ -152,6 +161,9 @@ export async function executeTool(
         break;
       case "get_distress_signals":
         result = await handleGetDistressSignals(roomId);
+        break;
+      case "get_destination":
+        result = await handleGetDestination(roomId);
         break;
       default:
         result = `Unknown tool: ${call.name}`;
@@ -535,6 +547,56 @@ async function handleGetDistressSignals(roomId: string): Promise<string> {
   if (lines.length === 0) {
     return "No distress signals or checkpoints found. All agents appear healthy.";
   }
+
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// get_destination
+// ---------------------------------------------------------------------------
+
+async function handleGetDestination(roomId: string): Promise<string> {
+  const { data, error } = await supabase
+    .from("memories")
+    .select("agent, ts, content, metadata")
+    .eq("room_id", roomId)
+    .eq("message_type", "knowledge")
+    .eq("metadata->>event", "destination")
+    .order("ts", { ascending: false })
+    .limit(1);
+
+  if (error) return `Database error: ${error.message}`;
+  if (!data || data.length === 0)
+    return "No destination set for this room. The team has no defined target state (point B).";
+
+  const row = data[0];
+  const meta = row.metadata as Record<string, unknown>;
+  const dest = (meta.destination as string) || "";
+  const milestones = (meta.milestones as string[]) || [];
+  const progress = (meta.progress as Record<string, boolean>) || {};
+  const notes = meta.notes as string | null;
+  const setBy = meta.set_by as string;
+  const updatedBy = meta.last_updated_by as string | null;
+
+  const done = milestones.filter((m) => progress[m]).length;
+  const total = milestones.length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  const lines: string[] = [
+    `Destination: ${dest}`,
+    `Progress: ${done}/${total} milestones (${pct}%)`,
+  ];
+
+  if (milestones.length > 0) {
+    lines.push("\nMilestones:");
+    for (const m of milestones) {
+      lines.push(`  ${progress[m] ? "[x]" : "[ ]"} ${m}`);
+    }
+  }
+
+  if (notes) lines.push(`\nNotes: ${notes}`);
+  lines.push(`\nSet by ${setBy} at ${formatTimeAgo(row.ts)}`);
+  if (updatedBy) lines.push(`Last updated by ${updatedBy}`);
 
   return lines.join("\n");
 }

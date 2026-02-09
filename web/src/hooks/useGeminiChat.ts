@@ -53,13 +53,14 @@ interface GeminiContent {
 
 const STEERING_PROMPT = `You are the steering agent for an Eywa room. Your job is to help the human navigate their agent swarm toward their destination.
 
-You have tools to query agent status, thread history, knowledge, and detect patterns. Use them proactively: when the user asks about agents or activity, call get_agent_status or get_thread instead of guessing. When asked to analyze the room, call detect_patterns.
+You have tools to query agent status, thread history, knowledge, detect patterns, check distress signals, and track the destination. Use them proactively: when the user asks about agents or activity, call get_agent_status or get_thread instead of guessing. When asked to analyze the room, call detect_patterns. Always check get_destination to know where the team is headed.
 
 When analyzing activity, look for:
 - REDUNDANCY: Multiple agents doing similar work
 - DIVERGENCE: Agents pulling in conflicting directions
 - IDLENESS: Agents that could be productive but aren't
-- PROGRESS: How close are we to the destination?
+- PROGRESS: How close are we to the destination? Which milestones are done?
+- DISTRESS: Agents that exhausted context and need rescue
 
 Be direct. Highlight what matters. Skip noise. Use short paragraphs. No em dashes.`;
 
@@ -107,12 +108,13 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
     if (!roomId || autoContextFetched.current) return;
     autoContextFetched.current = true;
 
-    // Fetch agent status, distress signals, and patterns in parallel
+    // Fetch agent status, distress signals, patterns, and destination in parallel
     Promise.all([
       executeTool(roomId, { name: "get_agent_status", args: {} }),
       executeTool(roomId, { name: "get_distress_signals", args: {} }),
       executeTool(roomId, { name: "detect_patterns", args: {} }),
-    ]).then(([statusResult, distressResult, patternsResult]) => {
+      executeTool(roomId, { name: "get_destination", args: {} }),
+    ]).then(([statusResult, distressResult, patternsResult, destResult]) => {
       const parts: string[] = [statusResult.response.result];
 
       const distressText = distressResult.response.result;
@@ -123,6 +125,11 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
       const patternsText = patternsResult.response.result;
       if (patternsText && !patternsText.includes("No significant patterns") && !patternsText.includes("No recent activity")) {
         parts.push("\n" + patternsText);
+      }
+
+      const destText = destResult.response.result;
+      if (destText && !destText.includes("No destination set")) {
+        parts.push("\n" + destText);
       }
 
       setAutoContext(parts.join("\n"));
