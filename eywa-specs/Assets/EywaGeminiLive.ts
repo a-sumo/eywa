@@ -103,7 +103,8 @@ export class EywaGeminiLive extends BaseScriptComponent {
         restUrl + "rooms?slug=eq." + this.roomSlug + "&select=id&limit=1",
         { method: "GET", headers: headers }
       );
-      const rooms = JSON.parse(roomRes.body);
+      const roomText = await roomRes.text();
+      const rooms = JSON.parse(roomText);
       if (!rooms || rooms.length === 0) {
         print("[EywaGeminiLive] Room not found: " + this.roomSlug);
         return;
@@ -122,8 +123,10 @@ export class EywaGeminiLive extends BaseScriptComponent {
         this.internetModule.fetch(destUrl, { method: "GET", headers: headers }),
       ]);
 
-      const memories = JSON.parse(memRes.body);
-      const destinations = JSON.parse(destRes.body);
+      const memText = await memRes.text();
+      const destText = await destRes.text();
+      const memories = JSON.parse(memText);
+      const destinations = JSON.parse(destText);
 
       // Build context string
       if (memories && memories.length > 0) {
@@ -362,7 +365,8 @@ export class EywaGeminiLive extends BaseScriptComponent {
         restUrl + "rooms?slug=eq." + this.roomSlug + "&select=id&limit=1",
         { method: "GET", headers: headers }
       );
-      const rooms = JSON.parse(roomRes.body);
+      const roomText = await roomRes.text();
+      const rooms = JSON.parse(roomText);
       if (!rooms || rooms.length === 0) return;
 
       const roomId = rooms[0].id;
