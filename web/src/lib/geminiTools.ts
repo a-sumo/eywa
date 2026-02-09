@@ -90,7 +90,16 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
   {
     name: "detect_patterns",
     description:
-      "Analyze recent agent activity to find patterns. Detects: REDUNDANCY (multiple agents doing similar work), DIVERGENCE (agents working on conflicting things), IDLENESS (agents with no recent activity that could be productive). Returns a structured analysis.",
+      "Analyze recent agent activity to find patterns. Detects: REDUNDANCY (multiple agents doing similar work), DIVERGENCE (agents working on conflicting things), IDLENESS (agents with no recent activity that could be productive), DISTRESS (agents that ran out of context and need rescue). Returns a structured analysis.",
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "get_distress_signals",
+    description:
+      "Check for agents in distress. Returns unresolved distress signals (agents that ran out of context) and recent checkpoints (agents that saved their state). Use this when asked about stuck agents, recovery, or handoff situations.",
     parameters: {
       type: "object",
       properties: {},
@@ -140,6 +149,9 @@ export async function executeTool(
         break;
       case "detect_patterns":
         result = await handleDetectPatterns(roomId);
+        break;
+      case "get_distress_signals":
+        result = await handleGetDistressSignals(roomId);
         break;
       default:
         result = `Unknown tool: ${call.name}`;
@@ -220,13 +232,23 @@ async function handleGetAgentStatus(roomId: string): Promise<string> {
     const taskEntry = info.entries.find(
       (e) =>
         e.type === "resource" &&
-        (e.content?.startsWith("SESSION START:") || e.content?.startsWith("Agent "))
+        e.content?.startsWith("SESSION START:")
     );
+    // Skip agents that only have connection events
+    const nonNoiseEntries = info.entries.filter(
+      (e) => e.metadata?.event !== "agent_connected"
+    );
+    if (nonNoiseEntries.length === 0) continue;
+
     const task = taskEntry
       ? taskEntry.content.replace("SESSION START: ", "").slice(0, 120)
-      : info.entries[0]?.content?.slice(0, 120) || "no content";
+      : nonNoiseEntries[0]?.content?.slice(0, 120) || "no content";
 
-    lines.push(`[${status}] ${agent} (${info.sessions.size} sessions, last seen ${ago})`);
+    // Flag distress
+    const hasDistress = info.entries.some((e) => e.metadata?.event === "distress" && e.metadata?.resolved !== true);
+    const distressTag = hasDistress ? " [DISTRESS]" : "";
+
+    lines.push(`[${status}]${distressTag} ${agent} (${info.sessions.size} sessions, last seen ${ago})`);
     lines.push(`  Task: ${task}`);
   }
 
@@ -418,11 +440,103 @@ async function handleDetectPatterns(roomId: string): Promise<string> {
     sections.push(`IDLE AGENTS:\n${idle.map((i) => `  - ${i}`).join("\n")}`);
   }
 
+  // --- Distress detection ---
+  const distressed: string[] = [];
+  for (const row of data) {
+    const meta = row.metadata as Record<string, unknown>;
+    if (meta?.event === "distress" && meta?.resolved !== true) {
+      distressed.push(
+        `${row.agent}: ${(meta.task as string) || "unknown task"} (${formatTimeAgo(row.ts)}). Remaining: ${((meta.remaining as string) || "").slice(0, 100)}`
+      );
+    }
+  }
+
+  if (distressed.length > 0) {
+    sections.push(`DISTRESS (agents that ran out of context):\n${distressed.map((d) => `  - ${d}`).join("\n")}`);
+  }
+
   if (sections.length === 0) {
-    return `Analyzed ${data.length} recent events across ${byAgent.size} agents. No significant patterns detected (no redundancy, divergence, or idleness).`;
+    return `Analyzed ${data.length} recent events across ${byAgent.size} agents. No significant patterns detected (no redundancy, divergence, idleness, or distress).`;
   }
 
   return `Pattern analysis (${data.length} events, ${byAgent.size} agents, last 30 min):\n\n${sections.join("\n\n")}`;
+}
+
+// ---------------------------------------------------------------------------
+// get_distress_signals
+// ---------------------------------------------------------------------------
+
+async function handleGetDistressSignals(roomId: string): Promise<string> {
+  // Get distress signals
+  const { data: distress, error: dErr } = await supabase
+    .from("memories")
+    .select("agent, ts, content, metadata")
+    .eq("room_id", roomId)
+    .eq("metadata->>event", "distress")
+    .order("ts", { ascending: false })
+    .limit(10);
+
+  // Get recent checkpoints (last 4 hours)
+  const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+  const { data: checkpoints, error: cErr } = await supabase
+    .from("memories")
+    .select("agent, ts, content, metadata")
+    .eq("room_id", roomId)
+    .eq("metadata->>event", "checkpoint")
+    .gte("ts", fourHoursAgo)
+    .order("ts", { ascending: false })
+    .limit(10);
+
+  if (dErr) return `Database error: ${dErr.message}`;
+  if (cErr) return `Database error: ${cErr.message}`;
+
+  const lines: string[] = [];
+
+  // Unresolved distress signals
+  const unresolved = (distress || []).filter(
+    (d) => (d.metadata as Record<string, unknown>)?.resolved !== true
+  );
+  const resolved = (distress || []).filter(
+    (d) => (d.metadata as Record<string, unknown>)?.resolved === true
+  );
+
+  if (unresolved.length > 0) {
+    lines.push(`UNRESOLVED DISTRESS (${unresolved.length}):\n`);
+    for (const d of unresolved) {
+      const meta = d.metadata as Record<string, unknown>;
+      lines.push(`  Agent: ${d.agent} (${formatTimeAgo(d.ts)})`);
+      lines.push(`  Task: ${(meta.task as string) || "unknown"}`);
+      lines.push(`  Done: ${((meta.done as string) || "").slice(0, 150)}`);
+      lines.push(`  Remaining: ${((meta.remaining as string) || "").slice(0, 200)}`);
+      const files = (meta.files_changed as string[]) || [];
+      if (files.length > 0) lines.push(`  Files: ${files.join(", ")}`);
+      lines.push("");
+    }
+  }
+
+  if (resolved.length > 0) {
+    lines.push(`RESOLVED DISTRESS (${resolved.length}):\n`);
+    for (const d of resolved) {
+      const meta = d.metadata as Record<string, unknown>;
+      lines.push(`  ${d.agent}: ${(meta.task as string) || "unknown"} (recovered by ${(meta.recovered_by as string) || "unknown"}, ${formatTimeAgo(d.ts)})`);
+    }
+    lines.push("");
+  }
+
+  if ((checkpoints || []).length > 0) {
+    lines.push(`RECENT CHECKPOINTS (${checkpoints!.length}, last 4h):\n`);
+    for (const cp of checkpoints!) {
+      const meta = cp.metadata as Record<string, unknown>;
+      lines.push(`  ${cp.agent}: ${(meta.task as string) || "unknown"} (${formatTimeAgo(cp.ts)})`);
+    }
+    lines.push("");
+  }
+
+  if (lines.length === 0) {
+    return "No distress signals or checkpoints found. All agents appear healthy.";
+  }
+
+  return lines.join("\n");
 }
 
 // ---------------------------------------------------------------------------
