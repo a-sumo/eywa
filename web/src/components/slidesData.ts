@@ -43,7 +43,7 @@ export interface SlidesData {
 
 export const slidesData: SlidesData = {
   title: "Eywa",
-  subtitle: "See what your whole team's AI agents are building.",
+  subtitle: "Agentic stewardship at scale.",
   summary: [
     "1. The Problem",
     "2. Connect, See, Steer",
@@ -61,7 +61,7 @@ export const slidesData: SlidesData = {
       "See what everyone's building",
       "Steer the work",
       "Agent-centric operations hub",
-      "Workspace + Gemini",
+      "Gemini steering",
     ],
     "Interaction Surfaces": [
       "More surfaces, more people steering",
@@ -104,10 +104,10 @@ export const slidesData: SlidesData = {
     {
       type: "bullets",
       title: "2. See what everyone's building",
-      subtitle: "Live thread tree of every agent session across your team.",
+      subtitle: "Live agent map showing every session, system, and decision across your team.",
       items: [
-        "Every session becomes a <strong>shared thread</strong> with memories, artifacts, and decisions.",
-        "Click into any thread for the full conversation, artifacts, and status.",
+        "Every agent session streams to the <strong>Hub</strong>: progress bars, systems touched, operation metadata.",
+        "Click any agent for the full conversation, artifacts, and status.",
         "Spot duplicated work, conflicting decisions, and drift before they compound.",
       ],
     },
@@ -134,12 +134,12 @@ export const slidesData: SlidesData = {
     },
     {
       type: "bullets",
-      title: "Workspace + Gemini",
-      subtitle: "Drag context from multiple agent sessions. Ask Gemini questions across all of it.",
+      title: "Gemini steering",
+      subtitle: "One AI that sees all your agents. Ask it anything about the swarm.",
       items: [
-        "Drag memories from any thread into a shared workspace.",
-        "<strong>Gemini 3 Flash</strong> synthesizes information across threads, resolves conflicts, and answers with the full picture.",
-        "Output becomes a new shareable thread.",
+        "Gemini watches every agent session in real time. Ask what's happening, where work overlaps, or who's stuck.",
+        "<strong>Pattern detection</strong>: redundant work, divergent goals, idle capacity, context exhaustion.",
+        "Inject corrections from the chat panel. Gemini becomes your steering wheel.",
       ],
     },
 
@@ -149,7 +149,7 @@ export const slidesData: SlidesData = {
       title: "More surfaces, more people steering",
       subtitle: "You don't need to be in a terminal to steer your agents. Each surface reaches people where they already are.",
       items: [
-        "<strong>Web dashboard</strong>: Thread tree, workspace, Gemini chat. Works on phone.",
+        "<strong>Web dashboard</strong>: Agent hub, destination tracking, Gemini chat. Works on phone.",
         "<strong>VS Code</strong>: Realtime sidebar, activity feed, one-click context injection.",
         "<strong>Discord</strong>: 15 slash commands. Your group chat becomes your agent control room.",
         "<strong>CLI</strong>: npx eywa-ai init, status, inject, log.",
@@ -161,7 +161,7 @@ export const slidesData: SlidesData = {
       subtitle: "Not everyone lives in an IDE. These surfaces work without opening anything.",
       items: [
         "<strong>E-ink display</strong>: Sits on your desk. Shows agent status, always on, no interaction needed. Also serves as an AR tracking anchor.",
-        "<strong>Snap Spectacles</strong>: AR overlay anchored to the physical display. Live tiles in space, hand tracking to interact.",
+        "<strong>Snap Spectacles</strong>: AR overlay with live tiles streamed from the dashboard. Voice interface via Gemini Live for hands-free steering.",
         "<strong>TFT touch</strong>: Tap to inspect an agent, tap to inject context. No keyboard required.",
         "The more surfaces you ship, the more people can participate. Someone who'd never open a terminal can still see what's happening and steer.",
       ],
@@ -184,11 +184,11 @@ export const slidesData: SlidesData = {
     {
       type: "bullets",
       title: "Gemini orchestration",
-      subtitle: "Gemini powers the intelligence layer across Eywa.",
+      subtitle: "Gemini runs the intelligence layer: chat, analysis, pattern detection, voice.",
       items: [
-        "<strong>Gemini 3 Flash</strong>: Dashboard chat, cross-thread analysis, workspace synthesis.",
-        "<strong>Gemini 3-flash-preview</strong>: Advanced reasoning for divergence detection and knowledge distillation.",
-        "Every workspace query, every conflict detection, every knowledge synthesis runs through Gemini.",
+        "<strong>Dashboard chat</strong>: ask Gemini about agent status, conflicts, and progress. It calls 6 tools to query the room in real time.",
+        "<strong>Spectacles voice</strong>: Gemini Live provides bidirectional audio on AR glasses. Talk to your swarm, inject messages, steer agents hands-free.",
+        "<strong>Pattern detection</strong>: Gemini analyzes agent operations to detect redundancy, divergence, and context exhaustion automatically.",
       ],
     },
     {
@@ -212,6 +212,6 @@ export const slidesData: SlidesData = {
 
   closing: {
     title: "Eywa",
-    subtitle: "See what your whole team's AI agents are building.",
+    subtitle: "Agentic stewardship at scale.",
   },
 };

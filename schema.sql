@@ -83,6 +83,39 @@ CREATE INDEX IF NOT EXISTS idx_global_insights_ts ON global_insights(ts DESC);
 CREATE INDEX IF NOT EXISTS idx_global_insights_domain ON global_insights USING GIN(domain_tags);
 CREATE INDEX IF NOT EXISTS idx_global_insights_source ON global_insights(source_hash);
 
+-- Clone a room's memories into a new demo room (bypasses RLS via SECURITY DEFINER)
+CREATE OR REPLACE FUNCTION clone_demo_room(source_slug TEXT, new_slug TEXT)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  source_room_id UUID;
+  new_room_id UUID;
+BEGIN
+  -- Find source room
+  SELECT id INTO source_room_id FROM rooms WHERE slug = source_slug;
+  IF source_room_id IS NULL THEN
+    RAISE EXCEPTION 'Source room not found: %', source_slug;
+  END IF;
+
+  -- Create new room
+  INSERT INTO rooms (slug, name, created_by, is_demo)
+  VALUES (new_slug, 'Demo Room', 'demo', true)
+  RETURNING id INTO new_room_id;
+
+  -- Clone memories (skip parent_id to avoid FK issues)
+  INSERT INTO memories (room_id, agent, session_id, message_type, content, token_count, metadata, ts)
+  SELECT new_room_id, agent, session_id, message_type, content, token_count, metadata, ts
+  FROM memories
+  WHERE room_id = source_room_id
+  ORDER BY ts ASC
+  LIMIT 500;
+
+  RETURN new_room_id;
+END;
+$$;
+
 -- Optional: Row Level Security (if you want user isolation)
 -- ALTER TABLE memories ENABLE ROW LEVEL SECURITY;
 -- CREATE POLICY "Users can read all" ON memories FOR SELECT USING (true);

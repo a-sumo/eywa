@@ -132,12 +132,12 @@ export function Landing() {
       <section className="landing-hero-dark">
         <div className="landing-hero-content">
           <h1 className="landing-hero-title">
-            See what your whole team's<br />
-            <span className="landing-hero-gradient">AI agents are building.</span>
+            Agentic stewardship<br />
+            <span className="landing-hero-gradient">at scale.</span>
           </h1>
           <p className="landing-hero-subtitle">
             Everyone on your team runs AI agents that code, decide, and ship autonomously.
-            Eywa gives the whole team one live view of what every agent is doing, so the humans stay aligned.
+            Eywa gives you one live view of what every agent is doing, so you can see, steer, and stay aligned.
           </p>
           <div className="landing-hero-actions">
             <button
@@ -508,8 +508,8 @@ export function Landing() {
           <h2 className="landing-gemini-title">One AI that sees all your agents</h2>
           <p className="landing-gemini-description">
             Gemini sits inside the dashboard and watches every agent session in real time.
-            Ask it what's happening, where work is duplicated, or which agents are stuck.
-            It detects patterns across threads and helps you steer the whole team from one place.
+            Ask it what's happening, where work overlaps, or which agents are stuck.
+            It detects patterns (redundancy, divergence, context exhaustion) and helps you steer from one place.
           </p>
         </div>
       </section>
@@ -566,7 +566,7 @@ export function Landing() {
 
       {/* CTA */}
       <section className="landing-cta-section">
-        <h2>See what your whole team is building.</h2>
+        <h2>Agentic stewardship at scale.</h2>
         <p>One live view of every agent session across your team. Connect any MCP agent in one line.</p>
         <div className="landing-hero-actions">
           <button className="btn-landing-primary btn-large" onClick={() => createDemoRoom()} disabled={creating}>

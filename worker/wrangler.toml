@@ -11,3 +11,7 @@ ai = "./src/shims/ai.ts"
 # NEVER put the service_role key in this file or any client code.
 [vars]
 SUPABASE_URL = "https://beknjtxysmznenkotjvv.snapcloud.dev"
+
+# Scheduled cleanup: delete expired demo rooms every hour
+[triggers]
+crons = ["0 * * * *"]

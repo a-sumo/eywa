@@ -67,7 +67,7 @@ Hold 5 sec. The audience reads the bullets. No voiceover needed over the slide.
 
 **Say:**
 - Drag context from any thread. Ask Gemini questions across all of it.
-- Powered by Gemini 3 Flash.
+- Powered by Gemini.
 
 ## 1:30-2:00 | Every Surface
 
@@ -114,12 +114,12 @@ Hold 5 sec. The audience reads the bullets. No voiceover needed over the slide.
 
 **Say:**
 - Built on MCP. Open standard, works with any agent.
-- Orchestration powered by Gemini 3 Flash. Chat, synthesis, divergence detection, knowledge distillation.
+- Orchestration powered by Gemini. Chat, pattern detection, voice on Spectacles, divergence alerts.
 - Cloudflare Workers, Supabase Realtime, React 19. Fully open source.
 
 ## 2:50-3:00 | Close
 
-**SLIDE: Closing** ("Eywa / See what your whole team's AI agents are building.")
+**SLIDE: Closing** ("Eywa / Agentic stewardship at scale.")
 
 **Say:**
 - eywa-ai.dev. Try it now: npx eywa-ai init.
