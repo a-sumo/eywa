@@ -3461,6 +3461,194 @@ body {
   margin-left: auto;
 }
 
+/* Context pressure pill */
+.hub-pressure-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  animation: hub-pressure-pulse 2s ease-in-out infinite;
+}
+
+@keyframes hub-pressure-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Gemini steering panel */
+.hub-steering {
+  margin-bottom: 10px;
+}
+
+.hub-steering-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: rgba(139, 92, 246, 0.04);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.hub-steering-toggle:hover {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.hub-steering-label {
+  color: #a78bfa;
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hub-steering-count {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c084fc;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.hub-steering-body {
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.hub-steering-messages {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.hub-steering-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.hub-steering-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.hub-steering-empty {
+  padding: 16px;
+  text-align: center;
+  opacity: 0.3;
+  font-size: 0.78rem;
+}
+
+.hub-steering-msg {
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+}
+
+.hub-steering-user {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.hub-steering-model {
+  background: rgba(139, 92, 246, 0.06);
+}
+
+.hub-steering-msg-role {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  opacity: 0.5;
+  margin-bottom: 2px;
+}
+
+.hub-steering-msg-content {
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.hub-steering-typing {
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.hub-steering-error {
+  padding: 6px 10px;
+  color: #fca5a5;
+  font-size: 0.75rem;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.hub-steering-input {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hub-steering-input input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-family: inherit;
+}
+
+.hub-steering-input input:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.hub-steering-input input::placeholder {
+  color: rgba(240, 242, 248, 0.3);
+}
+
+.hub-steering-input button {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+  padding: 4px 10px;
+  color: #c084fc;
+  font-size: 0.88rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease;
+}
+
+.hub-steering-input button:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+.hub-steering-input button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.hub-steering-clear {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 0.75rem !important;
+}
+
+.hub-steering-clear:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* Sticky inject bar */
 .hub-inject-bar {
   position: fixed;

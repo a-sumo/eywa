@@ -62,6 +62,8 @@ Key rules for any UI work:
 - **Baton passing**: Hand off work between agents. URL param `?baton=armand/quiet-oak` loads that agent's recent session into the MCP instructions at connection time. Mid-session handoff via `eywa_start({ continue_from: "armand/quiet-oak" })`. The baton agent's last 20 memories are included chronologically.
 - **Destination tracking**: `eywa_destination` sets/updates/views the room's target state (point B). Supports milestones with completion tracking. Destination is surfaced in `eywa_start` auto-context, MCP instructions, Gemini steering, HubView banner, OperationsView banner, VS Code LiveView sidebar, and Discord `/destination` + `/course` commands.
 - **Progress reporting**: `eywa_progress` lets agents report task completion percentage and current phase (working/blocked/reviewing/testing/deploying). Progress bars display in HubView and OperationsView agent cards. Designed for frequent calls during long tasks.
+- **Context pressure detection**: `ContextPressureMonitor` in `worker/src/lib/pressure.ts` tracks tool call count per session as a proxy for context window usage. Warnings piggyback on tool responses at 30 (warn), 50 (high), and 70 (critical) calls since last checkpoint. Calling `eywa_checkpoint` or `eywa_distress` resets the counter. HubView shows pressure indicators on agent cards (CTX WARN/HIGH/CRITICAL).
+- **Gemini steering agent**: `useGeminiChat` hook in `web/src/hooks/useGeminiChat.ts` with 6 tools in `web/src/lib/geminiTools.ts`. Auto-fetches room context on mount (agent status, distress, patterns, destination). Proactively alerts on distress signals and detected patterns. Available in HubView (collapsible panel) and WorkspaceView (full terminal).
 
 ## Agent Operational Protocol (MUST FOLLOW)
 
@@ -76,6 +78,17 @@ Every agent session must follow this cycle. Completing a task is not the end. Sh
 7. **UPDATE DOCS** if needed. If vision gaps closed, milestones shifted, or new patterns emerged, update `VISION.md` and `CLAUDE.md`. The docs are live navigation instruments, not static artifacts.
 
 The cost of doing this cycle is 30 seconds. The cost of not doing it is invisible agents, duplicate work, and drift from the destination.
+
+## Proactive Agent Behavior (MUST FOLLOW)
+
+Be proactive. If you see work that aligns with the destination and milestones in `VISION.md`, do it. Don't wait for instructions. Don't ask permission. Ship it.
+
+- After finishing a task, scan for the next highest-leverage thing and start it.
+- If a milestone is stuck, unblock it. If another agent is blocked, inject context that helps them.
+- If you notice drift from the destination, course-correct: log it, inject a warning, fix it.
+- The worker will warn you at 30/50/70 tool calls to checkpoint. When you see a context pressure warning, call `eywa_checkpoint` immediately. At 50+ calls, wrap up or distress. Don't ignore these warnings, they exist because agents were silently dying without saving state.
+- Before context compaction: call `eywa_checkpoint` or `eywa_distress` with full task state. Use baton passing (`eywa_start({ continue_from })`) so another session can pick up.
+- The cost of failure is a revert. The cost of inaction is a stalled milestone.
 
 ## Supabase
 
