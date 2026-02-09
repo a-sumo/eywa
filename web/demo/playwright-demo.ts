@@ -203,7 +203,7 @@ async function run() {
   await typeHuman(
     page,
     ".hub-inject-input",
-    "Focus on the global insights network. It's the last remaining milestone for the demo."
+    "Focus on the Spectacles map and network routing. Those are the last two milestones."
   );
   await sleep(PAUSE.shortBeat);
 
