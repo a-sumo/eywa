@@ -17,6 +17,7 @@ import { SessionGraph } from "./components/SessionGraph";
 import { SpectaclesView } from "./components/SpectaclesView";
 import { SpectaclesReceiver } from "./components/SpectaclesReceiver";
 import { GlobalKnowledgeHub } from "./components/GlobalKnowledgeHub";
+import { OperationsView } from "./components/OperationsView";
 import { BroadcastTest } from "./components/BroadcastTest";
 import { LogoGlowTuner } from "./components/LogoGlowTuner";
 import { JellyEditor } from "./components/JellyEditor";
@@ -67,6 +68,7 @@ function RoomRoutes() {
       <RoomLayout>
         <Routes>
           <Route index element={<ThreadTree />} />
+          <Route path="ops" element={<OperationsView />} />
           <Route path="thread/:agent/:sessionId" element={<ThreadView />} />
           <Route path="workspace" element={<WorkspaceView />} />
           <Route path="agent/:name" element={<AgentDetail />} />

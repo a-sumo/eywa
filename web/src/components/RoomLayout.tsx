@@ -50,6 +50,7 @@ export function RoomLayout({ children }: RoomLayoutProps) {
       </div>
       <nav className="mobile-tabs">
         <Link to={`/r/${slug}`}>Threads</Link>
+        <Link to={`/r/${slug}/ops`}>Ops</Link>
         <Link to={`/r/${slug}/workspace`}>Workspace</Link>
         <Link to={`/r/${slug}/chat`}>Chat</Link>
         <Link to={`/r/${slug}/graph`}>Graph</Link>

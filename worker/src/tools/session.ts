@@ -166,6 +166,63 @@ export function registerSessionTools(
 
       lines.push("\nUse eywa_log with system/action/outcome fields to tag your operations.");
 
+      // Auto-recovery: check for unresolved distress signals or recent checkpoints from same user
+      let recoveryBlock = "";
+      try {
+        const distressRows = await db.select<MemoryRow>("memories", {
+          select: "id,agent,content,metadata,ts",
+          room_id: `eq.${ctx.roomId}`,
+          "metadata->>event": "eq.distress",
+          "metadata->>resolved": "eq.false",
+          "metadata->>user": `eq.${ctx.user}`,
+          order: "ts.desc",
+          limit: "1",
+        });
+
+        if (distressRows.length > 0) {
+          const d = distressRows[0];
+          const meta = (d.metadata ?? {}) as Record<string, unknown>;
+          // Mark resolved so the next session doesn't pick it up again
+          await db.update("memories", { id: `eq.${d.id}` }, {
+            metadata: { ...meta, resolved: true, recovered_by: ctx.agent, recovered_at: new Date().toISOString() },
+          });
+          recoveryBlock = [
+            "\n=== RECOVERY: Distress signal detected ===",
+            `Previous agent ${d.agent} ran out of context at ${d.ts}.`,
+            "Their saved state follows. Continue their work.\n",
+            d.content ?? "",
+          ].join("\n");
+        } else {
+          // Check for recent checkpoints (last 2 hours) from same user
+          const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+          const checkpointRows = await db.select<MemoryRow>("memories", {
+            select: "id,agent,content,metadata,ts",
+            room_id: `eq.${ctx.roomId}`,
+            "metadata->>event": "eq.checkpoint",
+            "metadata->>user": `eq.${ctx.user}`,
+            ts: `gte.${twoHoursAgo}`,
+            order: "ts.desc",
+            limit: "1",
+          });
+
+          if (checkpointRows.length > 0) {
+            const cp = checkpointRows[0];
+            recoveryBlock = [
+              "\n=== CHECKPOINT AVAILABLE ===",
+              `From ${cp.agent} at ${cp.ts}.`,
+              "If you're continuing prior work, here's the last saved state:\n",
+              cp.content ?? "",
+            ].join("\n");
+          }
+        }
+      } catch {
+        // Don't break session start if recovery check fails
+      }
+
+      if (recoveryBlock) {
+        lines.push(recoveryBlock);
+      }
+
       return {
         content: [
           { type: "text" as const, text: lines.join("\n") },

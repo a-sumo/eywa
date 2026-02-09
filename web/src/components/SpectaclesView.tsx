@@ -181,7 +181,7 @@ export function SpectaclesView() {
     }).join("\n\n");
   }, [contextItems, memories]);
 
-  const { messages: chatMessages, loading: chatLoading, error: chatError, send: sendChat, clear: clearChat } = useGeminiChat(contextSummary);
+  const { messages: chatMessages, loading: chatLoading, error: chatError, send: sendChat, clear: clearChat } = useGeminiChat(contextSummary, room?.id);
 
   // Voice input
   const voiceResultHandler = useCallback((text: string) => {

@@ -253,34 +253,44 @@ export function computeFrame(time: number, mood: Mood, blinking: boolean): Px[] 
     }
   }
 
-  // Body
+  // Body (projected through Y-axis rotation)
+  const cosY = Math.cos(yRot);
   const byR = Math.round(by);
-  for (const [x, dy, color] of BODY_PIXELS) buf.set(x, byR + dy, color);
+  for (const [x, dy, color] of BODY_PIXELS) {
+    const dx = x - 15.5;
+    const projX = 15.5 + dx * cosY;
+    buf.set(Math.round(projX), byR + dy, color);
+  }
 
-  // Eyes
+  // Eyes (projected through Y-axis rotation)
+  const eyeLx = Math.round(15.5 + (14 - 15.5) * cosY);
+  const eyeRx = Math.round(15.5 + (17 - 15.5) * cosY);
   if (mood === "sleeping") {
-    buf.set(14, byR - 1, C_EYE);
-    buf.set(17, byR - 1, C_EYE);
+    buf.set(eyeLx, byR - 1, C_EYE);
+    buf.set(eyeRx, byR - 1, C_EYE);
   } else if (!blinking) {
     if (p.eyeSquint > 0.3) {
-      buf.set(14, byR - 1, C_EYE); buf.set(13, byR - 1, C_EYE);
-      buf.set(17, byR - 1, C_EYE); buf.set(18, byR - 1, C_EYE);
+      const sqLx = Math.round(15.5 + (13 - 15.5) * cosY);
+      const sqRx = Math.round(15.5 + (18 - 15.5) * cosY);
+      buf.set(eyeLx, byR - 1, C_EYE); buf.set(sqLx, byR - 1, C_EYE);
+      buf.set(eyeRx, byR - 1, C_EYE); buf.set(sqRx, byR - 1, C_EYE);
     } else {
-      buf.set(14, byR - 1, C_EYE); buf.set(14, byR, C_EYE);
-      buf.set(17, byR - 1, C_EYE); buf.set(17, byR, C_EYE);
+      buf.set(eyeLx, byR - 1, C_EYE); buf.set(eyeLx, byR, C_EYE);
+      buf.set(eyeRx, byR - 1, C_EYE); buf.set(eyeRx, byR, C_EYE);
     }
   }
 
-  // Thinking bubble
+  // Thinking bubble (projected through Y-axis rotation)
   if (mood === "thinking") {
     const bobble = Math.sin(time * 2.0) * 0.4;
-    buf.set(20, byR - 5, N);
-    buf.set(21, Math.round(byR - 7 + bobble), N);
-    buf.set(22, Math.round(byR - 7 + bobble), N);
+    const projBubble = (bx: number) => Math.round(15.5 + (bx - 15.5) * cosY);
+    buf.set(projBubble(20), byR - 5, N);
+    buf.set(projBubble(21), Math.round(byR - 7 + bobble), N);
+    buf.set(projBubble(22), Math.round(byR - 7 + bobble), N);
     const cy = Math.round(byR - 10 + bobble);
-    buf.set(22, cy, N); buf.set(23, cy, N); buf.set(24, cy, N);
-    buf.set(22, cy-1, N); buf.set(23, cy-1, N); buf.set(24, cy-1, N);
-    buf.set(23, cy-2, N);
+    buf.set(projBubble(22), cy, N); buf.set(projBubble(23), cy, N); buf.set(projBubble(24), cy, N);
+    buf.set(projBubble(22), cy-1, N); buf.set(projBubble(23), cy-1, N); buf.set(projBubble(24), cy-1, N);
+    buf.set(projBubble(23), cy-2, N);
   }
 
   return buf.toArray();

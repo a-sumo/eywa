@@ -69,9 +69,7 @@ export function MemoryCard({
     <div
       className={`memory-card ${expanded ? "memory-card-expanded" : ""} ${compact ? "memory-card-compact" : ""} ${isDraggable ? "memory-card-draggable" : ""}`}
       onClick={() => {
-        if (compact && onPull) {
-          onPull(memory);
-        } else if (!compact) {
+        if (isLong) {
           setExpanded(!expanded);
         }
       }}
@@ -110,7 +108,16 @@ export function MemoryCard({
             <span className="memory-time">{formatTime(memory.ts)}</span>
           )}
           {compact && onPull && (
-            <span className="memory-time" style={{ cursor: "pointer" }}>+</span>
+            <span
+              className="memory-time"
+              style={{ cursor: "pointer" }}
+              onClick={(e) => { e.stopPropagation(); onPull(memory); }}
+            >+</span>
+          )}
+          {isLong && (
+            <span className="memory-expand-hint">
+              {expanded ? "\u25B4" : "\u25BE"}
+            </span>
           )}
         </div>
         <div className="memory-content">
