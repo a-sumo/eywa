@@ -53,17 +53,11 @@ export class EywaGeminiLive extends BaseScriptComponent {
   private voice: string = "Kore";
   @ui.group_end
 
-  @ui.separator
-  @ui.group_start("Room")
-  @input
-  @hint("Room slug to fetch context from (e.g. 'demo')")
-  private roomSlug: string = "demo";
-  @ui.group_end
-
   private audioProcessor: AudioProcessor = new AudioProcessor();
   private internetModule: InternetModule = require('LensStudio:InternetModule');
   private roomContext: string = "";
   private destinationText: string = "";
+  private roomSlug: string = "";
 
   onAwake() {
     this.websocketRequirementsObj.enabled = true;
@@ -73,6 +67,16 @@ export class EywaGeminiLive extends BaseScriptComponent {
   }
 
   private async initialize() {
+    // Derive room slug from the RealtimeTextureReceiver's channel name.
+    // This keeps voice queries in sync with whatever room the broadcast
+    // channel is connected to, instead of hardcoding a slug.
+    if (this.realtimeReceiver) {
+      this.roomSlug = this.realtimeReceiver.getChannelName() || "demo";
+    } else {
+      this.roomSlug = "demo";
+    }
+    print("[EywaGeminiLive] Room slug (from receiver): " + this.roomSlug);
+
     this.dynamicAudioOutput.initialize(24000);
     this.microphoneRecorder.setSampleRate(16000);
 
