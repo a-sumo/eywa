@@ -38,8 +38,9 @@ export interface ChatMessage {
 
 interface GeminiPart {
   text?: string;
-  functionCall?: { name: string; args: Record<string, unknown> };
+  functionCall?: { name: string; args: Record<string, unknown>; [key: string]: unknown };
   functionResponse?: { name: string; response: { result: string } };
+  [key: string]: unknown;
 }
 
 interface GeminiContent {
@@ -234,6 +235,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
 
           let modelText = "";
           let functionCalls: GeminiFunctionCall[] = [];
+          let rawFunctionCallParts: GeminiPart[] = [];
           let success = false;
 
           // Try models in order (fallback on rate limit)
@@ -292,6 +294,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
               );
               modelText = parsed.text;
               functionCalls = parsed.functionCalls;
+              rawFunctionCallParts = parsed.rawFunctionCallParts;
             } else {
               // Non-streaming: parse JSON response
               const data = await response.json();
@@ -306,6 +309,8 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
                       name: part.functionCall.name,
                       args: part.functionCall.args || {},
                     });
+                    // Preserve the raw part (includes thought_signature for Gemini thinking models)
+                    rawFunctionCallParts.push(part);
                   }
                 }
               }
@@ -324,12 +329,15 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
 
           // If Gemini returned function calls, execute them and loop
           if (functionCalls.length > 0 && roomId) {
-            // Add the model's function call to the API conversation
+            // Add the model's function call to the API conversation.
+            // Use raw parts to preserve thought_signature for Gemini thinking models.
             apiContents.push({
               role: "model",
-              parts: functionCalls.map((fc) => ({
-                functionCall: { name: fc.name, args: fc.args },
-              })),
+              parts: rawFunctionCallParts.length > 0
+                ? rawFunctionCallParts
+                : functionCalls.map((fc) => ({
+                    functionCall: { name: fc.name, args: fc.args },
+                  })),
             });
 
             // Execute each tool
@@ -431,9 +439,10 @@ async function parseStreamingResponse(
   response: Response,
   signal: AbortSignal,
   onChunk: (text: string) => void
-): Promise<{ text: string; functionCalls: GeminiFunctionCall[] }> {
+): Promise<{ text: string; functionCalls: GeminiFunctionCall[]; rawFunctionCallParts: GeminiPart[] }> {
   let fullText = "";
   const functionCalls: GeminiFunctionCall[] = [];
+  const rawFunctionCallParts: GeminiPart[] = [];
 
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
@@ -472,6 +481,7 @@ async function parseStreamingResponse(
                 name: part.functionCall.name,
                 args: part.functionCall.args || {},
               });
+              rawFunctionCallParts.push(part);
             }
           }
         } catch {
@@ -483,5 +493,5 @@ async function parseStreamingResponse(
     reader.releaseLock();
   }
 
-  return { text: fullText, functionCalls };
+  return { text: fullText, functionCalls, rawFunctionCallParts };
 }
