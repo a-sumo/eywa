@@ -1,35 +1,92 @@
 #!/bin/bash
 # Eywa Demo - Voice Clone + TTS Generation
+# Reads voiceover text from voiceover.md (blockquotes starting with >)
 # Uses ElevenLabs API with eleven_v3 (latest model) + instant voice clone
 #
 # Prerequisites:
 #   export ELEVENLABS_API_KEY="your-key-here"
-#   brew install jq ffmpeg (if not already installed)
+#   brew install jq ffmpeg python3
 #
 # Usage:
 #   cd web/demo
 #   chmod +x generate-voiceover.sh
 #   ./generate-voiceover.sh
+#
+# The script reads voiceover.md and extracts all > blockquote sections
+# as separate audio segments. Run refresh-demo.sh to update voiceover.md
+# from current app state before generating audio.
 
 set -euo pipefail
 
 API_KEY="${ELEVENLABS_API_KEY:?Set ELEVENLABS_API_KEY environment variable}"
 BASE="https://api.elevenlabs.io/v1"
 MODEL="eleven_v3"
-OUTPUT_DIR="$(dirname "$0")/generated-audio"
-SAMPLES_DIR="$(dirname "$0")/voice-samples"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+OUTPUT_DIR="$SCRIPT_DIR/generated-audio"
+SAMPLES_DIR="$SCRIPT_DIR/voice-samples"
+VOICEOVER_MD="$SCRIPT_DIR/voiceover.md"
 
 mkdir -p "$OUTPUT_DIR"
 
 echo ""
 echo "=== Eywa Demo Voiceover Generator ==="
 echo "Model: $MODEL (ElevenLabs latest)"
+echo "Source: $VOICEOVER_MD"
 echo ""
 
 # -----------------------------------------------
-# Step 1: Clone voice from audio samples
+# Step 1: Parse voiceover.md into segments
 # -----------------------------------------------
-echo "Step 1: Cloning your voice from samples..."
+echo "Step 1: Parsing voiceover.md..."
+
+# Extract segments: each ## heading becomes a segment label,
+# and the blockquote (> lines) below it becomes the text.
+SEGMENTS=()
+LABELS=()
+
+current_label=""
+current_text=""
+in_quote=false
+
+while IFS= read -r line; do
+  # New section heading
+  if echo "$line" | grep -q '^## '; then
+    # Save previous segment if we have one
+    if [ -n "$current_label" ] && [ -n "$current_text" ]; then
+      LABELS+=("$current_label")
+      SEGMENTS+=("$current_text")
+    fi
+    # Extract label from heading (e.g., "## [0:00 - 0:20] THE HOOK" -> "hook")
+    current_label=$(echo "$line" | sed 's/^## \[.*\] //' | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-' | head -c 30)
+    current_text=""
+    in_quote=false
+  elif echo "$line" | grep -q '^>'; then
+    # Blockquote line - extract text after "> "
+    quote_text=$(echo "$line" | sed 's/^> *//')
+    if [ -n "$current_text" ]; then
+      current_text="$current_text $quote_text"
+    else
+      current_text="$quote_text"
+    fi
+    in_quote=true
+  elif [ "$in_quote" = true ] && [ -z "$line" ]; then
+    in_quote=false
+  fi
+done < "$VOICEOVER_MD"
+
+# Don't forget the last segment
+if [ -n "$current_label" ] && [ -n "$current_text" ]; then
+  LABELS+=("$current_label")
+  SEGMENTS+=("$current_text")
+fi
+
+echo "  Found ${#SEGMENTS[@]} segments"
+echo ""
+
+# -----------------------------------------------
+# Step 2: Clone voice from audio samples
+# -----------------------------------------------
+echo "Step 2: Setting up voice..."
 
 VOICE_ID=""
 
@@ -44,7 +101,6 @@ else
 
   CLONE_CMD="curl -s -X POST '$BASE/voices/add' -H 'xi-api-key: $API_KEY'"
 
-  # Add all sample files
   for f in "$SAMPLES_DIR"/*.mp3; do
     if [ -f "$f" ]; then
       CLONE_CMD="$CLONE_CMD -F 'files=@$f'"
@@ -71,9 +127,9 @@ fi
 echo ""
 
 # -----------------------------------------------
-# Step 2: Generate each voiceover segment
+# Step 3: Generate each voiceover segment
 # -----------------------------------------------
-echo "Step 2: Generating voiceover segments with $MODEL..."
+echo "Step 3: Generating voiceover segments with $MODEL..."
 echo ""
 
 generate_segment() {
@@ -82,11 +138,7 @@ generate_segment() {
   local text="$3"
   local outfile="$OUTPUT_DIR/segment_${idx}_${label}.mp3"
 
-  if [ -f "$outfile" ]; then
-    echo "  [$idx] $label - already exists, skipping"
-    return
-  fi
-
+  # Always regenerate (refresh pipeline clears old files)
   echo "  [$idx] $label - generating..."
 
   # Escape text for JSON
@@ -112,7 +164,7 @@ generate_segment() {
 
   if [ "$HTTP_CODE" != "200" ]; then
     echo "    WARN: Got HTTP $HTTP_CODE for segment $idx"
-    cat "$outfile"
+    cat "$outfile" 2>/dev/null || true
     rm -f "$outfile"
   else
     local duration
@@ -121,59 +173,18 @@ generate_segment() {
   fi
 }
 
-# --- Segment definitions (matching voiceover.md) ---
-
-generate_segment "01" "hook" \
-  "Right now I have over 80 AI agents that have touched this codebase. They're writing code, making decisions, shipping commits. The problem is: how do I know what's actually happening? That's Eywa. It's a navigation system for agent swarms, and Gemini is the navigator."
-
-generate_segment "02" "destination" \
-  "Every team sets a destination. This is ours: ship Eywa as a navigation system across web, CLI, Discord, VS Code, and Spectacles. You can see we're at 10 out of 12 milestones. All of this was built today by agents coordinating through Eywa."
-
-generate_segment "03" "agents" \
-  "Below that, every active agent shows up as a card. You can see what they're working on, their progress, what systems they're touching, and their success rate. This updates in real time."
-
-generate_segment "04" "gemini-intro" \
-  "But the real question is: are these agents converging or drifting? That's where Gemini comes in. Let me open the steering panel."
-
-generate_segment "05" "gemini-query1" \
-  "I'll ask Gemini: what are my agents doing right now?"
-
-generate_segment "06" "gemini-explain1" \
-  "Gemini just called get agent status behind the scenes. It can see every agent's task, their activity level, and whether they're blocked. Now let me ask it something harder."
-
-generate_segment "07" "gemini-query2" \
-  "Detect patterns across my agents."
-
-generate_segment "08" "gemini-explain2" \
-  "It found redundancy between two agents working on similar tasks, flagged an idle agent that could be doing useful work, and spotted a distress signal from an agent that ran out of context. This is the steering layer. Gemini isn't just answering questions. It's actively watching for drift and misalignment."
-
-generate_segment "09" "course" \
-  "Now I want to check our course. Which milestones are stuck and what should I prioritize?"
-
-generate_segment "10" "course-explain" \
-  "Gemini pulls the destination, sees which milestones are incomplete, cross-references with what agents are actually doing, and tells me where the gaps are. It's like having a Waze that says three agents are on the highway but nobody's covering the exit ramp."
-
-generate_segment "11" "inject" \
-  "Based on that, I can course-correct instantly. This inject bar at the bottom lets me broadcast instructions to all my agents at once, or target a specific one. I'll send: Focus on the Spectacles milestone, it's the last remaining blocker."
-
-generate_segment "12" "multi-surface" \
-  "And this same navigation model works everywhere. Here's Discord where the team runs slash destination and slash course to stay aligned. Here's VS Code where every developer sees the destination and agent progress right in their editor sidebar."
-
-generate_segment "13" "recovery" \
-  "One more thing. When an agent runs out of context, which happens constantly, it fires a distress signal. Gemini detects it, and any new agent that connects automatically recovers the lost state. No work is lost."
-
-generate_segment "14" "network" \
-  "And through the global knowledge hub, insights from one room can route to another. If an agent in one project discovers a pattern, other teams benefit. It's Waze for agent swarms: live routing from real telemetry."
-
-generate_segment "15" "close" \
-  "Eywa gives humans the steering wheel. Gemini gives them a co-pilot. When every team member runs AI, small misalignments amplify at machine speed. Eywa makes sure you see them before they compound."
+# Generate all extracted segments
+for i in "${!SEGMENTS[@]}"; do
+  idx=$(printf "%02d" $((i + 1)))
+  generate_segment "$idx" "${LABELS[$i]}" "${SEGMENTS[$i]}"
+done
 
 echo ""
 
 # -----------------------------------------------
-# Step 3: Concatenate all segments
+# Step 4: Concatenate all segments
 # -----------------------------------------------
-echo "Step 3: Concatenating segments into final voiceover..."
+echo "Step 4: Concatenating segments into final voiceover..."
 
 # Build ffmpeg concat file
 CONCAT_FILE="$OUTPUT_DIR/concat.txt"
@@ -183,7 +194,7 @@ CONCAT_FILE="$OUTPUT_DIR/concat.txt"
 ffmpeg -y -f lavfi -i anullsrc=channel_layout=mono:sample_rate=44100 -t 1.0 "$OUTPUT_DIR/silence_1s.mp3" 2>/dev/null
 echo "file 'silence_1s.mp3'" >> "$CONCAT_FILE"
 
-# Add 0.5s silence between segments (natural pause)
+# Add 0.6s silence between segments (natural pause)
 ffmpeg -y -f lavfi -i anullsrc=channel_layout=mono:sample_rate=44100 -t 0.6 "$OUTPUT_DIR/silence_pause.mp3" 2>/dev/null
 
 for f in "$OUTPUT_DIR"/segment_*.mp3; do
