@@ -63,7 +63,20 @@ Key rules for any UI work:
 - **Destination tracking**: `eywa_destination` sets/updates/views the room's target state (point B). Supports milestones with completion tracking. Destination is surfaced in `eywa_start` auto-context, MCP instructions, Gemini steering, HubView banner, OperationsView banner, VS Code LiveView sidebar, and Discord `/destination` + `/course` commands.
 - **Progress reporting**: `eywa_progress` lets agents report task completion percentage and current phase (working/blocked/reviewing/testing/deploying). Progress bars display in HubView and OperationsView agent cards. Designed for frequent calls during long tasks.
 - **Context pressure detection**: `ContextPressureMonitor` in `worker/src/lib/pressure.ts` tracks tool call count per session as a proxy for context window usage. Warnings piggyback on tool responses at 30 (warn), 50 (high), and 70 (critical) calls since last checkpoint. Calling `eywa_checkpoint` or `eywa_distress` resets the counter. HubView shows pressure indicators on agent cards (CTX WARN/HIGH/CRITICAL).
+- **Work claiming**: `eywa_claim` lets agents declare what scope and files they're working on. Active claims are shown in `eywa_start` snapshots and MCP instructions. `eywa_start` auto-detects conflicts between a new task description and existing claims, returning a warning. Claims auto-release on `eywa_done`/`eywa_stop` or expire after 2 hours. `eywa_unclaim` for manual release.
 - **Gemini steering agent**: `useGeminiChat` hook in `web/src/hooks/useGeminiChat.ts` with 6 tools in `web/src/lib/geminiTools.ts`. Auto-fetches room context on mount (agent status, distress, patterns, destination). Proactively alerts on distress signals and detected patterns. Available in HubView (collapsible panel) and WorkspaceView (full terminal).
+
+## Before Starting Work (MUST FOLLOW)
+
+Before writing any code, every agent must check for conflicts. Duplicate work is the most expensive failure mode. Two agents building the same thing wastes both their context windows.
+
+1. **CHECK STATUS**: Call `eywa_status` or read the room snapshot from `eywa_start`. Look for agents working on the same area.
+2. **CHECK GIT**: Run `git log --oneline -5` to see what was just committed. If someone already shipped your feature, stop.
+3. **CHECK CLAIMS**: Active claims are shown in your `eywa_start` snapshot and MCP instructions. If another agent has claimed the scope you're about to work on, coordinate or pick something else.
+4. **CLAIM YOUR WORK**: Call `eywa_claim` with a clear scope description and the files you plan to touch. Other agents will see your claim and avoid the overlap.
+5. **If conflict detected**: Do not proceed. Either coordinate with the other agent via `eywa_inject`, pick a different task, or extend their work instead of rebuilding it.
+
+The cost of checking is 5 seconds. The cost of not checking is an entire wasted context window.
 
 ## Agent Operational Protocol (MUST FOLLOW)
 

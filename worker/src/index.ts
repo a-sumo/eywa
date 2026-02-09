@@ -15,6 +15,7 @@ import { registerTimelineTools } from "./tools/timeline.js";
 import { registerNetworkTools } from "./tools/network.js";
 import { registerRecoveryTools } from "./tools/recovery.js";
 import { registerDestinationTools } from "./tools/destination.js";
+import { registerClaimTools, getActiveClaims } from "./tools/claim.js";
 
 export default {
   async fetch(request: Request, env: Env, execCtx: ExecutionContext): Promise<Response> {
@@ -198,6 +199,7 @@ async function handleMcp(
   registerNetworkTools(server, db, ctx);
   registerRecoveryTools(server, db, ctx);
   registerDestinationTools(server, db, ctx);
+  registerClaimTools(server, db, ctx);
 
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);
@@ -273,6 +275,15 @@ async function buildInstructions(
       order: "ts.desc",
       limit: "1",
     }),
+    // Active claims (for conflict detection)
+    db.select<MemoryRow>("memories", {
+      select: "agent,metadata,ts,session_id",
+      room_id: `eq.${ctx.roomId}`,
+      "metadata->>event": "eq.claim",
+      ts: `gte.${twoHoursAgo}`,
+      order: "ts.desc",
+      limit: "50",
+    }),
   ];
 
   // Baton: load target agent's recent session
@@ -289,8 +300,8 @@ async function buildInstructions(
   }
 
   const results = await Promise.all(queries);
-  const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows, destRows] = results;
-  const batonRows = baton ? results[7] : [];
+  const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows, destRows, claimRows] = results;
+  const batonRows = baton ? results[8] : [];
 
   // Build agent status map with curvature
   const agents = new Map<string, {
@@ -380,6 +391,27 @@ async function buildInstructions(
       }
     }
     if (dMeta.notes) lines.push(`Notes: ${dMeta.notes as string}`);
+  }
+
+  // Active claims (work dedup)
+  if (claimRows && claimRows.length > 0) {
+    // Dedupe: latest claim per agent, skip self
+    const claimSeen = new Set<string>();
+    const claimLines: string[] = [];
+    for (const row of claimRows) {
+      if (row.agent === ctx.agent) continue;
+      if (claimSeen.has(row.agent)) continue;
+      claimSeen.add(row.agent);
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const scope = (meta.scope as string) || "";
+      const files = (meta.files as string[]) || [];
+      const short = row.agent.includes("/") ? row.agent.split("/").pop()! : row.agent;
+      claimLines.push(`  ${short}: ${scope}${files.length > 0 ? ` [${files.join(", ")}]` : ""}`);
+    }
+    if (claimLines.length > 0) {
+      lines.push(`\nActive claims (do not duplicate):`);
+      lines.push(...claimLines);
+    }
   }
 
   // Recovery (read-only, don't resolve distress here)
