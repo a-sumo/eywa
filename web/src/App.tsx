@@ -67,8 +67,8 @@ function RoomRoutes() {
     <RoomProvider>
       <RoomLayout>
         <Routes>
-          <Route index element={<OperationsView />} />
-          <Route path="threads" element={<ThreadTree />} />
+          <Route index element={<ThreadTree />} />
+          <Route path="ops" element={<OperationsView />} />
           <Route path="thread/:agent/:sessionId" element={<ThreadView />} />
           <Route path="workspace" element={<WorkspaceView />} />
           <Route path="agent/:name" element={<AgentDetail />} />
