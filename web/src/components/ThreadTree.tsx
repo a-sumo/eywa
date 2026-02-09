@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import { useParams } from "react-router-dom";
-import { supabase, type Memory } from "../lib/supabase";
+import { supabase, type Memory, type GlobalInsight } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import { ConnectAgent } from "./ConnectAgent";
@@ -795,6 +795,61 @@ export function ThreadTree() {
   const unresolvedDistress = distressSignals.filter((d) => !d.resolved);
   const destination = useMemo(() => extractDestination(memories), [memories]);
 
+  // Network routes: fetch global insights and match against remaining milestones
+  const [networkRoutes, setNetworkRoutes] = useState<
+    { domain: string; match: number; insights: GlobalInsight[] }[]
+  >([]);
+
+  useEffect(() => {
+    if (!destination) { setNetworkRoutes([]); return; }
+    const remaining = destination.milestones.filter(m => !destination.progress[m]);
+    if (remaining.length === 0) { setNetworkRoutes([]); return; }
+
+    const query = remaining.join(" ").toLowerCase().replace(/[^a-z0-9\s-]/g, " ");
+    const keywords = query.split(/\s+/).filter(w => w.length > 2);
+    if (keywords.length === 0) { setNetworkRoutes([]); return; }
+
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("global_insights")
+        .select("*")
+        .order("upvotes", { ascending: false })
+        .order("ts", { ascending: false })
+        .limit(50);
+      if (cancelled || !data?.length) return;
+
+      // Score and group by domain
+      const scored = (data as GlobalInsight[]).map(ins => {
+        const text = `${ins.insight} ${ins.domain_tags.join(" ")}`.toLowerCase();
+        let hits = 0;
+        for (const kw of keywords) { if (text.includes(kw)) hits++; }
+        return { ins, score: hits / keywords.length };
+      }).filter(s => s.score > 0.1).sort((a, b) => b.score - a.score);
+
+      const byDomain = new Map<string, { scores: number[]; insights: GlobalInsight[] }>();
+      for (const { ins, score } of scored) {
+        const domain = ins.domain_tags[0] || "general";
+        const group = byDomain.get(domain) || { scores: [], insights: [] };
+        group.scores.push(score);
+        if (group.insights.length < 2) group.insights.push(ins);
+        byDomain.set(domain, group);
+      }
+
+      const routes = Array.from(byDomain.entries())
+        .map(([domain, g]) => ({
+          domain,
+          match: Math.round((g.scores.reduce((a, b) => a + b, 0) / g.scores.length) * 100),
+          insights: g.insights,
+        }))
+        .sort((a, b) => b.match - a.match)
+        .slice(0, 4);
+
+      if (!cancelled) setNetworkRoutes(routes);
+    })();
+    return () => { cancelled = true; };
+  }, [destination]);
+
   // Auto-expand active agents
   useEffect(() => {
     const active = new Set<string>();
@@ -943,6 +998,32 @@ export function ThreadTree() {
           {destination.notes && (
             <div className="hub-destination-notes">{destination.notes}</div>
           )}
+        </div>
+      )}
+
+      {/* Network routes (cross-room intelligence) */}
+      {networkRoutes.length > 0 && (
+        <div className="hub-network-routes">
+          <div className="hub-network-routes-header">
+            <span className="hub-network-routes-label">Network Routes</span>
+            <span className="hub-network-routes-count">{networkRoutes.reduce((a, r) => a + r.insights.length, 0)} signals</span>
+          </div>
+          <div className="hub-network-routes-grid">
+            {networkRoutes.map((route) => (
+              <div key={route.domain} className="hub-route-card">
+                <div className="hub-route-header">
+                  <span className="hub-route-domain">{route.domain}</span>
+                  <span className="hub-route-match">{route.match}%</span>
+                </div>
+                {route.insights.map((ins) => (
+                  <div key={ins.id} className="hub-route-insight">
+                    {ins.insight.slice(0, 120)}{ins.insight.length > 120 ? "..." : ""}
+                    {ins.upvotes > 0 && <span className="hub-route-votes">+{ins.upvotes}</span>}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

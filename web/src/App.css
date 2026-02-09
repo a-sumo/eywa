@@ -3418,6 +3418,91 @@ body {
   margin-top: 6px;
 }
 
+/* Network routes (cross-room intelligence) */
+.hub-network-routes {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  background: rgba(139, 92, 246, 0.04);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 8px;
+}
+
+.hub-network-routes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.hub-network-routes-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #c4b5fd;
+}
+
+.hub-network-routes-count {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.hub-network-routes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.hub-route-card {
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  transition: border-color 0.3s ease-in-out;
+}
+
+.hub-route-card:hover {
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.hub-route-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.hub-route-domain {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--aurora-cyan, #06b6d4);
+  text-transform: lowercase;
+}
+
+.hub-route-match {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.hub-route-insight {
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 4px;
+}
+
+.hub-route-insight:last-child {
+  margin-bottom: 0;
+}
+
+.hub-route-votes {
+  font-size: 0.6rem;
+  color: #34d399;
+  margin-left: 4px;
+  font-weight: 600;
+}
+
 /* Agent topology map */
 .hub-topology {
   margin: 0 -4px 12px;

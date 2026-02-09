@@ -411,12 +411,42 @@ async function buildInstructions(
         if (relevant.length > 0) {
           lines.push("\nGuidance for remaining milestones:");
           for (const entry of relevant) {
-            lines.push(`  ${entry.text.slice(0, 200)}`);
+            lines.push(`  [${entry.source}] ${entry.text.slice(0, 200)}`);
           }
         }
       }
     } catch {
       // Don't break instructions if relevance matching fails
+    }
+
+    // Network route recommendations for remaining milestones
+    try {
+      const remaining = ms.filter((m: string) => !prog[m]);
+      if (remaining.length > 0 && insightRows && insightRows.length > 0) {
+        const routeQuery = remaining.join(" ");
+        const keywords = routeQuery.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split(/\s+/).filter((w: string) => w.length > 2);
+        if (keywords.length > 0) {
+          // Score insights against remaining milestones
+          const scored = (insightRows as GlobalInsightRow[]).map(ins => {
+            const text = `${ins.insight} ${ins.domain_tags.join(" ")}`.toLowerCase();
+            let hits = 0;
+            for (const kw of keywords) { if (text.includes(kw)) hits++; }
+            return { ins, score: hits / keywords.length };
+          }).filter(s => s.score > 0.15).sort((a, b) => b.score - a.score).slice(0, 3);
+
+          if (scored.length > 0) {
+            lines.push(`\nNetwork routes (from ${insightRows.length} cross-room insights):`);
+            lines.push("Use eywa_route for detailed recommendations.");
+            for (const { ins, score } of scored) {
+              const pct = Math.round(score * 100);
+              const tags = ins.domain_tags.length ? ` {${ins.domain_tags.join(", ")}}` : "";
+              lines.push(`  [${pct}%] ${ins.insight.slice(0, 150)}${tags}`);
+            }
+          }
+        }
+      }
+    } catch {
+      // Don't break instructions if route computation fails
     }
   }
 
