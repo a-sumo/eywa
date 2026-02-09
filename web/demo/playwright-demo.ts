@@ -1,20 +1,16 @@
 /**
  * Eywa Demo - Playwright automated browser walkthrough
- * For Gemini 3 Hackathon (3 minute video)
+ * Hackathon demo video (3 minutes)
  *
  * Usage:
  *   cd web
- *   npx playwright test demo/playwright-demo.ts --headed --timeout 300000
- *
- * Or run directly:
  *   npx tsx demo/playwright-demo.ts
  *
  * Prerequisites:
  *   - web app running at localhost:5173 (npm run dev)
  *   - screen recording running (macOS: Cmd+Shift+5, or OBS)
  *
- * The script pauses at key moments so you can record voiceover.
- * Press any key in the terminal to advance, or let timers auto-advance.
+ * The script pauses at key moments for voiceover timing.
  */
 
 import { chromium, type Page, type Browser } from "playwright";
@@ -23,14 +19,13 @@ const BASE_URL = process.env.DEMO_URL || "http://localhost:5173";
 const ROOM = process.env.DEMO_ROOM || "demo";
 const HUB_URL = `${BASE_URL}/r/${ROOM}`;
 
-// Timing (ms) - adjust these to match your voiceover pace
 const PAUSE = {
-  pageLoad: 3000,       // Let the page fully render + data load
-  shortBeat: 1500,      // Brief pause between actions
-  readMoment: 4000,     // Time for viewer to read something
-  geminiThink: 12000,   // Wait for Gemini tool calls + response
-  longPause: 6000,      // Dramatic pause / voiceover moment
-  typeSpeed: 80,        // ms between keystrokes (human-like)
+  pageLoad: 3000,
+  shortBeat: 1500,
+  readMoment: 4000,
+  geminiThink: 12000,
+  longPause: 6000,
+  typeSpeed: 80,
 };
 
 async function sleep(ms: number) {
@@ -50,11 +45,10 @@ async function smoothScroll(page: Page, y: number, duration = 1500) {
 }
 
 async function waitForGeminiResponse(page: Page, timeout = 20000) {
-  // Wait for "Thinking..." to appear then disappear
   try {
     await page.waitForSelector(".hub-steering-typing", { timeout: 5000 });
   } catch {
-    // Already responded or no thinking indicator
+    // Already responded
   }
   try {
     await page.waitForSelector(".hub-steering-typing", {
@@ -62,17 +56,15 @@ async function waitForGeminiResponse(page: Page, timeout = 20000) {
       timeout,
     });
   } catch {
-    // Timeout is OK, we'll continue
+    // Timeout OK
   }
-  await sleep(1500); // Let the response render
+  await sleep(1500);
 }
 
 async function run() {
-  console.log("\n🎬 Eywa Demo Script - Gemini 3 Hackathon");
-  console.log("=========================================\n");
-  console.log("Start your screen recording NOW, then press Enter.\n");
-
-  // Wait for user to start recording (optional, auto-continues after 5s)
+  console.log("\n  Eywa Demo Script");
+  console.log("  ================\n");
+  console.log("  Start screen recording, then press Enter.\n");
   await sleep(2000);
 
   const browser: Browser = await chromium.launch({
@@ -86,7 +78,7 @@ async function run() {
 
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
-    deviceScaleFactor: 2, // Retina for crisp recording
+    deviceScaleFactor: 2,
     recordVideo: {
       dir: "demo/recordings",
       size: { width: 1440, height: 900 },
@@ -96,151 +88,153 @@ async function run() {
   const page = await context.newPage();
 
   // ============================================
-  // ACT 1: THE HOOK - HubView loads (0:00 - 0:20)
+  // ACT 1: THE HOOK (0:00 - 0:20)
+  // HubView loads with topology map + destination
   // ============================================
-  console.log("📍 Act 1: Loading HubView...");
+  console.log("  [0:00] Loading HubView...");
 
   await page.goto(HUB_URL, { waitUntil: "networkidle" });
   await sleep(PAUSE.pageLoad);
-
-  // Let the page settle, data loads via realtime
   await sleep(PAUSE.readMoment);
 
   // ============================================
-  // ACT 2: DESTINATION + LIVE SWARM (0:20 - 0:45)
+  // ACT 2: DESTINATION + GEMINI (0:20 - 0:50)
+  // Show destination, then ask Gemini two questions
   // ============================================
-  console.log("📍 Act 2: Showing destination + agents...");
+  console.log("  [0:20] Destination + Gemini steering...");
 
-  // Scroll slowly to destination banner
+  // Scroll to destination banner
   const destBanner = page.locator(".hub-destination");
   if (await destBanner.isVisible()) {
     await destBanner.scrollIntoViewIfNeeded();
     await sleep(PAUSE.readMoment);
   }
 
-  // Scroll to show agent cards
-  const agentGrid = page.locator(".hub-agent-grid").first();
-  if (await agentGrid.isVisible()) {
-    await agentGrid.scrollIntoViewIfNeeded();
-    await sleep(PAUSE.readMoment);
-
-    // Click first active agent to expand it
-    const firstCard = page.locator(".hub-agent-card.hub-agent-active").first();
-    if (await firstCard.isVisible()) {
-      await firstCard.click();
-      await sleep(PAUSE.shortBeat);
-    }
-  }
-
-  // ============================================
-  // ACT 3: GEMINI STEERING (0:45 - 1:30) - THE STAR
-  // ============================================
-  console.log("📍 Act 3: Gemini steering panel...");
-
-  // Scroll back up and focus the command bar (already in Gemini mode by default)
+  // Scroll back up for Gemini
   await smoothScroll(page, 0, 1000);
   await sleep(PAUSE.shortBeat);
 
-  // First query: "What are my agents doing?"
-  console.log("  > Asking: What are my agents doing?");
+  // Query 1: "What are my agents doing right now?"
+  console.log('  > "What are my agents doing right now?"');
   await typeHuman(page, ".hub-command-input", "What are my agents doing right now?");
   await sleep(PAUSE.shortBeat);
-
-  // Send
   await page.keyboard.press("Enter");
   await waitForGeminiResponse(page, PAUSE.geminiThink);
   await sleep(PAUSE.readMoment);
 
-  // Second query: "Detect patterns"
-  console.log("  > Asking: Detect patterns across my agents");
+  // Query 2: "Detect patterns across my agents"
+  console.log('  > "Detect patterns across my agents"');
   await typeHuman(page, ".hub-command-input", "Detect patterns across my agents");
   await sleep(PAUSE.shortBeat);
-
   await page.keyboard.press("Enter");
   await waitForGeminiResponse(page, PAUSE.geminiThink);
   await sleep(PAUSE.longPause);
 
   // ============================================
-  // ACT 4: COURSE CORRECTION (1:30 - 2:00)
+  // ACT 3: COURSE CORRECTION (0:50 - 1:15)
+  // Ask about stuck milestones, then inject
   // ============================================
-  console.log("📍 Act 4: Course correction...");
+  console.log("  [0:50] Course correction...");
 
-  // Third query: milestone check
-  console.log("  > Asking: Which milestones are stuck?");
+  // Query 3: milestone check
+  console.log('  > "Which milestones are stuck?"');
   await typeHuman(
     page,
     ".hub-command-input",
     "Which milestones are stuck and what should I prioritize?"
   );
   await sleep(PAUSE.shortBeat);
+  await page.keyboard.press("Enter");
+  await waitForGeminiResponse(page, PAUSE.geminiThink);
+  await sleep(PAUSE.readMoment);
 
+  // Switch to inject mode and send a targeted instruction
+  console.log("  > Sending inject...");
+  const injectModeBtn = page.locator('.hub-mode-btn:has-text("Inject")');
+  if (await injectModeBtn.isVisible()) {
+    await injectModeBtn.click();
+    await sleep(PAUSE.shortBeat);
+
+    const urgentBtn = page.locator('.hub-priority-btn:has-text("urgent")');
+    if (await urgentBtn.isVisible()) {
+      await urgentBtn.click();
+      await sleep(PAUSE.shortBeat);
+    }
+
+    await typeHuman(
+      page,
+      ".hub-command-input",
+      "pale-oak: fix the TS compiler errors first, then wire EywaGeminiLive into the scene."
+    );
+    await sleep(PAUSE.shortBeat);
+    await page.locator(".hub-command-send").click();
+    await sleep(PAUSE.readMoment);
+  }
+
+  // ============================================
+  // ACT 4: MULTI-SURFACE FLASH (1:15 - 1:50)
+  // VS Code + Discord + Spectacles are manual cuts
+  // Show knowledge/network on web as a bridge
+  // ============================================
+  console.log("  [1:15] Multi-surface (manual cuts for VS Code, Discord, Spectacles)");
+  console.log("         Record VS Code sidebar (timeline graph + Needs You) separately");
+  console.log("         Record Discord /course and /claims separately");
+  console.log("         Record SpectaclesView broadcast UI separately");
+
+  // Brief pause on HubView while voiceover covers multi-surface
+  await sleep(PAUSE.longPause);
+
+  // ============================================
+  // ACT 5: RECOVERY + NETWORK (1:50 - 2:25)
+  // Show network route query
+  // ============================================
+  console.log("  [1:50] Recovery + Network...");
+
+  // Switch back to Gemini mode if we're still in inject
+  const geminiModeBtn = page.locator('.hub-mode-btn:has-text("Gemini")');
+  if (await geminiModeBtn.isVisible()) {
+    await geminiModeBtn.click();
+    await sleep(PAUSE.shortBeat);
+  }
+
+  // Query network
+  console.log('  > "What does the network recommend for our remaining work?"');
+  await typeHuman(
+    page,
+    ".hub-command-input",
+    "What does the network recommend for our remaining work?"
+  );
+  await sleep(PAUSE.shortBeat);
   await page.keyboard.press("Enter");
   await waitForGeminiResponse(page, PAUSE.geminiThink);
   await sleep(PAUSE.readMoment);
 
   // ============================================
-  // ACT 5: INJECT (2:00 - 2:15)
+  // ACT 6: META MOMENT + CLOSE (2:25 - 3:00)
+  // Pull back to full HubView
   // ============================================
-  console.log("📍 Act 5: Inject bar...");
+  console.log("  [2:25] Meta moment + close...");
 
-  // Switch to inject mode in the unified command bar
-  const injectModeBtn = page.locator('.hub-mode-btn:has-text("Inject")');
-  await injectModeBtn.click();
-  await sleep(PAUSE.shortBeat);
-
-  // Set priority to urgent
-  const urgentBtn = page.locator('.hub-priority-btn:has-text("urgent")');
-  await urgentBtn.click();
-  await sleep(PAUSE.shortBeat);
-
-  // Type inject message
-  await typeHuman(
-    page,
-    ".hub-command-input",
-    "Focus on the Spectacles map and network routing. Those are the last two milestones."
-  );
-  await sleep(PAUSE.shortBeat);
-
-  // Send inject
-  await page.locator(".hub-command-send").click();
-  await sleep(PAUSE.readMoment);
-
-  // ============================================
-  // ACT 6: MULTI-SURFACE FLASH (2:15 - 2:50)
-  // ============================================
-  console.log("📍 Act 6: Multi-surface (Discord + VS Code would be manual cuts)");
-
-  // Show the knowledge hub briefly
-  await page.goto(`${BASE_URL}/r/${ROOM}/knowledge`, {
-    waitUntil: "networkidle",
-  });
-  await sleep(PAUSE.readMoment);
-
-  // ============================================
-  // ACT 7: CLOSE (2:50 - 3:00)
-  // ============================================
-  console.log("📍 Act 7: Back to HubView for closing shot");
-
-  await page.goto(HUB_URL, { waitUntil: "networkidle" });
-  await sleep(PAUSE.pageLoad);
-
-  // Final lingering shot on the full dashboard
+  // Scroll to show the full topology map
+  await smoothScroll(page, 0, 1000);
   await sleep(PAUSE.longPause);
 
-  // Close page to finalize the video recording
+  // Final lingering shot
+  await sleep(PAUSE.longPause);
+
   const videoPath = await page.video()?.path();
   await page.close();
   await context.close();
   await browser.close();
 
-  console.log("\n✅ Demo complete!\n");
+  console.log("\n  Done.\n");
   if (videoPath) {
-    console.log(`  Video saved: ${videoPath}`);
+    console.log(`  Video: ${videoPath}`);
   }
-  console.log("\nNext steps:");
-  console.log("  1. Record voiceover using web/demo/voiceover.md");
-  console.log("  2. Splice Discord + VS Code screenshots/clips manually");
-  console.log("  3. Stitch with: ffmpeg -i screen.mp4 -i voiceover.m4a -c:v copy -c:a aac demo.mp4\n");
+  console.log("\n  Next:");
+  console.log("  1. Record voiceover from web/demo/voiceover.md");
+  console.log("  2. Record VS Code sidebar, Discord /course + /claims, Spectacles clips manually");
+  console.log("  3. Stitch: ffmpeg -i screen.mp4 -i voiceover.m4a -c:v copy -c:a aac demo.mp4\n");
 }
 
 run().catch((e) => {
