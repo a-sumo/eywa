@@ -13,6 +13,7 @@ import { registerLinkTools } from "./tools/link.js";
 import { registerTimelineTools } from "./tools/timeline.js";
 import { registerNetworkTools } from "./tools/network.js";
 import { registerRecoveryTools } from "./tools/recovery.js";
+import { registerDestinationTools } from "./tools/destination.js";
 
 export default {
   async fetch(request: Request, env: Env, execCtx: ExecutionContext): Promise<Response> {
@@ -126,28 +127,8 @@ async function handleMcp(
     sessionId,
   };
 
-  // Log agent connection — deduplicate within 5 minutes
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-  const recentConnections = await db.select("memories", {
-    select: "id",
-    room_id: `eq.${ctx.roomId}`,
-    agent: `eq.${ctx.agent}`,
-    "metadata->>event": "eq.agent_connected",
-    ts: `gte.${fiveMinAgo}`,
-    limit: "1",
-  });
-
-  if (recentConnections.length === 0) {
-    await db.insert("memories", {
-      room_id: ctx.roomId,
-      agent: ctx.agent,
-      session_id: ctx.sessionId,
-      message_type: "resource",
-      content: `Agent ${ctx.agent} connected to room ${ctx.roomName}`,
-      token_count: 0,
-      metadata: { event: "agent_connected", room_slug: ctx.roomSlug, user: ctx.user, ...(baton ? { baton_from: baton } : {}) },
-    });
-  }
+  // Connection is tracked implicitly via eywa_start (session_start event).
+  // No need to log "connected to room" - it's noise that drowns out real work.
 
   // Build instructions string with room context + baton (delivered at MCP init, no tool call needed)
   let instructions: string;
@@ -199,6 +180,7 @@ async function handleMcp(
   registerTimelineTools(server, db, ctx);
   registerNetworkTools(server, db, ctx);
   registerRecoveryTools(server, db, ctx);
+  registerDestinationTools(server, db, ctx);
 
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);
@@ -214,17 +196,19 @@ async function buildInstructions(
   const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
   const queries: Promise<MemoryRow[]>[] = [
-    // Active agents
+    // Active agents (skip connection spam, only real activity)
     db.select<MemoryRow>("memories", {
       select: "agent,content,metadata,ts",
       room_id: `eq.${ctx.roomId}`,
+      "metadata->>event": "neq.agent_connected",
       order: "ts.desc",
       limit: "200",
     }),
-    // Recent activity
+    // Recent activity (skip connection spam)
     db.select<MemoryRow>("memories", {
       select: "agent,message_type,content,metadata,ts",
       room_id: `eq.${ctx.roomId}`,
+      "metadata->>event": "neq.agent_connected",
       order: "ts.desc",
       limit: "8",
     }),
@@ -263,6 +247,15 @@ async function buildInstructions(
       order: "ts.desc",
       limit: "1",
     }),
+    // Current destination
+    db.select<MemoryRow>("memories", {
+      select: "content,metadata,ts",
+      room_id: `eq.${ctx.roomId}`,
+      message_type: "eq.knowledge",
+      "metadata->>event": "eq.destination",
+      order: "ts.desc",
+      limit: "1",
+    }),
   ];
 
   // Baton: load target agent's recent session
@@ -279,8 +272,8 @@ async function buildInstructions(
   }
 
   const results = await Promise.all(queries);
-  const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows] = results;
-  const batonRows = baton ? results[6] : [];
+  const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows, destRows] = results;
+  const batonRows = baton ? results[7] : [];
 
   // Build agent status map
   const agents = new Map<string, { status: string; task: string; systems: Set<string> }>();
@@ -340,6 +333,25 @@ async function buildInstructions(
     if (ic > 0) parts.push(`Pending injections: ${ic}`);
     if (kc > 0) parts.push(`Knowledge: ${kc}`);
     lines.push(`\n${parts.join(" | ")}`);
+  }
+
+  // Destination
+  if (destRows && destRows.length > 0) {
+    const dMeta = (destRows[0].metadata ?? {}) as Record<string, unknown>;
+    const dest = dMeta.destination as string;
+    const ms = (dMeta.milestones as string[]) || [];
+    const prog = (dMeta.progress as Record<string, boolean>) || {};
+    const done = ms.filter((m) => prog[m]).length;
+    const total = ms.length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    lines.push(`\nDestination: ${dest}`);
+    if (total > 0) {
+      lines.push(`Progress: ${done}/${total} (${pct}%)`);
+      for (const m of ms) {
+        lines.push(`  ${prog[m] ? "[x]" : "[ ]"} ${m}`);
+      }
+    }
+    if (dMeta.notes) lines.push(`Notes: ${dMeta.notes as string}`);
   }
 
   // Recovery (read-only, don't resolve distress here)

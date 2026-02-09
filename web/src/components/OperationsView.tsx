@@ -10,6 +10,36 @@ import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import type { Memory } from "../lib/supabase";
 
+// --- Destination ---
+
+interface Destination {
+  destination: string;
+  milestones: string[];
+  progress: Record<string, boolean>;
+  notes: string | null;
+  setBy: string;
+  updatedBy: string | null;
+  ts: string;
+}
+
+function extractDestination(memories: Memory[]): Destination | null {
+  for (const m of memories) {
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    if (meta.event === "destination" && m.message_type === "knowledge") {
+      return {
+        destination: (meta.destination as string) || "",
+        milestones: (meta.milestones as string[]) || [],
+        progress: (meta.progress as Record<string, boolean>) || {},
+        notes: (meta.notes as string) || null,
+        setBy: (meta.set_by as string) || m.agent,
+        updatedBy: (meta.last_updated_by as string) || null,
+        ts: m.ts,
+      };
+    }
+  }
+  return null;
+}
+
 // --- Types ---
 
 interface AgentOp {
@@ -370,6 +400,7 @@ export function OperationsView() {
   const agentStates = useMemo(() => buildAgentStates(memories), [memories]);
   const distressSignals = useMemo(() => extractDistress(memories), [memories]);
   const unresolvedDistress = distressSignals.filter((d) => !d.resolved);
+  const destination = useMemo(() => extractDestination(memories), [memories]);
 
   // Mark new operations when count increases
   useEffect(() => {
@@ -490,6 +521,97 @@ export function OperationsView() {
           </div>
         )}
       </div>
+
+      {/* Destination banner */}
+      {destination && (
+        <div
+          style={{
+            background: "rgba(139, 92, 246, 0.06)",
+            border: "1px solid rgba(139, 92, 246, 0.25)",
+            borderRadius: "6px",
+            padding: "10px 12px",
+            marginBottom: "8px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+            <span style={{
+              color: "#a78bfa",
+              fontWeight: 700,
+              fontSize: "10px",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}>
+              Destination
+            </span>
+            <span style={{ opacity: 0.3, fontSize: "10px", marginLeft: "auto" }}>
+              {timeAgo(destination.ts)}
+            </span>
+          </div>
+          <div style={{ fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>
+            {destination.destination}
+          </div>
+          {destination.milestones.length > 0 && (() => {
+            const done = destination.milestones.filter((m) => destination.progress[m]).length;
+            const total = destination.milestones.length;
+            const pct = Math.round((done / total) * 100);
+            return (
+              <>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "6px",
+                }}>
+                  <div style={{
+                    flex: 1,
+                    height: "4px",
+                    background: "rgba(255,255,255,0.08)",
+                    borderRadius: "2px",
+                    overflow: "hidden",
+                  }}>
+                    <div style={{
+                      width: `${pct}%`,
+                      height: "100%",
+                      background: pct === 100
+                        ? "#34d399"
+                        : "linear-gradient(90deg, #8b5cf6, #06b6d4)",
+                      borderRadius: "2px",
+                      transition: "width 0.5s ease-in-out",
+                    }} />
+                  </div>
+                  <span style={{ fontSize: "11px", color: "#a78bfa", fontWeight: 600, flexShrink: 0 }}>
+                    {done}/{total} ({pct}%)
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                  {destination.milestones.map((m) => (
+                    <span
+                      key={m}
+                      style={{
+                        fontSize: "10px",
+                        padding: "2px 6px",
+                        borderRadius: "3px",
+                        background: destination.progress[m]
+                          ? "rgba(52, 211, 153, 0.15)"
+                          : "rgba(255,255,255,0.04)",
+                        color: destination.progress[m] ? "#6ee7b7" : "rgba(255,255,255,0.4)",
+                        textDecoration: destination.progress[m] ? "line-through" : "none",
+                      }}
+                    >
+                      {destination.progress[m] ? "\u2713 " : ""}{m}
+                    </span>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
+          {destination.notes && (
+            <div style={{ fontSize: "11px", opacity: 0.5, marginTop: "6px" }}>
+              {destination.notes}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Distress alerts */}
       {unresolvedDistress.length > 0 && unresolvedDistress.map((d) => (

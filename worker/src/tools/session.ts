@@ -71,18 +71,20 @@ export function registerSessionTools(
       });
 
       // Auto-context: fetch room snapshot so agent lands aware
-      const [agentRows, recentRows, injectionRows, knowledgeRows] = await Promise.all([
-        // Active agents
+      const [agentRows, recentRows, injectionRows, knowledgeRows, destRows] = await Promise.all([
+        // Active agents (skip connection noise)
         db.select<MemoryRow>("memories", {
           select: "agent,content,metadata,ts",
           room_id: `eq.${ctx.roomId}`,
+          "metadata->>event": "neq.agent_connected",
           order: "ts.desc",
           limit: "200",
         }),
-        // Recent activity
+        // Recent activity (skip connection noise)
         db.select<MemoryRow>("memories", {
           select: "agent,message_type,content,metadata,ts",
           room_id: `eq.${ctx.roomId}`,
+          "metadata->>event": "neq.agent_connected",
           order: "ts.desc",
           limit: "8",
         }),
@@ -100,6 +102,15 @@ export function registerSessionTools(
           room_id: `eq.${ctx.roomId}`,
           message_type: "eq.knowledge",
           limit: "100",
+        }),
+        // Current destination
+        db.select<MemoryRow>("memories", {
+          select: "content,metadata,ts",
+          room_id: `eq.${ctx.roomId}`,
+          message_type: "eq.knowledge",
+          "metadata->>event": "eq.destination",
+          order: "ts.desc",
+          limit: "1",
         }),
       ]);
 
@@ -165,6 +176,27 @@ export function registerSessionTools(
         lines.push("");
         if (injectionCount > 0) lines.push(`Pending injections: ${injectionCount} (call eywa_inbox to read)`);
         if (knowledgeCount > 0) lines.push(`Knowledge entries: ${knowledgeCount} (call eywa_knowledge to browse)`);
+      }
+
+      // Destination
+      if (destRows && destRows.length > 0) {
+        const dMeta = (destRows[0].metadata ?? {}) as Record<string, unknown>;
+        const dest = dMeta.destination as string;
+        const ms = (dMeta.milestones as string[]) || [];
+        const prog = (dMeta.progress as Record<string, boolean>) || {};
+        const done = ms.filter((m) => prog[m]).length;
+        const total = ms.length;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        lines.push(`\n=== Destination ===`);
+        lines.push(dest);
+        if (total > 0) {
+          lines.push(`Progress: ${done}/${total} (${pct}%)`);
+          for (const m of ms) {
+            lines.push(`  ${prog[m] ? "[x]" : "[ ]"} ${m}`);
+          }
+        }
+        if (dMeta.notes) lines.push(`Notes: ${dMeta.notes as string}`);
+        lines.push("Use eywa_destination to update progress.");
       }
 
       lines.push("\nUse eywa_log with system/action/outcome fields to tag your operations.");
