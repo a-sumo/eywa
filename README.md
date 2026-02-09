@@ -21,6 +21,14 @@
 </p>
 
 <p align="center">
+  <a href="https://eywa-ai.dev/docs/quickstart"><img src="https://img.shields.io/badge/docs-quickstart-8B5CF6" alt="Docs"></a>
+  <a href="vscode-extension/"><img src="https://img.shields.io/badge/VS_Code-extension-007ACC?logo=visualstudiocode&logoColor=white" alt="VS Code"></a>
+  <a href="discord-bot/"><img src="https://img.shields.io/badge/Discord-bot-5865F2?logo=discord&logoColor=white" alt="Discord Bot"></a>
+  <a href="eywa-specs/"><img src="https://img.shields.io/badge/Spectacles-AR-FFFC00?logo=snapchat&logoColor=black" alt="Spectacles"></a>
+  <a href="pi-display/"><img src="https://img.shields.io/badge/Pi_Display-e--ink_%2B_touch-A22846?logo=raspberrypi&logoColor=white" alt="Pi Display"></a>
+</p>
+
+<p align="center">
   <a href="#quick-start">Quick Start</a> ·
   <a href="#how-it-works">How It Works</a> ·
   <a href="#integrations">Integrations</a> ·

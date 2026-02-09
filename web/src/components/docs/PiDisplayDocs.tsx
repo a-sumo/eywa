@@ -1,3 +1,6 @@
+import { WavesharePinout } from "./WavesharePinout";
+import { ILI9341Pinout } from "./ILI9341Pinout";
+
 export function PiDisplayDocs() {
   return (
     <article className="docs-article">
@@ -73,6 +76,29 @@ export function PiDisplayDocs() {
         <li>Used when you want to interact with agents without Spectacles</li>
       </ul>
 
+      <h2>Wiring</h2>
+
+      <h3>E-Ink (Waveshare HAT)</h3>
+      <p>
+        Just plug the HAT onto the Pi GPIO header. No additional wiring needed.
+        For standalone modules (no HAT), use the interactive diagram below to
+        see which pins to connect.
+      </p>
+
+      <h4>Waveshare Module Wiring</h4>
+      <p style={{ fontSize: "13px", color: "#94a3b8" }}>
+        Select a device type to see its GPIO connections. Hover any pin to
+        trace the wire.
+      </p>
+      <WavesharePinout />
+
+      <h3>TFT (ILI9341 3.5" + XPT2046 Touch)</h3>
+      <p>
+        The ILI9341 display and XPT2046 touch controller share the SPI bus.
+        Toggle LCD and touch layers independently to see which pins are shared.
+      </p>
+      <ILI9341Pinout />
+
       <h2>E-Ink Setup (Waveshare 5.65" ACeP)</h2>
 
       <h3>1. Enable SPI on Pi</h3>
@@ -136,81 +162,6 @@ sudo ./fbcp-ili9341 &`}</code></pre>
 
       <h3>2. Run Touch Interface</h3>
       <pre className="docs-code"><code>{`python tft_touch.py --room demo`}</code></pre>
-
-      <h2>Wiring</h2>
-
-      <h3>E-Ink (Waveshare HAT)</h3>
-      <p>
-        Just plug the HAT onto the Pi GPIO header. No additional wiring needed.
-      </p>
-
-      <h3>TFT (ILI9341 SPI)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>TFT Pin</th>
-            <th>Pi Pin</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>VCC</td>
-            <td>3.3V (Pin 1)</td>
-          </tr>
-          <tr>
-            <td>GND</td>
-            <td>GND (Pin 6)</td>
-          </tr>
-          <tr>
-            <td>CS</td>
-            <td>CE0 (Pin 24)</td>
-          </tr>
-          <tr>
-            <td>RESET</td>
-            <td>GPIO24 (Pin 18)</td>
-          </tr>
-          <tr>
-            <td>DC</td>
-            <td>GPIO25 (Pin 22)</td>
-          </tr>
-          <tr>
-            <td>SDI/MOSI</td>
-            <td>MOSI (Pin 19)</td>
-          </tr>
-          <tr>
-            <td>SCK</td>
-            <td>SCLK (Pin 23)</td>
-          </tr>
-          <tr>
-            <td>LED</td>
-            <td>3.3V (Pin 1)</td>
-          </tr>
-          <tr>
-            <td>SDO/MISO</td>
-            <td>MISO (Pin 21)</td>
-          </tr>
-          <tr>
-            <td>T_CLK</td>
-            <td>SCLK (Pin 23)</td>
-          </tr>
-          <tr>
-            <td>T_CS</td>
-            <td>CE1 (Pin 26)</td>
-          </tr>
-          <tr>
-            <td>T_DIN</td>
-            <td>MOSI (Pin 19)</td>
-          </tr>
-          <tr>
-            <td>T_DO</td>
-            <td>MISO (Pin 21)</td>
-          </tr>
-          <tr>
-            <td>T_IRQ</td>
-            <td>GPIO17 (Pin 11)</td>
-          </tr>
-        </tbody>
-      </table>
 
       <h2>Mini Display Fallback (Phone/Tablet/Web)</h2>
       <p>

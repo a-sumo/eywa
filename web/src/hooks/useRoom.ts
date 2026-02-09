@@ -231,11 +231,46 @@ export function useRoom() {
       return null;
     }
 
-    // Seed with sample data
-    const seeds = buildSeedMemories(data.id);
-    const { error: seedError } = await supabase.from("memories").insert(seeds);
-    if (seedError) {
-      console.warn("Demo seed failed:", seedError);
+    // Clone memories from the source demo room
+    const { data: sourceRoom } = await supabase
+      .from("rooms")
+      .select("id")
+      .eq("slug", "demo")
+      .single();
+
+    if (sourceRoom) {
+      const { data: sourceMemories } = await supabase
+        .from("memories")
+        .select("agent, session_id, message_type, content, metadata, ts")
+        .eq("room_id", sourceRoom.id)
+        .order("ts", { ascending: true })
+        .limit(500);
+
+      if (sourceMemories && sourceMemories.length > 0) {
+        const cloned = sourceMemories.map((m) => ({
+          room_id: data.id,
+          agent: m.agent,
+          session_id: m.session_id,
+          message_type: m.message_type,
+          content: m.content,
+          metadata: m.metadata,
+          ts: m.ts,
+        }));
+        const { error: cloneError } = await supabase.from("memories").insert(cloned);
+        if (cloneError) {
+          console.warn("Demo clone failed, falling back to seed:", cloneError);
+          const seeds = buildSeedMemories(data.id);
+          await supabase.from("memories").insert(seeds);
+        }
+      } else {
+        // Source room empty, use generated seed data
+        const seeds = buildSeedMemories(data.id);
+        await supabase.from("memories").insert(seeds);
+      }
+    } else {
+      // No source demo room found, use generated seed data
+      const seeds = buildSeedMemories(data.id);
+      await supabase.from("memories").insert(seeds);
     }
 
     setCreating(false);

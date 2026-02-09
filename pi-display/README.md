@@ -1,5 +1,7 @@
 # Eywa Pi Displays
 
+> Full docs with interactive wiring diagrams: [eywa-ai.dev/docs/pi-displays](https://eywa-ai.dev/docs/pi-displays)
+
 Raspberry Pi scripts for physical Eywa displays.
 
 ## Hardware
