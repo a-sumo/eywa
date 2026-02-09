@@ -157,7 +157,21 @@ export class TilePanel extends BaseScriptComponent {
     // Default placement: position panel 65cm in front of camera, 3cm below eye level.
     // This ensures the panel is visible immediately even without marker detection.
     // If marker is detected later, ExtendedMarkerTracking repositions us.
-    this.setDefaultPlacement();
+    {
+      const camT = this.cameraObj.getTransform();
+      const camPos = camT.getWorldPosition();
+      const camRot = camT.getWorldRotation();
+      const fwd = camRot.multiplyVec3(new vec3(0, 0, -1));
+      const defaultPos = new vec3(
+        camPos.x + fwd.x * 65,
+        camPos.y + fwd.y * 65 - 3,
+        camPos.z + fwd.z * 65
+      );
+      this.sceneObject.getTransform().setWorldPosition(defaultPos);
+      this.sceneObject.getTransform().setWorldRotation(camRot);
+      print("[TilePanel] Default placement: 65cm forward, 3cm below eye level at (" +
+        defaultPos.x.toFixed(1) + ", " + defaultPos.y.toFixed(1) + ", " + defaultPos.z.toFixed(1) + ")");
+    }
 
     // Test quads (toggle via Inspector to verify mesh/material pipeline)
     if (this.showTestQuads) {
@@ -375,33 +389,6 @@ export class TilePanel extends BaseScriptComponent {
     }
 
     return null;
-  }
-
-  /**
-   * Place the panel at a default world position: 65cm in front of camera,
-   * 3cm below eye level. This runs on init so the panel is visible immediately
-   * without waiting for marker detection.
-   */
-  private setDefaultPlacement() {
-    const camT = this.cameraObj.getTransform();
-    const camPos = camT.getWorldPosition();
-    const camRot = camT.getWorldRotation();
-
-    // Camera forward direction (local -Z rotated to world space)
-    const fwd = camRot.multiplyVec3(new vec3(0, 0, -1));
-
-    // 65cm forward, 3cm below eye center
-    const defaultPos = new vec3(
-      camPos.x + fwd.x * 65,
-      camPos.y + fwd.y * 65 - 3,
-      camPos.z + fwd.z * 65
-    );
-
-    this.sceneObject.getTransform().setWorldPosition(defaultPos);
-    this.sceneObject.getTransform().setWorldRotation(camRot);
-
-    print("[TilePanel] Default placement: 65cm forward, 3cm below eye level at (" +
-      defaultPos.x.toFixed(1) + ", " + defaultPos.y.toFixed(1) + ", " + defaultPos.z.toFixed(1) + ")");
   }
 
   private handlePanelHover(e: InteractorEvent, type: string) {
