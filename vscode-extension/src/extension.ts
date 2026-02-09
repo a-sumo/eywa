@@ -11,6 +11,8 @@ import { RealtimeManager, type MemoryPayload } from "./realtime";
 import { injectSelection } from "./injectCommand";
 import { KnowledgeCodeLensProvider, registerKnowledgeForFileCommand } from "./knowledgeLens";
 import { CourseCodeLensProvider } from "./courseAwareness";
+import { AgentDecorationManager } from "./agentDecorations";
+import { SessionTreeProvider } from "./sessionTree";
 import { startLoginFlow } from "./authServer";
 import { LiveViewProvider } from "./liveView";
 import type { AttentionItem } from "./client";
@@ -36,6 +38,8 @@ export function activate(context: vscode.ExtensionContext) {
   // Providers
   const codeLensProvider = new KnowledgeCodeLensProvider(() => client);
   const courseProvider = new CourseCodeLensProvider(() => client);
+  const decorationManager = new AgentDecorationManager(() => client);
+  const sessionTree = new SessionTreeProvider(() => client);
   const liveProvider = new LiveViewProvider(() => client, getConfig("room"));
 
   // Track attention items for badge and notifications
@@ -115,12 +119,14 @@ export function activate(context: vscode.ExtensionContext) {
       });
     }
 
+    decorationManager.handleEvent(mem);
+    sessionTree.handleEvent(mem);
     liveProvider.handleEvent(mem);
     updateStatusBar();
   }
 
   // Initialize client
-  initClient(codeLensProvider, courseProvider, handleRealtimeEvent, context);
+  initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, handleRealtimeEvent, context);
 
   if (!getConfig("room")) {
     showWelcome();
@@ -130,8 +136,21 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewViewProvider(LiveViewProvider.viewType, liveProvider, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
+    vscode.window.registerTreeDataProvider("eywaSessions", sessionTree),
     vscode.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider),
     vscode.languages.registerCodeLensProvider({ scheme: "file" }, courseProvider),
+    // Agent decoration lifecycle
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      if (editor) decorationManager.updateDecorations(editor);
+    }),
+    vscode.window.onDidChangeVisibleTextEditors(() => {
+      decorationManager.updateAllVisibleEditors();
+    }),
+    vscode.languages.registerHoverProvider({ scheme: "file" }, {
+      provideHover(doc, pos) { return decorationManager.getHoverContent(doc, pos); },
+    }),
+    { dispose: () => decorationManager.dispose() },
+    { dispose: () => sessionTree.dispose() },
   );
 
   // Commands
@@ -139,6 +158,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("eywa.refreshAgents", () => {
       codeLensProvider.refreshCache();
       courseProvider.refresh();
+      decorationManager.seed();
+      sessionTree.seed();
       liveProvider.loadInitial();
     }),
 
@@ -316,7 +337,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
-        initClient(codeLensProvider, courseProvider, handleRealtimeEvent, context);
+        initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, handleRealtimeEvent, context);
         liveProvider.setRoom(getConfig("room"));
         updateStatusBar();
       }
@@ -350,6 +371,8 @@ function updateStatusBar() {
 function initClient(
   codeLensProvider: KnowledgeCodeLensProvider,
   courseProvider: CourseCodeLensProvider,
+  decorationManager: AgentDecorationManager,
+  sessionTree: SessionTreeProvider,
   onEvent: (mem: MemoryPayload) => void,
   context: vscode.ExtensionContext,
 ) {
@@ -366,6 +389,8 @@ function initClient(
     updateStatusBar();
     codeLensProvider.refreshCache();
     courseProvider.refresh();
+    decorationManager.seed();
+    sessionTree.seed();
 
     realtime = new RealtimeManager();
     const unsub = realtime.on(onEvent);

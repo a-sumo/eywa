@@ -8023,7 +8023,7 @@ __export(extension_exports, {
   deactivate: () => deactivate
 });
 module.exports = __toCommonJS(extension_exports);
-var vscode4 = __toESM(require("vscode"));
+var vscode7 = __toESM(require("vscode"));
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
 var os = __toESM(require("os"));
@@ -12554,6 +12554,13 @@ function shouldShowDeprecationWarning() {
 if (shouldShowDeprecationWarning()) console.warn("\u26A0\uFE0F  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217");
 
 // src/client.ts
+var ATTENTION_URGENCY = {
+  distress: 4,
+  blocked: 3,
+  stopped: 2,
+  checkpoint: 1,
+  idle: 0
+};
 var EywaClient = class {
   supabase;
   roomSlug;
@@ -12638,6 +12645,20 @@ var EywaClient = class {
       message_type: r.message_type ?? ""
     }));
   }
+  /** Recent operations that have scope/system metadata (for decoration seeding). */
+  async getRecentOperations(since, limit = 200) {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return [];
+    const { data: rows } = await this.supabase.from("memories").select("id,agent,content,metadata,ts,message_type").eq("room_id", roomId).gt("ts", since).not("metadata->>scope", "is", null).order("ts", { ascending: false }).limit(limit);
+    return (rows ?? []).map((r) => ({
+      id: r.id,
+      agent: r.agent,
+      content: r.content ?? "",
+      metadata: r.metadata ?? {},
+      ts: r.ts,
+      message_type: r.message_type ?? ""
+    }));
+  }
   /**
    * Fetch all sessions grouped by user. Determines status from lifecycle events
    * (session_start/session_done) and a 30-min active threshold. Filters ghost
@@ -12713,6 +12734,114 @@ var EywaClient = class {
       userSessions.set(user, sessions.slice(0, 20));
     }
     return userSessions;
+  }
+  async getDestination() {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return null;
+    const { data: rows } = await this.supabase.from("memories").select("agent,content,metadata,ts").eq("room_id", roomId).eq("message_type", "knowledge").eq("metadata->>event", "destination").order("ts", { ascending: false }).limit(1);
+    if (!rows?.length) return null;
+    const meta = rows[0].metadata ?? {};
+    return {
+      destination: meta.destination || "",
+      milestones: meta.milestones || [],
+      progress: meta.progress || {},
+      notes: meta.notes || null,
+      setBy: meta.set_by || rows[0].agent,
+      ts: rows[0].ts
+    };
+  }
+  async getAgentProgress() {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return [];
+    const { data: rows } = await this.supabase.from("memories").select("agent,metadata,ts").eq("room_id", roomId).eq("metadata->>event", "progress").order("ts", { ascending: false }).limit(50);
+    if (!rows?.length) return [];
+    const seen = /* @__PURE__ */ new Set();
+    const results = [];
+    for (const row of rows) {
+      if (seen.has(row.agent)) continue;
+      seen.add(row.agent);
+      const meta = row.metadata ?? {};
+      results.push({
+        agent: row.agent,
+        percent: meta.percent ?? 0,
+        status: meta.status || "working",
+        detail: meta.detail || null,
+        task: meta.task || "",
+        ts: row.ts
+      });
+    }
+    return results;
+  }
+  /**
+   * Get agents that need human attention: distress signals, blocked progress,
+   * stopped sessions, recent checkpoints, and idle-after-active sessions.
+   */
+  async getAttentionItems() {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return [];
+    const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1e3).toISOString();
+    const [distressRows, progressRows, sessionRows] = await Promise.all([
+      // Distress signals and checkpoints
+      this.supabase.from("memories").select("agent,content,metadata,ts,session_id").eq("room_id", roomId).gt("ts", cutoff).in("metadata->>event", ["distress", "checkpoint"]).order("ts", { ascending: false }).limit(20),
+      // Blocked progress reports
+      this.supabase.from("memories").select("agent,content,metadata,ts,session_id").eq("room_id", roomId).eq("metadata->>event", "progress").eq("metadata->>status", "blocked").gt("ts", cutoff).order("ts", { ascending: false }).limit(20),
+      // Recent session lifecycle (done/end) to find stopped sessions
+      this.supabase.from("memories").select("agent,content,metadata,ts,session_id").eq("room_id", roomId).gt("ts", cutoff).in("metadata->>event", ["session_done", "session_end"]).order("ts", { ascending: false }).limit(20)
+    ]);
+    const items = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const row of distressRows.data ?? []) {
+      const meta = row.metadata ?? {};
+      const event = meta.event;
+      const reason = event === "distress" ? "distress" : "checkpoint";
+      const key = `${row.agent}:${reason}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const remaining = meta.remaining || "";
+      const task = meta.task || "";
+      items.push({
+        agent: row.agent,
+        reason,
+        summary: reason === "distress" ? (remaining || task || "Context exhausted, needs direction").slice(0, 150) : (task || "Checkpointed, may need direction").slice(0, 150),
+        ts: row.ts,
+        sessionId: row.session_id,
+        urgency: ATTENTION_URGENCY[reason]
+      });
+    }
+    for (const row of progressRows.data ?? []) {
+      const key = `${row.agent}:blocked`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const meta = row.metadata ?? {};
+      items.push({
+        agent: row.agent,
+        reason: "blocked",
+        summary: (meta.detail || meta.task || "Blocked, needs input").slice(0, 150),
+        ts: row.ts,
+        sessionId: row.session_id,
+        urgency: ATTENTION_URGENCY.blocked
+      });
+    }
+    for (const row of sessionRows.data ?? []) {
+      const key = `${row.agent}:stopped`;
+      if (seen.has(key)) continue;
+      if (seen.has(`${row.agent}:distress`) || seen.has(`${row.agent}:blocked`)) continue;
+      seen.add(key);
+      const meta = row.metadata ?? {};
+      items.push({
+        agent: row.agent,
+        reason: "stopped",
+        summary: (meta.summary || "Session ended, awaiting direction").slice(0, 150),
+        ts: row.ts,
+        sessionId: row.session_id,
+        urgency: ATTENTION_URGENCY.stopped
+      });
+    }
+    items.sort((a, b) => {
+      if (a.urgency !== b.urgency) return b.urgency - a.urgency;
+      return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+    });
+    return items;
   }
   async inject(fromAgent, target, content, priority = "normal") {
     const roomId = await this.resolveRoom();
@@ -12874,6 +13003,595 @@ function registerKnowledgeForFileCommand(context) {
   );
 }
 
+// src/courseAwareness.ts
+var vscode3 = __toESM(require("vscode"));
+var CourseCodeLensProvider = class {
+  constructor(getClient) {
+    this.getClient = getClient;
+  }
+  _onDidChangeCodeLenses = new vscode3.EventEmitter();
+  onDidChangeCodeLenses = this._onDidChangeCodeLenses.event;
+  destination = null;
+  agentProgress = [];
+  activeScopes = [];
+  async refresh() {
+    const client2 = this.getClient();
+    if (!client2) return;
+    const [dest, prog, events] = await Promise.all([
+      client2.getDestination(),
+      client2.getAgentProgress(),
+      client2.getRecentEvents(
+        new Date(Date.now() - 30 * 60 * 1e3).toISOString(),
+        100
+      )
+    ]);
+    this.destination = dest;
+    this.agentProgress = prog;
+    const scopeMap = /* @__PURE__ */ new Map();
+    for (const e of events) {
+      const meta = e.metadata ?? {};
+      const scope = meta.scope;
+      const system = meta.system;
+      if (scope && !scopeMap.has(e.agent)) {
+        scopeMap.set(e.agent, { scope, system: system || "" });
+      }
+    }
+    this.activeScopes = Array.from(scopeMap.entries()).map(([agent, info]) => ({
+      agent,
+      ...info
+    }));
+    this._onDidChangeCodeLenses.fire();
+  }
+  updateDestination(dest) {
+    this.destination = dest;
+    this._onDidChangeCodeLenses.fire();
+  }
+  updateProgress(prog) {
+    this.agentProgress = prog;
+    this._onDidChangeCodeLenses.fire();
+  }
+  provideCodeLenses(document2) {
+    const lenses = [];
+    const range = new vscode3.Range(0, 0, 0, 0);
+    if (this.destination) {
+      const ms = this.destination.milestones;
+      const done = ms.filter((m) => this.destination.progress[m]).length;
+      const total = ms.length;
+      const pct = total > 0 ? Math.round(done / total * 100) : 0;
+      const bar = total > 0 ? progressBar(done, total) : "";
+      lenses.push(
+        new vscode3.CodeLens(range, {
+          title: `$(compass) Course: ${done}/${total} ${bar} ${pct}%`,
+          command: "eywaLive.focus",
+          tooltip: this.destination.destination
+        })
+      );
+    }
+    const relativePath = vscode3.workspace.asRelativePath(document2.uri);
+    const pathParts = relativePath.toLowerCase().split("/");
+    const fileName = pathParts[pathParts.length - 1] ?? "";
+    const dirName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : "";
+    const related = this.activeScopes.filter((s) => {
+      const scopeLower = s.scope.toLowerCase();
+      return scopeLower.includes(fileName.replace(/\.[^.]+$/, "")) || dirName && scopeLower.includes(dirName) || relativePath.toLowerCase().includes(scopeLower);
+    });
+    if (related.length > 0) {
+      const names = related.map((r) => {
+        const short = r.agent.includes("/") ? r.agent.split("/").pop() : r.agent;
+        return short;
+      }).join(", ");
+      lenses.push(
+        new vscode3.CodeLens(range, {
+          title: `$(broadcast) ${related.length} agent${related.length === 1 ? "" : "s"} nearby: ${names}`,
+          command: "eywaLive.focus",
+          tooltip: related.map((r) => `${r.agent}: ${r.scope} (${r.system})`).join("\n")
+        })
+      );
+    }
+    const activeCount = this.agentProgress.filter(
+      (p) => p.status === "working" || p.status === "blocked"
+    ).length;
+    if (activeCount > 0 && related.length === 0) {
+      lenses.push(
+        new vscode3.CodeLens(range, {
+          title: `$(pulse) ${activeCount} agent${activeCount === 1 ? "" : "s"} active`,
+          command: "eywaLive.focus",
+          tooltip: this.agentProgress.filter((p) => p.status === "working" || p.status === "blocked").map((p) => `${p.agent}: ${p.task} (${p.percent}%)`).join("\n")
+        })
+      );
+    }
+    return lenses;
+  }
+};
+function progressBar(done, total) {
+  const filled = Math.round(done / total * 8);
+  return "\u2588".repeat(filled) + "\u2591".repeat(8 - filled);
+}
+
+// src/agentDecorations.ts
+var vscode4 = __toESM(require("vscode"));
+var TTL_MS = 30 * 60 * 1e3;
+function agentColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = (300 + Math.abs(hash) % 60) / 360;
+  const sat = (60 + Math.abs(hash >> 8) % 30) / 100;
+  const lit = (55 + Math.abs(hash >> 16) % 20) / 100;
+  const a = sat * Math.min(lit, 1 - lit);
+  const f = (n) => {
+    const k = (n + hue * 12) % 12;
+    const c = lit - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * Math.max(0, Math.min(1, c))).toString(16).padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+function timeAgo(ts) {
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 6e4);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  return `${hours}h`;
+}
+function shortName(agent) {
+  return agent.includes("/") ? agent.split("/").pop() : agent;
+}
+function extractFileRefs(scope, content) {
+  const refs = [];
+  if (scope) refs.push(scope);
+  if (content) {
+    const pathMatches = content.match(
+      /[\w./-]+\.\w{1,6}/g
+    );
+    if (pathMatches) {
+      for (const m of pathMatches) {
+        if (m.includes("/") || m.includes("\\")) refs.push(m);
+      }
+    }
+  }
+  return refs;
+}
+function matchesFile(refs, editorRelPath) {
+  const lower = editorRelPath.toLowerCase();
+  const parts = lower.split("/");
+  const fileName = parts[parts.length - 1] ?? "";
+  const stem = fileName.replace(/\.[^.]+$/, "");
+  const dirName = parts.length > 1 ? parts[parts.length - 2] : "";
+  for (const ref of refs) {
+    const refLower = ref.toLowerCase();
+    if (lower.includes(refLower) || refLower.includes(lower)) return true;
+    if (stem && refLower.includes(stem)) return true;
+    if (dirName && refLower.includes(dirName)) return true;
+    if (ref.includes("/") || ref.includes("\\")) {
+      const refParts = refLower.split(/[/\\]/);
+      const refFile = refParts[refParts.length - 1] ?? "";
+      const refStem = refFile.replace(/\.[^.]+$/, "");
+      if (refStem && refStem === stem) return true;
+    }
+  }
+  return false;
+}
+var AgentDecorationManager = class {
+  constructor(getClient) {
+    this.getClient = getClient;
+    this.pruneTimer = setInterval(() => this.pruneStale(), 6e4);
+  }
+  // file path (workspace-relative, lowercase) -> touches
+  fileTouches = /* @__PURE__ */ new Map();
+  // All touches keyed by agent for global lookup
+  allTouches = [];
+  decorationTypes = /* @__PURE__ */ new Map();
+  pruneTimer;
+  /** Seed from recent operations on initial load. */
+  async seed() {
+    const client2 = this.getClient();
+    if (!client2) return;
+    const since = new Date(Date.now() - TTL_MS).toISOString();
+    const events = await client2.getRecentOperations(since, 200);
+    for (const e of events) {
+      this.processEvent(e.agent, e.metadata, e.ts, e.content);
+    }
+    this.updateAllVisibleEditors();
+  }
+  /** Handle a realtime memory event. */
+  handleEvent(mem) {
+    this.processEvent(mem.agent, mem.metadata ?? {}, mem.ts, mem.content);
+    this.updateAllVisibleEditors();
+  }
+  processEvent(agent, metadata, ts, content) {
+    const scope = metadata.scope;
+    const system = metadata.system;
+    const action = metadata.action;
+    if (!scope && !system) return;
+    const refs = extractFileRefs(scope, content);
+    if (refs.length === 0) return;
+    const touch = {
+      agent,
+      action: action || "touch",
+      scope: scope || "",
+      system: system || "",
+      ts,
+      content: (content || "").slice(0, 100)
+    };
+    this.allTouches.push(touch);
+    const folders = vscode4.workspace.workspaceFolders;
+    if (!folders?.length) {
+      const key = (scope || "").toLowerCase();
+      if (key) {
+        const list = this.fileTouches.get(key) || [];
+        list.push(touch);
+        this.fileTouches.set(key, list);
+      }
+      return;
+    }
+    for (const ref of refs) {
+      const key = ref.toLowerCase();
+      const list = this.fileTouches.get(key) || [];
+      const isDupe = list.some(
+        (t) => t.agent === touch.agent && t.action === touch.action && Math.abs(new Date(t.ts).getTime() - new Date(touch.ts).getTime()) < 6e4
+      );
+      if (!isDupe) {
+        list.push(touch);
+        this.fileTouches.set(key, list);
+      }
+    }
+  }
+  /** Find touches relevant to an editor's file. */
+  findTouches(editor) {
+    const relPath = vscode4.workspace.asRelativePath(editor.document.uri);
+    const matches = [];
+    const seen = /* @__PURE__ */ new Set();
+    for (const touch of this.allTouches) {
+      const refs = extractFileRefs(touch.scope, touch.content);
+      if (!matchesFile(refs, relPath)) continue;
+      const key = `${touch.agent}:${touch.action}:${touch.ts}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      matches.push(touch);
+    }
+    matches.sort(
+      (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
+    );
+    const agentSeen = /* @__PURE__ */ new Set();
+    const unique = [];
+    for (const m of matches) {
+      if (agentSeen.has(m.agent)) continue;
+      agentSeen.add(m.agent);
+      unique.push(m);
+    }
+    return unique;
+  }
+  /** Get or create a decoration type for an agent. */
+  getDecorationType(agent, line, touch) {
+    const key = `${agent}:${line}`;
+    const existing = this.decorationTypes.get(key);
+    if (existing) {
+      existing.dispose();
+      this.decorationTypes.delete(key);
+    }
+    const color = agentColor(agent);
+    const name = shortName(agent);
+    const ago = timeAgo(touch.ts);
+    const actionLabel = touch.action;
+    const scopeShort = touch.scope.length > 30 ? touch.scope.split(/[/\\]/).pop() || touch.scope.slice(0, 30) : touch.scope;
+    const decType = vscode4.window.createTextEditorDecorationType({
+      gutterIconPath: this.makeGutterDot(color),
+      gutterIconSize: "60%",
+      overviewRulerColor: color,
+      overviewRulerLane: vscode4.OverviewRulerLane.Right,
+      after: {
+        contentText: `  ${name} ${actionLabel} ${scopeShort}  ${ago}`,
+        color: new vscode4.ThemeColor("editorCodeLens.foreground"),
+        fontStyle: "italic",
+        fontWeight: "normal",
+        margin: "0 0 0 2em"
+      }
+    });
+    this.decorationTypes.set(key, decType);
+    return decType;
+  }
+  /** Create a tiny SVG dot for the gutter. */
+  makeGutterDot(color) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="6" height="16" viewBox="0 0 6 16"><circle cx="3" cy="8" r="2.5" fill="${color}"/></svg>`;
+    return vscode4.Uri.parse(
+      `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+    );
+  }
+  /** Apply decorations to a single editor. */
+  updateDecorations(editor) {
+    const touches = this.findTouches(editor);
+    if (touches.length === 0) {
+      for (const [, dec] of this.decorationTypes) {
+        editor.setDecorations(dec, []);
+      }
+      return;
+    }
+    for (let i = 0; i < touches.length && i < 5; i++) {
+      const touch = touches[i];
+      const line = Math.min(i, editor.document.lineCount - 1);
+      const range = new vscode4.Range(line, 0, line, 0);
+      const decType = this.getDecorationType(touch.agent, line, touch);
+      editor.setDecorations(decType, [range]);
+    }
+  }
+  /** Refresh decorations on all visible editors. */
+  updateAllVisibleEditors() {
+    for (const editor of vscode4.window.visibleTextEditors) {
+      this.updateDecorations(editor);
+    }
+  }
+  /** Build hover content for a file's agent touches. */
+  getHoverContent(document2, position) {
+    if (position.line > 4) return null;
+    const relPath = vscode4.workspace.asRelativePath(document2.uri);
+    const touches = this.findTouches(
+      vscode4.window.activeTextEditor
+    );
+    const touch = touches[position.line];
+    if (!touch) return null;
+    const color = agentColor(touch.agent);
+    const md = new vscode4.MarkdownString("", true);
+    md.isTrusted = true;
+    md.supportHtml = true;
+    md.appendMarkdown(
+      `<span style="color:${color};">**${touch.agent}**</span>
+
+`
+    );
+    md.appendMarkdown(`**Action:** ${touch.action}
+
+`);
+    if (touch.scope) md.appendMarkdown(`**Scope:** ${touch.scope}
+
+`);
+    if (touch.system) md.appendMarkdown(`**System:** ${touch.system}
+
+`);
+    md.appendMarkdown(`**When:** ${timeAgo(touch.ts)} ago
+
+`);
+    if (touch.content) {
+      md.appendMarkdown(`> ${touch.content}
+
+`);
+    }
+    md.appendMarkdown(
+      `[Open Eywa](command:eywaLive.focus)`
+    );
+    return new vscode4.Hover(md);
+  }
+  /** Remove touches older than TTL. */
+  pruneStale() {
+    const cutoff = Date.now() - TTL_MS;
+    this.allTouches = this.allTouches.filter(
+      (t) => new Date(t.ts).getTime() > cutoff
+    );
+    for (const [key, list] of this.fileTouches) {
+      const filtered = list.filter(
+        (t) => new Date(t.ts).getTime() > cutoff
+      );
+      if (filtered.length === 0) {
+        this.fileTouches.delete(key);
+      } else {
+        this.fileTouches.set(key, filtered);
+      }
+    }
+    this.updateAllVisibleEditors();
+  }
+  dispose() {
+    clearInterval(this.pruneTimer);
+    for (const [, dec] of this.decorationTypes) {
+      dec.dispose();
+    }
+    this.decorationTypes.clear();
+    this.fileTouches.clear();
+    this.allTouches = [];
+  }
+};
+
+// src/sessionTree.ts
+var vscode5 = __toESM(require("vscode"));
+function shortName2(agent) {
+  return agent.includes("/") ? agent.split("/").pop() : agent;
+}
+function timeAgo2(ts) {
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 6e4);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  return `${hours}h ago`;
+}
+var SessionItem = class extends vscode5.TreeItem {
+  constructor(session) {
+    const name = shortName2(session.agent);
+    const statusIcon = session.status === "active" ? "$(pulse)" : session.status === "finished" ? "$(check)" : "$(circle-outline)";
+    const actionText = session.lastAction ? `${session.lastAction} ${session.lastScope}` : session.task || "starting...";
+    super(`${statusIcon} ${name}`, vscode5.TreeItemCollapsibleState.Expanded);
+    this.session = session;
+    this.description = actionText.slice(0, 60);
+    const lines = [
+      `Agent: ${session.agent}`,
+      `Status: ${session.status}`
+    ];
+    if (session.task) lines.push(`Task: ${session.task}`);
+    if (session.lastAction) lines.push(`Action: ${session.lastAction}`);
+    if (session.lastScope) lines.push(`Scope: ${session.lastScope}`);
+    if (session.lastSystem) lines.push(`System: ${session.lastSystem}`);
+    if (session.lastContent) lines.push(`
+${session.lastContent}`);
+    if (session.progress > 0) lines.push(`Progress: ${session.progress}%`);
+    lines.push(`Last seen: ${timeAgo2(session.ts)}`);
+    this.tooltip = new vscode5.MarkdownString(lines.join("\n\n"));
+    this.contextValue = "session";
+    this.iconPath = new vscode5.ThemeIcon(
+      session.status === "active" ? "vm-running" : session.status === "finished" ? "pass-filled" : "circle-outline",
+      new vscode5.ThemeColor(
+        session.status === "active" ? "testing.runAction" : session.status === "finished" ? "testing.iconPassed" : "disabledForeground"
+      )
+    );
+  }
+};
+var DetailItem = class extends vscode5.TreeItem {
+  constructor(label, detail, icon) {
+    super(label, vscode5.TreeItemCollapsibleState.None);
+    this.description = detail;
+    if (icon) {
+      this.iconPath = new vscode5.ThemeIcon(icon);
+    }
+  }
+};
+var SessionTreeProvider = class {
+  constructor(getClient) {
+    this.getClient = getClient;
+    this.refreshTimer = setInterval(() => this._onDidChangeTreeData.fire(), 3e4);
+  }
+  _onDidChangeTreeData = new vscode5.EventEmitter();
+  onDidChangeTreeData = this._onDidChangeTreeData.event;
+  sessions = /* @__PURE__ */ new Map();
+  refreshTimer;
+  /** Seed from recent events on startup. */
+  async seed() {
+    const client2 = this.getClient();
+    if (!client2) return;
+    const since = new Date(Date.now() - 60 * 60 * 1e3).toISOString();
+    const events = await client2.getRecentEvents(since, 200);
+    for (const e of events.reverse()) {
+      this.processEvent(e.agent, e.metadata, e.ts, e.content);
+    }
+    this._onDidChangeTreeData.fire();
+  }
+  /** Handle a realtime memory event. */
+  handleEvent(mem) {
+    this.processEvent(mem.agent, mem.metadata ?? {}, mem.ts, mem.content);
+    this._onDidChangeTreeData.fire();
+  }
+  processEvent(agent, metadata, ts, content) {
+    const event = metadata.event;
+    const existing = this.sessions.get(agent);
+    if (event === "session_start") {
+      this.sessions.set(agent, {
+        agent,
+        task: metadata.task || "",
+        lastAction: "",
+        lastScope: "",
+        lastSystem: "",
+        lastContent: "",
+        status: "active",
+        progress: 0,
+        ts
+      });
+      return;
+    }
+    if (event === "session_done" || event === "session_end") {
+      if (existing) {
+        existing.status = "finished";
+        existing.task = metadata.summary || existing.task;
+        existing.ts = ts;
+      }
+      return;
+    }
+    if (event === "progress") {
+      if (existing) {
+        existing.progress = metadata.percent ?? existing.progress;
+        existing.ts = ts;
+        const detail = metadata.detail;
+        if (detail) existing.lastContent = detail.slice(0, 100);
+      }
+      return;
+    }
+    const scope = metadata.scope;
+    const system = metadata.system;
+    const action = metadata.action;
+    if (existing) {
+      if (action) existing.lastAction = action;
+      if (scope) existing.lastScope = scope;
+      if (system) existing.lastSystem = system;
+      if (content) existing.lastContent = content.slice(0, 100);
+      existing.ts = ts;
+      if (existing.status !== "finished") {
+        existing.status = "active";
+      }
+    } else {
+      this.sessions.set(agent, {
+        agent,
+        task: "",
+        lastAction: action || "",
+        lastScope: scope || "",
+        lastSystem: system || "",
+        lastContent: (content || "").slice(0, 100),
+        status: "active",
+        progress: 0,
+        ts
+      });
+    }
+  }
+  getTreeItem(element) {
+    return element;
+  }
+  getChildren(element) {
+    if (!element) {
+      const sessions = [...this.sessions.values()];
+      const cutoff = Date.now() - 2 * 60 * 60 * 1e3;
+      const recent = sessions.filter(
+        (s) => new Date(s.ts).getTime() > cutoff
+      );
+      recent.sort((a, b) => {
+        const order = { active: 0, idle: 1, finished: 2 };
+        const diff = order[a.status] - order[b.status];
+        if (diff !== 0) return diff;
+        return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+      });
+      return recent.map((s) => new SessionItem(s));
+    }
+    if (element instanceof SessionItem) {
+      const s = element.session;
+      const children = [];
+      if (s.task) {
+        children.push(new DetailItem("Task", s.task.slice(0, 80), "target"));
+      }
+      if (s.lastAction && s.lastScope) {
+        children.push(
+          new DetailItem(
+            s.lastAction,
+            s.lastScope.slice(0, 60),
+            "edit"
+          )
+        );
+      }
+      if (s.lastSystem) {
+        children.push(
+          new DetailItem("System", s.lastSystem, "server-environment")
+        );
+      }
+      if (s.progress > 0) {
+        const bar = progressBar2(s.progress);
+        children.push(
+          new DetailItem("Progress", `${bar} ${s.progress}%`, "graph")
+        );
+      }
+      if (s.lastContent) {
+        children.push(
+          new DetailItem("Latest", s.lastContent.slice(0, 80), "comment")
+        );
+      }
+      children.push(new DetailItem("Seen", timeAgo2(s.ts), "clock"));
+      return children;
+    }
+    return [];
+  }
+  dispose() {
+    clearInterval(this.refreshTimer);
+    this._onDidChangeTreeData.dispose();
+  }
+};
+function progressBar2(pct) {
+  const filled = Math.round(pct / 12.5);
+  return "\u2588".repeat(filled) + "\u2591".repeat(8 - filled);
+}
+
 // src/authServer.ts
 var http = __toESM(require("http"));
 function startLoginFlow(openUrl) {
@@ -12938,7 +13656,7 @@ function startLoginFlow(openUrl) {
 }
 
 // src/liveView.ts
-var vscode3 = __toESM(require("vscode"));
+var vscode6 = __toESM(require("vscode"));
 
 // src/avatars.ts
 var AVATARS = [
@@ -13389,16 +14107,35 @@ var LiveViewProvider = class {
   view;
   agents = /* @__PURE__ */ new Map();
   activity = [];
+  destination = null;
+  agentProgress = [];
+  attentionItems = [];
   getClient;
   room;
+  onAttentionChange;
   constructor(getClient, room) {
     this.getClient = getClient;
     this.room = room;
+  }
+  /** Register callback for attention count changes (used for badge + notifications). */
+  setAttentionListener(cb) {
+    this.onAttentionChange = cb;
+  }
+  getAttentionItems() {
+    return this.attentionItems;
+  }
+  /** Update the view badge (attention count). */
+  setBadge(count) {
+    if (!this.view) return;
+    this.view.badge = count > 0 ? { tooltip: `${count} agent${count === 1 ? "" : "s"} need attention`, value: count } : void 0;
   }
   setRoom(room) {
     this.room = room;
     this.agents.clear();
     this.activity = [];
+    this.destination = null;
+    this.agentProgress = [];
+    this.attentionItems = [];
     this.postMessage({ type: "loading", room });
     this.loadInitial();
   }
@@ -13406,11 +14143,24 @@ var LiveViewProvider = class {
     this.view = view;
     view.webview.options = { enableScripts: true };
     view.webview.html = this.getHtml();
-    view.webview.onDidReceiveMessage((msg) => {
-      if (msg.type === "setRoom") vscode3.commands.executeCommand("eywa.setRoom");
-      else if (msg.type === "inject") vscode3.commands.executeCommand("eywa.injectContext");
-      else if (msg.type === "openDashboard") vscode3.commands.executeCommand("eywa.openDashboard");
+    view.webview.onDidReceiveMessage(async (msg) => {
+      if (msg.type === "setRoom") vscode6.commands.executeCommand("eywa.setRoom");
+      else if (msg.type === "inject") vscode6.commands.executeCommand("eywa.injectContext");
+      else if (msg.type === "openDashboard") vscode6.commands.executeCommand("eywa.openDashboard");
       else if (msg.type === "refresh") this.loadInitial();
+      else if (msg.type === "attentionReply") {
+        const client2 = this.getClient();
+        if (!client2 || !msg.agent || !msg.content) return;
+        await client2.inject("vscode-user", msg.agent, msg.content, "high");
+        this.attentionItems = this.attentionItems.filter((a) => a.agent !== msg.agent);
+        this.onAttentionChange?.(this.attentionItems);
+        this.pushState();
+        vscode6.window.showInformationMessage(`Sent to ${msg.agent}`);
+      } else if (msg.type === "attentionDismiss") {
+        this.attentionItems = this.attentionItems.filter((a) => a.agent !== msg.agent);
+        this.onAttentionChange?.(this.attentionItems);
+        this.pushState();
+      }
     });
     view.onDidChangeVisibility(() => {
       if (view.visible) {
@@ -13430,7 +14180,16 @@ var LiveViewProvider = class {
       return;
     }
     try {
-      const sessionMap = await client2.getSessions();
+      const [sessionMap, dest, prog, attention] = await Promise.all([
+        client2.getSessions(),
+        client2.getDestination(),
+        client2.getAgentProgress(),
+        client2.getAttentionItems()
+      ]);
+      this.destination = dest;
+      this.agentProgress = prog;
+      this.attentionItems = attention;
+      this.onAttentionChange?.(this.attentionItems);
       this.agents.clear();
       for (const [, sessions] of sessionMap) {
         for (const s of sessions) {
@@ -13445,8 +14204,8 @@ var LiveViewProvider = class {
           }
         }
       }
-      const historyHours = vscode3.workspace.getConfiguration("eywa").get("historyHours") ?? 24;
-      const logLevel = vscode3.workspace.getConfiguration("eywa").get("logLevel") ?? "all";
+      const historyHours = vscode6.workspace.getConfiguration("eywa").get("historyHours") ?? 24;
+      const logLevel = vscode6.workspace.getConfiguration("eywa").get("logLevel") ?? "all";
       const since = new Date(Date.now() - historyHours * 60 * 60 * 1e3).toISOString();
       const events = await client2.getRecentEvents(since, 50);
       this.activity = events.filter((e) => {
@@ -13471,6 +14230,63 @@ var LiveViewProvider = class {
   handleEvent(mem) {
     const meta = mem.metadata ?? {};
     const event = meta.event;
+    if (event === "distress" || event === "checkpoint" || event === "progress" && meta.status === "blocked" || event === "session_done" || event === "session_end") {
+      const reason = event === "distress" ? "distress" : event === "checkpoint" ? "checkpoint" : meta.status === "blocked" ? "blocked" : "stopped";
+      const urgencyMap = { distress: 4, blocked: 3, stopped: 2, checkpoint: 1, idle: 0 };
+      const existing = this.attentionItems.findIndex(
+        (a) => a.agent === mem.agent && a.reason === reason
+      );
+      const item = {
+        agent: mem.agent,
+        reason,
+        summary: (meta.remaining || meta.summary || meta.detail || meta.task || "Needs attention").slice(0, 150),
+        ts: mem.ts,
+        sessionId: mem.session_id,
+        urgency: urgencyMap[reason]
+      };
+      if (existing >= 0) {
+        this.attentionItems[existing] = item;
+      } else {
+        this.attentionItems.push(item);
+      }
+      this.attentionItems.sort((a, b) => {
+        if (a.urgency !== b.urgency) return b.urgency - a.urgency;
+        return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+      });
+      this.onAttentionChange?.(this.attentionItems);
+    }
+    if (event === "session_start") {
+      const hadItems = this.attentionItems.some((a) => a.agent === mem.agent);
+      this.attentionItems = this.attentionItems.filter((a) => a.agent !== mem.agent);
+      if (hadItems) this.onAttentionChange?.(this.attentionItems);
+    }
+    if (event === "destination" && mem.message_type === "knowledge") {
+      const dest = meta;
+      this.destination = {
+        destination: dest.destination || "",
+        milestones: dest.milestones || [],
+        progress: dest.progress || {},
+        notes: dest.notes || null,
+        setBy: dest.set_by || mem.agent,
+        ts: mem.ts
+      };
+    }
+    if (event === "progress") {
+      const existing = this.agentProgress.findIndex((p) => p.agent === mem.agent);
+      const prog = {
+        agent: mem.agent,
+        percent: meta.percent ?? 0,
+        status: meta.status || "working",
+        detail: meta.detail || null,
+        task: meta.task || "",
+        ts: mem.ts
+      };
+      if (existing >= 0) {
+        this.agentProgress[existing] = prog;
+      } else {
+        this.agentProgress.push(prog);
+      }
+    }
     if (event === "session_start") {
       this.agents.set(mem.agent, {
         name: mem.agent,
@@ -13491,7 +14307,7 @@ var LiveViewProvider = class {
       a.lastSeen = mem.ts;
       a.memoryCount++;
     }
-    const logLevel = vscode3.workspace.getConfiguration("eywa").get("logLevel") ?? "all";
+    const logLevel = vscode6.workspace.getConfiguration("eywa").get("logLevel") ?? "all";
     if (passesLogFilter(mem.message_type || "assistant", event, logLevel)) {
       const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
       this.activity.unshift({
@@ -13525,7 +14341,10 @@ var LiveViewProvider = class {
       agents: sorted,
       activity: this.activity,
       room: this.room,
-      avatars: avatarMap
+      avatars: avatarMap,
+      destination: this.destination,
+      agentProgress: this.agentProgress,
+      attention: this.attentionItems
     });
   }
   postMessage(msg) {
@@ -13654,6 +14473,71 @@ var LiveViewProvider = class {
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes mascot-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
   .mascot-wrap svg { animation: mascot-bob 2s ease-in-out infinite; }
+
+  /* Attention section */
+  @keyframes attn-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .attn-section {
+    border-bottom: 1px solid var(--vscode-panel-border);
+  }
+  .attn-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 12px 4px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: #f85149;
+  }
+  .attn-badge {
+    background: #f85149; color: #fff; font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 8px; min-width: 16px; text-align: center;
+  }
+  .attn-item {
+    padding: 6px 12px; display: flex; flex-direction: column; gap: 4px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s ease-in-out;
+  }
+  .attn-item:hover { background: var(--vscode-list-hoverBackground); }
+  .attn-item.distress { border-left-color: #f85149; animation: attn-pulse 2s ease-in-out infinite; }
+  .attn-item.blocked { border-left-color: #d29922; }
+  .attn-item.stopped { border-left-color: #8b949e; }
+  .attn-item.checkpoint { border-left-color: #58a6ff; }
+  .attn-top {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .attn-avatar {
+    width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  }
+  .attn-agent { font-size: 11px; font-weight: 600; flex: 1; min-width: 0; }
+  .attn-reason {
+    font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.3px; flex-shrink: 0;
+  }
+  .attn-reason.distress { background: rgba(248,81,73,0.15); color: #f85149; }
+  .attn-reason.blocked { background: rgba(210,153,34,0.15); color: #d29922; }
+  .attn-reason.stopped { background: rgba(139,148,158,0.15); color: #8b949e; }
+  .attn-reason.checkpoint { background: rgba(88,166,255,0.15); color: #58a6ff; }
+  .attn-dismiss {
+    background: none; border: none; color: var(--vscode-foreground);
+    opacity: 0.3; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;
+  }
+  .attn-dismiss:hover { opacity: 0.8; }
+  .attn-summary { font-size: 10px; opacity: 0.6; line-height: 1.3; }
+  .attn-reply-row {
+    display: flex; gap: 4px; align-items: center; margin-top: 2px;
+  }
+  .attn-input {
+    flex: 1; background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border, rgba(128,128,128,0.3));
+    border-radius: 3px; padding: 3px 6px; font-size: 11px;
+    font-family: var(--vscode-font-family); outline: none;
+  }
+  .attn-input:focus { border-color: var(--vscode-focusBorder); }
+  .attn-input::placeholder { opacity: 0.4; }
+  .attn-send {
+    background: var(--vscode-button-background); color: var(--vscode-button-foreground);
+    border: none; border-radius: 3px; padding: 3px 8px; font-size: 10px;
+    cursor: pointer; font-weight: 600; font-family: inherit; white-space: nowrap;
+  }
+  .attn-send:hover { background: var(--vscode-button-hoverBackground); }
 </style>
 </head>
 <body>
@@ -13684,6 +14568,21 @@ function timeAgo(ts) {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+function sendAttn(input) {
+  const agent = input.dataset.agent;
+  const content = input.value.trim();
+  if (!content) return;
+  vscode.postMessage({ type: 'attentionReply', agent: agent, content: content });
+  input.value = '';
+  input.placeholder = 'Sent!';
+  input.disabled = true;
+  setTimeout(() => { input.disabled = false; input.placeholder = 'Reply...'; }, 1500);
+}
+
+function dismissAttn(agent) {
+  vscode.postMessage({ type: 'attentionDismiss', agent: agent });
+}
+
 const LOGO = '<svg class="logo" viewBox="0 0 250 250" fill="none"><path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/><path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/><path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/><path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/><rect width="69.09" height="37.63" rx="18.81" transform="matrix(-0.682 -0.731 0.715 -0.7 165.13 184.31)"/><rect width="69.09" height="37.47" rx="18.73" transform="matrix(-0.682 0.731 -0.714 -0.7 182.38 88.9)"/><rect width="75.28" height="37.98" rx="18.99" transform="matrix(0.679 0.734 -0.717 0.697 95.87 64.43)"/><rect width="71.22" height="41.64" rx="20.82" transform="matrix(0.799 -0.601 0.583 0.813 55 149.83)"/></svg>';
 
 function render(data) {
@@ -13695,8 +14594,13 @@ function render(data) {
     return;
   }
 
-  const { agents, activity, room, avatars } = data;
+  const { agents, activity, room, avatars, destination, agentProgress, attention } = data;
   const active = agents.filter(a => a.status === 'active').length;
+  const progressMap = {};
+  if (agentProgress) {
+    for (const p of agentProgress) progressMap[p.agent] = p;
+  }
+  const attnItems = attention || [];
 
   // Header
   let html = '<div class="header">' + LOGO
@@ -13707,6 +14611,68 @@ function render(data) {
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'inject\\'})" title="Inject context"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 3L14 8l-3.5 5h-2l3-4.5H2V7.5h9.5l-3-4.5h2z"/></svg></button>'
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'openDashboard\\'})" title="Web dashboard"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h13l.5.5v13l-.5.5h-13l-.5-.5v-13l.5-.5zM2 5v9h12V5H2zm0-1h12V2H2v2z"/></svg></button>'
     + '</div></div>';
+
+  // Attention section (agents that need your input)
+  if (attnItems.length > 0) {
+    html += '<div class="attn-section">';
+    html += '<div class="attn-header"><span>Needs You</span><span class="attn-badge">' + attnItems.length + '</span></div>';
+    for (const a of attnItems) {
+      const src = avatars[a.agent] || '';
+      const sn = shortName(a.agent);
+      html += '<div class="attn-item ' + a.reason + '">';
+      html += '<div class="attn-top">';
+      html += '<img class="attn-avatar" src="' + src + '" alt=""/>';
+      html += '<span class="attn-agent">' + esc(sn) + '</span>';
+      html += '<span class="attn-reason ' + a.reason + '">' + esc(a.reason) + '</span>';
+      html += '<button class="attn-dismiss" onclick="dismissAttn(\\'' + esc(a.agent).replace(/'/g, "\\\\'") + '\\')" title="Dismiss">&times;</button>';
+      html += '</div>';
+      html += '<div class="attn-summary">' + esc(a.summary) + '</div>';
+      html += '<div class="attn-reply-row">';
+      html += '<input class="attn-input" data-agent="' + esc(a.agent) + '" placeholder="Reply to ' + esc(sn) + '..." onkeydown="if(event.key===\\'Enter\\')sendAttn(this)"/>';
+      html += '<button class="attn-send" onclick="sendAttn(this.previousElementSibling)">Send</button>';
+      html += '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Destination banner
+  if (destination && destination.destination) {
+    const ms = destination.milestones || [];
+    const prog = destination.progress || {};
+    const done = ms.filter(m => prog[m]).length;
+    const total = ms.length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    html += '<div style="padding:8px 12px;border-bottom:1px solid var(--vscode-panel-border)">';
+    html += '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;opacity:0.5;margin-bottom:4px">Destination</div>';
+    html += '<div style="font-size:11px;font-weight:600;margin-bottom:4px;line-height:1.3">' + esc(destination.destination).slice(0, 200) + '</div>';
+
+    if (total > 0) {
+      html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">';
+      html += '<div style="flex:1;height:3px;background:rgba(128,128,128,0.2);border-radius:2px;overflow:hidden">';
+      html += '<div style="width:' + pct + '%;height:100%;background:' + (pct === 100 ? '#3fb950' : '#7946FF') + ';border-radius:2px;transition:width 0.5s ease-in-out"></div>';
+      html += '</div>';
+      html += '<span style="font-size:10px;font-weight:600;opacity:0.7">' + done + '/' + total + '</span>';
+      html += '</div>';
+
+      html += '<div style="display:flex;flex-wrap:wrap;gap:3px">';
+      for (const m of ms) {
+        const isDone = prog[m];
+        html += '<span style="font-size:9px;padding:1px 5px;border-radius:2px;'
+          + 'background:' + (isDone ? 'rgba(63,185,80,0.15)' : 'rgba(128,128,128,0.1)') + ';'
+          + 'color:' + (isDone ? '#3fb950' : 'inherit') + ';opacity:' + (isDone ? '0.7' : '0.4') + ';'
+          + (isDone ? 'text-decoration:line-through;' : '')
+          + '">' + (isDone ? '\\u2713 ' : '') + esc(m) + '</span>';
+      }
+      html += '</div>';
+    }
+
+    if (destination.notes) {
+      html += '<div style="font-size:10px;opacity:0.4;margin-top:4px">' + esc(destination.notes).slice(0, 150) + '</div>';
+    }
+    html += '</div>';
+  }
 
   // Mascot: cross-body between header and agent strip
   const mascotMood = agents.filter(a => a.status === 'active').length > 0 ? 'active' : (agents.length > 0 ? 'idle' : 'sleeping');
@@ -13767,9 +14733,16 @@ function render(data) {
     html += '<div class="strip">';
     for (const a of agents) {
       const src = avatars[a.name] || '';
-      html += '<div class="agent-chip ' + a.status + '" title="' + esc(a.name) + '\\n' + esc(a.task) + '">'
+      const ap = progressMap[a.name];
+      const progTitle = ap ? '\\n' + ap.percent + '% ' + (ap.status || '') : '';
+      html += '<div class="agent-chip ' + a.status + '" title="' + esc(a.name) + '\\n' + esc(a.task) + progTitle + '">'
         + '<div class="av-wrap"><img class="av-img" src="' + src + '" alt="' + esc(shortName(a.name)) + '"/><span class="dot"></span></div>'
-        + '<div class="name">' + esc(shortName(a.name)) + '</div></div>';
+        + '<div class="name">' + esc(shortName(a.name)) + '</div>';
+      if (ap) {
+        html += '<div style="width:100%;height:2px;background:rgba(128,128,128,0.15);border-radius:1px;overflow:hidden;margin-top:2px">'
+          + '<div style="width:' + ap.percent + '%;height:100%;background:' + (ap.status === 'blocked' ? '#d29922' : '#7946FF') + ';border-radius:1px"></div></div>';
+      }
+      html += '</div>';
     }
     html += '</div>';
   }
@@ -13840,19 +14813,54 @@ var statusBarItem;
 var realtime;
 var terminalAgentMap = /* @__PURE__ */ new Map();
 function activate(context) {
-  statusBarItem = vscode4.window.createStatusBarItem(vscode4.StatusBarAlignment.Left, 50);
+  statusBarItem = vscode7.window.createStatusBarItem(vscode7.StatusBarAlignment.Left, 50);
   statusBarItem.command = "eywa.showStatus";
   statusBarItem.text = "$(cloud) Eywa";
   statusBarItem.tooltip = "Click for Eywa quick actions";
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
   const codeLensProvider = new KnowledgeCodeLensProvider(() => client);
+  const courseProvider = new CourseCodeLensProvider(() => client);
+  const decorationManager = new AgentDecorationManager(() => client);
+  const sessionTree = new SessionTreeProvider(() => client);
   const liveProvider = new LiveViewProvider(() => client, getConfig("room"));
+  let knownAttentionAgents = /* @__PURE__ */ new Set();
+  liveProvider.setAttentionListener((items) => {
+    const count = items.length;
+    if (count > 0) {
+      statusBarItem.text = `$(bell) Eywa: ${count} need${count === 1 ? "s" : ""} you`;
+      statusBarItem.backgroundColor = new vscode7.ThemeColor("statusBarItem.warningBackground");
+    } else {
+      updateStatusBar();
+      statusBarItem.backgroundColor = void 0;
+    }
+    liveProvider.setBadge(count);
+    for (const item of items) {
+      if (knownAttentionAgents.has(item.agent)) continue;
+      if (item.reason === "distress" || item.reason === "blocked") {
+        const short = item.agent.includes("/") ? item.agent.split("/").pop() : item.agent;
+        const label = item.reason === "distress" ? "DISTRESS" : "BLOCKED";
+        vscode7.window.showWarningMessage(
+          `${label}: ${short} - ${item.summary.slice(0, 80)}`,
+          "Open Eywa",
+          "Dismiss"
+        ).then((choice) => {
+          if (choice === "Open Eywa") {
+            vscode7.commands.executeCommand("eywaLive.focus");
+          }
+        });
+      }
+    }
+    knownAttentionAgents = new Set(items.map((i) => i.agent));
+  });
   function handleRealtimeEvent(mem) {
     const meta = mem.metadata ?? {};
     const event = meta.event;
     if (event === "knowledge_stored" || mem.message_type === "knowledge") {
       codeLensProvider.refreshCache();
+    }
+    if (event === "destination" || event === "progress") {
+      courseProvider.refresh();
     }
     if (event === "context_injection") {
       const priority = meta.priority || "normal";
@@ -13860,38 +14868,68 @@ function activate(context) {
         const from = meta.from_agent || mem.agent;
         const target = meta.target_agent || "all";
         const msg = `${from} injected context${target !== "all" ? ` to ${target}` : ""}`;
-        vscode4.window.showWarningMessage(`URGENT: ${msg}`, "Open Dashboard").then((choice) => {
-          if (choice === "Open Dashboard") vscode4.commands.executeCommand("eywa.openDashboard");
+        vscode7.window.showWarningMessage(`URGENT: ${msg}`, "Open Eywa").then((choice) => {
+          if (choice === "Open Eywa") vscode7.commands.executeCommand("eywaLive.focus");
         });
       }
     }
+    if (event === "distress") {
+      const short = mem.agent.includes("/") ? mem.agent.split("/").pop() : mem.agent;
+      vscode7.window.showErrorMessage(
+        `Agent ${short} sent a distress signal and needs direction`,
+        "Open Eywa"
+      ).then((choice) => {
+        if (choice === "Open Eywa") vscode7.commands.executeCommand("eywaLive.focus");
+      });
+    }
+    decorationManager.handleEvent(mem);
+    sessionTree.handleEvent(mem);
     liveProvider.handleEvent(mem);
     updateStatusBar();
   }
-  initClient(codeLensProvider, handleRealtimeEvent, context);
+  initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, handleRealtimeEvent, context);
   if (!getConfig("room")) {
     showWelcome();
   }
   context.subscriptions.push(
-    vscode4.window.registerWebviewViewProvider(LiveViewProvider.viewType, liveProvider, {
+    vscode7.window.registerWebviewViewProvider(LiveViewProvider.viewType, liveProvider, {
       webviewOptions: { retainContextWhenHidden: true }
     }),
-    vscode4.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider)
+    vscode7.window.registerTreeDataProvider("eywaSessions", sessionTree),
+    vscode7.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider),
+    vscode7.languages.registerCodeLensProvider({ scheme: "file" }, courseProvider),
+    // Agent decoration lifecycle
+    vscode7.window.onDidChangeActiveTextEditor((editor) => {
+      if (editor) decorationManager.updateDecorations(editor);
+    }),
+    vscode7.window.onDidChangeVisibleTextEditors(() => {
+      decorationManager.updateAllVisibleEditors();
+    }),
+    vscode7.languages.registerHoverProvider({ scheme: "file" }, {
+      provideHover(doc, pos) {
+        return decorationManager.getHoverContent(doc, pos);
+      }
+    }),
+    { dispose: () => decorationManager.dispose() },
+    { dispose: () => sessionTree.dispose() }
   );
   context.subscriptions.push(
-    vscode4.commands.registerCommand("eywa.refreshAgents", () => {
+    vscode7.commands.registerCommand("eywa.refreshAgents", () => {
       codeLensProvider.refreshCache();
+      courseProvider.refresh();
+      decorationManager.seed();
+      sessionTree.seed();
       liveProvider.loadInitial();
     }),
-    vscode4.commands.registerCommand("eywa.openDashboard", () => {
+    vscode7.commands.registerCommand("eywa.openDashboard", () => {
       const room = getConfig("room");
-      vscode4.env.openExternal(vscode4.Uri.parse(room ? `https://eywa-ai.dev/r/${room}` : "https://eywa-ai.dev"));
+      vscode7.env.openExternal(vscode7.Uri.parse(room ? `https://eywa-ai.dev/r/${room}` : "https://eywa-ai.dev"));
     }),
-    vscode4.commands.registerCommand("eywa.login", async () => {
-      const result = await vscode4.window.withProgress(
-        { location: vscode4.ProgressLocation.Notification, title: "Waiting for browser login...", cancellable: true },
+    vscode7.commands.registerCommand("eywa.login", async () => {
+      const result = await vscode7.window.withProgress(
+        { location: vscode7.ProgressLocation.Notification, title: "Waiting for browser login...", cancellable: true },
         (_progress, token) => {
-          const loginPromise = startLoginFlow((url) => vscode4.env.openExternal(vscode4.Uri.parse(url)));
+          const loginPromise = startLoginFlow((url) => vscode7.env.openExternal(vscode7.Uri.parse(url)));
           return new Promise((resolve) => {
             token.onCancellationRequested(() => resolve(null));
             loginPromise.then(resolve);
@@ -13899,69 +14937,69 @@ function activate(context) {
         }
       );
       if (!result) return;
-      const config = vscode4.workspace.getConfiguration("eywa");
+      const config = vscode7.workspace.getConfiguration("eywa");
       await config.update("supabaseUrl", result.supabaseUrl, true);
       await config.update("supabaseKey", result.supabaseKey, true);
       await config.update("room", result.room, true);
-      vscode4.window.showInformationMessage(`Connected to Eywa room: ${result.room}`);
+      vscode7.window.showInformationMessage(`Connected to Eywa room: ${result.room}`);
     }),
-    vscode4.commands.registerCommand("eywa.connectAgent", async () => {
-      const room = await vscode4.window.showInputBox({ prompt: "Room slug", placeHolder: "my-project", value: getConfig("room") });
+    vscode7.commands.registerCommand("eywa.connectAgent", async () => {
+      const room = await vscode7.window.showInputBox({ prompt: "Room slug", placeHolder: "my-project", value: getConfig("room") });
       if (!room) return;
-      const agent = await vscode4.window.showInputBox({ prompt: "Agent name", placeHolder: "claude-code" });
+      const agent = await vscode7.window.showInputBox({ prompt: "Agent name", placeHolder: "claude-code" });
       if (!agent) return;
       const mcpUrl = `https://mcp.eywa-ai.dev/mcp?room=${room}&agent=${agent}`;
-      await vscode4.env.clipboard.writeText(mcpUrl);
-      vscode4.window.showInformationMessage(`MCP URL copied! Add to your MCP config:
+      await vscode7.env.clipboard.writeText(mcpUrl);
+      vscode7.window.showInformationMessage(`MCP URL copied! Add to your MCP config:
 ${mcpUrl}`, "Open Terminal").then((action) => {
         if (action === "Open Terminal") {
-          const terminal = vscode4.window.createTerminal("Eywa");
+          const terminal = vscode7.window.createTerminal("Eywa");
           terminal.sendText(`claude mcp add --transport http eywa "${mcpUrl}"`);
           terminal.show();
         }
       });
-      await vscode4.workspace.getConfiguration("eywa").update("room", room, true);
+      await vscode7.workspace.getConfiguration("eywa").update("room", room, true);
     }),
-    vscode4.commands.registerCommand("eywa.injectContext", async () => {
+    vscode7.commands.registerCommand("eywa.injectContext", async () => {
       if (!client) {
-        const action = await vscode4.window.showWarningMessage("Not connected to Eywa.", "Login");
-        if (action === "Login") vscode4.commands.executeCommand("eywa.login");
+        const action = await vscode7.window.showWarningMessage("Not connected to Eywa.", "Login");
+        if (action === "Login") vscode7.commands.executeCommand("eywa.login");
         return;
       }
       const agents = await client.getAgents();
-      const target = await vscode4.window.showQuickPick([...agents.map((a) => a.name), "all"], { placeHolder: "Target agent (or 'all' for broadcast)" });
+      const target = await vscode7.window.showQuickPick([...agents.map((a) => a.name), "all"], { placeHolder: "Target agent (or 'all' for broadcast)" });
       if (!target) return;
-      const content = await vscode4.window.showInputBox({ prompt: "Context/instructions to inject", placeHolder: "Focus on the auth module, the schema changed to use UUIDs" });
+      const content = await vscode7.window.showInputBox({ prompt: "Context/instructions to inject", placeHolder: "Focus on the auth module, the schema changed to use UUIDs" });
       if (!content) return;
-      const priority = await vscode4.window.showQuickPick(["normal", "high", "urgent"], { placeHolder: "Priority" });
+      const priority = await vscode7.window.showQuickPick(["normal", "high", "urgent"], { placeHolder: "Priority" });
       if (!priority) return;
       await client.inject("vscode-user", target, content, priority);
-      vscode4.window.showInformationMessage(`Injected context for ${target} (${priority})`);
+      vscode7.window.showInformationMessage(`Injected context for ${target} (${priority})`);
     }),
-    vscode4.commands.registerCommand("eywa.injectSelection", () => injectSelection(() => client)),
-    vscode4.commands.registerCommand("eywa.setRoom", async () => {
-      const room = await vscode4.window.showInputBox({
+    vscode7.commands.registerCommand("eywa.injectSelection", () => injectSelection(() => client)),
+    vscode7.commands.registerCommand("eywa.setRoom", async () => {
+      const room = await vscode7.window.showInputBox({
         prompt: "Enter room slug",
         placeHolder: "my-project",
         value: getConfig("room"),
         validateInput: (v) => /^[a-zA-Z0-9_-]{1,64}$/.test(v) ? null : "Letters, numbers, hyphens, underscores only"
       });
       if (!room) return;
-      await vscode4.workspace.getConfiguration("eywa").update("room", room, true);
+      await vscode7.workspace.getConfiguration("eywa").update("room", room, true);
     }),
-    vscode4.commands.registerCommand("eywa.showStatus", async () => {
+    vscode7.commands.registerCommand("eywa.showStatus", async () => {
       const room = getConfig("room");
       const tabTitlesOn = fs.existsSync(TAB_TITLE_FLAG);
       const items = [
         { label: `$(folder) ${room || "(no room)"}`, description: "Switch room", detail: room ? `Connected to /${room}` : "Click to set a room" },
-        { label: "", kind: vscode4.QuickPickItemKind.Separator }
+        { label: "", kind: vscode7.QuickPickItemKind.Separator }
       ];
       if (client) {
         const agents = await client.getAgents();
         if (agents.length > 0) {
           items.push(
             ...agents.map((a) => ({ label: `$(${a.isActive ? "circle-filled" : "circle-outline"}) ${a.name}`, description: a.isActive ? "active" : "idle" })),
-            { label: "", kind: vscode4.QuickPickItemKind.Separator }
+            { label: "", kind: vscode7.QuickPickItemKind.Separator }
           );
         }
         items.push({ label: "$(arrow-right) Inject context to agent...", description: "" });
@@ -13972,34 +15010,34 @@ ${mcpUrl}`, "Open Terminal").then((action) => {
         { label: "$(link-external) Open web dashboard", description: room || "" },
         { label: "$(log-in) Login with browser", description: "" }
       );
-      const pick = await vscode4.window.showQuickPick(items, { placeHolder: room ? `Eywa: /${room}` : "Eywa: set up your room" });
+      const pick = await vscode7.window.showQuickPick(items, { placeHolder: room ? `Eywa: /${room}` : "Eywa: set up your room" });
       if (!pick) return;
-      if (pick.label.includes(room || "(no room)")) vscode4.commands.executeCommand("eywa.setRoom");
-      else if (pick.label.includes("Inject context")) vscode4.commands.executeCommand("eywa.injectContext");
-      else if (pick.label.includes("Agent tab titles")) vscode4.commands.executeCommand("eywa.toggleTabTitles");
-      else if (pick.label.includes("Open web dashboard")) vscode4.commands.executeCommand("eywa.openDashboard");
-      else if (pick.label.includes("Connect new agent")) vscode4.commands.executeCommand("eywa.connectAgent");
-      else if (pick.label.includes("Login")) vscode4.commands.executeCommand("eywa.login");
+      if (pick.label.includes(room || "(no room)")) vscode7.commands.executeCommand("eywa.setRoom");
+      else if (pick.label.includes("Inject context")) vscode7.commands.executeCommand("eywa.injectContext");
+      else if (pick.label.includes("Agent tab titles")) vscode7.commands.executeCommand("eywa.toggleTabTitles");
+      else if (pick.label.includes("Open web dashboard")) vscode7.commands.executeCommand("eywa.openDashboard");
+      else if (pick.label.includes("Connect new agent")) vscode7.commands.executeCommand("eywa.connectAgent");
+      else if (pick.label.includes("Login")) vscode7.commands.executeCommand("eywa.login");
     }),
-    vscode4.commands.registerCommand("eywa.toggleTabTitles", () => {
+    vscode7.commands.registerCommand("eywa.toggleTabTitles", () => {
       const dir = path.dirname(TAB_TITLE_FLAG);
       if (fs.existsSync(TAB_TITLE_FLAG)) {
         fs.unlinkSync(TAB_TITLE_FLAG);
-        vscode4.window.showInformationMessage("Agent tab titles disabled");
+        vscode7.window.showInformationMessage("Agent tab titles disabled");
       } else {
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(TAB_TITLE_FLAG, "1");
-        vscode4.window.showInformationMessage("Agent tab titles enabled");
+        vscode7.window.showInformationMessage("Agent tab titles enabled");
       }
     }),
-    vscode4.commands.registerCommand("eywa.tagTerminal", async () => {
-      const terminal = vscode4.window.activeTerminal;
+    vscode7.commands.registerCommand("eywa.tagTerminal", async () => {
+      const terminal = vscode7.window.activeTerminal;
       if (!terminal) {
-        vscode4.window.showWarningMessage("No active terminal to tag.");
+        vscode7.window.showWarningMessage("No active terminal to tag.");
         return;
       }
       if (!client) {
-        vscode4.window.showWarningMessage("Not connected to Eywa.");
+        vscode7.window.showWarningMessage("Not connected to Eywa.");
         return;
       }
       const agents = await client.getAgents();
@@ -14008,27 +15046,27 @@ ${mcpUrl}`, "Open Terminal").then((action) => {
         description: a.isActive ? "active" : "idle"
       }));
       items.push({ label: "Custom name...", description: "" });
-      const pick = await vscode4.window.showQuickPick(items, { placeHolder: "Associate this terminal with an agent" });
+      const pick = await vscode7.window.showQuickPick(items, { placeHolder: "Associate this terminal with an agent" });
       if (!pick) return;
       let agentName = pick.label;
       if (agentName === "Custom name...") {
-        const custom = await vscode4.window.showInputBox({ prompt: "Agent name for this terminal" });
+        const custom = await vscode7.window.showInputBox({ prompt: "Agent name for this terminal" });
         if (!custom) return;
         agentName = custom;
       }
       terminalAgentMap.set(terminal, agentName);
       const short = agentName.includes("/") ? agentName.split("/").pop() : agentName;
       terminal.sendText(`# Tagged: ${agentName}`, false);
-      vscode4.window.showInformationMessage(`Terminal tagged as ${short}`);
+      vscode7.window.showInformationMessage(`Terminal tagged as ${short}`);
     })
   );
   context.subscriptions.push(
-    vscode4.window.onDidCloseTerminal((t) => {
+    vscode7.window.onDidCloseTerminal((t) => {
       terminalAgentMap.delete(t);
     })
   );
   context.subscriptions.push(
-    vscode4.window.onDidOpenTerminal((terminal) => {
+    vscode7.window.onDidOpenTerminal((terminal) => {
       const name = terminal.name.toLowerCase();
       if (name.includes("claude") || name.includes("eywa")) {
       }
@@ -14036,9 +15074,9 @@ ${mcpUrl}`, "Open Terminal").then((action) => {
   );
   registerKnowledgeForFileCommand(context);
   context.subscriptions.push(
-    vscode4.workspace.onDidChangeConfiguration((e) => {
+    vscode7.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
-        initClient(codeLensProvider, handleRealtimeEvent, context);
+        initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, handleRealtimeEvent, context);
         liveProvider.setRoom(getConfig("room"));
         updateStatusBar();
       }
@@ -14046,19 +15084,19 @@ ${mcpUrl}`, "Open Terminal").then((action) => {
   );
 }
 async function showWelcome() {
-  const action = await vscode4.window.showInformationMessage(
+  const action = await vscode7.window.showInformationMessage(
     "Welcome to Eywa. Set a room to start monitoring your agents.",
     "Get Started",
     "Set Room"
   );
   if (action === "Get Started") {
-    vscode4.commands.executeCommand("workbench.action.openWalkthrough", "curvilinear.eywa-agents#eywa.welcome");
+    vscode7.commands.executeCommand("workbench.action.openWalkthrough", "curvilinear.eywa-agents#eywa.welcome");
   } else if (action === "Set Room") {
-    vscode4.commands.executeCommand("eywa.setRoom");
+    vscode7.commands.executeCommand("eywa.setRoom");
   }
 }
 function getConfig(key) {
-  return vscode4.workspace.getConfiguration("eywa").get(key) ?? "";
+  return vscode7.workspace.getConfiguration("eywa").get(key) ?? "";
 }
 function updateStatusBar() {
   const room = getConfig("room");
@@ -14068,7 +15106,7 @@ function updateStatusBar() {
   }
   statusBarItem.text = `$(cloud) Eywa: /${room}`;
 }
-function initClient(codeLensProvider, onEvent, context) {
+function initClient(codeLensProvider, courseProvider, decorationManager, sessionTree, onEvent, context) {
   const url = getConfig("supabaseUrl");
   const key = getConfig("supabaseKey");
   const room = getConfig("room");
@@ -14079,6 +15117,9 @@ function initClient(codeLensProvider, onEvent, context) {
     client = new EywaClient(url, key, room);
     updateStatusBar();
     codeLensProvider.refreshCache();
+    courseProvider.refresh();
+    decorationManager.seed();
+    sessionTree.seed();
     realtime = new RealtimeManager();
     const unsub = realtime.on(onEvent);
     context.subscriptions.push({ dispose: unsub });

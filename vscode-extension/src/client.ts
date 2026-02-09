@@ -216,6 +216,30 @@ export class EywaClient {
     }));
   }
 
+  /** Recent operations that have scope/system metadata (for decoration seeding). */
+  async getRecentOperations(since: string, limit = 200): Promise<MemoryEvent[]> {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return [];
+
+    const { data: rows } = await this.supabase
+      .from("memories")
+      .select("id,agent,content,metadata,ts,message_type")
+      .eq("room_id", roomId)
+      .gt("ts", since)
+      .not("metadata->>scope", "is", null)
+      .order("ts", { ascending: false })
+      .limit(limit);
+
+    return (rows ?? []).map((r) => ({
+      id: r.id,
+      agent: r.agent,
+      content: r.content ?? "",
+      metadata: (r.metadata ?? {}) as Record<string, unknown>,
+      ts: r.ts,
+      message_type: r.message_type ?? "",
+    }));
+  }
+
   /**
    * Fetch all sessions grouped by user. Determines status from lifecycle events
    * (session_start/session_done) and a 30-min active threshold. Filters ghost

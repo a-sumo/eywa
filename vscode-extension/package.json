@@ -27,6 +27,13 @@
           "title": "Eywa",
           "icon": "icon.svg"
         }
+      ],
+      "panel": [
+        {
+          "id": "eywaPanel",
+          "title": "Agents",
+          "icon": "$(pulse)"
+        }
       ]
     },
     "views": {
@@ -35,6 +42,14 @@
           "type": "webview",
           "id": "eywaLive",
           "name": "Eywa"
+        }
+      ],
+      "eywaPanel": [
+        {
+          "id": "eywaSessions",
+          "name": "Sessions",
+          "icon": "$(pulse)",
+          "contextualTitle": "Agent Sessions"
         }
       ]
     },
