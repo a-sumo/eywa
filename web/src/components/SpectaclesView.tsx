@@ -146,6 +146,20 @@ export function SpectaclesView() {
     setChatInput("");
   };
 
+  // Broadcasting state
+  const [broadcasting, setBroadcasting] = useState(false);
+
+  const handleStartBroadcast = useCallback(() => {
+    if (!channelRef.current || !channelReady) return;
+    setBroadcasting(true);
+    // Send a presence ping so Spectacles devices know a broadcaster is active
+    channelRef.current.send({
+      type: "broadcast",
+      event: "broadcaster_online",
+      payload: { deviceId, ts: Date.now() },
+    });
+  }, [channelReady, deviceId]);
+
   return (
     <div style={styles.root}>
       {/* Header */}
@@ -155,21 +169,54 @@ export function SpectaclesView() {
             ...styles.statusDot,
             background: channelReady ? "#4ade80" : "#333",
           }} />
-          <span style={styles.title}>Spectacles</span>
+          <span style={styles.title}>Spectacles Broadcast</span>
           <span style={styles.roomSlug}>/{room?.slug || "..."}</span>
         </div>
-        {voiceSupported && (
-          <button
-            onClick={toggleListening}
-            style={{
-              ...styles.btn,
-              background: isListening ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.05)",
-              color: isListening ? "#f87171" : "#8b949e",
-              borderColor: isListening ? "#f87171" : "#30363d",
-            }}
-          >
-            {isListening ? "Listening..." : "Mic"}
-          </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {voiceSupported && (
+            <button
+              onClick={toggleListening}
+              style={{
+                ...styles.btn,
+                background: isListening ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.05)",
+                color: isListening ? "#f87171" : "#8b949e",
+                borderColor: isListening ? "#f87171" : "#30363d",
+              }}
+            >
+              {isListening ? "Listening..." : "Mic"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Explanation banner */}
+      <div style={styles.banner}>
+        <div style={styles.bannerTitle}>This page livestreams to Snap Spectacles</div>
+        <div style={styles.bannerDesc}>
+          Activity, destination progress, and Gemini chat from this room are broadcast in real time
+          to any Spectacles device running the Eywa lens. The glasses render this content as floating
+          AR panels in world space.
+        </div>
+        {!broadcasting ? (
+          <div style={styles.bannerActions}>
+            <button onClick={handleStartBroadcast} disabled={!channelReady} style={{
+              ...styles.broadcastBtn,
+              opacity: channelReady ? 1 : 0.4,
+            }}>
+              {channelReady ? "Start Broadcast" : "Connecting..."}
+            </button>
+            <div style={styles.bannerSteps}>
+              <div style={styles.step}><span style={styles.stepNum}>1</span> Open the Eywa lens on Spectacles</div>
+              <div style={styles.step}><span style={styles.stepNum}>2</span> Click "Start Broadcast" above</div>
+              <div style={styles.step}><span style={styles.stepNum}>3</span> The AR panel appears in front of you (no marker needed)</div>
+              <div style={styles.step}><span style={styles.stepNum}>4</span> Optional: point at a tracking marker to anchor the panel to a surface</div>
+            </div>
+          </div>
+        ) : (
+          <div style={styles.bannerLive}>
+            <span style={styles.liveDot} />
+            Broadcasting to <strong>spectacles:{room?.slug}:{deviceId}</strong>
+          </div>
         )}
       </div>
 
@@ -512,5 +559,79 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "0.6rem",
     cursor: "pointer",
     padding: "0 4px",
+  },
+  banner: {
+    padding: "14px 16px",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(21,209,255,0.04)",
+  },
+  bannerTitle: {
+    fontSize: "0.85rem",
+    fontWeight: 600,
+    color: "#15D1FF",
+    fontFamily: "var(--font-display, 'Plus Jakarta Sans', system-ui, sans-serif)",
+    marginBottom: 4,
+  },
+  bannerDesc: {
+    fontSize: "0.72rem",
+    color: "rgba(255,255,255,0.5)",
+    lineHeight: 1.5,
+    marginBottom: 12,
+  },
+  bannerActions: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 10,
+  },
+  broadcastBtn: {
+    padding: "8px 20px",
+    background: "linear-gradient(135deg, #8b5cf6, #15D1FF)",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    alignSelf: "flex-start" as const,
+    transition: "opacity 0.2s ease-in-out",
+  },
+  bannerSteps: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 6,
+  },
+  step: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: "0.68rem",
+    color: "rgba(255,255,255,0.45)",
+  },
+  stepNum: {
+    width: 18,
+    height: 18,
+    borderRadius: "50%",
+    background: "rgba(139,92,246,0.15)",
+    color: "#c4b5fd",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "0.55rem",
+    fontWeight: 600,
+    flexShrink: 0,
+  },
+  bannerLive: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: "0.75rem",
+    color: "#4ade80",
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    background: "#4ade80",
+    flexShrink: 0,
   },
 };

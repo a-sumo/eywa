@@ -146,22 +146,26 @@ Assign the SupabaseProject asset in the Inspector.
 - Positions are in cm, centered at the panel origin
 - Layer Z offsets: 0=0.05cm, 1=0.5cm, 2=1.0cm, 3=2.0cm
 
-## Marker Tracking
+## Marker Tracking (Optional)
 
-The scene uses Extended Marker Tracking to anchor the AR panel to a physical display.
+The scene uses Extended Marker Tracking to optionally anchor the AR panel to a physical display. **A marker is not required.** The panel appears at a default position automatically.
 
-**How it works:**
+**Default mode (no marker):**
+1. On launch, a 2-second warmup guard ignores false positive detections from the first frames
+2. After 3 seconds with no marker detected, the panel auto-detaches to a default position: 65cm forward, 3cm below eye level
+3. If a marker is detected later, the panel repositions to the marker location
+4. Spectacles' IMU handles orientation tracking after placement
+
+**Marker mode:**
 1. Spectacles camera detects the tracking marker pattern (`tracking-marker.png`) on a physical display
 2. The AR panel spawns at the marker position (children start disabled, enabled on detection)
-3. A 2-second warmup guard ignores false positives from the first frames
-4. With `trackMarkerOnce: true`, the marker is detected once, the panel detaches to world space, and marker tracking is disabled to save performance
-5. After detach, Spectacles' IMU handles orientation tracking
+3. With `trackMarkerOnce: true`, the marker is detected once, the panel detaches to world space, and marker tracking is disabled to save performance
 
 **Scene hierarchy:**
 ```
 Extended_Marker_Tracking (root)
   Object 1 [MarkerTrackingComponent]
-    RealtimePanel [TilePanel]   <- disabled until marker found
+    RealtimePanel [TilePanel]   <- auto-places after 3s or on marker detection
 ```
 
 **Why a fixed pattern (not a QR code):**
@@ -170,6 +174,17 @@ Extended_Marker_Tracking (root)
 - The pattern is designed for high contrast and asymmetric features to improve detection reliability
 
 See [`pi-display/`](../pi-display/) for the physical display setup and tracking strategy.
+
+## Web Broadcast
+
+The web dashboard at `/r/{room-slug}/spectacles` serves as the broadcaster. It maintains a Supabase Realtime channel and streams room activity, Gemini chat, and destination progress to Spectacles devices.
+
+1. Open the Eywa lens on Spectacles
+2. Navigate to `/r/{room-slug}/spectacles` in a browser
+3. Click "Start Broadcast"
+4. The AR panel appears automatically (or at a marker if one is visible)
+
+Channel format: `spectacles:{room}:{deviceId}` (default deviceId: "editor").
 
 ## Dependencies
 
