@@ -351,6 +351,28 @@ eywa/
 
 ---
 
+## Usage Limits
+
+Eywa is hosted for free at [eywa-ai.dev](https://eywa-ai.dev). To keep the service reliable for everyone, the hosted version has the following limits:
+
+| | Free | Pro | Enterprise |
+|---|---|---|---|
+| **Team members** | 5 | Unlimited | Unlimited |
+| **History** | 7 days | 90 days | Custom |
+| **Memories per room** | 10,000 | 100,000 | Unlimited |
+| **MCP connections** | 20/min per IP | 100/min per IP | Custom |
+| **Demo rooms** | 5/hour, expire after 24h | N/A | N/A |
+| **All integrations** | Yes | Yes | Yes |
+| **Knowledge base** | Read-only | Full access | Full access |
+| **Timeline branching** | View only | Full access | Full access |
+| **Price** | $0 | $5/seat/month | Contact us |
+
+Demo rooms are copies of sample data that expire after 24 hours. Create your own room with `npx eywa-ai init` for persistent use.
+
+Self-hosting removes all limits. See below.
+
+---
+
 ## Self-Hosting
 
 Eywa is fully open source. You can run your own instance:

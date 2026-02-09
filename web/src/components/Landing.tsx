@@ -525,8 +525,8 @@ export function Landing() {
               <li>Up to 5 team members</li>
               <li>Unlimited workspaces</li>
               <li>7-day history</li>
-              <li>VS Code + Discord integrations</li>
-              <li>All agent types supported</li>
+              <li>10,000 memories per room</li>
+              <li>All integrations + agent types</li>
             </ul>
             <button className="btn-landing-secondary" style={{ width: "100%" }} onClick={() => createDemoRoom()} disabled={creating}>
               Get Started Free
@@ -539,9 +539,9 @@ export function Landing() {
             <ul className="landing-pricing-features">
               <li>Unlimited team members</li>
               <li>90-day history</li>
+              <li>100,000 memories per room</li>
               <li>Team knowledge base</li>
               <li>Timeline rewind + forking</li>
-              <li>Priority support</li>
             </ul>
             <button className="btn-landing-primary" style={{ width: "100%" }} onClick={() => createRoom()}>
               Start Pro Trial
@@ -552,8 +552,8 @@ export function Landing() {
             <div className="landing-pricing-price">Contact us</div>
             <ul className="landing-pricing-features">
               <li>Everything in Pro</li>
-              <li>Custom deployment options</li>
-              <li>Priority support</li>
+              <li>Unlimited storage</li>
+              <li>Custom deployment</li>
               <li>Custom integrations</li>
               <li>Volume discounts</li>
             </ul>

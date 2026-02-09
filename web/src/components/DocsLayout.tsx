@@ -188,6 +188,30 @@ export function DocsOverview() {
         <li><strong>Spectacles AR</strong> - Activity log, Gemini chat, and destination progress as floating AR panels via Supabase Realtime</li>
       </ul>
 
+      <h2>Usage Limits</h2>
+      <p>
+        Eywa is hosted for free at eywa-ai.dev. To keep the service reliable, the hosted
+        version has usage limits. Self-hosting removes all limits.
+      </p>
+      <table className="docs-table">
+        <thead>
+          <tr><th></th><th>Free</th><th>Pro</th><th>Enterprise</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Team members</td><td>5</td><td>Unlimited</td><td>Unlimited</td></tr>
+          <tr><td>History</td><td>7 days</td><td>90 days</td><td>Custom</td></tr>
+          <tr><td>Memories per room</td><td>10,000</td><td>100,000</td><td>Unlimited</td></tr>
+          <tr><td>Integrations</td><td>All</td><td>All</td><td>All + custom</td></tr>
+          <tr><td>Knowledge base</td><td>Read-only</td><td>Full</td><td>Full</td></tr>
+          <tr><td>Timeline branching</td><td>View only</td><td>Full</td><td>Full</td></tr>
+          <tr><td>Price</td><td>$0</td><td>$5/seat/month</td><td>Contact us</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Demo rooms are copies of sample data that expire after 24 hours. Create your own
+        room with <code>npx eywa-ai init</code> for persistent use.
+      </p>
+
       <h2>LLM Documentation</h2>
       <p>
         For AI agents that need to understand Eywa's full API surface, point them

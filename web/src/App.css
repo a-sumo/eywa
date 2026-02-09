@@ -7936,6 +7936,41 @@ body {
   font-weight: 600;
 }
 
+.docs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+
+.docs-table th,
+.docs-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.docs-table th {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.docs-table td {
+  color: var(--color-text-secondary);
+}
+
+.docs-table td:first-child {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.docs-table tr:last-child td {
+  border-bottom: none;
+}
+
 .docs-article code {
   background: var(--color-fill);
   padding: 0.15rem 0.4rem;
