@@ -37,6 +37,11 @@ export function registerInjectTools(
       priority: z.enum(["normal", "high", "urgent"]).optional().default("normal").describe("Priority level"),
       label: z.string().optional().describe("Short label (e.g. 'code review feedback', 'architecture decision')"),
     },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
     async ({ target, content, priority, label }) => {
       const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
@@ -45,7 +50,7 @@ export function registerInjectTools(
         session_id: ctx.sessionId,
         parent_id: parentId,
         message_type: "injection",
-        content: `[INJECT → ${target}]${label ? ` (${label})` : ""}: ${content}`,
+        content: `[INJECT -> ${target}]${label ? ` (${label})` : ""}: ${content}`,
         token_count: estimateTokens(content),
         metadata: {
           event: "context_injection",
@@ -69,6 +74,10 @@ export function registerInjectTools(
     "Check for context injections sent to you by other agents or the user. Call this periodically to stay in sync.",
     {
       limit: z.number().optional().default(10).describe("Maximum injections to retrieve"),
+    },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
     },
     async ({ limit }) => {
       // Get injections targeted at this agent (full agent id)
@@ -129,7 +138,6 @@ export function registerInjectTools(
 
       let linkedMemories: MemoryRow[] = [];
       if (linkMemoryIds.size > 0) {
-        // Fetch memories by IDs (PostgREST in filter)
         const ids = Array.from(linkMemoryIds);
         linkedMemories = await db.select<MemoryRow>("memories", {
           select: "id,agent,content,metadata,ts",
@@ -177,7 +185,7 @@ export function registerInjectTools(
 
       if (!injectionResults.length && !linkedResults.length) {
         return {
-          content: [{ type: "text" as const, text: "Inbox empty — no injections pending." }],
+          content: [{ type: "text" as const, text: "Inbox empty -- no injections pending." }],
         };
       }
 
@@ -191,7 +199,7 @@ export function registerInjectTools(
           const from = meta.from_agent as string;
           const label = meta.label ? ` (${meta.label})` : "";
           const content = m.content?.replace(/^\[INJECT[^\]]*\]\s*(\([^)]*\)\s*)?:\s*/, "") ?? "";
-          lines.push(`From ${from}${pri}${label}:\n  ${content.slice(0, 500)}\n  — ${m.ts}`);
+          lines.push(`From ${from}${pri}${label}:\n  ${content.slice(0, 500)}\n  -- ${m.ts}`);
         }
       }
 
@@ -200,7 +208,7 @@ export function registerInjectTools(
         for (const { memory, linkMeta } of linkedResults) {
           const label = linkMeta.label ? ` (${linkMeta.label})` : "";
           const content = memory.content?.slice(0, 500) ?? "(no content)";
-          lines.push(`Linked by ${linkMeta.createdBy}${label}:\n  ${content}\n  — linked ${linkMeta.linkTs}`);
+          lines.push(`Linked by ${linkMeta.createdBy}${label}:\n  ${content}\n  -- linked ${linkMeta.linkTs}`);
         }
       }
 

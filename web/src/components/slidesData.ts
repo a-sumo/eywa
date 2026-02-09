@@ -43,130 +43,127 @@ export interface SlidesData {
 
 export const slidesData: SlidesData = {
   title: "Eywa",
-  subtitle: "Steering infrastructure for AI agent teams.",
+  subtitle: "See what your whole team's AI agents are building.",
   summary: [
     "1. The Problem",
-    "2. What Eywa Does",
-    "3. Every Surface",
+    "2. Connect, See, Steer",
+    "3. Interaction Surfaces",
     "4. The Network",
-    "5. How It Works",
+    "5. Powered by Gemini",
   ],
 
   sections: {
     "The Problem": [
-      "The bottleneck has flipped",
-      "The coordination gap",
+      "Agents amplify misalignment",
     ],
-    "What Eywa Does": [
-      "One shared view",
-      "Thread Tree",
+    "Connect, See, Steer": [
+      "One command to connect",
+      "See what everyone's building",
+      "Steer the work",
+      "Agent-centric operations hub",
       "Workspace + Gemini",
-      "Coordination tools",
     ],
-    "Every Surface": [
-      "Meet people where they are",
+    "Interaction Surfaces": [
+      "More surfaces, more people steering",
       "Physical + AR",
     ],
     "The Network": [
       "Agents learn from each other",
     ],
-    "How It Works": [
+    "Powered by Gemini": [
+      "Gemini orchestration",
       "Works with your agents",
-      "Powered by Gemini",
       "System overview",
     ],
   },
 
   slides: [
-    // -- THE PROBLEM --
+    // -- THE PROBLEM (mirrors landing page: 3 concrete scenarios) --
     {
-      type: "quote",
-      title: "The bottleneck has flipped",
-      subtitle: "Intelligence is abundant. Intention is scarce.",
-      quote:
-        "it's just so clear humans are the bottleneck to writing software. number of agents we can manage, information flow, state management. there will just be no centaurs soon as it is not a stable state",
-      attribution: "@tszzl (roon)",
-    },
-    {
-      type: "bigstat",
-      title: "The coordination gap",
-      subtitle:
-        "AI makes individuals faster. Teams fall out of sync.",
-      stats: [
-        { value: "4.6x", label: "Longer review wait for AI-generated PRs" },
-        { value: "+41%", label: "Higher code churn from AI vs human code" },
-        { value: "+47%", label: "More context switching with AI tools" },
-        { value: "17%", label: "Say AI improved team collaboration" },
+      type: "bullets",
+      title: "Agents amplify misalignment",
+      subtitle: "Each person runs AI. Nobody sees what the others' agents are doing.",
+      items: [
+        "<strong>Duplicated work</strong>: Two developers independently ask their agents to evaluate the same library. Both spend 40 minutes. Neither knows the other started.",
+        "<strong>Silent divergence</strong>: One teammate's agent switches the database schema. Another keeps building on the old one. You find out at merge time.",
+        "<strong>Lost context</strong>: A teammate's agent spent 10 minutes investigating a date format issue. Your agent starts from scratch because it can't see the reasoning.",
       ],
-      footnote:
-        "When everyone runs AI, small misalignments compound at machine speed.",
     },
 
-    // -- WHAT EYWA DOES --
+    // -- CONNECT, SEE, STEER (mirrors landing page: 3 steps) --
     {
       type: "bullets",
-      title: "One shared view",
-      subtitle:
-        "Every agent session, decision, and insight, visible to your whole team.",
+      title: "1. Connect your team",
+      subtitle: "One command. No signup. No auth.",
       items: [
-        "Each person on your team directs AI agents that code, decide, and ship autonomously. Eywa makes all of it <strong>visible</strong>.",
-        "Every session becomes a <strong>shared thread</strong> with memories, artifacts, and decisions.",
-        "One command to start: <strong>npx eywa-ai init</strong>. No signup. No auth.",
+        "<strong>npx eywa-ai init my-team</strong> creates a room and prints MCP configs for every major agent.",
+        "Each person adds one line to their agent config. All activity streams to a shared room.",
+        "Claude Code, Cursor, Gemini CLI, Windsurf, Codex, Cline, Mistral, Cohere. One URL, any agent.",
       ],
     },
     {
       type: "bullets",
-      title: "Thread Tree",
-      subtitle: "See every agent session across your team in real time.",
+      title: "2. See what everyone's building",
+      subtitle: "Live thread tree of every agent session across your team.",
       items: [
-        "Live tree of all agent sessions, organized by team member.",
+        "Every session becomes a <strong>shared thread</strong> with memories, artifacts, and decisions.",
         "Click into any thread for the full conversation, artifacts, and status.",
-        "Filter by agent, owner, status, or search across all threads.",
+        "Spot duplicated work, conflicting decisions, and drift before they compound.",
+      ],
+    },
+    {
+      type: "bullets",
+      title: "3. Steer the work",
+      subtitle: "Inject context. Share decisions. Keep the team pulling in the same direction.",
+      items: [
+        "<strong>Context injection</strong>: Push a decision to any teammate's agent mid-session. They see it on their next action.",
+        "<strong>Divergence alerts</strong>: Surface when two agents solve the same problem differently.",
+        "<strong>Knowledge base</strong>: Architecture decisions and conventions persist across all sessions.",
+      ],
+    },
+    {
+      type: "bullets",
+      title: "Agent-centric operations hub",
+      subtitle: "Not just code. Every system an agent touches becomes visible.",
+      items: [
+        "Agents tag every operation with <strong>what system</strong> (git, database, API, deploy, infra, browser), <strong>what action</strong> (read, write, deploy, test), and <strong>outcome</strong> (success, failure, blocked).",
+        "When an agent starts a session, it lands with a <strong>room snapshot</strong>: who's active, what they're doing, what systems they're touching, pending injections, knowledge entries.",
+        "<strong>eywa_summary</strong> compresses the entire room into a token-efficient view. Per-agent task, systems, outcomes, knowledge count. One call, full picture.",
+        "Every tool carries <strong>MCP annotations</strong> (readOnlyHint, destructiveHint). Agent hosts can auto-approve safe reads and flag destructive actions.",
       ],
     },
     {
       type: "bullets",
       title: "Workspace + Gemini",
-      subtitle:
-        "Build shared context from any thread. Ask Gemini questions across all of it.",
+      subtitle: "Drag context from multiple agent sessions. Ask Gemini questions across all of it.",
       items: [
         "Drag memories from any thread into a shared workspace.",
-        "Context auto-compiles. Ask <strong>Gemini 2.5-flash</strong> questions grounded in your team's actual work.",
-        "Output becomes a new shareable thread. The orchestration layer for your agents' knowledge.",
-      ],
-    },
-    {
-      type: "bullets",
-      title: "Coordination tools",
-      subtitle: "Keep humans aligned while their agents move fast.",
-      items: [
-        "<strong>Divergence alerts</strong>: surface when two agents solve the same problem differently.",
-        "<strong>Context injection</strong>: push a decision to any agent mid-session. They see it on their next action.",
-        "<strong>Knowledge base</strong>: conventions and decisions persist across all sessions, all agents.",
+        "<strong>Gemini 3 Flash</strong> synthesizes information across threads, resolves conflicts, and answers with the full picture.",
+        "Output becomes a new shareable thread.",
       ],
     },
 
-    // -- EVERY SURFACE --
+    // -- INTERACTION SURFACES --
     {
       type: "bullets",
-      title: "Meet people where they are",
-      subtitle: "Not locked to one tool. Not just for power users in terminals.",
+      title: "More surfaces, more people steering",
+      subtitle: "You don't need to be in a terminal to steer your agents. Each surface reaches people where they already are.",
       items: [
-        "<strong>VS Code</strong>: Realtime sidebar, activity feed, one-click context injection.",
-        "<strong>Discord</strong>: 12 slash commands for full agent observability from chat.",
-        "<strong>CLI</strong>: npx eywa-ai init, status, inject, log. Zero-auth setup.",
         "<strong>Web dashboard</strong>: Thread tree, workspace, Gemini chat. Works on phone.",
+        "<strong>VS Code</strong>: Realtime sidebar, activity feed, one-click context injection.",
+        "<strong>Discord</strong>: 12 slash commands. Your group chat becomes your agent control room.",
+        "<strong>CLI</strong>: npx eywa-ai init, status, inject, log.",
       ],
     },
     {
       type: "bullets",
       title: "Physical + AR",
-      subtitle: "Agent activity projected into the physical world.",
+      subtitle: "Not everyone lives in an IDE. These surfaces work without opening anything.",
       items: [
-        "<strong>E-ink display</strong>: Ambient agent status on your desk. Low power, always on. Doubles as AR tracking anchor.",
-        "<strong>Snap Spectacles</strong>: AR overlay anchored to the physical display. Live tiles streamed from the dashboard.",
-        "<strong>TFT touch</strong>: Interactive display for direct touch input. Agent status, quick actions.",
-        "Any device with a browser works as a display. Navigate to /r/{room-slug}.",
+        "<strong>E-ink display</strong>: Sits on your desk. Shows agent status, always on, no interaction needed. Also serves as an AR tracking anchor.",
+        "<strong>Snap Spectacles</strong>: AR overlay anchored to the physical display. Live tiles in space, hand tracking to interact.",
+        "<strong>TFT touch</strong>: Tap to inspect an agent, tap to inject context. No keyboard required.",
+        "The more surfaces you ship, the more people can participate. Someone who'd never open a terminal can still see what's happening and steer.",
       ],
     },
 
@@ -176,38 +173,38 @@ export const slidesData: SlidesData = {
       title: "Agents learn from each other",
       subtitle: "Knowledge flows across the network. The name is literal.",
       items: [
-        "Agents opt-in to publish <strong>anonymized insights</strong> to the global Eywa network.",
+        "Agents publish <strong>anonymized insights</strong> to the global Eywa network.",
         "Any agent, anywhere, can query the network for relevant knowledge from other teams.",
-        "The network maps which domains are compressing fastest and where the highest-leverage opportunities are emerging.",
         "One agent discovers a pattern. Another agent, in a different organization, benefits from it instantly.",
+        "The network maps where effort compresses most and where the highest-leverage opportunities are emerging.",
       ],
     },
 
-    // -- HOW IT WORKS --
+    // -- POWERED BY GEMINI --
     {
       type: "bullets",
-      title: "Works with your agents",
-      subtitle: "One URL. Zero config. Works with 8+ AI coding agents.",
+      title: "Gemini orchestration",
+      subtitle: "Gemini powers the intelligence layer across Eywa.",
       items: [
-        "Claude Code, Cursor, Windsurf, Gemini CLI, Codex, Cline, Mistral, Cohere.",
-        "One line in your MCP config. That's the entire setup.",
-        "Your code stays local. Eywa syncs context only.",
+        "<strong>Gemini 3 Flash</strong>: Dashboard chat, cross-thread analysis, workspace synthesis.",
+        "<strong>Gemini 3-flash-preview</strong>: Advanced reasoning for divergence detection and knowledge distillation.",
+        "Every workspace query, every conflict detection, every knowledge synthesis runs through Gemini.",
       ],
     },
     {
       type: "bullets",
-      title: "Powered by Gemini",
-      subtitle: "Gemini is the orchestration layer across Eywa.",
+      title: "Works with your agents",
+      subtitle: "One URL. Zero config. Open standard.",
       items: [
-        "<strong>Gemini 2.5-flash</strong>: Dashboard chat. Ask questions grounded in your team's agent context.",
-        "<strong>Gemini 3-flash-preview</strong>: Advanced reasoning for divergence detection and knowledge synthesis.",
-        "Every workspace query, every cross-thread analysis, every knowledge base synthesis runs through Gemini.",
+        "Built on <strong>MCP</strong> (Model Context Protocol). Any MCP-compatible agent connects instantly.",
+        "Your code stays local. Eywa syncs context only. Local-first privacy.",
+        "Fully open source. Self-host or use eywa-ai.dev.",
       ],
     },
     {
       type: "diagram",
       title: "System overview",
-      subtitle: "Stateless MCP server + Supabase Realtime + Gemini orchestration",
+      subtitle: "MCP server (Cloudflare Workers) + Supabase Realtime + Gemini orchestration",
       diagramKey: "architecture",
     },
 
@@ -215,6 +212,6 @@ export const slidesData: SlidesData = {
 
   closing: {
     title: "Eywa",
-    subtitle: "Steering infrastructure for AI agent teams.",
+    subtitle: "See what your whole team's AI agents are building.",
   },
 };

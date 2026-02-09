@@ -297,7 +297,14 @@ async function cmdStatus(slugArg) {
       status = "finished";
       desc = meta.summary || desc;
     }
-    agents.set(row.agent, { status, desc, ts: row.ts });
+    const systems = new Set();
+    const actions = new Set();
+    for (const r of rows.filter(r => r.agent === row.agent)) {
+      const m = r.metadata ?? {};
+      if (m.system) systems.add(m.system);
+      if (m.action) actions.add(m.action);
+    }
+    agents.set(row.agent, { status, desc, ts: row.ts, systems: [...systems], actions: [...actions] });
   }
 
   for (const [name, info] of agents) {
@@ -313,6 +320,9 @@ async function cmdStatus(slugArg) {
               : dim("○ idle");
     console.log(`  ${bold(name)}  ${badge}  ${dim(timeAgo(info.ts))}`);
     console.log(`    ${dim(info.desc)}`);
+    if (info.systems.length) {
+      console.log(`    ${dim("systems:")} ${info.systems.map(s => cyan(s)).join(", ")}`);
+    }
     console.log();
   }
 
@@ -342,7 +352,10 @@ async function cmdLog(slugArg, limit = 30) {
     const meta = m.metadata ?? {};
     const event = meta.event || m.message_type;
     const time = m.ts.slice(11, 19);
-    console.log(`  ${dim(time)} ${bold(m.agent)} ${cyan(`[${event}]`)}`);
+    const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+    const opTag = opParts.length ? ` ${magenta(opParts.join(":"))}` : "";
+    const scopeTag = meta.scope ? ` ${dim(`(${meta.scope})`)}` : "";
+    console.log(`  ${dim(time)} ${bold(m.agent)} ${cyan(`[${event}]`)}${opTag}${scopeTag}`);
     console.log(`    ${dim((m.content ?? "").slice(0, 200))}`);
     console.log();
   }

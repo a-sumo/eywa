@@ -59,12 +59,15 @@ function formatMemory(m: MemoryRow, short = false): string {
   const type = m.message_type ?? "memory";
   const time = new Date(m.ts).toLocaleString();
   const content = m.content ?? "";
+  const meta = (m.metadata ?? {}) as Record<string, string>;
+  const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+  const opTag = opParts.length > 0 ? ` [${opParts.join(":")}]` : "";
 
   if (short) {
-    return `${id} | ${type} | ${content.slice(0, 60)}${content.length > 60 ? "..." : ""}`;
+    return `${id} | ${type} | ${content.slice(0, 60)}${content.length > 60 ? "..." : ""}${opTag}`;
   }
 
-  return `[${id}] ${type} @ ${time}\n${content.slice(0, 200)}${content.length > 200 ? "..." : ""}`;
+  return `[${id}] ${type} @ ${time}${opTag}\n${content.slice(0, 200)}${content.length > 200 ? "..." : ""}`;
 }
 
 export function registerTimelineTools(
@@ -72,15 +75,16 @@ export function registerTimelineTools(
   db: SupabaseClient,
   ctx: EywaContext,
 ) {
-  // ============================================================
-  // eywa_history - View the timeline of what happened
-  // ============================================================
   server.tool(
     "eywa_history",
     "View the history of a session. Shows what happened, when, and in what order. Like scrolling back through a conversation.",
     {
       session: z.string().optional().describe("Session to view (defaults to your current session)"),
       limit: z.number().optional().default(20).describe("How many items to show"),
+    },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
     },
     async ({ session, limit }) => {
       const targetSession = session ?? ctx.sessionId;
@@ -100,14 +104,14 @@ export function registerTimelineTools(
       }
 
       const lines = [`Timeline for ${targetSession} (${rows.length} items):\n`];
-      lines.push("─".repeat(50));
+      lines.push("\u2500".repeat(50));
 
       for (const m of rows) {
         lines.push(formatMemory(m));
         lines.push("");
       }
 
-      lines.push("─".repeat(50));
+      lines.push("\u2500".repeat(50));
       lines.push("Use eywa_rewind <id> to go back to any point.");
       lines.push("Use eywa_bookmark <id> to mark important moments.");
 
@@ -117,17 +121,18 @@ export function registerTimelineTools(
     },
   );
 
-  // ============================================================
-  // eywa_rewind - Go back to an earlier point
-  // ============================================================
   server.tool(
     "eywa_rewind",
     "Rewind to an earlier point in the timeline. This moves your current position back, like an undo. You can always go forward again.",
     {
       to: z.string().describe("The ID of the point to rewind to (from eywa_history)"),
     },
+    {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+    },
     async ({ to }) => {
-      // Find the target commit
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,message_type,content,ts",
         room_id: `eq.${ctx.roomId}`,
@@ -136,7 +141,6 @@ export function registerTimelineTools(
       });
 
       if (!rows.length) {
-        // Try prefix match
         const prefixRows = await db.select<MemoryRow>("memories", {
           select: "id,message_type,content,ts",
           room_id: `eq.${ctx.roomId}`,
@@ -153,8 +157,6 @@ export function registerTimelineTools(
       }
 
       const target = rows[0];
-
-      // Update HEAD to point to this commit
       await updateHead(db, ctx.roomId, ctx.agent, ctx.sessionId, target.id);
 
       return {
@@ -166,9 +168,6 @@ export function registerTimelineTools(
     },
   );
 
-  // ============================================================
-  // eywa_fork - Create a new timeline from any point
-  // ============================================================
   server.tool(
     "eywa_fork",
     "Create a new timeline branching from the current point (or any point). Use this to explore alternatives without affecting the original work.",
@@ -176,8 +175,11 @@ export function registerTimelineTools(
       name: z.string().describe("Name for the new timeline (e.g., 'try-redis', 'experiment-v2')"),
       from: z.string().optional().describe("Point to fork from (defaults to current position)"),
     },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+    },
     async ({ name, from }) => {
-      // Resolve starting point
       let startCommit: string;
 
       if (from) {
@@ -194,7 +196,6 @@ export function registerTimelineTools(
         }
         startCommit = rows[0].id;
       } else {
-        // Use current HEAD or latest memory
         const head = await getHead(db, ctx.roomId, ctx.agent, ctx.sessionId);
         if (head) {
           startCommit = head;
@@ -215,7 +216,6 @@ export function registerTimelineTools(
         }
       }
 
-      // Create a new branch ref
       const branchName = `branches/${ctx.agent}/${name}`;
 
       await db.upsert("refs", {
@@ -234,9 +234,6 @@ export function registerTimelineTools(
     },
   );
 
-  // ============================================================
-  // eywa_bookmark - Mark an important moment
-  // ============================================================
   server.tool(
     "eywa_bookmark",
     "Bookmark an important moment so you can easily find it later. Good for marking decisions, milestones, or points you might want to return to.",
@@ -245,8 +242,11 @@ export function registerTimelineTools(
       at: z.string().optional().describe("Point to bookmark (defaults to current position)"),
       note: z.string().optional().describe("Optional note explaining why this moment is important"),
     },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+    },
     async ({ name, at, note }) => {
-      // Resolve point to bookmark
       let commitId: string;
 
       if (at) {
@@ -278,7 +278,6 @@ export function registerTimelineTools(
         commitId = latest[0].id;
       }
 
-      // Create bookmark ref (bookmarks are immutable, unlike branches)
       const bookmarkName = `bookmarks/${name}`;
 
       await db.insert("refs", {
@@ -298,13 +297,14 @@ export function registerTimelineTools(
     },
   );
 
-  // ============================================================
-  // eywa_bookmarks - List all bookmarks
-  // ============================================================
   server.tool(
     "eywa_bookmarks",
     "List all bookmarks in this room. Bookmarks mark important moments across all timelines.",
     {},
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     async () => {
       const refs = await db.select<RefRow>("refs", {
         select: "name,commit_id,created_by,ts",
@@ -323,7 +323,7 @@ export function registerTimelineTools(
       for (const ref of refs) {
         const name = ref.name.replace("bookmarks/", "");
         const time = new Date(ref.ts).toLocaleDateString();
-        lines.push(`  ${name} → ${ref.commit_id.slice(0, 8)} (by ${ref.created_by}, ${time})`);
+        lines.push(`  ${name} -> ${ref.commit_id.slice(0, 8)} (by ${ref.created_by}, ${time})`);
       }
 
       lines.push("\nUse eywa_rewind <name> to jump to any bookmark.");
@@ -334,9 +334,6 @@ export function registerTimelineTools(
     },
   );
 
-  // ============================================================
-  // eywa_compare - See what changed between two points
-  // ============================================================
   server.tool(
     "eywa_compare",
     "Compare two points in the timeline to see what changed between them. Useful for understanding how work evolved.",
@@ -344,8 +341,11 @@ export function registerTimelineTools(
       from: z.string().describe("Starting point (older)"),
       to: z.string().optional().describe("Ending point (newer, defaults to current)"),
     },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     async ({ from, to }) => {
-      // Resolve 'from' point
       const fromRows = await db.select<MemoryRow>("memories", {
         select: "id,ts",
         room_id: `eq.${ctx.roomId}`,
@@ -361,7 +361,6 @@ export function registerTimelineTools(
       const fromId = fromRows[0].id;
       const fromTs = fromRows[0].ts;
 
-      // Resolve 'to' point
       let toTs: string;
       let toId: string;
 
@@ -396,15 +395,13 @@ export function registerTimelineTools(
         toTs = latest[0].ts;
       }
 
-      // Get all memories between the two points
       const between = await db.select<MemoryRow>("memories", {
-        select: "id,message_type,content,ts,agent",
+        select: "id,message_type,content,ts,agent,metadata",
         room_id: `eq.${ctx.roomId}`,
         ts: `gte.${fromTs}`,
         order: "ts.asc",
       });
 
-      // Filter to those before 'to'
       const changes = between.filter(m => m.ts <= toTs && m.id !== fromId);
 
       if (!changes.length) {
@@ -414,13 +411,16 @@ export function registerTimelineTools(
       }
 
       const lines = [`Changes from ${fromId.slice(0, 8)} to ${toId.slice(0, 8)} (${changes.length} items):\n`];
-      lines.push("─".repeat(50));
+      lines.push("\u2500".repeat(50));
 
       for (const m of changes) {
         const type = m.message_type ?? "memory";
-        const agent = m.agent.split("/")[0]; // Just the user part
+        const agent = m.agent.split("/")[0];
         const content = (m.content ?? "").slice(0, 100);
-        lines.push(`+ [${m.id.slice(0, 8)}] ${agent}:${type}`);
+        const meta = (m.metadata ?? {}) as Record<string, string>;
+        const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+        const opTag = opParts.length > 0 ? ` [${opParts.join(":")}]` : "";
+        lines.push(`+ [${m.id.slice(0, 8)}] ${agent}:${type}${opTag}`);
         lines.push(`  ${content}${(m.content?.length ?? 0) > 100 ? "..." : ""}`);
         lines.push("");
       }
@@ -431,20 +431,20 @@ export function registerTimelineTools(
     },
   );
 
-  // ============================================================
-  // eywa_pick - Bring specific moments to current timeline
-  // ============================================================
   server.tool(
     "eywa_pick",
     "Copy specific moments from another timeline into your current one. Like cherry-picking the best parts of someone else's work.",
     {
       ids: z.array(z.string()).describe("IDs of the moments to bring in (from eywa_history)"),
     },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+    },
     async ({ ids }) => {
       const picked: string[] = [];
       const notFound: string[] = [];
 
-      // Get current HEAD for parent chaining
       let parentId = await getHead(db, ctx.roomId, ctx.agent, ctx.sessionId);
 
       for (const id of ids) {
@@ -462,7 +462,6 @@ export function registerTimelineTools(
 
         const source = rows[0];
 
-        // Create a copy in current session
         const inserted = await db.insert<MemoryRow>("memories", {
           room_id: ctx.roomId,
           agent: ctx.agent,
@@ -484,7 +483,6 @@ export function registerTimelineTools(
         }
       }
 
-      // Update HEAD
       if (parentId) {
         await updateHead(db, ctx.roomId, ctx.agent, ctx.sessionId, parentId);
       }
@@ -503,13 +501,14 @@ export function registerTimelineTools(
     },
   );
 
-  // ============================================================
-  // eywa_timelines - List all active timelines
-  // ============================================================
   server.tool(
     "eywa_timelines",
     "List all timelines (branches) in this room. Shows what parallel work streams exist.",
     {},
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     async () => {
       const refs = await db.select<RefRow>("refs", {
         select: "name,commit_id,created_by,ts",
@@ -561,17 +560,17 @@ export function registerTimelineTools(
     },
   );
 
-  // ============================================================
-  // eywa_merge - Combine timelines (with AI-assisted conflict resolution)
-  // ============================================================
   server.tool(
     "eywa_merge",
     "Combine another timeline into your current one. If there are conflicts, they'll be flagged for review.",
     {
       timeline: z.string().describe("Name of the timeline to merge in"),
     },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+    },
     async ({ timeline }) => {
-      // Find the branch ref
       const refs = await db.select<RefRow>("refs", {
         select: "commit_id",
         room_id: `eq.${ctx.roomId}`,
@@ -587,7 +586,6 @@ export function registerTimelineTools(
 
       const branchHead = refs[0].commit_id;
 
-      // Get memories from the branch
       const branchMemories = await db.select<MemoryRow>("memories", {
         select: "id,message_type,content,metadata,ts",
         room_id: `eq.${ctx.roomId}`,
@@ -601,7 +599,6 @@ export function registerTimelineTools(
         };
       }
 
-      // For now, create a merge commit that references the branch
       let parentId = await getHead(db, ctx.roomId, ctx.agent, ctx.sessionId);
 
       const mergeResult = await db.insert<MemoryRow>("memories", {

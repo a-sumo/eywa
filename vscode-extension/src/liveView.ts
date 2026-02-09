@@ -21,6 +21,7 @@ interface ActivityItem {
   content: string;
   type: string;
   ts: string;
+  opTag?: string;
 }
 
 /** Which message types pass a given log level filter. */
@@ -136,13 +137,17 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
           return passesLogFilter(e.message_type, event, logLevel);
         })
         .slice(0, 40)
-        .map((e) => ({
-          id: e.id,
-          agent: e.agent,
-          content: e.content.slice(0, 150),
-          type: e.message_type,
-          ts: e.ts,
-        }));
+        .map((e) => {
+          const opParts = [e.metadata?.system, e.metadata?.action, e.metadata?.outcome].filter(Boolean);
+          return {
+            id: e.id,
+            agent: e.agent,
+            content: e.content.slice(0, 150),
+            type: e.message_type,
+            ts: e.ts,
+            opTag: opParts.length ? opParts.join(":") : undefined,
+          };
+        });
 
       this.pushState();
     } catch (err) {
@@ -179,12 +184,14 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     // Add to activity feed (filtered by log level)
     const logLevel = vscode.workspace.getConfiguration("eywa").get<string>("logLevel") ?? "all";
     if (passesLogFilter(mem.message_type || "assistant", event, logLevel)) {
+      const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
       this.activity.unshift({
         id: mem.id,
         agent: mem.agent,
         content: (mem.content || "").slice(0, 150),
         type: mem.message_type || "assistant",
         ts: mem.ts,
+        opTag: opParts.length ? (opParts as string[]).join(":") : undefined,
       });
       if (this.activity.length > 40) this.activity.length = 40;
     }
@@ -476,6 +483,7 @@ function render(data) {
       + '<div class="feed-body">'
       + '<span class="feed-agent">' + esc(shortName(ev.agent)) + '</span>'
       + '<span class="feed-type" style="background:' + dotColor + '" title="' + esc(ev.type) + '"></span>'
+      + (ev.opTag ? '<span style="font-size:9px;opacity:0.5;margin-left:4px">' + esc(ev.opTag) + '</span>' : '')
       + (ev.content ? '<div class="feed-text">' + esc(ev.content) + '</div>' : '')
       + '<div class="feed-time">' + timeAgo(ev.ts) + '</div>'
       + '</div></div>';

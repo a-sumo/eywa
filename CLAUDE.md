@@ -51,12 +51,18 @@ Key rules for any UI work:
 - Deployed on Cloudflare Workers. Entry: `worker/src/index.ts`.
 - Thin fetch wrapper for Supabase PostgREST (no SDK, just HTTP).
 - Agent identity: `{base_name}/{adjective}-{noun}` (e.g. `armand/quiet-oak`).
-- Tools: session lifecycle, memory logging, file storage, context queries, collaboration, injection, knowledge base.
+- Tools: session lifecycle, memory logging, file storage, context queries, collaboration, injection, knowledge base, timeline (git-like), network.
+- **Operation tagging**: `eywa_log` accepts optional `system`, `action`, `scope`, `outcome` fields. These propagate to `eywa_context`, `eywa_status`, `eywa_recall`, `eywa_pull`, `eywa_sync`, `eywa_compare`, `eywa_history`.
+- **Auto-context**: `eywa_start` returns a room snapshot (active agents, systems, recent activity, injection/knowledge counts).
+- **eywa_summary**: Token-efficient compressed room view. Per-agent task, systems, outcomes.
+- **Tool annotations**: All tools have `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint` so agent hosts can auto-approve safe reads.
+- **Injection piggyback**: Pending injections are appended to every tool response automatically.
 
 ## Supabase
 
 - URL and key in `worker/wrangler.toml` (vars) and `discord-bot/.env`.
 - Three tables: `rooms`, `memories`, `messages`.
-- `memories.metadata` JSONB stores event type, tags, injection targets, etc.
+- `memories.metadata` JSONB stores event type, tags, injection targets, operation metadata (system, action, scope, outcome).
 - `memories.message_type`: resource, user, assistant, tool_call, tool_result, injection, knowledge.
 - MCP tool names use `eywa_*` prefix (e.g. `eywa_log`, `eywa_start`, `eywa_context`).
+- Operation metadata fields: `system` (git, database, api, deploy, filesystem, communication, browser, infra, ci, cloud, terminal, editor), `action` (read, write, create, delete, deploy, test, review, debug, configure, monitor), `scope` (free text), `outcome` (success, failure, blocked, in_progress).

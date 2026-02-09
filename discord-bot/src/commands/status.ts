@@ -49,7 +49,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   // Build per-agent info from most recent meaningful event
   const agents = new Map<
     string,
-    { status: string; desc: string; ts: string; meaningful: boolean }
+    { status: string; desc: string; ts: string; meaningful: boolean; systems: string[] }
   >();
 
   for (const row of rows) {
@@ -85,7 +85,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       // still register them for the idle count, but mark not meaningful
     }
 
-    agents.set(row.agent, { status, desc, ts: row.ts, meaningful });
+    // Collect operation metadata across all memories for this agent
+    const systems = new Set<string>();
+    for (const r of rows!.filter(r => r.agent === row.agent)) {
+      const rm = (r.metadata ?? {}) as Record<string, any>;
+      if (rm.system) systems.add(rm.system);
+    }
+
+    agents.set(row.agent, { status, desc, ts: row.ts, meaningful, systems: [...systems] });
   }
 
   // Partition into buckets
@@ -114,14 +121,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const lines: string[] = [];
 
   for (const [name, info] of active) {
+    const sysTag = info.systems?.length ? `\n> Systems: \`${info.systems.join("` `")}\`` : "";
     lines.push(
-      `${statusEmoji("active")} **${name}**\n> ${truncate(info.desc, 120)}\n> *${timeAgo(info.ts)}*`,
+      `${statusEmoji("active")} **${name}**\n> ${truncate(info.desc, 120)}${sysTag}\n> *${timeAgo(info.ts)}*`,
     );
   }
 
   for (const [name, info] of recent) {
+    const sysTag = info.systems?.length ? `\n> Systems: \`${info.systems.join("` `")}\`` : "";
     lines.push(
-      `${statusEmoji(info.status)} **${name}** \`${info.status}\`\n> ${truncate(info.desc, 100)}\n> *${timeAgo(info.ts)}*`,
+      `${statusEmoji(info.status)} **${name}** \`${info.status}\`\n> ${truncate(info.desc, 100)}${sysTag}\n> *${timeAgo(info.ts)}*`,
     );
   }
 

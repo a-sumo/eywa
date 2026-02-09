@@ -13452,13 +13452,17 @@ var LiveViewProvider = class {
       this.activity = events.filter((e) => {
         const event = e.metadata?.event || void 0;
         return passesLogFilter(e.message_type, event, logLevel);
-      }).slice(0, 40).map((e) => ({
-        id: e.id,
-        agent: e.agent,
-        content: e.content.slice(0, 150),
-        type: e.message_type,
-        ts: e.ts
-      }));
+      }).slice(0, 40).map((e) => {
+        const opParts = [e.metadata?.system, e.metadata?.action, e.metadata?.outcome].filter(Boolean);
+        return {
+          id: e.id,
+          agent: e.agent,
+          content: e.content.slice(0, 150),
+          type: e.message_type,
+          ts: e.ts,
+          opTag: opParts.length ? opParts.join(":") : void 0
+        };
+      });
       this.pushState();
     } catch (err) {
       this.postMessage({ type: "error", message: "Could not connect to room" });
@@ -13489,12 +13493,14 @@ var LiveViewProvider = class {
     }
     const logLevel = vscode3.workspace.getConfiguration("eywa").get("logLevel") ?? "all";
     if (passesLogFilter(mem.message_type || "assistant", event, logLevel)) {
+      const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
       this.activity.unshift({
         id: mem.id,
         agent: mem.agent,
         content: (mem.content || "").slice(0, 150),
         type: mem.message_type || "assistant",
-        ts: mem.ts
+        ts: mem.ts,
+        opTag: opParts.length ? opParts.join(":") : void 0
       });
       if (this.activity.length > 40) this.activity.length = 40;
     }
@@ -13646,6 +13652,8 @@ var LiveViewProvider = class {
     animation: spin 0.8s linear infinite; opacity: 0.3; margin: 0 auto 8px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes mascot-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+  .mascot-wrap svg { animation: mascot-bob 2s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -13700,29 +13708,58 @@ function render(data) {
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'openDashboard\\'})" title="Web dashboard"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h13l.5.5v13l-.5.5h-13l-.5-.5v-13l.5-.5zM2 5v9h12V5H2zm0-1h12V2H2v2z"/></svg></button>'
     + '</div></div>';
 
-  // Mascot: small jellyfish between header and agent strip
+  // Mascot: cross-body between header and agent strip
   const mascotMood = agents.filter(a => a.status === 'active').length > 0 ? 'active' : (agents.length > 0 ? 'idle' : 'sleeping');
-  const mascotColor = mascotMood === 'active' ? '#15D1FF' : (mascotMood === 'idle' ? '#6417EC' : '#334');
+  // Color palette per mood
+  const mPalette = mascotMood === 'active'
+    ? { core:'#eef0ff', up:'#7946FF', down:'#393CF5', left:'#E72B76', right:'#15D1FF', nub:'#15D1FF', tendril:'#5ec8e6' }
+    : mascotMood === 'idle'
+    ? { core:'#b0a8d0', up:'#5a3ab0', down:'#3a3890', left:'#a02060', right:'#1090b0', nub:'#1090b0', tendril:'#4a90a0' }
+    : { core:'#444', up:'#333', down:'#2a2a2a', left:'#333', right:'#333', nub:'#333', tendril:'#2a2a2a' };
   const mascotGlow = mascotMood === 'active' ? 'drop-shadow(0 0 4px rgba(21,209,255,0.4))' : 'none';
-  html += '<div style="text-align:center;padding:4px 0;opacity:' + (mascotMood === 'sleeping' ? '0.3' : '0.7') + ';filter:' + mascotGlow + '">'
-    + '<svg width="32" height="36" viewBox="0 0 32 32" fill="none">'
-    // Body (bell)
-    + '<ellipse cx="16" cy="22" rx="5" ry="3.5" fill="' + mascotColor + '" opacity="0.9"/>'
-    + '<ellipse cx="16" cy="22" rx="4" ry="2.8" fill="' + mascotColor + '"/>'
-    // Highlight
-    + '<ellipse cx="16" cy="20.5" rx="1.5" ry="0.8" fill="#7EEAFF" opacity="0.6"/>'
-    // Core
-    + '<circle cx="16" cy="22.5" r="1" fill="#E72B76" opacity="0.7"/>'
-    // Eyes
-    + (mascotMood === 'sleeping'
-      ? '<line x1="13.5" y1="22" x2="15" y2="22" stroke="#0a0a12" stroke-width="0.8"/><line x1="17" y1="22" x2="18.5" y2="22" stroke="#0a0a12" stroke-width="0.8"/>'
-      : '<rect x="13" y="21" width="2.5" height="2.5" rx="0.3" fill="#0a0a12"/><rect x="16.5" y="21" width="2.5" height="2.5" rx="0.3" fill="#0a0a12"/><rect x="14" y="22" width="0.8" height="0.8" fill="white"/><rect x="17.5" y="22" width="0.8" height="0.8" fill="white"/>')
-    // Tendrils
-    + '<path d="M11 18.5 Q10 14 11 10 Q12 6 14 4" stroke="' + mascotColor + '" fill="none" stroke-width="0.8" opacity="0.6"/>'
-    + '<path d="M13 18 Q13 13 14.5 9 Q15 5 16 3" stroke="' + mascotColor + '" fill="none" stroke-width="0.8" opacity="0.7"/>'
-    + '<path d="M16 18 Q16 12 16 8 Q16 5 16 2" stroke="' + mascotColor + '" fill="none" stroke-width="0.8" opacity="0.8"/>'
-    + '<path d="M19 18 Q19 13 17.5 9 Q17 5 16 3" stroke="' + mascotColor + '" fill="none" stroke-width="0.8" opacity="0.7"/>'
-    + '<path d="M21 18.5 Q22 14 21 10 Q20 6 18 4" stroke="' + mascotColor + '" fill="none" stroke-width="0.8" opacity="0.6"/>'
+  const mascotOp = mascotMood === 'sleeping' ? '0.3' : '0.7';
+
+  // Build cross-body pixel rects (scaled to ~32x36 viewport from 32x32 grid, each grid cell = 1 unit)
+  const mBody = [
+    [15,-6,'nub'],[16,-6,'nub'],
+    [15,-5,'up'],[16,-5,'up'],
+    [14,-4,'up'],[15,-4,'up'],[16,-4,'up'],[17,-4,'up'],
+    [14,-3,'up'],[15,-3,'up'],[16,-3,'up'],[17,-3,'up'],
+    [12,-2,'left'],[13,-2,'left'],[14,-2,'core'],[15,-2,'core'],[16,-2,'core'],[17,-2,'core'],[18,-2,'right'],[19,-2,'right'],
+    [11,-1,'left'],[12,-1,'left'],[13,-1,'left'],[14,-1,'core'],[15,-1,'core'],[16,-1,'core'],[17,-1,'core'],[18,-1,'right'],[19,-1,'right'],[20,-1,'right'],
+    [11, 0,'left'],[12, 0,'left'],[13, 0,'left'],[14, 0,'core'],[15, 0,'core'],[16, 0,'core'],[17, 0,'core'],[18, 0,'right'],[19, 0,'right'],[20, 0,'right'],
+    [12,+1,'left'],[13,+1,'left'],[14,+1,'core'],[15,+1,'core'],[16,+1,'core'],[17,+1,'core'],[18,+1,'right'],[19,+1,'right'],
+    [14,+2,'down'],[15,+2,'down'],[16,+2,'down'],[17,+2,'down'],
+    [14,+3,'down'],[15,+3,'down'],[16,+3,'down'],[17,+3,'down'],
+    [15,+4,'down'],[16,+4,'down'],
+    [15,+5,'nub'],[16,+5,'nub'],
+  ];
+  let bodyRects = '';
+  for (const [bx, dy, part] of mBody) {
+    bodyRects += '<rect x="' + bx + '" y="' + (18 + dy) + '" width="1" height="1" fill="' + mPalette[part] + '"/>';
+  }
+
+  // Eyes
+  let eyeSvg = '';
+  if (mascotMood === 'sleeping') {
+    eyeSvg = '<line x1="13.5" y1="17.5" x2="15" y2="17.5" stroke="#0a0a12" stroke-width="0.6"/>'
+      + '<line x1="16.5" y1="17.5" x2="18" y2="17.5" stroke="#0a0a12" stroke-width="0.6"/>';
+  } else {
+    eyeSvg = '<rect x="14" y="17" width="1" height="2" fill="#0a0a12"/>'
+      + '<rect x="17" y="17" width="1" height="2" fill="#0a0a12"/>';
+  }
+
+  // Tendrils as arc paths
+  const tC = mPalette.tendril;
+  const tendrils = '<path d="M11 12 Q9 7 11 3 Q13 0 15 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.5"/>'
+    + '<path d="M13 12 Q13 7 14.5 3 Q15 0 16 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.6"/>'
+    + '<path d="M16 12 Q16 6 16 2 Q16 0 16 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.7"/>'
+    + '<path d="M19 12 Q19 7 17.5 3 Q17 0 16 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.6"/>'
+    + '<path d="M21 12 Q23 7 21 3 Q19 0 17 -1" stroke="' + tC + '" fill="none" stroke-width="0.6" opacity="0.5"/>';
+
+  html += '<div class="mascot-wrap" style="text-align:center;padding:4px 0;opacity:' + mascotOp + ';filter:' + mascotGlow + '">'
+    + '<svg width="32" height="36" viewBox="0 -2 32 34" shape-rendering="crispEdges">'
+    + tendrils + bodyRects + eyeSvg
     + '</svg></div>';
 
   // Agent strip
@@ -13750,6 +13787,7 @@ function render(data) {
       + '<div class="feed-body">'
       + '<span class="feed-agent">' + esc(shortName(ev.agent)) + '</span>'
       + '<span class="feed-type" style="background:' + dotColor + '" title="' + esc(ev.type) + '"></span>'
+      + (ev.opTag ? '<span style="font-size:9px;opacity:0.5;margin-left:4px">' + esc(ev.opTag) + '</span>' : '')
       + (ev.content ? '<div class="feed-text">' + esc(ev.content) + '</div>' : '')
       + '<div class="feed-time">' + timeAgo(ev.ts) + '</div>'
       + '</div></div>';

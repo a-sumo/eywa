@@ -10,13 +10,17 @@ export function registerContextTools(
 ) {
   server.tool(
     "eywa_context",
-    "Get shared context from all agents. See what others are working on.",
+    "Get shared context from all agents. See what others are working on, including what systems they're operating on.",
     {
       limit: z.number().optional().default(20).describe("Maximum messages to retrieve"),
     },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     async ({ limit }) => {
       const rows = await db.select<MemoryRow>("memories", {
-        select: "agent,message_type,content,ts",
+        select: "agent,message_type,content,metadata,ts",
         room_id: `eq.${ctx.roomId}`,
         order: "ts.desc",
         limit: String(limit),
@@ -31,7 +35,11 @@ export function registerContextTools(
       const lines: string[] = [];
       for (const m of rows) {
         const content = m.content?.slice(0, 500) ?? "";
-        lines.push(`[${m.agent}] ${m.message_type}: ${content}`);
+        const meta = (m.metadata ?? {}) as Record<string, string>;
+        const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+        const opTag = opParts.length > 0 ? `  [${opParts.join(":")}]` : "";
+        const scopeTag = meta.scope ? ` (${meta.scope})` : "";
+        lines.push(`[${m.agent}] ${m.message_type}: ${content}${opTag}${scopeTag}`);
       }
 
       return {
@@ -44,6 +52,10 @@ export function registerContextTools(
     "eywa_agents",
     "List all agents that have logged to Eywa in this room.",
     {},
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     async () => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "agent,ts",
@@ -82,9 +94,13 @@ export function registerContextTools(
       agent: z.string().describe("Agent name to query"),
       limit: z.number().optional().default(20).describe("Maximum messages to retrieve"),
     },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     async ({ agent, limit }) => {
       const rows = await db.select<MemoryRow>("memories", {
-        select: "message_type,content,ts,session_id",
+        select: "message_type,content,metadata,ts,session_id",
         room_id: `eq.${ctx.roomId}`,
         agent: `eq.${agent}`,
         order: "ts.desc",
@@ -102,7 +118,10 @@ export function registerContextTools(
       const lines = [`Messages from ${agent}:`];
       for (const m of rows) {
         const content = m.content?.slice(0, 500) ?? "";
-        lines.push(`[${m.message_type}]: ${content}`);
+        const meta = (m.metadata ?? {}) as Record<string, string>;
+        const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+        const opTag = opParts.length > 0 ? `  [${opParts.join(":")}]` : "";
+        lines.push(`[${m.message_type}]: ${content}${opTag}`);
       }
 
       return {

@@ -64,7 +64,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       return `${emoji} **${row.agent}** ended session\n> ${truncate(meta.summary || content, 120)}\n> *${timeAgo(row.ts)}*`;
     }
 
-    return `${emoji} **${row.agent}** \`${row.message_type}\`\n> ${truncate(content, 120)}\n> *${timeAgo(row.ts)}*`;
+    const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+    const opTag = opParts.length ? ` \`${opParts.join(":")}\`` : "";
+    const scopeTag = meta.scope ? ` *(${meta.scope})*` : "";
+    return `${emoji} **${row.agent}** \`${row.message_type}\`${opTag}${scopeTag}\n> ${truncate(content, 120)}\n> *${timeAgo(row.ts)}*`;
   });
 
   await interaction.editReply({

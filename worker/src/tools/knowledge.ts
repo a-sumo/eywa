@@ -36,6 +36,10 @@ export function registerKnowledgeTools(
       tags: z.array(z.string()).optional().describe("Tags for categorization (e.g. 'architecture', 'api', 'convention', 'gotcha')"),
       title: z.string().optional().describe("Short title for quick scanning"),
     },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+    },
     async ({ content, tags, title }) => {
       const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
@@ -64,11 +68,15 @@ export function registerKnowledgeTools(
 
   server.tool(
     "eywa_knowledge",
-    "Retrieve the project knowledge base. Returns persistent context accumulated across all sessions — architecture decisions, conventions, gotchas, patterns.",
+    "Retrieve the project knowledge base. Returns persistent context accumulated across all sessions: architecture decisions, conventions, gotchas, patterns.",
     {
       tag: z.string().optional().describe("Filter by tag"),
       search: z.string().optional().describe("Search within knowledge content"),
       limit: z.number().optional().default(20).describe("Maximum entries to return"),
+    },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
     },
     async ({ tag, search, limit }) => {
       const params: Record<string, string> = {
@@ -80,7 +88,6 @@ export function registerKnowledgeTools(
       };
 
       if (search) {
-        // Sanitize: escape PostgREST special chars to prevent filter injection
         const sanitized = search.replace(/[%_*(),.]/g, (c) => `\\${c}`);
         params.content = `ilike.*${sanitized}*`;
       }
@@ -115,7 +122,7 @@ export function registerKnowledgeTools(
         const storedBy = meta.stored_by as string;
         const tagStr = tags.length ? ` {${tags.join(", ")}}` : "";
         const titleStr = title ? `**${title}**\n  ` : "";
-        lines.push(`${titleStr}${m.content?.replace(/^\[[^\]]*\]\s*/, "").slice(0, 500) ?? ""}${tagStr}\n  — ${storedBy}, ${m.ts}`);
+        lines.push(`${titleStr}${m.content?.replace(/^\[[^\]]*\]\s*/, "").slice(0, 500) ?? ""}${tagStr}\n  -- ${storedBy}, ${m.ts}`);
       }
 
       return {
@@ -129,6 +136,11 @@ export function registerKnowledgeTools(
     "Remove a knowledge entry by its ID. Use when knowledge is outdated or incorrect.",
     {
       knowledge_id: z.string().describe("The ID of the knowledge entry to remove"),
+    },
+    {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
     },
     async ({ knowledge_id }) => {
       try {
