@@ -47,6 +47,7 @@ web/scripts/avatar-pipeline/out/
 docs/frames/
 
 # Editors
+.vscode/
 *.sw?
 *.local
 
