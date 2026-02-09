@@ -733,6 +733,7 @@ export function ThreadTree() {
   const {
     messages: chatMessages,
     loading: chatLoading,
+    status: chatStatus,
     error: chatError,
     send: sendChat,
     clear: clearChat,
@@ -957,10 +958,12 @@ export function ThreadTree() {
               <div className="hub-steering-msg-content">{msg.content}</div>
             </div>
           ))}
-          {chatLoading && (
+          {chatLoading && !chatMessages[chatMessages.length - 1]?.streaming && (
             <div className="hub-steering-msg hub-steering-model">
               <div className="hub-steering-msg-role">Gemini</div>
-              <div className="hub-steering-msg-content hub-steering-typing">Thinking...</div>
+              <div className="hub-steering-msg-content hub-steering-typing">
+                {chatStatus || "Thinking..."}
+              </div>
             </div>
           )}
           {chatError && (
