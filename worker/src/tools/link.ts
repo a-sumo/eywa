@@ -19,6 +19,10 @@ export function registerLinkTools(
       link_type: z.enum(["reference", "inject", "fork"]).optional().default("reference").describe("Type of link: reference (read-only pointer), inject (push context), fork (branch off)"),
       label: z.string().optional().describe("Short label for the link"),
     },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+    },
     async ({ source_memory_id, target_agent, target_session_id, target_position, link_type, label }) => {
       // Verify source memory exists
       const sourceMems = await db.select<MemoryRow>("memories", {
@@ -70,6 +74,10 @@ export function registerLinkTools(
       target_agent: z.string().optional().describe("Filter by target agent"),
       link_type: z.string().optional().describe("Filter by link type"),
     },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     async ({ limit, target_agent, link_type }) => {
       const params: Record<string, string> = {
         select: "id,source_memory_id,target_agent,target_session_id,target_position,link_type,created_by,label,ts",
@@ -113,6 +121,11 @@ export function registerLinkTools(
     {
       link_id: z.string().describe("UUID of the link to delete"),
     },
+    {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+    },
     async ({ link_id }) => {
       await db.delete("links", {
         id: `eq.${link_id}`,
@@ -131,6 +144,10 @@ export function registerLinkTools(
     {
       memory_id: z.string().describe("UUID of the memory to fetch"),
     },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     async ({ memory_id }) => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,agent,session_id,message_type,content,metadata,ts",
@@ -147,11 +164,14 @@ export function registerLinkTools(
 
       const m = rows[0];
       const meta = m.metadata as Record<string, unknown>;
+      const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+      const opTag = opParts.length > 0 ? `\nOperation: ${opParts.join(":")}` : "";
+      const scopeStr = meta.scope ? `\nScope: ${meta.scope}` : "";
 
       return {
         content: [{
           type: "text" as const,
-          text: `Memory ${m.id}:\nAgent: ${m.agent}\nSession: ${m.session_id}\nType: ${m.message_type}\nTime: ${m.ts}\n${meta.event ? `Event: ${meta.event}\n` : ""}---\n${m.content ?? "(no content)"}`,
+          text: `Memory ${m.id}:\nAgent: ${m.agent}\nSession: ${m.session_id}\nType: ${m.message_type}\nTime: ${m.ts}\n${meta.event ? `Event: ${meta.event}\n` : ""}${opTag}${scopeStr}---\n${m.content ?? "(no content)"}`,
         }],
       };
     },

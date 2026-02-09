@@ -23,6 +23,11 @@ export function registerNetworkTools(
       insight: z.string().describe("The insight to share (will be anonymized)"),
       domain_tags: z.array(z.string()).optional().describe("Domain tags for discovery (e.g. 'typescript', 'react', 'testing', 'deployment')"),
     },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
     async ({ insight, domain_tags }) => {
       const sourceHash = await hashSource(ctx.roomId, ctx.agent);
 
@@ -52,6 +57,10 @@ export function registerNetworkTools(
       domain: z.string().optional().describe("Filter by domain tag (e.g. 'typescript', 'react')"),
       search: z.string().optional().describe("Search within insight text"),
       limit: z.number().optional().default(20).describe("Maximum results to return"),
+    },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
     },
     async ({ domain, search, limit }) => {
       const params: Record<string, string> = {

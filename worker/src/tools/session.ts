@@ -32,6 +32,10 @@ export function registerSessionTools(
     "eywa_whoami",
     "Check your agent identity, session, and room.",
     {},
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
     async () => ({
       content: [
         {
@@ -44,8 +48,12 @@ export function registerSessionTools(
 
   server.tool(
     "eywa_start",
-    "Start logging this session. Call this when beginning work on a task.",
+    "Start logging this session. Call this when beginning work on a task. Returns a room snapshot so you land with full situational awareness.",
     { task_description: z.string().describe("Brief description of what you're working on") },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+    },
     async ({ task_description }) => {
       const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
@@ -58,12 +66,109 @@ export function registerSessionTools(
         token_count: estimateTokens(task_description),
         metadata: { event: "session_start", task: task_description, user: ctx.user },
       });
+
+      // Auto-context: fetch room snapshot so agent lands aware
+      const [agentRows, recentRows, injectionRows, knowledgeRows] = await Promise.all([
+        // Active agents
+        db.select<MemoryRow>("memories", {
+          select: "agent,content,metadata,ts",
+          room_id: `eq.${ctx.roomId}`,
+          order: "ts.desc",
+          limit: "200",
+        }),
+        // Recent activity
+        db.select<MemoryRow>("memories", {
+          select: "agent,message_type,content,metadata,ts",
+          room_id: `eq.${ctx.roomId}`,
+          order: "ts.desc",
+          limit: "8",
+        }),
+        // Pending injections for this agent
+        db.select<MemoryRow>("memories", {
+          select: "id",
+          room_id: `eq.${ctx.roomId}`,
+          message_type: "eq.injection",
+          "metadata->>target_agent": `in.(${ctx.agent},${ctx.user},all)`,
+          limit: "50",
+        }),
+        // Knowledge count
+        db.select<MemoryRow>("memories", {
+          select: "id",
+          room_id: `eq.${ctx.roomId}`,
+          message_type: "eq.knowledge",
+          limit: "100",
+        }),
+      ]);
+
+      // Build agent status summary
+      const agents = new Map<string, { status: string; task: string; systems: Set<string>; lastSeen: string }>();
+      for (const row of agentRows) {
+        if (row.agent === ctx.agent) continue;
+        if (agents.has(row.agent)) {
+          // Accumulate systems from earlier rows
+          const meta = (row.metadata ?? {}) as Record<string, string>;
+          if (meta.system) agents.get(row.agent)!.systems.add(meta.system);
+          continue;
+        }
+        const meta = (row.metadata ?? {}) as Record<string, string>;
+        const event = meta.event ?? "";
+        let status = "idle";
+        let task = (row.content ?? "").slice(0, 100);
+        if (event === "session_start") { status = "active"; task = meta.task || task; }
+        else if (event === "session_end" || event === "session_done") { status = "finished"; task = meta.summary || task; }
+        const systems = new Set<string>();
+        if (meta.system) systems.add(meta.system);
+        agents.set(row.agent, { status, task, systems, lastSeen: row.ts });
+      }
+
+      // Build recent activity
+      const recentLines: string[] = [];
+      for (const m of recentRows) {
+        if (m.agent === ctx.agent) continue;
+        const meta = (m.metadata ?? {}) as Record<string, string>;
+        const opTag = meta.system || meta.action
+          ? ` [${[meta.system, meta.action, meta.outcome].filter(Boolean).join(":")}]`
+          : "";
+        const content = (m.content ?? "").slice(0, 120);
+        recentLines.push(`  ${m.agent} ${m.message_type}: ${content}${opTag}`);
+      }
+
+      // Compose snapshot
+      const lines: string[] = [
+        `Logging started for: ${task_description}`,
+        `Session: ${ctx.sessionId} in room /${ctx.roomSlug}`,
+        "",
+        "=== Room Snapshot ===",
+      ];
+
+      if (agents.size > 0) {
+        lines.push(`\nAgents (${agents.size}):`);
+        for (const [name, info] of agents) {
+          const sysStr = info.systems.size > 0 ? ` {${Array.from(info.systems).join(", ")}}` : "";
+          lines.push(`  ${name} [${info.status}] ${info.task}${sysStr}`);
+        }
+      } else {
+        lines.push("\nNo other agents active.");
+      }
+
+      if (recentLines.length > 0) {
+        lines.push(`\nRecent activity:`);
+        lines.push(...recentLines.slice(0, 5));
+      }
+
+      const injectionCount = injectionRows.length;
+      const knowledgeCount = knowledgeRows.length;
+      if (injectionCount > 0 || knowledgeCount > 0) {
+        lines.push("");
+        if (injectionCount > 0) lines.push(`Pending injections: ${injectionCount} (call eywa_inbox to read)`);
+        if (knowledgeCount > 0) lines.push(`Knowledge entries: ${knowledgeCount} (call eywa_knowledge to browse)`);
+      }
+
+      lines.push("\nUse eywa_log with system/action/outcome fields to tag your operations.");
+
       return {
         content: [
-          {
-            type: "text" as const,
-            text: `Logging started for: ${task_description}\nSession: ${ctx.sessionId} in room /${ctx.roomSlug}\nRemember to call eywa_log for important exchanges.`,
-          },
+          { type: "text" as const, text: lines.join("\n") },
         ],
       };
     },
@@ -73,6 +178,10 @@ export function registerSessionTools(
     "eywa_stop",
     "Stop logging and save a session summary.",
     { summary: z.string().describe("Summary of what was accomplished") },
+    {
+      readOnlyHint: false,
+      idempotentHint: true,
+    },
     async ({ summary }) => {
       const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
@@ -100,6 +209,10 @@ export function registerSessionTools(
       artifacts: z.array(z.string()).optional().describe("Key files or outputs produced"),
       tags: z.array(z.string()).optional().describe("Tags for categorization (e.g. 'bugfix', 'feature', 'refactor')"),
       next_steps: z.string().optional().describe("Suggested follow-up work for the next session"),
+    },
+    {
+      readOnlyHint: false,
+      idempotentHint: true,
     },
     async ({ summary, status, artifacts, tags, next_steps }) => {
       const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);

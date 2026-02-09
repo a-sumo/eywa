@@ -176,25 +176,35 @@ Agents connect via [MCP](https://modelcontextprotocol.io) (Model Context Protoco
 
 | Category | Tools | What they do |
 |----------|-------|-------------|
-| **Session** | `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on |
-| **Memory** | `eywa_log`, `eywa_file`, `eywa_search` | Log decisions, store files, search history |
-| **Context** | `eywa_context`, `eywa_pull`, `eywa_sync` | See what other agents are doing, pull their context |
-| **Injection** | `eywa_inject`, `eywa_inbox` | Push context to any agent. They see it on their next action. |
+| **Session** | `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on. `eywa_start` returns a room snapshot with active agents, systems, injections. |
+| **Memory** | `eywa_log`, `eywa_file`, `eywa_search` | Log decisions with operation metadata (system, action, scope, outcome). Store files, search history. |
+| **Context** | `eywa_context`, `eywa_summary`, `eywa_pull`, `eywa_sync` | See what other agents are doing. `eywa_summary` is a compressed room view for token-efficient agents. |
+| **Injection** | `eywa_inject`, `eywa_inbox` | Push context to any agent. They see it on their next action (piggyback delivery). |
 | **Knowledge** | `eywa_learn`, `eywa_knowledge` | Persistent project knowledge across all sessions |
 | **Messaging** | `eywa_msg` | Team chat between agents and humans |
 | **Linking** | `eywa_link`, `eywa_fetch` | Connect memories across sessions |
+| **Timeline** | `eywa_history`, `eywa_fork`, `eywa_rewind`, `eywa_merge` | Git-like version control over agent work |
+| **Network** | `eywa_publish_insight`, `eywa_query_network` | Cross-room anonymized knowledge sharing |
 
 ### Common workflows
 
-**Start a session:**
+**Start a session (returns room snapshot):**
 ```
 eywa_start("Implementing user authentication")
+# Returns: active agents, what they're working on, systems they're touching,
+# pending injections, knowledge count
+```
+
+**Log with operation metadata:**
+```
+eywa_log("Deployed auth service", system="deploy", action="deploy", scope="auth-service", outcome="success")
 ```
 
 **Check what the team is doing:**
 ```
-eywa_status()   # overview of all agents
-eywa_pull("bob")  # get bob's recent context
+eywa_status()     # per-agent status with systems touched, actions, duration
+eywa_summary()    # compressed room view, token-efficient
+eywa_pull("bob")  # get bob's recent context with operation tags
 ```
 
 **Share a decision:**
@@ -398,7 +408,7 @@ cd discord-bot && npm install && npm start
 | MCP Server | Cloudflare Workers, `@modelcontextprotocol/sdk` |
 | Database | Supabase (PostgreSQL + Realtime) |
 | Dashboard | React 19, TypeScript, Vite |
-| AI Chat | Gemini (gemini-2.5-flash) |
+| AI Chat | Gemini (gemini-3-flash-preview) |
 | CLI | Node.js, `@supabase/supabase-js` |
 | Discord Bot | discord.js, direct Supabase |
 | VS Code | Extension API, Supabase realtime |

@@ -134,6 +134,27 @@ export function MemoryCard({
                   {String(memory.metadata.event)}
                 </span>
               ) : null}
+              {"system" in memory.metadata && memory.metadata.system ? (
+                <span className="event-tag" style={{ background: "rgba(121, 70, 255, 0.15)", color: "#a78bfa" }}>
+                  {String(memory.metadata.system)}
+                  {memory.metadata.action ? `:${String(memory.metadata.action)}` : ""}
+                </span>
+              ) : null}
+              {"scope" in memory.metadata && memory.metadata.scope ? (
+                <span className="event-tag" style={{ background: "rgba(21, 209, 255, 0.12)", color: "#67e8f9" }}>
+                  {String(memory.metadata.scope)}
+                </span>
+              ) : null}
+              {"outcome" in memory.metadata && memory.metadata.outcome ? (
+                <span className="event-tag" style={{
+                  background: memory.metadata.outcome === "success" ? "rgba(52, 211, 153, 0.12)" :
+                    memory.metadata.outcome === "failure" ? "rgba(248, 113, 113, 0.12)" : "rgba(251, 191, 36, 0.12)",
+                  color: memory.metadata.outcome === "success" ? "#6ee7b7" :
+                    memory.metadata.outcome === "failure" ? "#fca5a5" : "#fcd34d",
+                }}>
+                  {String(memory.metadata.outcome)}
+                </span>
+              ) : null}
             </div>
           )}
         {expanded && onPull && (

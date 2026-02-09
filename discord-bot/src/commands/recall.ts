@@ -67,7 +67,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const meta = (row.metadata ?? {}) as Record<string, any>;
     const emoji = typeEmoji(row.message_type, meta.event);
     const label = meta.event || row.message_type || "unknown";
-    return `${emoji} \`${label}\` *${timeAgo(row.ts)}*\n> ${truncate(row.content ?? "", 150)}`;
+    const opParts = [meta.system, meta.action, meta.outcome].filter(Boolean);
+    const opTag = opParts.length ? ` \`${opParts.join(":")}\`` : "";
+    return `${emoji} \`${label}\`${opTag} *${timeAgo(row.ts)}*\n> ${truncate(row.content ?? "", 150)}`;
   });
 
   await interaction.editReply({

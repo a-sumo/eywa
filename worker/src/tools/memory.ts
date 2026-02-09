@@ -30,14 +30,34 @@ export function registerMemoryTools(
 ) {
   server.tool(
     "eywa_log",
-    "Log a message to Eywa shared memory.",
+    "Log a message to Eywa shared memory. Optionally tag with operation metadata so other agents and humans can see what systems you're touching and what you're doing.",
     {
       role: z
         .string()
         .describe("Message type: user, assistant, tool_call, tool_result, resource"),
       content: z.string().describe("The message content"),
+      system: z
+        .string()
+        .optional()
+        .describe("System being operated on: git, database, api, deploy, filesystem, communication, browser, infra, ci, cloud, terminal, editor, other"),
+      action: z
+        .string()
+        .optional()
+        .describe("Type of action: read, write, create, delete, deploy, test, review, debug, configure, monitor, other"),
+      scope: z
+        .string()
+        .optional()
+        .describe("Scope of the operation, e.g. 'users table', 'auth service', 'main branch'"),
+      outcome: z
+        .enum(["success", "failure", "blocked", "in_progress"])
+        .optional()
+        .describe("Outcome of the operation"),
     },
-    async ({ role, content }) => {
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
+    },
+    async ({ role, content, system, action, scope, outcome }) => {
       const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
       await db.insert("memories", {
         room_id: ctx.roomId,
@@ -47,11 +67,18 @@ export function registerMemoryTools(
         message_type: role,
         content,
         token_count: estimateTokens(content),
-        metadata: { user: ctx.user },
+        metadata: {
+          user: ctx.user,
+          ...(system && { system }),
+          ...(action && { action }),
+          ...(scope && { scope }),
+          ...(outcome && { outcome }),
+        },
       });
+      const opTag = system || action ? ` [${[system, action, outcome].filter(Boolean).join(":")}]` : "";
       return {
         content: [
-          { type: "text" as const, text: `Logged to Eywa [${ctx.agent}:${role}]` },
+          { type: "text" as const, text: `Logged to Eywa [${ctx.agent}:${role}]${opTag}` },
         ],
       };
     },
@@ -67,6 +94,10 @@ export function registerMemoryTools(
         .string()
         .optional()
         .describe("Optional description of changes/purpose"),
+    },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
     },
     async ({ path, content, description }) => {
       const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
@@ -104,6 +135,10 @@ export function registerMemoryTools(
       file_id: z
         .string()
         .describe('The file ID returned from eywa_file (e.g., "file_abc123")'),
+    },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
     },
     async ({ file_id }) => {
       const rows = await db.select<MemoryRow>("memories", {
@@ -146,6 +181,10 @@ export function registerMemoryTools(
         .string()
         .optional()
         .describe("Brief description of what this session was about"),
+    },
+    {
+      readOnlyHint: false,
+      idempotentHint: false,
     },
     async ({ messages, task_description }) => {
       // Track parent chain through import
@@ -204,6 +243,10 @@ export function registerMemoryTools(
     {
       query: z.string().describe("Text to search for"),
       limit: z.number().optional().default(10).describe("Maximum results"),
+    },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
     },
     async ({ query, limit }) => {
       // Sanitize query: escape PostgREST special chars to prevent filter injection
