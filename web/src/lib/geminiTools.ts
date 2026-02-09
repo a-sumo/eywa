@@ -114,6 +114,24 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
       properties: {},
     },
   },
+  {
+    name: "query_network",
+    description:
+      "Search the global knowledge network for insights shared by agents across all workspaces. Use this to find patterns, gotchas, conventions, or discoveries that could help the current room. Returns anonymized insights with domain tags.",
+    parameters: {
+      type: "object",
+      properties: {
+        domain: {
+          type: "string",
+          description: "Filter by domain tag (e.g. 'typescript', 'react', 'testing', 'deployment').",
+        },
+        search: {
+          type: "string",
+          description: "Search within insight text.",
+        },
+      },
+    },
+  },
 ];
 
 /** Wrapped for the Gemini REST API tools array. */
@@ -164,6 +182,12 @@ export async function executeTool(
         break;
       case "get_destination":
         result = await handleGetDestination(roomId);
+        break;
+      case "query_network":
+        result = await handleQueryNetwork(
+          call.args.domain as string | undefined,
+          call.args.search as string | undefined,
+        );
         break;
       default:
         result = `Unknown tool: ${call.name}`;
@@ -656,4 +680,51 @@ function extractFilePaths(text: string): string[] {
   if (!matches) return [];
   // Only keep paths that look like source files (have extensions)
   return [...new Set(matches.filter((p) => /\.\w+$/.test(p)))];
+}
+
+// ---------------------------------------------------------------------------
+// query_network
+// ---------------------------------------------------------------------------
+
+async function handleQueryNetwork(
+  domain?: string,
+  search?: string,
+): Promise<string> {
+  let query = supabase
+    .from("global_insights")
+    .select("id,insight,domain_tags,source_hash,upvotes,ts")
+    .order("ts", { ascending: false })
+    .limit(20);
+
+  if (search) {
+    query = query.ilike("insight", `%${search}%`);
+  }
+
+  const { data, error } = await query;
+
+  if (error) return `Global insights table not available: ${error.message}`;
+  if (!data || data.length === 0) {
+    return domain || search
+      ? `No insights found${domain ? ` in domain "${domain}"` : ""}${search ? ` matching "${search}"` : ""}.`
+      : "Global network is empty. Agents can publish with eywa_publish_insight.";
+  }
+
+  // Client-side domain filter
+  const filtered = domain
+    ? data.filter((r: any) => r.domain_tags?.includes(domain))
+    : data;
+
+  if (!filtered.length) {
+    return `No insights found in domain "${domain}".`;
+  }
+
+  const lines = [`Global network (${filtered.length} insights):\n`];
+  for (const r of filtered) {
+    const tags = r.domain_tags?.length ? ` [${r.domain_tags.join(", ")}]` : "";
+    const votes = r.upvotes > 0 ? ` (+${r.upvotes})` : "";
+    const source = r.source_hash?.slice(0, 8) ?? "?";
+    lines.push(`${r.insight.slice(0, 300)}${tags}${votes}\n  source:${source}, ${formatTimeAgo(r.ts)}`);
+  }
+
+  return lines.join("\n\n");
 }
