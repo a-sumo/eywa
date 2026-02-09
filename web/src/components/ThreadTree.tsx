@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import { useParams } from "react-router-dom";
@@ -6,6 +6,7 @@ import { supabase, type Memory } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import { ConnectAgent } from "./ConnectAgent";
+import { useGeminiChat, type ChatMessage } from "../hooks/useGeminiChat";
 
 // --- Destination ---
 
@@ -72,7 +73,27 @@ interface AgentState {
   lastSeen: string;
   recentOps: AgentOp[];
   progress: AgentProgress | null;
+  toolCallCount: number;
 }
+
+// Context pressure thresholds (matches worker/src/lib/pressure.ts)
+const PRESSURE_WARN = 30;
+const PRESSURE_HIGH = 50;
+const PRESSURE_CRITICAL = 70;
+
+function getPressureLevel(toolCalls: number): "ok" | "warn" | "high" | "critical" {
+  if (toolCalls >= PRESSURE_CRITICAL) return "critical";
+  if (toolCalls >= PRESSURE_HIGH) return "high";
+  if (toolCalls >= PRESSURE_WARN) return "warn";
+  return "ok";
+}
+
+const PRESSURE_COLORS: Record<string, string> = {
+  ok: "transparent",
+  warn: "#eab308",
+  high: "#f97316",
+  critical: "#ef4444",
+};
 
 interface DistressSignal {
   id: string;
@@ -230,8 +251,14 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
         lastSeen: m.ts,
         recentOps: [],
         progress: null,
+        toolCallCount: 0,
       };
       agents.set(m.agent, state);
+    }
+
+    // Count tool calls for context pressure estimation
+    if (m.message_type === "tool_call" || m.message_type === "tool_result") {
+      state.toolCallCount++;
     }
 
     if (meta.system) state.systems.add(meta.system as string);
@@ -315,6 +342,8 @@ function AgentCard({
         : "hub-dot-idle";
   const totalOutcomes = state.outcomes.success + state.outcomes.failure + state.outcomes.blocked;
   const successRate = totalOutcomes > 0 ? Math.round((state.outcomes.success / totalOutcomes) * 100) : null;
+  const pressure = getPressureLevel(state.toolCallCount);
+  const pressureColor = PRESSURE_COLORS[pressure];
 
   return (
     <div
@@ -327,6 +356,14 @@ function AgentCard({
         <span className="hub-agent-name" style={{ color: agentColor(state.agent) }}>
           {state.agent.split("/")[1] || state.agent}
         </span>
+        {pressure !== "ok" && (
+          <span className="hub-pill hub-pressure-pill" style={{
+            background: `${pressureColor}18`,
+            color: pressureColor,
+          }}>
+            {pressure === "critical" ? "CTX CRITICAL" : pressure === "high" ? "CTX HIGH" : "CTX WARN"}
+          </span>
+        )}
         <span className="hub-agent-meta">{state.opCount} mem</span>
         <span className="hub-agent-meta">{timeAgo(state.lastSeen)}</span>
         <span className="hub-chevron">{expanded ? "\u25B2" : "\u25BC"}</span>
@@ -480,6 +517,36 @@ export function ThreadTree() {
 
   // Collapsed groups
   const [showFinished, setShowFinished] = useState(false);
+
+  // Gemini steering
+  const [steeringOpen, setSteeringOpen] = useState(false);
+  const {
+    messages: chatMessages,
+    loading: chatLoading,
+    error: chatError,
+    send: sendChat,
+    clear: clearChat,
+  } = useGeminiChat("", room?.id);
+  const [chatInput, setChatInput] = useState("");
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll chat
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  // Auto-open steering if Gemini posts proactive alerts
+  useEffect(() => {
+    if (chatMessages.length > 0 && chatMessages[0]?.role === "model") {
+      setSteeringOpen(true);
+    }
+  }, [chatMessages]);
+
+  const handleChatSend = useCallback(() => {
+    if (!chatInput.trim()) return;
+    sendChat(chatInput);
+    setChatInput("");
+  }, [chatInput, sendChat]);
 
   // Inject state
   const [injectTarget, setInjectTarget] = useState("all");
@@ -668,6 +735,80 @@ export function ThreadTree() {
           )}
         </div>
       )}
+
+      {/* Gemini steering panel */}
+      <div className="hub-steering">
+        <button
+          className="hub-steering-toggle"
+          onClick={() => setSteeringOpen(!steeringOpen)}
+        >
+          <span className="hub-steering-label">Steering</span>
+          {chatMessages.length > 0 && (
+            <span className="hub-steering-count">{chatMessages.length}</span>
+          )}
+          <span className="hub-chevron">{steeringOpen ? "\u25B2" : "\u25BC"}</span>
+        </button>
+        {steeringOpen && (
+          <div className="hub-steering-body">
+            <div className="hub-steering-messages">
+              {chatMessages.length === 0 && !chatLoading && (
+                <div className="hub-steering-empty">
+                  Gemini steering agent. Ask about agent status, patterns, or progress.
+                </div>
+              )}
+              {chatMessages.map((msg: ChatMessage, i: number) => (
+                <div
+                  key={i}
+                  className={`hub-steering-msg hub-steering-${msg.role}`}
+                >
+                  <div className="hub-steering-msg-role">
+                    {msg.role === "user" ? "You" : "Gemini"}
+                  </div>
+                  <div className="hub-steering-msg-content">{msg.content}</div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="hub-steering-msg hub-steering-model">
+                  <div className="hub-steering-msg-role">Gemini</div>
+                  <div className="hub-steering-msg-content hub-steering-typing">Thinking...</div>
+                </div>
+              )}
+              {chatError && (
+                <div className="hub-steering-error">{chatError}</div>
+              )}
+              <div ref={chatBottomRef} />
+            </div>
+            <div className="hub-steering-input">
+              <input
+                placeholder="Ask Gemini about agents, patterns, progress..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleChatSend();
+                  }
+                }}
+              />
+              <button
+                onClick={handleChatSend}
+                disabled={chatLoading || !chatInput.trim()}
+              >
+                {chatLoading ? "..." : "\u2192"}
+              </button>
+              {chatMessages.length > 0 && (
+                <button
+                  onClick={clearChat}
+                  className="hub-steering-clear"
+                  title="Clear chat"
+                >
+                  \u2715
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Distress alerts */}
       {unresolvedDistress.map((d) => (
