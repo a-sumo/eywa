@@ -94,13 +94,44 @@ function buildSystemInstruction(
 // Hook
 // ---------------------------------------------------------------------------
 
+function storageKey(roomId?: string | null): string {
+  return `eywa-chat-${roomId || "default"}`;
+}
+
+function loadMessages(roomId?: string | null): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(storageKey(roomId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as ChatMessage[];
+    // Drop any that were mid-stream
+    return parsed.filter((m) => !m.streaming);
+  } catch {
+    return [];
+  }
+}
+
+function saveMessages(roomId: string | null | undefined, msgs: ChatMessage[]) {
+  try {
+    // Only persist non-streaming messages
+    const clean = msgs.filter((m) => !m.streaming);
+    localStorage.setItem(storageKey(roomId), JSON.stringify(clean));
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
 export function useGeminiChat(systemContext: string, roomId?: string | null) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessages(roomId));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoContext, setAutoContext] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const autoContextFetched = useRef(false);
+
+  // Persist messages to localStorage on every change
+  useEffect(() => {
+    saveMessages(roomId, messages);
+  }, [messages, roomId]);
 
   // -----------------------------------------------------------------------
   // Auto-context: fetch agent status on mount when we have a roomId
@@ -163,6 +194,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
   useEffect(() => {
     autoContextFetched.current = false;
     setAutoContext("");
+    setMessages(loadMessages(roomId));
   }, [roomId]);
 
   // -----------------------------------------------------------------------
@@ -426,6 +458,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
     setMessages([]);
     setError(null);
     setLoading(false);
+    try { localStorage.removeItem(storageKey(roomId)); } catch {}
   }, []);
 
   return { messages, loading, error, send, clear, autoContext };
