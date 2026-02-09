@@ -139,7 +139,7 @@ export function Landing() {
             <a href="#features">Features</a>
             <a href="/docs">Docs</a>
             <a href="#pricing">Pricing</a>
-            <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer">Contact</a>
+            <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">Contact</a>
           </nav>
           <div className="landing-header-actions">
             <a href="/docs" className="landing-nav-link">Docs</a>
@@ -174,7 +174,7 @@ export function Landing() {
         <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
         <a href="/docs" onClick={() => setMenuOpen(false)}>Docs</a>
         <a href="#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
-        <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Contact</a>
+        <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Contact</a>
         <button onClick={() => { createDemoRoom(); setMenuOpen(false); }} disabled={creating}>Try Demo</button>
         <button
           onClick={() => { createRoom(); setMenuOpen(false); }}
@@ -616,7 +616,7 @@ export function Landing() {
               <li>Custom integrations</li>
               <li>Volume discounts</li>
             </ul>
-            <a href="https://discord.gg/c7V2Ze58" className="btn-landing-secondary" style={{ width: "100%" }} target="_blank" rel="noopener noreferrer">
+            <a href="https://discord.gg/TyEUUnNm" className="btn-landing-secondary" style={{ width: "100%" }} target="_blank" rel="noopener noreferrer">
               Contact Us
             </a>
           </div>
@@ -632,7 +632,7 @@ export function Landing() {
             {creating ? "Creating..." : "Try the Demo"}
             {!creating && <IconArrowRight />}
           </button>
-          <a href="https://discord.gg/c7V2Ze58" className="btn-landing-secondary" target="_blank" rel="noopener noreferrer">
+          <a href="https://discord.gg/TyEUUnNm" className="btn-landing-secondary" target="_blank" rel="noopener noreferrer">
             Join Discord
           </a>
         </div>
@@ -661,19 +661,19 @@ export function Landing() {
               <a href="/docs">Documentation</a>
               <a href="/llms.txt" target="_blank" rel="noopener noreferrer">LLM Docs (llms.txt)</a>
               <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer">GitHub</a>
-              <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer">Discord</a>
+              <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">Discord</a>
             </div>
             <div className="landing-footer-col">
               <h4>Company</h4>
-              <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer">Contact</a>
-              <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer">Support</a>
+              <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">Contact</a>
+              <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">Support</a>
             </div>
           </div>
           <div className="landing-footer-social">
             <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer" title="GitHub">
               <IconGitHub />
             </a>
-            <a href="https://discord.gg/c7V2Ze58" target="_blank" rel="noopener noreferrer" title="Discord">
+            <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer" title="Discord">
               <IconDiscord />
             </a>
           </div>

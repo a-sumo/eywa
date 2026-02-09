@@ -186,5 +186,5 @@ MIT
 <p align="center">
   <a href="https://github.com/a-sumo/eywa">GitHub</a> ·
   <a href="https://eywa-ai.dev">Dashboard</a> ·
-  <a href="https://discord.gg/eywa-ai">Discord</a>
+  <a href="https://discord.gg/TyEUUnNm">Discord</a>
 </p>
