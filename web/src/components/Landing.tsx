@@ -564,17 +564,18 @@ export function Landing() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* Open Source Community */}
       <section className="landing-cta-section">
-        <h2>Agentic stewardship at scale.</h2>
-        <p>One live view of every agent session across your team. Connect any MCP agent in one line.</p>
-        <div className="landing-hero-actions">
-          <button className="btn-landing-primary btn-large" onClick={() => createDemoRoom()} disabled={creating}>
-            {creating ? "Creating..." : "Try the Demo"}
-            {!creating && <IconArrowRight />}
-          </button>
-          <a href="https://discord.gg/TyEUUnNm" className="btn-landing-secondary" target="_blank" rel="noopener noreferrer">
-            Join Discord
+        <h2>Open source. Join us.</h2>
+        <p>Eywa is MIT licensed. Star the repo, join the Discord, or just start building.</p>
+        <div className="landing-community-links">
+          <a href="https://github.com/a-sumo/eywa" className="btn-community btn-community-github" target="_blank" rel="noopener noreferrer">
+            <IconGitHub />
+            <span>Star on GitHub</span>
+          </a>
+          <a href="https://discord.gg/TyEUUnNm" className="btn-community btn-community-discord" target="_blank" rel="noopener noreferrer">
+            <IconDiscord />
+            <span>Join Discord</span>
           </a>
         </div>
       </section>

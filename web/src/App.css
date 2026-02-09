@@ -113,6 +113,17 @@ body {
   flex-shrink: 0;
 }
 
+.global-header-github {
+  display: flex;
+  align-items: center;
+  color: rgba(240, 240, 245, 0.5);
+  transition: color 0.15s;
+}
+
+.global-header-github:hover {
+  color: rgba(240, 240, 245, 0.9);
+}
+
 .global-header-link {
   background: none;
   border: none;
@@ -1991,7 +2002,72 @@ body {
 .landing-cta-section p {
   font-size: 1.4rem;
   color: rgba(240, 240, 245, 0.6);
-  margin: 0 0 2rem;
+  margin: 0 0 2.5rem;
+}
+
+.landing-community-links {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-community {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2.25rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  border-radius: 10px;
+  text-decoration: none;
+  transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background 0.15s;
+  cursor: pointer;
+}
+
+.btn-community:hover {
+  transform: translateY(-2px);
+}
+
+.btn-community svg {
+  width: 24px;
+  height: 24px;
+}
+
+.btn-community-github {
+  background: #f0f0f5;
+  color: #0a0a0f;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-community-github:hover {
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(240, 240, 245, 0.15);
+}
+
+.btn-community-discord {
+  background: #5865F2;
+  color: #fff;
+  border: 1px solid rgba(88, 101, 242, 0.6);
+}
+
+.btn-community-discord:hover {
+  background: #6873f5;
+  box-shadow: 0 4px 20px rgba(88, 101, 242, 0.3);
+}
+
+@media (max-width: 600px) {
+  .landing-community-links {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn-community {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
 }
 
 /* Footer */
