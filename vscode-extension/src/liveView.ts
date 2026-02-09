@@ -3,7 +3,7 @@
  * Uses Kurzgesagt-style SVG avatars matching the mini/eink displays.
  */
 import * as vscode from "vscode";
-import type { EywaClient, DestinationInfo, AgentProgress } from "./client";
+import type { EywaClient, DestinationInfo, AgentProgress, AttentionItem } from "./client";
 import type { MemoryPayload } from "./realtime";
 import { getAvatarDataUri } from "./avatars";
 
@@ -60,12 +60,31 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   private activity: ActivityItem[] = [];
   private destination: DestinationInfo | null = null;
   private agentProgress: AgentProgress[] = [];
+  private attentionItems: AttentionItem[] = [];
   private getClient: () => EywaClient | undefined;
   private room: string;
+  private onAttentionChange?: (items: AttentionItem[]) => void;
 
   constructor(getClient: () => EywaClient | undefined, room: string) {
     this.getClient = getClient;
     this.room = room;
+  }
+
+  /** Register callback for attention count changes (used for badge + notifications). */
+  setAttentionListener(cb: (items: AttentionItem[]) => void) {
+    this.onAttentionChange = cb;
+  }
+
+  getAttentionItems(): AttentionItem[] {
+    return this.attentionItems;
+  }
+
+  /** Update the view badge (attention count). */
+  setBadge(count: number) {
+    if (!this.view) return;
+    this.view.badge = count > 0
+      ? { tooltip: `${count} agent${count === 1 ? "" : "s"} need attention`, value: count }
+      : undefined;
   }
 
   setRoom(room: string) {
@@ -74,6 +93,7 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     this.activity = [];
     this.destination = null;
     this.agentProgress = [];
+    this.attentionItems = [];
     this.postMessage({ type: "loading", room });
     this.loadInitial();
   }
@@ -83,11 +103,27 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     view.webview.options = { enableScripts: true };
     view.webview.html = this.getHtml();
 
-    view.webview.onDidReceiveMessage((msg) => {
+    view.webview.onDidReceiveMessage(async (msg) => {
       if (msg.type === "setRoom") vscode.commands.executeCommand("eywa.setRoom");
       else if (msg.type === "inject") vscode.commands.executeCommand("eywa.injectContext");
       else if (msg.type === "openDashboard") vscode.commands.executeCommand("eywa.openDashboard");
       else if (msg.type === "refresh") this.loadInitial();
+      else if (msg.type === "attentionReply") {
+        // Inline reply to an agent needing attention
+        const client = this.getClient();
+        if (!client || !msg.agent || !msg.content) return;
+        await client.inject("vscode-user", msg.agent, msg.content, "high");
+        // Remove the attention item after reply
+        this.attentionItems = this.attentionItems.filter((a) => a.agent !== msg.agent);
+        this.onAttentionChange?.(this.attentionItems);
+        this.pushState();
+        vscode.window.showInformationMessage(`Sent to ${msg.agent}`);
+      } else if (msg.type === "attentionDismiss") {
+        // Dismiss an attention item
+        this.attentionItems = this.attentionItems.filter((a) => a.agent !== msg.agent);
+        this.onAttentionChange?.(this.attentionItems);
+        this.pushState();
+      }
     });
 
     // Re-push state when sidebar becomes visible again
@@ -112,14 +148,17 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     }
 
     try {
-      // Load destination and progress in parallel with sessions
-      const [sessionMap, dest, prog] = await Promise.all([
+      // Load destination, progress, and attention items in parallel with sessions
+      const [sessionMap, dest, prog, attention] = await Promise.all([
         client.getSessions(),
         client.getDestination(),
         client.getAgentProgress(),
+        client.getAttentionItems(),
       ]);
       this.destination = dest;
       this.agentProgress = prog;
+      this.attentionItems = attention;
+      this.onAttentionChange?.(this.attentionItems);
       this.agents.clear();
       for (const [, sessions] of sessionMap) {
         for (const s of sessions) {
@@ -168,6 +207,53 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   handleEvent(mem: MemoryPayload) {
     const meta = mem.metadata ?? {};
     const event = meta.event as string | undefined;
+
+    // Real-time attention detection
+    if (event === "distress" || event === "checkpoint" ||
+        (event === "progress" && (meta.status as string) === "blocked") ||
+        event === "session_done" || event === "session_end") {
+
+      const reason = event === "distress" ? "distress" as const
+        : event === "checkpoint" ? "checkpoint" as const
+        : (meta.status as string) === "blocked" ? "blocked" as const
+        : "stopped" as const;
+
+      const urgencyMap = { distress: 4, blocked: 3, stopped: 2, checkpoint: 1, idle: 0 };
+
+      // Replace existing item for same agent+reason, or add new
+      const existing = this.attentionItems.findIndex(
+        (a) => a.agent === mem.agent && a.reason === reason,
+      );
+      const item = {
+        agent: mem.agent,
+        reason,
+        summary: ((meta.remaining as string) || (meta.summary as string) || (meta.detail as string) || (meta.task as string) || "Needs attention").slice(0, 150),
+        ts: mem.ts,
+        sessionId: mem.session_id,
+        urgency: urgencyMap[reason],
+      };
+
+      if (existing >= 0) {
+        this.attentionItems[existing] = item;
+      } else {
+        this.attentionItems.push(item);
+      }
+
+      // Re-sort
+      this.attentionItems.sort((a, b) => {
+        if (a.urgency !== b.urgency) return b.urgency - a.urgency;
+        return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+      });
+
+      this.onAttentionChange?.(this.attentionItems);
+    }
+
+    // If an agent starts a new session, clear their attention items
+    if (event === "session_start") {
+      const hadItems = this.attentionItems.some((a) => a.agent === mem.agent);
+      this.attentionItems = this.attentionItems.filter((a) => a.agent !== mem.agent);
+      if (hadItems) this.onAttentionChange?.(this.attentionItems);
+    }
 
     // Update destination if a new one comes in
     if (event === "destination" && mem.message_type === "knowledge") {
@@ -265,6 +351,7 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
       avatars: avatarMap,
       destination: this.destination,
       agentProgress: this.agentProgress,
+      attention: this.attentionItems,
     });
   }
 
@@ -393,6 +480,71 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes mascot-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
   .mascot-wrap svg { animation: mascot-bob 2s ease-in-out infinite; }
+
+  /* Attention section */
+  @keyframes attn-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .attn-section {
+    border-bottom: 1px solid var(--vscode-panel-border);
+  }
+  .attn-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 12px 4px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: #f85149;
+  }
+  .attn-badge {
+    background: #f85149; color: #fff; font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 8px; min-width: 16px; text-align: center;
+  }
+  .attn-item {
+    padding: 6px 12px; display: flex; flex-direction: column; gap: 4px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s ease-in-out;
+  }
+  .attn-item:hover { background: var(--vscode-list-hoverBackground); }
+  .attn-item.distress { border-left-color: #f85149; animation: attn-pulse 2s ease-in-out infinite; }
+  .attn-item.blocked { border-left-color: #d29922; }
+  .attn-item.stopped { border-left-color: #8b949e; }
+  .attn-item.checkpoint { border-left-color: #58a6ff; }
+  .attn-top {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .attn-avatar {
+    width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+  }
+  .attn-agent { font-size: 11px; font-weight: 600; flex: 1; min-width: 0; }
+  .attn-reason {
+    font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.3px; flex-shrink: 0;
+  }
+  .attn-reason.distress { background: rgba(248,81,73,0.15); color: #f85149; }
+  .attn-reason.blocked { background: rgba(210,153,34,0.15); color: #d29922; }
+  .attn-reason.stopped { background: rgba(139,148,158,0.15); color: #8b949e; }
+  .attn-reason.checkpoint { background: rgba(88,166,255,0.15); color: #58a6ff; }
+  .attn-dismiss {
+    background: none; border: none; color: var(--vscode-foreground);
+    opacity: 0.3; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;
+  }
+  .attn-dismiss:hover { opacity: 0.8; }
+  .attn-summary { font-size: 10px; opacity: 0.6; line-height: 1.3; }
+  .attn-reply-row {
+    display: flex; gap: 4px; align-items: center; margin-top: 2px;
+  }
+  .attn-input {
+    flex: 1; background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border, rgba(128,128,128,0.3));
+    border-radius: 3px; padding: 3px 6px; font-size: 11px;
+    font-family: var(--vscode-font-family); outline: none;
+  }
+  .attn-input:focus { border-color: var(--vscode-focusBorder); }
+  .attn-input::placeholder { opacity: 0.4; }
+  .attn-send {
+    background: var(--vscode-button-background); color: var(--vscode-button-foreground);
+    border: none; border-radius: 3px; padding: 3px 8px; font-size: 10px;
+    cursor: pointer; font-weight: 600; font-family: inherit; white-space: nowrap;
+  }
+  .attn-send:hover { background: var(--vscode-button-hoverBackground); }
 </style>
 </head>
 <body>
@@ -423,6 +575,21 @@ function timeAgo(ts) {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+function sendAttn(input) {
+  const agent = input.dataset.agent;
+  const content = input.value.trim();
+  if (!content) return;
+  vscode.postMessage({ type: 'attentionReply', agent: agent, content: content });
+  input.value = '';
+  input.placeholder = 'Sent!';
+  input.disabled = true;
+  setTimeout(() => { input.disabled = false; input.placeholder = 'Reply...'; }, 1500);
+}
+
+function dismissAttn(agent) {
+  vscode.postMessage({ type: 'attentionDismiss', agent: agent });
+}
+
 const LOGO = '<svg class="logo" viewBox="0 0 250 250" fill="none"><path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/><path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/><path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/><path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/><rect width="69.09" height="37.63" rx="18.81" transform="matrix(-0.682 -0.731 0.715 -0.7 165.13 184.31)"/><rect width="69.09" height="37.47" rx="18.73" transform="matrix(-0.682 0.731 -0.714 -0.7 182.38 88.9)"/><rect width="75.28" height="37.98" rx="18.99" transform="matrix(0.679 0.734 -0.717 0.697 95.87 64.43)"/><rect width="71.22" height="41.64" rx="20.82" transform="matrix(0.799 -0.601 0.583 0.813 55 149.83)"/></svg>';
 
 function render(data) {
@@ -434,12 +601,13 @@ function render(data) {
     return;
   }
 
-  const { agents, activity, room, avatars, destination, agentProgress } = data;
+  const { agents, activity, room, avatars, destination, agentProgress, attention } = data;
   const active = agents.filter(a => a.status === 'active').length;
   const progressMap = {};
   if (agentProgress) {
     for (const p of agentProgress) progressMap[p.agent] = p;
   }
+  const attnItems = attention || [];
 
   // Header
   let html = '<div class="header">' + LOGO
@@ -450,6 +618,30 @@ function render(data) {
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'inject\\'})" title="Inject context"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 3L14 8l-3.5 5h-2l3-4.5H2V7.5h9.5l-3-4.5h2z"/></svg></button>'
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'openDashboard\\'})" title="Web dashboard"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h13l.5.5v13l-.5.5h-13l-.5-.5v-13l.5-.5zM2 5v9h12V5H2zm0-1h12V2H2v2z"/></svg></button>'
     + '</div></div>';
+
+  // Attention section (agents that need your input)
+  if (attnItems.length > 0) {
+    html += '<div class="attn-section">';
+    html += '<div class="attn-header"><span>Needs You</span><span class="attn-badge">' + attnItems.length + '</span></div>';
+    for (const a of attnItems) {
+      const src = avatars[a.agent] || '';
+      const sn = shortName(a.agent);
+      html += '<div class="attn-item ' + a.reason + '">';
+      html += '<div class="attn-top">';
+      html += '<img class="attn-avatar" src="' + src + '" alt=""/>';
+      html += '<span class="attn-agent">' + esc(sn) + '</span>';
+      html += '<span class="attn-reason ' + a.reason + '">' + esc(a.reason) + '</span>';
+      html += '<button class="attn-dismiss" onclick="dismissAttn(\\'' + esc(a.agent).replace(/'/g, "\\\\'") + '\\')" title="Dismiss">&times;</button>';
+      html += '</div>';
+      html += '<div class="attn-summary">' + esc(a.summary) + '</div>';
+      html += '<div class="attn-reply-row">';
+      html += '<input class="attn-input" data-agent="' + esc(a.agent) + '" placeholder="Reply to ' + esc(sn) + '..." onkeydown="if(event.key===\\'Enter\\')sendAttn(this)"/>';
+      html += '<button class="attn-send" onclick="sendAttn(this.previousElementSibling)">Send</button>';
+      html += '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
 
   // Destination banner
   if (destination && destination.destination) {

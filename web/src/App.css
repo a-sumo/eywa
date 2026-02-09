@@ -3570,6 +3570,24 @@ body {
   margin-bottom: 2px;
 }
 
+.hub-steering-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.hub-steering-tool-pill {
+  font-size: 10px;
+  font-family: var(--font-sans);
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  letter-spacing: 0.2px;
+}
+
 .hub-steering-msg-content {
   line-height: 1.5;
   white-space: pre-wrap;

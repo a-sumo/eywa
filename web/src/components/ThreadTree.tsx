@@ -764,6 +764,13 @@ export function ThreadTree() {
                   <div className="hub-steering-msg-role">
                     {msg.role === "user" ? "You" : "Gemini"}
                   </div>
+                  {msg.toolCalls && msg.toolCalls.length > 0 && (
+                    <div className="hub-steering-tools">
+                      {msg.toolCalls.map((t, j) => (
+                        <span key={j} className="hub-steering-tool-pill">{t}</span>
+                      ))}
+                    </div>
+                  )}
                   <div className="hub-steering-msg-content">{msg.content}</div>
                 </div>
               ))}

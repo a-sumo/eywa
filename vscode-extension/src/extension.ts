@@ -12,6 +12,7 @@ import { injectSelection } from "./injectCommand";
 import { KnowledgeCodeLensProvider, registerKnowledgeForFileCommand } from "./knowledgeLens";
 import { startLoginFlow } from "./authServer";
 import { LiveViewProvider } from "./liveView";
+import type { AttentionItem } from "./client";
 
 const TAB_TITLE_FLAG = path.join(os.homedir(), ".config", "eywa", "tab-title");
 
@@ -35,6 +36,45 @@ export function activate(context: vscode.ExtensionContext) {
   const codeLensProvider = new KnowledgeCodeLensProvider(() => client);
   const liveProvider = new LiveViewProvider(() => client, getConfig("room"));
 
+  // Track attention items for badge and notifications
+  let knownAttentionAgents = new Set<string>();
+
+  liveProvider.setAttentionListener((items: AttentionItem[]) => {
+    // Update badge on Eywa view
+    const count = items.length;
+    if (count > 0) {
+      statusBarItem.text = `$(bell) Eywa: ${count} need${count === 1 ? "s" : ""} you`;
+      statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
+    } else {
+      updateStatusBar();
+      statusBarItem.backgroundColor = undefined;
+    }
+
+    // Badge on the view
+    liveProvider.setBadge(count);
+
+    // Fire native notifications for NEW distress/blocked items
+    for (const item of items) {
+      if (knownAttentionAgents.has(item.agent)) continue;
+      if (item.reason === "distress" || item.reason === "blocked") {
+        const short = item.agent.includes("/") ? item.agent.split("/").pop()! : item.agent;
+        const label = item.reason === "distress" ? "DISTRESS" : "BLOCKED";
+        vscode.window
+          .showWarningMessage(
+            `${label}: ${short} - ${item.summary.slice(0, 80)}`,
+            "Open Eywa",
+            "Dismiss",
+          )
+          .then((choice) => {
+            if (choice === "Open Eywa") {
+              vscode.commands.executeCommand("eywaLive.focus");
+            }
+          });
+      }
+    }
+    knownAttentionAgents = new Set(items.map((i) => i.agent));
+  });
+
   // Realtime event handler
   function handleRealtimeEvent(mem: MemoryPayload) {
     const meta = mem.metadata ?? {};
@@ -51,10 +91,21 @@ export function activate(context: vscode.ExtensionContext) {
         const from = (meta.from_agent as string) || mem.agent;
         const target = (meta.target_agent as string) || "all";
         const msg = `${from} injected context${target !== "all" ? ` to ${target}` : ""}`;
-        vscode.window.showWarningMessage(`URGENT: ${msg}`, "Open Dashboard").then((choice) => {
-          if (choice === "Open Dashboard") vscode.commands.executeCommand("eywa.openDashboard");
+        vscode.window.showWarningMessage(`URGENT: ${msg}`, "Open Eywa").then((choice) => {
+          if (choice === "Open Eywa") vscode.commands.executeCommand("eywaLive.focus");
         });
       }
+    }
+
+    // Distress signals get an immediate high-priority notification
+    if (event === "distress") {
+      const short = mem.agent.includes("/") ? mem.agent.split("/").pop()! : mem.agent;
+      vscode.window.showErrorMessage(
+        `Agent ${short} sent a distress signal and needs direction`,
+        "Open Eywa",
+      ).then((choice) => {
+        if (choice === "Open Eywa") vscode.commands.executeCommand("eywaLive.focus");
+      });
     }
 
     liveProvider.handleEvent(mem);

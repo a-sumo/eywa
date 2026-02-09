@@ -64,6 +64,26 @@ export interface SessionInfo {
   lastSeen: string;
 }
 
+export type AttentionReason = "distress" | "blocked" | "stopped" | "checkpoint" | "idle";
+
+export interface AttentionItem {
+  agent: string;
+  reason: AttentionReason;
+  summary: string;
+  ts: string;
+  sessionId: string;
+  /** Higher = more urgent. distress=4, blocked=3, stopped=2, checkpoint=1, idle=0 */
+  urgency: number;
+}
+
+const ATTENTION_URGENCY: Record<AttentionReason, number> = {
+  distress: 4,
+  blocked: 3,
+  stopped: 2,
+  checkpoint: 1,
+  idle: 0,
+};
+
 export class EywaClient {
   private supabase: SupabaseClient;
   private roomSlug: string;
@@ -354,6 +374,119 @@ export class EywaClient {
       });
     }
     return results;
+  }
+
+  /**
+   * Get agents that need human attention: distress signals, blocked progress,
+   * stopped sessions, recent checkpoints, and idle-after-active sessions.
+   */
+  async getAttentionItems(): Promise<AttentionItem[]> {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return [];
+
+    const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2 hours
+
+    // Parallel queries for different attention signals
+    const [distressRows, progressRows, sessionRows] = await Promise.all([
+      // Distress signals and checkpoints
+      this.supabase
+        .from("memories")
+        .select("agent,content,metadata,ts,session_id")
+        .eq("room_id", roomId)
+        .gt("ts", cutoff)
+        .in("metadata->>event", ["distress", "checkpoint"])
+        .order("ts", { ascending: false })
+        .limit(20),
+      // Blocked progress reports
+      this.supabase
+        .from("memories")
+        .select("agent,content,metadata,ts,session_id")
+        .eq("room_id", roomId)
+        .eq("metadata->>event", "progress")
+        .eq("metadata->>status", "blocked")
+        .gt("ts", cutoff)
+        .order("ts", { ascending: false })
+        .limit(20),
+      // Recent session lifecycle (done/end) to find stopped sessions
+      this.supabase
+        .from("memories")
+        .select("agent,content,metadata,ts,session_id")
+        .eq("room_id", roomId)
+        .gt("ts", cutoff)
+        .in("metadata->>event", ["session_done", "session_end"])
+        .order("ts", { ascending: false })
+        .limit(20),
+    ]);
+
+    const items: AttentionItem[] = [];
+    const seen = new Set<string>(); // dedupe per agent+reason
+
+    // Distress signals
+    for (const row of distressRows.data ?? []) {
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const event = meta.event as string;
+      const reason: AttentionReason = event === "distress" ? "distress" : "checkpoint";
+      const key = `${row.agent}:${reason}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const remaining = (meta.remaining as string) || "";
+      const task = (meta.task as string) || "";
+      items.push({
+        agent: row.agent,
+        reason,
+        summary: reason === "distress"
+          ? (remaining || task || "Context exhausted, needs direction").slice(0, 150)
+          : (task || "Checkpointed, may need direction").slice(0, 150),
+        ts: row.ts,
+        sessionId: row.session_id,
+        urgency: ATTENTION_URGENCY[reason],
+      });
+    }
+
+    // Blocked agents
+    for (const row of progressRows.data ?? []) {
+      const key = `${row.agent}:blocked`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      items.push({
+        agent: row.agent,
+        reason: "blocked",
+        summary: ((meta.detail as string) || (meta.task as string) || "Blocked, needs input").slice(0, 150),
+        ts: row.ts,
+        sessionId: row.session_id,
+        urgency: ATTENTION_URGENCY.blocked,
+      });
+    }
+
+    // Stopped sessions (done/end without a follow-up session_start from same agent)
+    for (const row of sessionRows.data ?? []) {
+      const key = `${row.agent}:stopped`;
+      if (seen.has(key)) continue;
+      // Skip if agent already has a distress or blocked item
+      if (seen.has(`${row.agent}:distress`) || seen.has(`${row.agent}:blocked`)) continue;
+      seen.add(key);
+
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      items.push({
+        agent: row.agent,
+        reason: "stopped",
+        summary: ((meta.summary as string) || "Session ended, awaiting direction").slice(0, 150),
+        ts: row.ts,
+        sessionId: row.session_id,
+        urgency: ATTENTION_URGENCY.stopped,
+      });
+    }
+
+    // Sort by urgency desc, then recency
+    items.sort((a, b) => {
+      if (a.urgency !== b.urgency) return b.urgency - a.urgency;
+      return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+    });
+
+    return items;
   }
 
   async inject(

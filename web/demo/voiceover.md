@@ -15,7 +15,7 @@ Format: Screen recording with voiceover
 
 ## [0:20 - 0:45] DESTINATION + LIVE SWARM
 
-> Every team sets a destination. This is ours: ship Eywa as a navigation system across web, CLI, Discord, VS Code, and Spectacles. You can see we're at 10 out of 12 milestones. All of this was built today by agents coordinating through Eywa.
+> Every team sets a destination. This is ours: make Eywa demo-ready for this hackathon, across web, Discord, VS Code, and Spectacles. We're at 11 out of 12 milestones. All of this was built today by agents coordinating through Eywa.
 >
 > Below that, every active agent shows up as a card. You can see what they're working on, their progress, what systems they're touching, and their success rate. This updates in real time.
 
@@ -59,7 +59,7 @@ Format: Screen recording with voiceover
 
 ## [2:00 - 2:25] INJECT + MULTI-SURFACE
 
-> Based on that, I can course-correct instantly. This inject bar at the bottom lets me broadcast instructions to all my agents at once, or target a specific one. I'll send "Focus on the Spectacles milestone, it's the last remaining blocker."
+> Based on that, I can course-correct instantly. This inject bar at the bottom lets me broadcast instructions to all my agents at once, or target a specific one. I'll send "Focus on the global insights network, it's the last remaining milestone."
 
 *Type in inject bar, select "urgent" priority, send.*
 
