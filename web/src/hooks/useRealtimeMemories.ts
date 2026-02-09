@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { supabase, type Memory } from "../lib/supabase";
 
 export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?: number) {
@@ -57,8 +57,24 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
     { name: string; lastSeen: string; sessionCount: number; isActive: boolean }[]
   >([]);
 
+  // Keep a mutable ref for incremental updates so we don't refetch everything
+  const agentMapRef = React.useRef<Map<string, { lastSeen: string; sessions: Set<string>; agents: Set<string> }>>(new Map());
+
+  const buildAgentList = useCallback(() => {
+    const now = Date.now();
+    setAgents(
+      Array.from(agentMapRef.current.entries()).map(([name, info]) => ({
+        name,
+        lastSeen: info.lastSeen,
+        sessionCount: info.sessions.size,
+        isActive: now - new Date(info.lastSeen).getTime() < 5 * 60 * 1000,
+      }))
+    );
+  }, []);
+
   const fetchAgents = useCallback(async () => {
     if (!roomId) {
+      agentMapRef.current.clear();
       setAgents([]);
       return;
     }
@@ -67,7 +83,8 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
       .from("memories")
       .select("agent, ts, session_id, metadata")
       .eq("room_id", roomId)
-      .order("ts", { ascending: false });
+      .order("ts", { ascending: false })
+      .limit(1000);
 
     if (sinceMs != null && sinceMs > 0) {
       query = query.gte("ts", new Date(Date.now() - sinceMs).toISOString());
@@ -77,7 +94,7 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
 
     if (!data) return;
 
-    // Group by user (from metadata) falling back to base agent name (strip -xxxx suffix)
+    // Rebuild map from scratch on initial fetch
     const map = new Map<string, { lastSeen: string; sessions: Set<string>; agents: Set<string> }>();
     for (const row of data) {
       const meta = (row.metadata ?? {}) as Record<string, unknown>;
@@ -95,16 +112,9 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
       }
     }
 
-    const now = Date.now();
-    setAgents(
-      Array.from(map.entries()).map(([name, info]) => ({
-        name,
-        lastSeen: info.lastSeen,
-        sessionCount: info.sessions.size,
-        isActive: now - new Date(info.lastSeen).getTime() < 5 * 60 * 1000,
-      }))
-    );
-  }, [roomId, sinceMs]);
+    agentMapRef.current = map;
+    buildAgentList();
+  }, [roomId, sinceMs, buildAgentList]);
 
   useEffect(() => {
     fetchAgents();
@@ -116,8 +126,27 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "memories", filter: `room_id=eq.${roomId}` },
-        () => {
-          fetchAgents();
+        (payload) => {
+          // Incremental update: merge new row into existing map
+          const row = payload.new as { agent: string; ts: string; session_id: string; metadata: Record<string, unknown> };
+          const meta = (row.metadata ?? {}) as Record<string, unknown>;
+          const user = (meta.user as string) ?? row.agent.split("/")[0];
+          const map = agentMapRef.current;
+          const existing = map.get(user);
+          if (!existing) {
+            map.set(user, {
+              lastSeen: row.ts,
+              sessions: new Set([row.session_id]),
+              agents: new Set([row.agent]),
+            });
+          } else {
+            existing.sessions.add(row.session_id);
+            existing.agents.add(row.agent);
+            if (new Date(row.ts) > new Date(existing.lastSeen)) {
+              existing.lastSeen = row.ts;
+            }
+          }
+          buildAgentList();
         }
       )
       .subscribe();
@@ -125,7 +154,7 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchAgents, roomId]);
+  }, [fetchAgents, roomId, buildAgentList]);
 
   return agents;
 }
