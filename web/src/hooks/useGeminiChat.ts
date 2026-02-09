@@ -107,11 +107,48 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
     if (!roomId || autoContextFetched.current) return;
     autoContextFetched.current = true;
 
-    executeTool(roomId, { name: "get_agent_status", args: {} }).then(
-      (result) => {
-        setAutoContext(result.response.result);
+    // Fetch agent status, distress signals, and patterns in parallel
+    Promise.all([
+      executeTool(roomId, { name: "get_agent_status", args: {} }),
+      executeTool(roomId, { name: "get_distress_signals", args: {} }),
+      executeTool(roomId, { name: "detect_patterns", args: {} }),
+    ]).then(([statusResult, distressResult, patternsResult]) => {
+      const parts: string[] = [statusResult.response.result];
+
+      const distressText = distressResult.response.result;
+      if (distressText && !distressText.includes("No distress signals") && !distressText.includes("appear healthy")) {
+        parts.push("\n" + distressText);
       }
-    );
+
+      const patternsText = patternsResult.response.result;
+      if (patternsText && !patternsText.includes("No significant patterns") && !patternsText.includes("No recent activity")) {
+        parts.push("\n" + patternsText);
+      }
+
+      setAutoContext(parts.join("\n"));
+
+      // If there are distress signals or patterns, show a proactive alert
+      const hasDistress = distressText && distressText.includes("UNRESOLVED DISTRESS");
+      const hasPatterns = patternsText && (
+        patternsText.includes("REDUNDANCY") ||
+        patternsText.includes("DIVERGENCE") ||
+        patternsText.includes("DISTRESS")
+      );
+
+      if (hasDistress || hasPatterns) {
+        const alertParts: string[] = [];
+        if (hasDistress) alertParts.push(distressText);
+        if (hasPatterns) alertParts.push(patternsText);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "model" as const,
+            content: alertParts.join("\n\n"),
+            ts: Date.now(),
+          },
+        ]);
+      }
+    });
   }, [roomId]);
 
   // Reset auto-context fetch flag when room changes
