@@ -44,6 +44,127 @@ body {
   overflow: hidden;
 }
 
+/* ============================================
+   Global Header (persistent across all pages)
+   ============================================ */
+
+.global-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.global-header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.6rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.global-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--aurora-cyan, #15D1FF);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+}
+
+.global-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.global-header-nav a {
+  color: rgba(240, 240, 245, 0.5);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.global-header-nav a:hover,
+.global-header-nav a.active {
+  color: rgba(240, 240, 245, 0.9);
+}
+
+.global-header-room {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: rgba(240, 240, 245, 0.4);
+  font-weight: 600;
+}
+
+.global-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.global-header-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(240, 240, 245, 0.6);
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.global-header-link:hover {
+  color: rgba(240, 240, 245, 0.9);
+}
+
+.global-header-cta {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 6px;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.12);
+  color: #c4b5fd;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.global-header-cta:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.6);
+}
+
+@media (max-width: 600px) {
+  .global-header-inner {
+    padding: 0.5rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .global-header-link {
+    display: none;
+  }
+
+  .global-header-cta {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+  }
+}
+
+/* ============================================ */
+
 .app-header {
   display: flex;
   align-items: center;
