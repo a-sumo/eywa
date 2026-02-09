@@ -287,7 +287,10 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
   return agents;
 }
 
-// --- Agent Topology Map ---
+// --- Agent Flow Map ---
+// Horizontal river: time flows left to right, destination on right edge.
+// Each agent is a lane. Active agents flow rightward with particles.
+// Idle agents stall on the left. Done agents reach the right.
 
 function AgentTopologyMap({
   agents,
@@ -312,176 +315,162 @@ function AgentTopologyMap({
     canvas.height = H * dpr;
     ctx.scale(dpr, dpr);
 
-    // Build node positions using deterministic layout from agent name
-    const centerX = W / 2;
-    const centerY = H / 2;
-    const maxRadius = Math.min(W, H) * 0.38;
+    // Layout: left margin for labels, right margin for destination
+    const LEFT = 80;
+    const RIGHT = W - 30;
+    const TOP = 12;
+    const BOTTOM = H - 12;
+    const LANE_W = RIGHT - LEFT;
 
-    interface Node {
-      x: number;
-      y: number;
-      r: number;
+    // Sort: active first, then done, then idle
+    const sorted = [...agents].sort((a, b) => {
+      const order: Record<string, number> = { active: 0, finished: 1, idle: 2 };
+      return (order[a.status] ?? 2) - (order[b.status] ?? 2);
+    });
+
+    // Limit visible lanes to avoid cramming
+    const maxLanes = Math.floor((BOTTOM - TOP) / 8);
+    const visible = sorted.slice(0, maxLanes);
+    const laneH = visible.length > 0 ? (BOTTOM - TOP) / visible.length : 12;
+
+    interface Lane {
       agent: AgentState;
+      y: number;        // center Y of lane
+      progress: number; // 0..1 how far right (active=0.7, done=1.0, idle=0.15..0.3)
       color: string;
-      systems: string[];
     }
 
-    const nodes: Node[] = agents.map((a, i) => {
-      // Hash agent name to angle
+    const lanes: Lane[] = visible.map((a, i) => {
+      // Hash for slight variation
       let hash = 0;
       for (let c = 0; c < a.agent.length; c++) {
         hash = ((hash << 5) - hash + a.agent.charCodeAt(c)) | 0;
       }
-      const angle = ((hash % 360) / 360) * Math.PI * 2;
+      const jitter = (Math.abs(hash) % 15) / 100;
 
-      // Distance from center based on status: active closer, idle farther
-      const distFraction =
-        a.status === "active" ? 0.35 + (i % 5) * 0.08
-        : a.status === "finished" ? 0.55 + (i % 4) * 0.08
-        : 0.75 + (i % 3) * 0.06;
-      const dist = maxRadius * Math.min(distFraction, 0.95);
-
-      // Size based on operation count
-      const r = Math.max(3, Math.min(8, 3 + Math.log2(a.opCount + 1)));
+      let progress: number;
+      if (a.status === "active") {
+        progress = 0.55 + jitter + Math.min(0.3, a.opCount * 0.02);
+      } else if (a.status === "finished") {
+        progress = 0.9 + jitter * 0.5;
+      } else {
+        progress = 0.08 + jitter * 2;
+      }
+      progress = Math.min(progress, 0.98);
 
       const color =
         a.status === "active" ? "#8b5cf6"
         : a.status === "finished" ? "#6ee7b7"
-        : "#64748b";
+        : "#475569";
 
       return {
-        x: centerX + Math.cos(angle) * dist,
-        y: centerY + Math.sin(angle) * dist,
-        r,
         agent: a,
+        y: TOP + i * laneH + laneH / 2,
+        progress,
         color,
-        systems: Array.from(a.systems),
       };
     });
 
-    // Find edges: shared systems between agents
-    interface Edge { a: number; b: number; color: string; }
-    const edges: Edge[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const shared = nodes[i].systems.filter((s) => nodes[j].systems.includes(s));
-        if (shared.length > 0) {
-          const color = SYSTEM_COLORS[shared[0]] || "#64748b";
-          edges.push({ a: i, b: j, color });
-        }
-      }
-    }
-
-    let flowOffset = 0;
+    let t = 0;
 
     function draw() {
       if (!ctx) return;
       ctx.clearRect(0, 0, W, H);
-      flowOffset += 0.003;
+      t += 0.004;
 
-      // Subtle radial gradient background
-      const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, maxRadius);
-      grad.addColorStop(0, "rgba(139, 92, 246, 0.04)");
-      grad.addColorStop(0.5, "rgba(6, 182, 212, 0.02)");
-      grad.addColorStop(1, "transparent");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
+      // Destination column: subtle glow on right edge
+      const destGrad = ctx.createLinearGradient(RIGHT - 20, 0, RIGHT + 10, 0);
+      destGrad.addColorStop(0, "transparent");
+      destGrad.addColorStop(0.7, "rgba(139, 92, 246, 0.06)");
+      destGrad.addColorStop(1, "rgba(139, 92, 246, 0.12)");
+      ctx.fillStyle = destGrad;
+      ctx.fillRect(RIGHT - 20, TOP, 50, BOTTOM - TOP);
 
-      // Orbit rings (very subtle)
-      ctx.strokeStyle = "rgba(139, 92, 246, 0.06)";
-      ctx.lineWidth = 0.5;
-      for (const frac of [0.35, 0.55, 0.75]) {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, maxRadius * frac, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      // Draw edges with flow
-      for (const e of edges) {
-        const na = nodes[e.a];
-        const nb = nodes[e.b];
-        ctx.strokeStyle = e.color + "20";
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(na.x, na.y);
-        ctx.lineTo(nb.x, nb.y);
-        ctx.stroke();
-      }
-
-      // Destination node at center
+      // Destination progress bar on right edge
       if (destination) {
         const done = destination.milestones.filter((m) => destination.progress[m]).length;
         const total = destination.milestones.length;
         const pct = total > 0 ? done / total : 0;
 
-        // Progress ring
-        ctx.strokeStyle = "rgba(139, 92, 246, 0.3)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 14, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.strokeStyle = pct === 1 ? "#34d399" : "#8b5cf6";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 14, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
-        ctx.stroke();
-
-        // Center glow
-        const cGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 18);
-        cGrad.addColorStop(0, "rgba(139, 92, 246, 0.15)");
-        cGrad.addColorStop(1, "transparent");
-        ctx.fillStyle = cGrad;
-        ctx.fillRect(centerX - 18, centerY - 18, 36, 36);
-
-        // Center dot
-        ctx.fillStyle = "#c4b5fd";
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
-        ctx.fill();
+        // Vertical progress bar
+        const barH = BOTTOM - TOP;
+        const barX = RIGHT + 2;
+        ctx.fillStyle = "rgba(139, 92, 246, 0.15)";
+        ctx.fillRect(barX, TOP, 4, barH);
+        ctx.fillStyle = pct === 1 ? "#34d399" : "#8b5cf6";
+        ctx.fillRect(barX, BOTTOM - barH * pct, 4, barH * pct);
       }
 
-      // Draw agent nodes
-      for (const node of nodes) {
-        // Glow for active
-        if (node.agent.status === "active") {
-          const pulse = 0.5 + 0.5 * Math.sin(flowOffset * 60 + node.x);
-          const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.r * 3);
-          glow.addColorStop(0, `rgba(139, 92, 246, ${0.15 * pulse})`);
-          glow.addColorStop(1, "transparent");
-          ctx.fillStyle = glow;
-          ctx.fillRect(node.x - node.r * 3, node.y - node.r * 3, node.r * 6, node.r * 6);
+      // Draw lanes
+      for (const lane of lanes) {
+        const x0 = LEFT;
+        const x1 = LEFT + LANE_W * lane.progress;
+        const y = lane.y;
+
+        // Lane trace (faint line from left to current position)
+        ctx.strokeStyle = lane.color + "18";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x0, y);
+        ctx.lineTo(x1, y);
+        ctx.stroke();
+
+        // Trail glow for active agents
+        if (lane.agent.status === "active") {
+          const trailGrad = ctx.createLinearGradient(x0, y, x1, y);
+          trailGrad.addColorStop(0, "transparent");
+          trailGrad.addColorStop(0.6, lane.color + "08");
+          trailGrad.addColorStop(1, lane.color + "20");
+          ctx.fillStyle = trailGrad;
+          ctx.fillRect(x0, y - laneH * 0.3, x1 - x0, laneH * 0.6);
         }
 
-        // Node
-        ctx.fillStyle = node.color;
+        // Agent dot at current position
+        const r = lane.agent.status === "active" ? 4 : lane.agent.status === "finished" ? 3 : 2.5;
+        ctx.fillStyle = lane.color;
         ctx.beginPath();
-        ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+        ctx.arc(x1, y, r, 0, Math.PI * 2);
         ctx.fill();
 
-        // Label for active agents
-        if (node.agent.status === "active") {
-          ctx.fillStyle = "rgba(255,255,255,0.5)";
-          ctx.font = "8px var(--font-sans)";
-          ctx.textAlign = "center";
-          ctx.fillText(
-            node.agent.agent.split("/")[1] || node.agent.agent,
-            node.x,
-            node.y + node.r + 10
-          );
+        // Pulse for active
+        if (lane.agent.status === "active") {
+          const pulse = 0.3 + 0.7 * Math.abs(Math.sin(t * 3 + lane.y * 0.1));
+          ctx.strokeStyle = lane.color + Math.round(pulse * 80).toString(16).padStart(2, "0");
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(x1, y, r + 3, 0, Math.PI * 2);
+          ctx.stroke();
         }
+
+        // Flow particles for active agents (moving right)
+        if (lane.agent.status === "active") {
+          for (let p = 0; p < 3; p++) {
+            const pt = ((t * 1.5 + p * 0.33 + lane.y * 0.002) % 1);
+            const px = x0 + (x1 - x0) * pt;
+            const alpha = Math.sin(pt * Math.PI) * 0.5;
+            ctx.fillStyle = `rgba(139, 92, 246, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(px, y, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Agent name label (left side)
+        const shortName = lane.agent.agent.split("/")[1] || lane.agent.agent;
+        ctx.fillStyle = lane.agent.status === "active" ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.25)";
+        ctx.font = `${Math.min(9, laneH * 0.7)}px var(--font-sans)`;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText(shortName, LEFT - 6, y);
       }
 
-      // Flow particles moving toward center (active agents only)
-      for (const node of nodes) {
-        if (node.agent.status !== "active") continue;
-        const t = ((flowOffset * 2 + node.x * 0.01) % 1);
-        const px = node.x + (centerX - node.x) * t;
-        const py = node.y + (centerY - node.y) * t;
-        ctx.fillStyle = `rgba(139, 92, 246, ${0.4 * (1 - t)})`;
-        ctx.beginPath();
-        ctx.arc(px, py, 1.5, 0, Math.PI * 2);
-        ctx.fill();
+      // Overflow indicator
+      if (agents.length > maxLanes) {
+        ctx.fillStyle = "rgba(255,255,255,0.2)";
+        ctx.font = "9px var(--font-sans)";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(`+${agents.length - maxLanes} more`, LEFT - 6, H - 2);
       }
 
       animRef.current = requestAnimationFrame(draw);
@@ -502,7 +491,7 @@ function AgentTopologyMap({
         <span className="hub-topology-dot" style={{ background: "#8b5cf6" }} /> active
         <span className="hub-topology-dot" style={{ background: "#6ee7b7" }} /> done
         <span className="hub-topology-dot" style={{ background: "#64748b" }} /> idle
-        <span className="hub-topology-center">&#9673;</span> destination
+        <span style={{ color: "rgba(255,255,255,0.3)", marginLeft: 8, fontSize: 10 }}>{"-->"} destination</span>
       </div>
     </div>
   );
