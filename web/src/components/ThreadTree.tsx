@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import { useParams } from "react-router-dom";
@@ -7,7 +7,45 @@ import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import { ConnectAgent } from "./ConnectAgent";
 
+// --- Destination ---
+
+interface Destination {
+  destination: string;
+  milestones: string[];
+  progress: Record<string, boolean>;
+  notes: string | null;
+  setBy: string;
+  updatedBy: string | null;
+  ts: string;
+}
+
+function extractDestination(memories: Memory[]): Destination | null {
+  for (const m of memories) {
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    if (meta.event === "destination" && m.message_type === "knowledge") {
+      return {
+        destination: (meta.destination as string) || "",
+        milestones: (meta.milestones as string[]) || [],
+        progress: (meta.progress as Record<string, boolean>) || {},
+        notes: (meta.notes as string) || null,
+        setBy: (meta.set_by as string) || m.agent,
+        updatedBy: (meta.last_updated_by as string) || null,
+        ts: m.ts,
+      };
+    }
+  }
+  return null;
+}
+
 // --- Types ---
+
+interface AgentProgress {
+  percent: number;
+  task: string;
+  status: string;
+  detail: string | null;
+  ts: string;
+}
 
 interface AgentOp {
   id: string;
@@ -28,10 +66,12 @@ interface AgentState {
   task: string;
   sessionId: string;
   systems: Set<string>;
+  actions: Set<string>;
   opCount: number;
   outcomes: { success: number; failure: number; blocked: number };
   lastSeen: string;
   recentOps: AgentOp[];
+  progress: AgentProgress | null;
 }
 
 interface DistressSignal {
@@ -184,18 +224,32 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
         task: task || (m.content ?? "").slice(0, 120),
         sessionId: m.session_id,
         systems: new Set(),
+        actions: new Set(),
         opCount: 0,
         outcomes: { success: 0, failure: 0, blocked: 0 },
         lastSeen: m.ts,
         recentOps: [],
+        progress: null,
       };
       agents.set(m.agent, state);
     }
 
     if (meta.system) state.systems.add(meta.system as string);
+    if (meta.action) state.actions.add(meta.action as string);
     if (meta.outcome === "success") state.outcomes.success++;
     else if (meta.outcome === "failure") state.outcomes.failure++;
     else if (meta.outcome === "blocked") state.outcomes.blocked++;
+
+    // Capture latest progress event
+    if (meta.event === "progress" && !state.progress) {
+      state.progress = {
+        percent: (meta.percent as number) ?? 0,
+        task: (meta.task as string) || "",
+        status: (meta.status as string) || "working",
+        detail: (meta.detail as string) || null,
+        ts: m.ts,
+      };
+    }
 
     state.opCount++;
     if (state.recentOps.length < 10) {
@@ -259,6 +313,8 @@ function AgentCard({
       : state.status === "finished"
         ? "hub-dot-finished"
         : "hub-dot-idle";
+  const totalOutcomes = state.outcomes.success + state.outcomes.failure + state.outcomes.blocked;
+  const successRate = totalOutcomes > 0 ? Math.round((state.outcomes.success / totalOutcomes) * 100) : null;
 
   return (
     <div
@@ -275,12 +331,50 @@ function AgentCard({
         <span className="hub-agent-meta">{timeAgo(state.lastSeen)}</span>
         <span className="hub-chevron">{expanded ? "\u25B2" : "\u25BC"}</span>
       </div>
+      {/* Progress bar */}
+      {state.progress && (
+        <div className="hub-progress-bar">
+          <div className="hub-progress-track">
+            <div
+              className="hub-progress-fill"
+              style={{
+                width: `${state.progress.percent}%`,
+                background: state.progress.status === "blocked"
+                  ? "#fcd34d"
+                  : state.progress.percent === 100
+                    ? "#34d399"
+                    : "#8b5cf6",
+              }}
+            />
+          </div>
+          <span className="hub-progress-pct">{state.progress.percent}%</span>
+          {state.progress.status !== "working" && (
+            <span className="hub-pill" style={{
+              background: state.progress.status === "blocked" ? "#fcd34d18" : "#67e8f918",
+              color: state.progress.status === "blocked" ? "#fcd34d" : "#67e8f9",
+            }}>
+              {state.progress.status}
+            </span>
+          )}
+          {state.progress.detail && (
+            <span className="hub-progress-detail">{state.progress.detail}</span>
+          )}
+        </div>
+      )}
       <div className="hub-agent-task">{state.task}</div>
-      {systemsList.length > 0 && (
+      {(systemsList.length > 0 || successRate !== null) && (
         <div className="hub-agent-systems">
           {systemsList.map((s) => (
             <SystemPill key={s} system={s} />
           ))}
+          {successRate !== null && (
+            <span className="hub-success-rate" style={{
+              color: successRate > 80 ? "#6ee7b7" : successRate > 50 ? "#fcd34d" : "#fca5a5",
+            }}>
+              {successRate}% success
+              {state.outcomes.failure > 0 && ` (${state.outcomes.failure} fail)`}
+            </span>
+          )}
         </div>
       )}
       {expanded && (
@@ -422,6 +516,16 @@ export function ThreadTree() {
   const agentStates = useMemo(() => buildAgentStates(memories), [memories]);
   const distressSignals = useMemo(() => extractDistress(memories), [memories]);
   const unresolvedDistress = distressSignals.filter((d) => !d.resolved);
+  const destination = useMemo(() => extractDestination(memories), [memories]);
+
+  // Auto-expand active agents
+  useEffect(() => {
+    const active = new Set<string>();
+    for (const [agent, state] of agentStates) {
+      if (state.status === "active") active.add(agent);
+    }
+    setExpandedAgents((prev) => new Set([...prev, ...active]));
+  }, [agentStates]);
 
   const sortedAgents = useMemo(() => {
     const arr = Array.from(agentStates.values());
@@ -515,6 +619,55 @@ export function ThreadTree() {
           <span className="hub-stat"><b>{idleCount}</b> idle</span>
         </div>
       </div>
+
+      {/* Destination banner */}
+      {destination && (
+        <div className="hub-destination">
+          <div className="hub-destination-header">
+            <span className="hub-destination-label">Destination</span>
+            <span className="hub-activity-time">{timeAgo(destination.ts)}</span>
+          </div>
+          <div className="hub-destination-text">{destination.destination}</div>
+          {destination.milestones.length > 0 && (() => {
+            const done = destination.milestones.filter((m) => destination.progress[m]).length;
+            const total = destination.milestones.length;
+            const pct = Math.round((done / total) * 100);
+            return (
+              <>
+                <div className="hub-destination-progress">
+                  <div className="hub-destination-track">
+                    <div
+                      className="hub-destination-fill"
+                      style={{
+                        width: `${pct}%`,
+                        background: pct === 100
+                          ? "#34d399"
+                          : "linear-gradient(90deg, #8b5cf6, #06b6d4)",
+                      }}
+                    />
+                  </div>
+                  <span className="hub-destination-pct">
+                    {done}/{total} ({pct}%)
+                  </span>
+                </div>
+                <div className="hub-destination-milestones">
+                  {destination.milestones.map((m) => (
+                    <span
+                      key={m}
+                      className={`hub-milestone ${destination.progress[m] ? "hub-milestone-done" : ""}`}
+                    >
+                      {destination.progress[m] ? "\u2713 " : ""}{m}
+                    </span>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
+          {destination.notes && (
+            <div className="hub-destination-notes">{destination.notes}</div>
+          )}
+        </div>
+      )}
 
       {/* Distress alerts */}
       {unresolvedDistress.map((d) => (

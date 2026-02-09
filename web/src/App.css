@@ -3333,6 +3333,134 @@ body {
   margin-top: 4px;
 }
 
+/* Destination banner */
+.hub-destination {
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+
+.hub-destination-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hub-destination-label {
+  color: #a78bfa;
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hub-destination-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.hub-destination-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hub-destination-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hub-destination-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease-in-out;
+}
+
+.hub-destination-pct {
+  font-size: 0.75rem;
+  color: #a78bfa;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.hub-destination-milestones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.hub-milestone {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.hub-milestone-done {
+  background: rgba(52, 211, 153, 0.15);
+  color: #6ee7b7;
+  text-decoration: line-through;
+}
+
+.hub-destination-notes {
+  font-size: 0.75rem;
+  opacity: 0.5;
+  margin-top: 6px;
+}
+
+/* Per-agent progress bar */
+.hub-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 4px;
+}
+
+.hub-progress-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hub-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease-in-out;
+}
+
+.hub-progress-pct {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #a78bfa;
+  flex-shrink: 0;
+}
+
+.hub-progress-detail {
+  font-size: 0.7rem;
+  opacity: 0.4;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hub-success-rate {
+  font-size: 0.7rem;
+  margin-left: auto;
+}
+
 /* Sticky inject bar */
 .hub-inject-bar {
   position: fixed;
