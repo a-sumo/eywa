@@ -216,21 +216,21 @@ Spectacles have a bidirectional voice interface powered by Gemini Live. The user
 
 **Lens Studio setup:**
 
-The scene already has the required dependencies: `MicrophoneRecorder`, `DynamicAudioOutput`, `SnapCloudRequirements`, `Websocket requirements`, and `RealtimeTextureReceiver` (on the TilePanel). You just need to add EywaGeminiLive and wire them together.
+The scene already has the required dependencies: `MicrophoneRecorder`, `DynamicAudioOutput`, `SnapCloudRequirements`, `Websocket requirements`, and `TilePanel` (on the Panel object). You just need to add EywaGeminiLive and wire them together.
 
-1. Create a new SceneObject (right-click scene hierarchy, Add Empty)
-2. Name it "EywaVoice"
-3. Add `EywaGeminiLive` as a script component (Add Component, Script, select `Assets/EywaGeminiLive.ts`)
+1. Right-click the scene hierarchy, select Add Empty. Name it "EywaVoice".
+2. Select EywaVoice, click Add Component, select Script.
+3. In the Script component's asset field, select `Assets/EywaGeminiLive.ts`.
 4. Wire inputs in the inspector:
-   - `websocketRequirementsObj` - drag the "Websocket requirements" SceneObject from the scene hierarchy
-   - `dynamicAudioOutput` - drag one of the existing `DynamicAudioOutput` objects
-   - `microphoneRecorder` - drag one of the existing `MicrophoneRecorder` objects
-   - `textDisplay` - drag a Text component (create one under EywaVoice if needed, or use an existing `TextOutput`)
-   - `realtimeReceiver` - drag the `RealtimeTextureReceiver` component from the `TilePanel` object
-   - `snapCloudRequirements` - drag the `SnapCloudRequirements` object from the scene
+   - `websocketRequirementsObj` - drag "Websocket requirements" from the scene hierarchy (under RemoteServiceGatewayExamples > External Hosted Examples)
+   - `dynamicAudioOutput` - drag the `DynamicAudioOutput` object (child of Websocket requirements)
+   - `microphoneRecorder` - drag the `MicrophoneRecorder` object (child of Websocket requirements)
+   - `textDisplay` - (optional) drag a Text component for on-screen transcription display. Create one under EywaVoice or use an existing TextOutput.
+   - `tilePanel` - drag the `Panel` object (under Camera Object > Marker_Cube...). This is the TilePanel that handles the Supabase broadcast channel.
+   - `snapCloudRequirements` - drag "[SnapCloudRequirements]" from the scene hierarchy
 5. Set `voice` to a Gemini voice (Kore, Puck, Aoede, or Zephyr)
 
-The room slug is derived automatically from the `RealtimeTextureReceiver`'s channel name (defaults to "demo"), so there is no separate room slug to configure.
+The room slug is derived automatically from the TilePanel's `channelName` property (defaults to "demo"), so there is no separate room slug to configure.
 
 **Testing without Spectacles:**
 
