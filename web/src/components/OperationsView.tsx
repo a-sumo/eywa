@@ -407,9 +407,18 @@ export function OperationsView() {
   // Global stats
   const totalOps = sortedAgents.reduce((sum, a) => sum + a.opCount, 0);
   const allSystems = new Set<string>();
+  const globalOutcomes = { success: 0, failure: 0, blocked: 0 };
   for (const a of sortedAgents) {
     for (const s of a.systems) allSystems.add(s);
+    globalOutcomes.success += a.outcomes.success;
+    globalOutcomes.failure += a.outcomes.failure;
+    globalOutcomes.blocked += a.outcomes.blocked;
   }
+  const checkpointCount = memories.filter((m) => {
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    return meta.event === "checkpoint";
+  }).length;
+  const finishedAgents = sortedAgents.filter((a) => a.status === "finished");
 
   if (loading) {
     return <div className="ops-view" style={{ padding: "2rem", opacity: 0.4 }}>Loading operations...</div>;
@@ -453,19 +462,32 @@ export function OperationsView() {
         .ops-feed-time { opacity: 0.25; font-size: 10px; flex-shrink: 0; font-family: monospace; }
       `}</style>
 
-      {/* Header stats */}
-      <div className="ops-header">
-        <h2 style={{ margin: 0, fontSize: "16px" }}>Operations</h2>
-        <span className="ops-stat"><b>{activeAgents.length}</b> active</span>
-        <span className="ops-stat">{sortedAgents.length} agents</span>
-        <span className="ops-stat">{totalOps} ops</span>
-        <span className="ops-stat">{allSystems.size} systems</span>
+      {/* Course status */}
+      <div className="ops-header" style={{ flexDirection: "column", alignItems: "stretch", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <h2 style={{ margin: 0, fontSize: "16px" }}>Course</h2>
+          <span className="ops-stat"><b style={{ color: "#34d399" }}>{activeAgents.length}</b> active</span>
+          <span className="ops-stat"><b>{finishedAgents.length}</b> done</span>
+          <span className="ops-stat">{totalOps} ops</span>
+          {unresolvedDistress.length > 0 && (
+            <span className="ops-stat" style={{ color: "#ef4444" }}><b>{unresolvedDistress.length}</b> distress</span>
+          )}
+          {globalOutcomes.failure > 0 && (
+            <span className="ops-stat" style={{ color: "#fca5a5" }}><b>{globalOutcomes.failure}</b> failures</span>
+          )}
+          {globalOutcomes.blocked > 0 && (
+            <span className="ops-stat" style={{ color: "#fcd34d" }}><b>{globalOutcomes.blocked}</b> blocked</span>
+          )}
+          {checkpointCount > 0 && (
+            <span className="ops-stat"><b>{checkpointCount}</b> checkpoints</span>
+          )}
+        </div>
         {allSystems.size > 0 && (
-          <span style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}>
             {Array.from(allSystems).map((s) => (
               <OpBadge key={s} label={s} color={SYSTEM_COLORS[s] || "#a78bfa"} />
             ))}
-          </span>
+          </div>
         )}
       </div>
 
