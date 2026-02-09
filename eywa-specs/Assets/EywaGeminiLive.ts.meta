@@ -1,0 +1,70 @@
+- !<AssetImportMetadata/4aac8c16-9927-4a18-bec0-ab06fbe8d60c>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 61a19bb3-d062-4aa2-87c8-5a42b368b3f3
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 61a19bb3-d062-4aa2-87c8-5a42b368b3f3
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 57ec2a56-a15f-48e5-b823-075aa379b80d
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/57ec2a56-a15f-48e5-b823-075aa379b80d>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  ComponentUid: da0e1c26-d168-4f6a-87b7-3c9421d58ec0
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    dynamicAudioOutput: false
+    microphoneRecorder: false
+    snapCloudRequirements: false
+    textDisplay: false
+    tilePanel: false
+    voice: false
+    websocketRequirementsObj: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - websocketRequirementsObj: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      dynamicAudioOutput: !<MappingBased.AssignableType> 00000000-0000-0000-0000-000000000000
+      microphoneRecorder: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      textDisplay: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      tilePanel: !<MappingBased.AssignableType_2> 00000000-0000-0000-0000-000000000000
+      snapCloudRequirements: !<MappingBased.AssignableType_3> 00000000-0000-0000-0000-000000000000
+      voice: Kore
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"Eywa voice interface: talk to Gemini about your agent swarm"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"group_start", "label":"Setup"}'
+    - // @input SceneObject websocketRequirementsObj
+    - // @input AssignableType dynamicAudioOutput
+    - // @input AssignableType_1 microphoneRecorder
+    - // @input Component.Text textDisplay
+    - // @input AssignableType_2 tilePanel
+    - // @input AssignableType_3 snapCloudRequirements
+    - '// @ui {"widget":"group_end"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"group_start", "label":"Voice"}'
+    - '// @input string voice = "Kore" {"widget":"combobox", "values":[{"label":"Puck", "value":"Puck"}, {"label":"Kore", "value":"Kore"}, {"label":"Aoede", "value":"Aoede"}, {"label":"Zephyr", "value":"Zephyr"}]}'
+    - '// @ui {"widget":"group_end"}'

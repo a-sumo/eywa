@@ -19,7 +19,7 @@ import { GeminiTypes } from "RemoteServiceGateway.lspkg/HostedExternal/GoogleGen
 import { AudioProcessor } from "RemoteServiceGateway.lspkg/Helpers/AudioProcessor";
 import { DynamicAudioOutput } from "RemoteServiceGateway.lspkg/Helpers/DynamicAudioOutput";
 import { MicrophoneRecorder } from "RemoteServiceGateway.lspkg/Helpers/MicrophoneRecorder";
-import { RealtimeTextureReceiver } from './RealtimeTextureReceiver';
+import { TilePanel } from './TilePanel';
 import { SnapCloudRequirements } from './SnapCloudRequirements';
 
 @component
@@ -35,7 +35,7 @@ export class EywaGeminiLive extends BaseScriptComponent {
   @input private dynamicAudioOutput: DynamicAudioOutput;
   @input private microphoneRecorder: MicrophoneRecorder;
   @input @allowUndefined private textDisplay: Text;
-  @input private realtimeReceiver: RealtimeTextureReceiver;
+  @input private tilePanel: TilePanel;
   @input private snapCloudRequirements: SnapCloudRequirements;
   @ui.group_end
 
@@ -67,15 +67,15 @@ export class EywaGeminiLive extends BaseScriptComponent {
   }
 
   private async initialize() {
-    // Derive room slug from the RealtimeTextureReceiver's channel name.
+    // Derive room slug from the TilePanel's channel name.
     // This keeps voice queries in sync with whatever room the broadcast
     // channel is connected to, instead of hardcoding a slug.
-    if (this.realtimeReceiver) {
-      this.roomSlug = this.realtimeReceiver.getChannelName() || "demo";
+    if (this.tilePanel) {
+      this.roomSlug = this.tilePanel.channelName || "demo";
     } else {
       this.roomSlug = "demo";
     }
-    print("[EywaGeminiLive] Room slug (from receiver): " + this.roomSlug);
+    print("[EywaGeminiLive] Room slug (from TilePanel): " + this.roomSlug);
 
     this.dynamicAudioOutput.initialize(24000);
     this.microphoneRecorder.setSampleRate(16000);
@@ -410,8 +410,10 @@ export class EywaGeminiLive extends BaseScriptComponent {
    * Send an event to the web dashboard via the broadcast channel.
    */
   private relayToWeb(event: string, payload: any) {
-    if (!this.realtimeReceiver) return;
-    this.realtimeReceiver.sendEvent(event, payload);
+    if (!this.tilePanel) return;
+    const receiver = this.tilePanel.getReceiver();
+    if (!receiver) return;
+    receiver.sendEvent(event, payload);
   }
 
   private updateText(text: string) {

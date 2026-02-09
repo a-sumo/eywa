@@ -1,5 +1,4 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import EywaLogo from "./EywaLogo";
 
 const integrations = [
   { id: "claude-code", name: "Claude Code", tag: "CLI" },
@@ -17,24 +16,6 @@ export function DocsLayout() {
 
   return (
     <div className="docs-layout">
-      <header className="docs-header">
-        <Link to="/" className="docs-logo">
-          <EywaLogo size={32} />
-          <span>Eywa</span>
-        </Link>
-        <nav className="docs-nav">
-          <Link to="/docs" className={location.pathname === "/docs" ? "active" : ""}>
-            Overview
-          </Link>
-          <Link
-            to="/docs/integrations/claude-code"
-            className={location.pathname.includes("/integrations") ? "active" : ""}
-          >
-            Integrations
-          </Link>
-        </nav>
-      </header>
-
       <div className="docs-container">
         <aside className="docs-sidebar">
           <div className="docs-sidebar-section">
@@ -59,6 +40,35 @@ export function DocsLayout() {
                 <span className="docs-sidebar-tag">{item.tag}</span>
               </Link>
             ))}
+          </div>
+
+          <div className="docs-sidebar-section">
+            <h3>Surfaces</h3>
+            <Link to="/docs/cli" className={location.pathname === "/docs/cli" ? "active" : ""}>
+              CLI
+            </Link>
+            <Link to="/docs/vscode" className={location.pathname === "/docs/vscode" ? "active" : ""}>
+              VS Code Extension
+            </Link>
+            <Link to="/docs/discord" className={location.pathname === "/docs/discord" ? "active" : ""}>
+              Discord Bot
+            </Link>
+            <Link to="/docs/spectacles" className={location.pathname === "/docs/spectacles" ? "active" : ""}>
+              Spectacles AR
+            </Link>
+            <Link to="/docs/pi-displays" className={location.pathname === "/docs/pi-displays" ? "active" : ""}>
+              Pi Displays
+            </Link>
+          </div>
+
+          <div className="docs-sidebar-section">
+            <h3>Reference</h3>
+            <Link to="/docs/architecture" className={location.pathname === "/docs/architecture" ? "active" : ""}>
+              Architecture
+            </Link>
+            <Link to="/docs/self-hosting" className={location.pathname === "/docs/self-hosting" ? "active" : ""}>
+              Self-Hosting
+            </Link>
           </div>
 
           <div className="docs-sidebar-section">
@@ -173,7 +183,7 @@ export function DocsOverview() {
       <ul>
         <li><strong>Web Dashboard</strong> - HubView with agent map, destination banner, Gemini chat, activity stream, and inject bar</li>
         <li><strong>VS Code Extension</strong> - Sidebar with agent avatars, activity feed, attention notifications, and agent detail panel next to terminals</li>
-        <li><strong>Discord Bot</strong> - 14 slash commands for team steering: <code>/destination</code>, <code>/course</code>, <code>/status</code>, <code>/inject</code>, and more</li>
+        <li><strong>Discord Bot</strong> - 15 slash commands for team steering: <code>/destination</code>, <code>/course</code>, <code>/status</code>, <code>/inject</code>, and more</li>
         <li><strong>CLI</strong> - <code>npx eywa-ai init</code> for zero-auth room setup, plus status, inject, and log commands</li>
         <li><strong>Spectacles AR</strong> - Activity log, Gemini chat, and destination progress as floating AR panels via Supabase Realtime</li>
       </ul>

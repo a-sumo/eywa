@@ -2,7 +2,6 @@ import { type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useRoomContext } from "../context/RoomContext";
 import { AgentList } from "./AgentList";
-import { RoomHeader } from "./RoomHeader";
 
 interface RoomLayoutProps {
   children: ReactNode;
@@ -34,12 +33,6 @@ export function RoomLayout({ children }: RoomLayoutProps) {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <Link to="/" className="logo-link">
-          <h1>Eywa</h1>
-        </Link>
-        <RoomHeader />
-      </header>
       <div className="app-body">
         <aside className="sidebar">
           <AgentList />
@@ -50,10 +43,7 @@ export function RoomLayout({ children }: RoomLayoutProps) {
       </div>
       <nav className="mobile-tabs">
         <Link to={`/r/${slug}`}>Hub</Link>
-        <Link to={`/r/${slug}/ops`}>Ops</Link>
-        <Link to={`/r/${slug}/knowledge`}>Network</Link>
-        <Link to={`/r/${slug}/workspace`}>Workspace</Link>
-        <Link to={`/r/${slug}/chat`}>Chat</Link>
+        <Link to={`/r/${slug}/knowledge`}>Knowledge</Link>
         <Link to={`/r/${slug}/graph`}>Graph</Link>
       </nav>
     </div>

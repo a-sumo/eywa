@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useRoom } from "../hooks/useRoom";
 import { FlowBackground } from "./FlowBackground";
@@ -122,67 +121,12 @@ const IconDiscord = () => (
 
 export function Landing() {
   const { createRoom, createDemoRoom, creating, error } = useRoom();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="landing-dark">
       <FlowBackground />
 
-      {/* Header */}
-      <header className="landing-header">
-        <div className="landing-header-inner">
-          <a href="/" className="landing-logo">
-            <EywaLogo size={36} />
-            <span>Eywa</span>
-          </a>
-          <nav className="landing-nav">
-            <a href="#features">Features</a>
-            <a href="/docs">Docs</a>
-            <a href="#pricing">Pricing</a>
-            <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">Contact</a>
-          </nav>
-          <div className="landing-header-actions">
-            <a href="/docs" className="landing-nav-link">Docs</a>
-            <button className="landing-nav-link" onClick={() => createDemoRoom()} disabled={creating}>Try Demo</button>
-            <button
-              className="btn-landing-primary"
-              onClick={() => createRoom()}
-              disabled={creating}
-            >
-              {creating ? "Creating..." : "Get Started"}
-            </button>
-          </div>
-          <button
-            className="mobile-menu-btn"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Open menu"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      {/* Mobile menu overlay */}
-      <div className={`mobile-menu${menuOpen ? " open" : ""}`}>
-        <button className="mobile-menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">
-          ×
-        </button>
-        <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
-        <a href="/docs" onClick={() => setMenuOpen(false)}>Docs</a>
-        <a href="#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
-        <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Contact</a>
-        <button onClick={() => { createDemoRoom(); setMenuOpen(false); }} disabled={creating}>Try Demo</button>
-        <button
-          onClick={() => { createRoom(); setMenuOpen(false); }}
-          disabled={creating}
-        >
-          {creating ? "Creating..." : "Get Started"}
-        </button>
-      </div>
+      {/* Header is now the global AppHeader in App.tsx */}
 
       {/* Hero */}
       <section className="landing-hero-dark">
@@ -351,7 +295,7 @@ export function Landing() {
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconChat /></div>
             <h3>Discord & CLI</h3>
-            <p>12 slash commands for team steering from Discord. Zero-auth CLI for room setup, status checks, and context injection from your terminal.</p>
+            <p>15 slash commands for team steering from Discord. Zero-auth CLI for room setup, status checks, and context injection from your terminal.</p>
           </div>
         </div>
       </section>

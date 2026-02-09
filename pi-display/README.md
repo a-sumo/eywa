@@ -23,7 +23,7 @@ Run these after wiring to verify hardware before using the full Eywa apps:
 | Script | What it tests | Display needed? |
 |--------|--------------|----------------|
 | `test_tft.py` | TFT color bars, text rendering, touch input | TFT (or `--window` for laptop) |
-| `test_eink.py` | E-ink 7-color swatches, shapes, pixel grid | E-ink (or `--preview` for PNG) |
+| `test_eink.py` | E-ink 7-color swatches, shapes, pixel grid | E-ink (or `--preview` for PNG, `--clear` to wipe display) |
 | `test_touch.py` | Raw touch events, coordinate ranges, device detection | None (reads kernel input) |
 
 ## E-Ink Setup (Waveshare 5.65" ACeP)
@@ -59,7 +59,10 @@ export SUPABASE_KEY="your-anon-key"
 # Test once (saves preview to /tmp/eywa_eink_preview.png)
 python eink_display.py --room demo --once
 
-# Run continuously (60s refresh)
+# Run continuously (default 300s/5min refresh)
+python eink_display.py --room demo
+
+# Custom interval (60s)
 python eink_display.py --room demo --interval 60
 ```
 
@@ -80,7 +83,7 @@ User=pi
 Environment=SUPABASE_URL=https://your-project.supabase.co
 Environment=SUPABASE_KEY=your-anon-key
 WorkingDirectory=/home/pi/eywa/pi-display
-ExecStart=/usr/bin/python3 eink_display.py --room demo --interval 60
+ExecStart=/usr/bin/python3 eink_display.py --room demo
 Restart=always
 
 [Install]
@@ -118,7 +121,7 @@ The two displays serve different roles:
 - Matte e-ink has zero reflections, making it reliable for Spectacles image tracking
 - A fixed tracking marker in the top-right corner anchors the AR UI to the physical display
 - No touch input. Spectacles provide interaction via hand tracking and pinch gestures
-- Refreshes every 60s with agent status, activity feed, and room QR code
+- Refreshes every 5 minutes by default (configurable via `--interval`) with agent status, room info, and tracking marker
 - Low power. Runs for hours on a battery pack.
 
 **TFT touch (glossy LCD) - interactive control surface**

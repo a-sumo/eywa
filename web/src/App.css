@@ -552,10 +552,31 @@ body {
   font-size: 0.9rem;
   font-weight: 500;
   transition: color 0.2s;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .landing-nav-link:hover {
   color: #f0f0f5;
+}
+
+.landing-footer-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(240, 240, 245, 0.5);
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.landing-footer-link-btn:hover {
+  color: rgba(240, 240, 245, 0.8);
 }
 
 /* Mobile hamburger menu */

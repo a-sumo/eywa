@@ -13,7 +13,7 @@ Observability and coordination layer for human + AI teams. Each person on a team
 
 - `worker/` - Cloudflare Worker MCP server (Streamable HTTP). Supabase PostgREST wrapper, tool registration.
 - `web/` - React/Vite web dashboard. Supabase JS SDK, realtime subscriptions.
-- `discord-bot/` - Discord bot (discord.js + direct Supabase). 12 slash commands for team observability from chat.
+- `discord-bot/` - Discord bot (discord.js + direct Supabase). 15 slash commands for team observability from chat.
 - `eywa-specs/` - Lens Studio project for Snap Spectacles AR panel.
 - `vscode-extension/` - VS Code extension: agent tree sidebar, activity feed, context injection, knowledge lens.
 - `cli/` - `npx eywa-ai` CLI for zero-auth room setup and agent management.
@@ -44,7 +44,7 @@ Key rules for any UI work:
 
 - Lives in `discord-bot/`. Run with `npm start`, deploy commands with `npm run deploy -- <guild_id>`.
 - Uses direct Supabase queries, not MCP. Messages from Discord show as `discord/<username>`.
-- Slash commands: help, room, status, agents, context, search, recall, inject, inbox, knowledge, learn, msg, destination, course.
+- Slash commands: help, room, status, agents, context, search, recall, inject, inbox, knowledge, learn, msg, destination, course, network.
 
 ## Worker (MCP Server)
 

@@ -105,7 +105,22 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
 
     view.webview.onDidReceiveMessage(async (msg) => {
       if (msg.type === "setRoom") vscode.commands.executeCommand("eywa.setRoom");
-      else if (msg.type === "inject") vscode.commands.executeCommand("eywa.injectContext");
+      else if (msg.type === "inject") {
+        if (msg.targetAgent) {
+          // Quick inject to a specific agent from detail panel
+          const client = this.getClient();
+          if (!client) return;
+          const content = await vscode.window.showInputBox({
+            prompt: `Inject context to ${msg.targetAgent}`,
+            placeHolder: "Context or instructions...",
+          });
+          if (!content) return;
+          await client.inject("vscode-user", msg.targetAgent, content, "normal");
+          vscode.window.showInformationMessage(`Injected to ${msg.targetAgent}`);
+        } else {
+          vscode.commands.executeCommand("eywa.injectContext");
+        }
+      }
       else if (msg.type === "openDashboard") vscode.commands.executeCommand("eywa.openDashboard");
       else if (msg.type === "refresh") this.loadInitial();
       else if (msg.type === "attentionReply") {
@@ -407,9 +422,10 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   .agent-chip {
     display: flex; flex-direction: column; align-items: center;
     padding: 4px 6px; border-radius: 4px; min-width: 52px;
-    cursor: default;
+    cursor: pointer;
   }
   .agent-chip:hover { background: var(--vscode-list-hoverBackground); }
+  .agent-chip.selected { background: var(--vscode-list-activeSelectionBackground); }
   .agent-chip .av-wrap {
     position: relative; width: 32px; height: 32px; margin-bottom: 3px;
   }
@@ -458,8 +474,44 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     display: -webkit-box; -webkit-line-clamp: 2;
     -webkit-box-orient: vertical; overflow: hidden;
     line-height: 1.35;
+    cursor: pointer;
+  }
+  .feed-text.expanded {
+    -webkit-line-clamp: unset; display: block;
   }
   .feed-time { font-size: 9px; opacity: 0.3; margin-top: 2px; }
+
+  /* Agent detail panel (shown below strip on click) */
+  .agent-detail {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-editor-background);
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .agent-detail .detail-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
+  .agent-detail .detail-body { flex: 1; min-width: 0; }
+  .agent-detail .detail-name { font-size: 12px; font-weight: 600; }
+  .agent-detail .detail-status {
+    display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px;
+    margin-left: 6px; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .agent-detail .detail-status.active { background: rgba(63,185,80,0.15); color: #3fb950; }
+  .agent-detail .detail-status.idle { background: rgba(210,153,34,0.15); color: #d29922; }
+  .agent-detail .detail-status.finished { background: rgba(139,148,158,0.15); color: #8b949e; }
+  .agent-detail .detail-task { font-size: 11px; opacity: 0.7; margin-top: 3px; line-height: 1.35; }
+  .agent-detail .detail-progress {
+    margin-top: 4px; height: 3px; background: rgba(128,128,128,0.15);
+    border-radius: 2px; overflow: hidden;
+  }
+  .agent-detail .detail-progress-fill { height: 100%; border-radius: 2px; }
+  .agent-detail .detail-meta { font-size: 10px; opacity: 0.4; margin-top: 3px; }
+  .agent-detail .detail-actions { display: flex; gap: 4px; margin-top: 5px; }
+  .agent-detail .detail-btn {
+    font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
+    border: 1px solid var(--vscode-input-border, rgba(128,128,128,0.3));
+    background: transparent; color: var(--vscode-foreground); font-family: inherit;
+  }
+  .agent-detail .detail-btn:hover { background: var(--vscode-toolbar-hoverBackground); }
 
   /* States */
   .state-msg { text-align: center; padding: 32px 16px; }
@@ -575,6 +627,18 @@ function timeAgo(ts) {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+let selectedAgent = null;
+let lastData = null;
+
+function selectAgent(name) {
+  selectedAgent = selectedAgent === name ? null : name;
+  if (lastData) render(lastData);
+}
+
+function toggleFeedItem(el) {
+  el.classList.toggle('expanded');
+}
+
 function sendAttn(input) {
   const agent = input.dataset.agent;
   const content = input.value.trim();
@@ -601,6 +665,7 @@ function render(data) {
     return;
   }
 
+  lastData = data;
   const { agents, activity, room, avatars, destination, agentProgress, attention } = data;
   const active = agents.filter(a => a.status === 'active').length;
   const progressMap = {};
@@ -742,7 +807,8 @@ function render(data) {
       const src = avatars[a.name] || '';
       const ap = progressMap[a.name];
       const progTitle = ap ? '\\n' + ap.percent + '% ' + (ap.status || '') : '';
-      html += '<div class="agent-chip ' + a.status + '" title="' + esc(a.name) + '\\n' + esc(a.task) + progTitle + '">'
+      const isSelected = selectedAgent === a.name;
+      html += '<div class="agent-chip ' + a.status + (isSelected ? ' selected' : '') + '" onclick="selectAgent(\\'' + esc(a.name).replace(/'/g, "\\\\'") + '\\')" title="' + esc(a.name) + '">'
         + '<div class="av-wrap"><img class="av-img" src="' + src + '" alt="' + esc(shortName(a.name)) + '"/><span class="dot"></span></div>'
         + '<div class="name">' + esc(shortName(a.name)) + '</div>';
       if (ap) {
@@ -752,6 +818,33 @@ function render(data) {
       html += '</div>';
     }
     html += '</div>';
+
+    // Agent detail panel (expanded below strip when an agent is selected)
+    if (selectedAgent) {
+      const sa = agents.find(a => a.name === selectedAgent);
+      if (sa) {
+        const src = avatars[sa.name] || '';
+        const ap = progressMap[sa.name];
+        html += '<div class="agent-detail">';
+        html += '<img class="detail-avatar" src="' + src + '" alt=""/>';
+        html += '<div class="detail-body">';
+        html += '<span class="detail-name">' + esc(sa.name) + '</span>';
+        html += '<span class="detail-status ' + sa.status + '">' + sa.status + '</span>';
+        if (sa.task) {
+          html += '<div class="detail-task">' + esc(sa.task) + '</div>';
+        }
+        if (ap) {
+          html += '<div class="detail-progress"><div class="detail-progress-fill" style="width:' + ap.percent + '%;background:' + (ap.status === 'blocked' ? '#d29922' : '#7946FF') + '"></div></div>';
+          html += '<div class="detail-meta">' + ap.percent + '% ' + (ap.status || 'working') + (ap.detail ? ' - ' + esc(ap.detail) : '') + '</div>';
+        }
+        html += '<div class="detail-meta">' + sa.memoryCount + ' memories, last seen ' + timeAgo(sa.lastSeen) + '</div>';
+        html += '<div class="detail-actions">';
+        html += '<button class="detail-btn" onclick="vscode.postMessage({type:\\'inject\\', targetAgent:\\'' + esc(sa.name).replace(/'/g, "\\\\'") + '\\'})">Inject</button>';
+        html += '<button class="detail-btn" onclick="vscode.postMessage({type:\\'openDashboard\\'})">Dashboard</button>';
+        html += '</div>';
+        html += '</div></div>';
+      }
+    }
   }
 
   // Activity feed
@@ -768,7 +861,7 @@ function render(data) {
       + '<span class="feed-agent">' + esc(shortName(ev.agent)) + '</span>'
       + '<span class="feed-type" style="background:' + dotColor + '" title="' + esc(ev.type) + '"></span>'
       + (ev.opTag ? '<span style="font-size:9px;opacity:0.5;margin-left:4px">' + esc(ev.opTag) + '</span>' : '')
-      + (ev.content ? '<div class="feed-text">' + esc(ev.content) + '</div>' : '')
+      + (ev.content ? '<div class="feed-text" onclick="toggleFeedItem(this)">' + esc(ev.content) + '</div>' : '')
       + '<div class="feed-time">' + timeAgo(ev.ts) + '</div>'
       + '</div></div>';
   }

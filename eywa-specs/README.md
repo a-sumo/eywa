@@ -34,8 +34,11 @@ The "DOM" for Spectacles. Manages a tree of quads inside a container. Receives s
 - `snapCloudRequirements` - SnapCloudRequirements reference
 - `channelName` - Room slug (e.g. "demo")
 - `deviceId` - Leave empty to auto-generate, "editor" for preview
+- `positionOffset` - Position offset from parent (center of panel)
 - `material` - Unlit material template (drag from Asset Browser)
 - `pixelsPerCm` - Scale factor (default 16)
+- `cameraObject` - Optional camera SceneObject override (for pose broadcasts)
+- `showStatus` - Show debug status text
 - `showTestQuads` - Toggle colored test quads for pipeline validation
 
 ### RealtimeTextureReceiver.ts
@@ -48,6 +51,14 @@ Also supports legacy modes: single-frame (`frame`) and tile-grid (`tile`).
 
 ### RealtimePanel.ts
 Fixed-grid mode (legacy). Creates a static NxM quad grid. Each quad has its own material. Simpler than TilePanel but less flexible - tiles can't be created/destroyed dynamically. Includes built-in cursor overlay for interaction feedback.
+
+### GestureLayoutController.ts
+Hand gesture recognition for spatial layout control. Uses SpectaclesInteractionKit hand tracking to detect three gestures:
+- **Clap** (hands together then apart) - expands layout zones outward
+- **Peace sign** (index + middle up, ring + pinky folded) - focuses the hovered group, pulling it closer
+- **Snap** (thumb + middle together then apart) - resets layout to default
+
+Sends `layout` events back to the web via RealtimeTextureReceiver with action types: `shift-zone`, `focus-group`, `reset-layout`.
 
 ### SnapCloudRequirements.ts
 Config bridge. Reads Supabase URL and anon key from the SupabaseProject asset (created via the Supabase Lens Studio plugin). Other scripts reference this instead of configuring Supabase directly.
@@ -73,8 +84,8 @@ EywaPanel             <- TilePanel script
 ### 4. Web broadcaster
 Navigate to `/r/{room-slug}/spectacles` in the Eywa web app. Click "Broadcast". The page renders tiles and streams them to any connected Spectacles device.
 
-### 4b. Production deployment (auto‑join)
-See `DEPLOYMENT.md` for the tracker‑based auto‑join flow. This replaces the manual “Broadcast” step for end users by encoding the room in the display’s tracking marker and anchoring the UI to the marker pose.
+### 4b. Production deployment (auto-join)
+See `DEPLOYMENT.md` for the tracker-based auto-join flow. This replaces the manual "Broadcast" step for end users by encoding the room in the display's tracking marker and anchoring the UI to the marker pose.
 
 ### 5. Test in editor
 Push to device or use Lens Studio preview. Check the Logger panel for:
@@ -101,15 +112,20 @@ Push to device or use Lens Studio preview. Check the Logger panel for:
 |-------|-----------|---------|
 | `scene` | web -> glasses | `{op, id, x, y, w, h, ...}` or `{ops: [...]}` |
 | `tex` | web -> glasses | `{id, image}` (image is raw base64 JPEG) |
-| `interact` | glasses -> web | `{id, type, timestamp}` (type: tap, hover, hover_exit) |
+| `interact` | glasses -> web | `{id, type, x, y, u, v, timestamp}` (type: tap, hover, hover_move, hover_exit) |
 | `device_connect` | glasses -> lobby | `{deviceId, channelName, timestamp}` |
 | `device_heartbeat` | glasses -> lobby | `{deviceId, channelName, timestamp}` |
+| `camera` | glasses -> web | `{x, y, z, wx, wy, wz, ts}` (local + world position) |
+| `layout` | glasses -> web | `{actions: [...], timestamp}` (gesture-driven layout changes) |
+| `sync_request` | glasses -> web | `{deviceId, timestamp}` (request full tile resync) |
 
 ### Scene ops
-- `create` - new quad: `{op:"create", id, x, y, w, h, layer, interactive}`
-- `move` - reposition: `{op:"move", id, x, y, s, layer, duration}`
+- `create` - new quad: `{op:"create", id, x, y, z, w, h, layer, group, interactive, s}`
 - `destroy` - remove quad: `{op:"destroy", id}`
 - `visibility` - show/hide: `{op:"visibility", id, visible}`
+- `group` - create/position a group container: `{op:"group", id, x, y, z, visible}`
+- `group-destroy` - remove a group and all its children: `{op:"group-destroy", id}`
+- `move` / `group-move` - currently ignored (static layout after creation)
 
 ## Ergonomics
 
@@ -144,7 +160,7 @@ Assign the SupabaseProject asset in the Inspector.
 **Quads visible but wrong size or position**
 - `pixelsPerCm` controls scaling: width_cm = pixel_width / pixelsPerCm
 - Positions are in cm, centered at the panel origin
-- Layer Z offsets: 0=0.05cm, 1=0.5cm, 2=1.0cm, 3=2.0cm
+- Layer Z offsets: 0=0.05cm, 1=1.5cm, 2=2.5cm, 3=3.5cm
 
 ## Marker Tracking (Optional)
 
@@ -196,7 +212,7 @@ Spectacles have a bidirectional voice interface powered by Gemini Live. The user
 3. Mic audio streams to Gemini Live via Snap's WebSocket proxy (no API key needed)
 4. Gemini responds with audio (played on the glasses) and text transcription
 5. Transcriptions relay to the web via the broadcast channel (`voice_input`, `voice_response`, `voice_inject` events)
-6. Gemini has an `inject_message` tool that writes directly to the Supabase memories table
+6. Gemini has an `inject_message` tool that writes directly to the Supabase memories table, making the message visible to all agents in the room
 
 **Lens Studio setup:**
 
