@@ -79,6 +79,9 @@ export function DocsLayout() {
             <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer">
               GitHub
             </a>
+            <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">
+              Discord
+            </a>
           </div>
         </aside>
 
