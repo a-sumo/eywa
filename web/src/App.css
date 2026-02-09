@@ -3418,6 +3418,47 @@ body {
   margin-top: 6px;
 }
 
+/* Agent topology map */
+.hub-topology {
+  margin: 0 -4px 12px;
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.hub-topology-canvas {
+  display: block;
+}
+
+.hub-topology-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 6px;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.3px;
+}
+
+.hub-topology-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.hub-topology-dot:first-child {
+  margin-left: 0;
+}
+
+.hub-topology-center {
+  color: #c4b5fd;
+  font-size: 10px;
+  margin-left: 8px;
+}
+
 /* Per-agent progress bar */
 .hub-progress-bar {
   display: flex;

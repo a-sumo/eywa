@@ -287,6 +287,227 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
   return agents;
 }
 
+// --- Agent Topology Map ---
+
+function AgentTopologyMap({
+  agents,
+  destination,
+}: {
+  agents: AgentState[];
+  destination: Destination | null;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+
+    // Build node positions using deterministic layout from agent name
+    const centerX = W / 2;
+    const centerY = H / 2;
+    const maxRadius = Math.min(W, H) * 0.38;
+
+    interface Node {
+      x: number;
+      y: number;
+      r: number;
+      agent: AgentState;
+      color: string;
+      systems: string[];
+    }
+
+    const nodes: Node[] = agents.map((a, i) => {
+      // Hash agent name to angle
+      let hash = 0;
+      for (let c = 0; c < a.agent.length; c++) {
+        hash = ((hash << 5) - hash + a.agent.charCodeAt(c)) | 0;
+      }
+      const angle = ((hash % 360) / 360) * Math.PI * 2;
+
+      // Distance from center based on status: active closer, idle farther
+      const distFraction =
+        a.status === "active" ? 0.35 + (i % 5) * 0.08
+        : a.status === "finished" ? 0.55 + (i % 4) * 0.08
+        : 0.75 + (i % 3) * 0.06;
+      const dist = maxRadius * Math.min(distFraction, 0.95);
+
+      // Size based on operation count
+      const r = Math.max(3, Math.min(8, 3 + Math.log2(a.opCount + 1)));
+
+      const color =
+        a.status === "active" ? "#8b5cf6"
+        : a.status === "finished" ? "#6ee7b7"
+        : "#64748b";
+
+      return {
+        x: centerX + Math.cos(angle) * dist,
+        y: centerY + Math.sin(angle) * dist,
+        r,
+        agent: a,
+        color,
+        systems: Array.from(a.systems),
+      };
+    });
+
+    // Find edges: shared systems between agents
+    interface Edge { a: number; b: number; color: string; }
+    const edges: Edge[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const shared = nodes[i].systems.filter((s) => nodes[j].systems.includes(s));
+        if (shared.length > 0) {
+          const color = SYSTEM_COLORS[shared[0]] || "#64748b";
+          edges.push({ a: i, b: j, color });
+        }
+      }
+    }
+
+    let flowOffset = 0;
+
+    function draw() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, W, H);
+      flowOffset += 0.003;
+
+      // Subtle radial gradient background
+      const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, maxRadius);
+      grad.addColorStop(0, "rgba(139, 92, 246, 0.04)");
+      grad.addColorStop(0.5, "rgba(6, 182, 212, 0.02)");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Orbit rings (very subtle)
+      ctx.strokeStyle = "rgba(139, 92, 246, 0.06)";
+      ctx.lineWidth = 0.5;
+      for (const frac of [0.35, 0.55, 0.75]) {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, maxRadius * frac, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Draw edges with flow
+      for (const e of edges) {
+        const na = nodes[e.a];
+        const nb = nodes[e.b];
+        ctx.strokeStyle = e.color + "20";
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(na.x, na.y);
+        ctx.lineTo(nb.x, nb.y);
+        ctx.stroke();
+      }
+
+      // Destination node at center
+      if (destination) {
+        const done = destination.milestones.filter((m) => destination.progress[m]).length;
+        const total = destination.milestones.length;
+        const pct = total > 0 ? done / total : 0;
+
+        // Progress ring
+        ctx.strokeStyle = "rgba(139, 92, 246, 0.3)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 14, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = pct === 1 ? "#34d399" : "#8b5cf6";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 14, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
+        ctx.stroke();
+
+        // Center glow
+        const cGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 18);
+        cGrad.addColorStop(0, "rgba(139, 92, 246, 0.15)");
+        cGrad.addColorStop(1, "transparent");
+        ctx.fillStyle = cGrad;
+        ctx.fillRect(centerX - 18, centerY - 18, 36, 36);
+
+        // Center dot
+        ctx.fillStyle = "#c4b5fd";
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw agent nodes
+      for (const node of nodes) {
+        // Glow for active
+        if (node.agent.status === "active") {
+          const pulse = 0.5 + 0.5 * Math.sin(flowOffset * 60 + node.x);
+          const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.r * 3);
+          glow.addColorStop(0, `rgba(139, 92, 246, ${0.15 * pulse})`);
+          glow.addColorStop(1, "transparent");
+          ctx.fillStyle = glow;
+          ctx.fillRect(node.x - node.r * 3, node.y - node.r * 3, node.r * 6, node.r * 6);
+        }
+
+        // Node
+        ctx.fillStyle = node.color;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Label for active agents
+        if (node.agent.status === "active") {
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          ctx.font = "8px var(--font-sans)";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            node.agent.agent.split("/")[1] || node.agent.agent,
+            node.x,
+            node.y + node.r + 10
+          );
+        }
+      }
+
+      // Flow particles moving toward center (active agents only)
+      for (const node of nodes) {
+        if (node.agent.status !== "active") continue;
+        const t = ((flowOffset * 2 + node.x * 0.01) % 1);
+        const px = node.x + (centerX - node.x) * t;
+        const py = node.y + (centerY - node.y) * t;
+        ctx.fillStyle = `rgba(139, 92, 246, ${0.4 * (1 - t)})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      animRef.current = requestAnimationFrame(draw);
+    }
+
+    draw();
+    return () => cancelAnimationFrame(animRef.current);
+  }, [agents, destination]);
+
+  return (
+    <div className="hub-topology">
+      <canvas
+        ref={canvasRef}
+        className="hub-topology-canvas"
+        style={{ width: "100%", height: 180 }}
+      />
+      <div className="hub-topology-legend">
+        <span className="hub-topology-dot" style={{ background: "#8b5cf6" }} /> active
+        <span className="hub-topology-dot" style={{ background: "#6ee7b7" }} /> done
+        <span className="hub-topology-dot" style={{ background: "#64748b" }} /> idle
+        <span className="hub-topology-center">&#9673;</span> destination
+      </div>
+    </div>
+  );
+}
+
 // --- Sub-components ---
 
 function AgentAvatar({ name, size = 20 }: { name: string; size?: number }) {
@@ -734,6 +955,11 @@ export function ThreadTree() {
             <div className="hub-destination-notes">{destination.notes}</div>
           )}
         </div>
+      )}
+
+      {/* Agent topology map */}
+      {sortedAgents.length > 0 && (
+        <AgentTopologyMap agents={sortedAgents} destination={destination} />
       )}
 
       {/* Gemini steering panel */}
