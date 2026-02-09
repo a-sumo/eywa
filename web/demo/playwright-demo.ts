@@ -45,26 +45,7 @@ async function typeHuman(page: Page, selector: string, text: string) {
 }
 
 async function smoothScroll(page: Page, y: number, duration = 1500) {
-  await page.evaluate(
-    ([targetY, dur]) => {
-      const start = window.scrollY;
-      const distance = targetY - start;
-      const startTime = performance.now();
-      function step(now: number) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / dur, 1);
-        // ease-in-out cubic
-        const ease =
-          progress < 0.5
-            ? 4 * progress * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-        window.scrollTo(0, start + distance * ease);
-        if (progress < 1) requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
-    },
-    [y, duration] as const
-  );
+  await page.evaluate(`window.scrollTo({ top: ${y}, behavior: 'smooth' })`);
   await sleep(duration + 200);
 }
 
