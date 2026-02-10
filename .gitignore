@@ -49,6 +49,10 @@ docs/frames/
 # Video files (large, not for git)
 *.mp4
 
+# Strategic docs (private, not for public repo)
+VISION.md
+DESIGN.md
+
 # Editors
 .vscode/
 *.sw?
