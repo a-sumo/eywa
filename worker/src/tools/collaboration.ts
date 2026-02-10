@@ -78,6 +78,8 @@ export function registerCollaborationTools(
           opCount: number;
           outcomes: { success: number; failure: number; blocked: number };
           ops: Array<{ action?: string; outcome?: string }>;
+          heartbeatPhase: string | null;
+          tokenPercent: number | null;
         }
       >();
 
@@ -109,11 +111,19 @@ export function registerCollaborationTools(
             opCount: 0,
             outcomes: { success: 0, failure: 0, blocked: 0 },
             ops: [],
+            heartbeatPhase: event === "heartbeat" ? (meta.phase || null) : null,
+            tokenPercent: event === "heartbeat" ? (Number(meta.token_percent) || null) : null,
           });
         }
 
         const info = agents.get(row.agent)!;
         info.firstSeen = row.ts; // keeps getting overwritten to earliest
+
+        // Capture heartbeat if not yet (first row = most recent)
+        if (!info.heartbeatPhase && event === "heartbeat") {
+          info.heartbeatPhase = meta.phase || null;
+          info.tokenPercent = Number(meta.token_percent) || null;
+        }
 
         // Accumulate operation metadata
         if (meta.system) info.systems.add(meta.system);
@@ -158,8 +168,13 @@ export function registerCollaborationTools(
           ? `\n    ⚠ SILENT ${silenceMin >= 60 ? `${Math.floor(silenceMin / 60)}h ${silenceMin % 60}m` : `${silenceMin}m`}`
           : "";
 
+        // Heartbeat telemetry
+        const hbStr = info.heartbeatPhase
+          ? `\n    Heartbeat: ${info.heartbeatPhase}${info.tokenPercent ? ` (${info.tokenPercent}% context)` : ""}`
+          : "";
+
         lines.push(
-          `  ${name} [${info.status}]${durationStr} - ${info.description}${sysStr}${actStr}${opsStr}${outStr}${kappaStr}${silenceStr}\n    Last seen: ${info.lastSeen}`,
+          `  ${name} [${info.status}]${durationStr} - ${info.description}${sysStr}${actStr}${opsStr}${outStr}${kappaStr}${silenceStr}${hbStr}\n    Last seen: ${info.lastSeen}`,
         );
       }
 

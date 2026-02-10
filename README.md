@@ -51,6 +51,8 @@ Each person on your team directs AI agents that code, decide, and ship autonomou
 - **Timeline branching** - git-like version control for agent work with rewind, fork, merge, and cherry-pick
 - **Global insights network** - publish anonymized patterns from your room and query what worked in other teams
 - **Gemini steering** - built-in AI chat panel for querying agent status, detecting patterns, and steering the team
+- **Host telemetry** - agents report their phase (working/thinking/compacting), token usage, and sub-agent count so you always know what's happening inside a session
+- **Silence detection** - active agents that go quiet get flagged automatically across all surfaces (10m/30m/60m thresholds)
 - One MCP endpoint. Zero config. Works with 8+ AI coding agents today.
 
 When everyone runs AI, small misalignments between people compound at machine speed. Eywa gives your team one shared view of what all agents are building, so you know what to sync on.
@@ -119,6 +121,7 @@ Agents connect via [MCP](https://modelcontextprotocol.io) (Model Context Protoco
 | **Linking** | `eywa_link`, `eywa_links`, `eywa_unlink`, `eywa_fetch` | Connect memories across sessions. List, delete, and fetch linked memories. |
 | **Timeline** | `eywa_history`, `eywa_rewind`, `eywa_fork`, `eywa_bookmark`, `eywa_bookmarks`, `eywa_compare`, `eywa_pick`, `eywa_timelines`, `eywa_merge` | Git-like version control over agent work. Rewind, fork, bookmark, compare, cherry-pick, and merge. |
 | **Recovery** | `eywa_checkpoint`, `eywa_distress`, `eywa_recover`, `eywa_progress` | Save working state for crash recovery. Distress signals broadcast to the room. Progress reporting with percentage and phase. |
+| **Telemetry** | `eywa_heartbeat` | Report agent phase, token usage, and sub-agent count. Surfaced in HubView, status tools, and Gemini steering. Silence detection flags agents quiet 10m+. |
 | **Destination** | `eywa_destination` | Set, update, or view the room's target state. Milestones with completion tracking. |
 | **Claims** | `eywa_claim`, `eywa_unclaim` | Declare work scope so other agents avoid duplicating it. Auto-release on session end. |
 | **Network** | `eywa_publish_insight`, `eywa_query_network`, `eywa_route` | Cross-room anonymized knowledge sharing. Lane recommendations based on network telemetry. |
@@ -152,6 +155,11 @@ eywa_learn("API uses /api/v1 prefix, JWT for auth", title="API conventions", tag
 **Push context to another team member's agent:**
 ```
 eywa_inject(target="bob", content="Schema changed: user_id is UUID not integer", priority="high")
+```
+
+**Report heartbeat (keeps you visible during long tasks):**
+```
+eywa_heartbeat(phase="working", tokens_used=45000, tokens_limit=200000, detail="Writing auth middleware")
 ```
 
 **End a session:**

@@ -91,6 +91,13 @@ const IconNetwork = () => (
   </svg>
 );
 
+const IconHeartbeat = () => (
+  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path className="anim-stream s1" d="M3 16h6l3-8 4 16 3-8h10" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle className="anim-node" cx="16" cy="16" r="2"/>
+  </svg>
+);
+
 const IconSurfaces = () => (
   <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
     <rect className="anim-cube-back" x="3" y="4" width="14" height="10" rx="2" strokeWidth="2"/>
@@ -283,6 +290,11 @@ export function Landing() {
             <div className="landing-feature-icon"><IconLink /></div>
             <h3>Context Recovery</h3>
             <p>Agents checkpoint their progress and send distress signals when context runs low. New sessions auto-recover where the last one left off.</p>
+          </div>
+          <div className="landing-feature">
+            <div className="landing-feature-icon"><IconHeartbeat /></div>
+            <h3>Host Telemetry</h3>
+            <p>Agents report their phase, token usage, and sub-agent count. If an agent goes quiet, you know within minutes instead of wondering.</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconCode /></div>

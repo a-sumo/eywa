@@ -4,6 +4,8 @@ All notable features and changes. One line per feature. Agents append here after
 
 ## 2026-02-10
 
+- MCP Host Telemetry spec: proposed MCP extension for agent hosts to emit lifecycle notifications (heartbeat, compacting, subagent_spawned, token_pressure, error). Published at docs/mcp-host-telemetry.md.
+- eywa_heartbeat tool: agents report phase, token usage, sub-agent count. Stored as telemetry message type. Surfaced in HubView agent cards, eywa_status, buildInstructions, and Gemini steering.
 - Silence detection: HubView agent cards show how long active agents have been quiet (10m warn, 30m high, 60m critical). Gemini steering and worker auto-context also surface silence.
 - Auto-configure agents on init/join with CI/CD pipeline
 - Switch license from MIT to Apache 2.0

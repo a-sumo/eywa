@@ -290,7 +290,15 @@ async function handleGetAgentStatus(roomId: string): Promise<string> {
       : !isActive && silenceMin >= 30
         ? ` [SILENT ${silenceMin >= 60 ? `${Math.floor(silenceMin / 60)}h ${silenceMin % 60}m` : `${silenceMin}m`}]`
         : "";
-    lines.push(`[${status}]${distressTag}${silenceTag} ${agent} (${info.sessions.size} sessions, last seen ${ago})`);
+    // Check for heartbeat telemetry
+    const heartbeatEntry = info.entries.find(
+      (e) => e.metadata?.event === "heartbeat"
+    );
+    const heartbeatTag = heartbeatEntry
+      ? ` [${(heartbeatEntry.metadata.phase as string) || "working"}${heartbeatEntry.metadata.token_percent ? ` ${heartbeatEntry.metadata.token_percent}% ctx` : ""}]`
+      : "";
+
+    lines.push(`[${status}]${distressTag}${silenceTag}${heartbeatTag} ${agent} (${info.sessions.size} sessions, last seen ${ago})`);
     lines.push(`  Task: ${task}`);
   }
 

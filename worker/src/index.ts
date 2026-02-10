@@ -17,6 +17,7 @@ import { registerNetworkTools } from "./tools/network.js";
 import { registerRecoveryTools } from "./tools/recovery.js";
 import { registerDestinationTools } from "./tools/destination.js";
 import { registerClaimTools, getActiveClaims } from "./tools/claim.js";
+import { registerTelemetryTools, storeHostTelemetry } from "./tools/telemetry.js";
 import { rateLimit, checkMemoryCap } from "./lib/ratelimit.js";
 
 export default {
@@ -373,6 +374,7 @@ async function handleMcp(
   registerRecoveryTools(server, db, ctx);
   registerDestinationTools(server, db, ctx);
   registerClaimTools(server, db, ctx);
+  registerTelemetryTools(server, db, ctx);
 
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);
@@ -488,16 +490,23 @@ async function buildInstructions(
   const agents = new Map<string, {
     status: string; task: string; systems: Set<string>;
     ops: Array<{ action?: string; outcome?: string }>; firstTs: string; lastTs: string;
+    heartbeatPhase: string | null; tokenPercent: number | null;
   }>();
   for (const row of agentRows) {
     if (row.agent === ctx.agent) continue;
     const meta = (row.metadata ?? {}) as Record<string, string>;
     if (agents.has(row.agent)) {
-      if (meta.system) agents.get(row.agent)!.systems.add(meta.system);
+      const a = agents.get(row.agent)!;
+      if (meta.system) a.systems.add(meta.system);
       if (meta.system || meta.action) {
-        agents.get(row.agent)!.ops.push({ action: meta.action, outcome: meta.outcome });
+        a.ops.push({ action: meta.action, outcome: meta.outcome });
       }
-      agents.get(row.agent)!.firstTs = row.ts;
+      // Capture heartbeat if we haven't yet (first = most recent due to desc order)
+      if (!a.heartbeatPhase && meta.event === "heartbeat") {
+        a.heartbeatPhase = meta.phase || null;
+        a.tokenPercent = Number(meta.token_percent) || null;
+      }
+      a.firstTs = row.ts;
       continue;
     }
     const event = meta.event ?? "";
@@ -509,7 +518,9 @@ async function buildInstructions(
     if (meta.system) systems.add(meta.system);
     const ops: Array<{ action?: string; outcome?: string }> = [];
     if (meta.system || meta.action) ops.push({ action: meta.action, outcome: meta.outcome });
-    agents.set(row.agent, { status, task, systems, ops, firstTs: row.ts, lastTs: row.ts });
+    const heartbeatPhase = event === "heartbeat" ? (meta.phase || null) : null;
+    const tokenPercent = event === "heartbeat" ? (Number(meta.token_percent) || null) : null;
+    agents.set(row.agent, { status, task, systems, ops, firstTs: row.ts, lastTs: row.ts, heartbeatPhase, tokenPercent });
   }
 
   // Compose instructions
@@ -528,7 +539,8 @@ async function buildInstructions(
       const kappaStr = info.ops.length > 0 ? ` κ=${kappa}` : "";
       const silenceMin = Math.floor((Date.now() - new Date(info.lastTs).getTime()) / 60000);
       const silenceTag = info.status === "active" && silenceMin >= 10 ? ` SILENT:${silenceMin}m` : "";
-      lines.push(`  ${name} [${info.status}]${kappaStr}${silenceTag} ${info.task}${sysStr}`);
+      const hbTag = info.heartbeatPhase ? ` [${info.heartbeatPhase}${info.tokenPercent ? ` ${info.tokenPercent}%ctx` : ""}]` : "";
+      lines.push(`  ${name} [${info.status}]${kappaStr}${silenceTag}${hbTag} ${info.task}${sysStr}`);
     }
   }
 

@@ -120,6 +120,7 @@ Once connected, agents get 40+ MCP tools:
 | **Claiming** | `eywa_claim`, `eywa_unclaim` | Prevent duplicate work across agents |
 | **Linking** | `eywa_link`, `eywa_links`, `eywa_unlink`, `eywa_fetch` | Connect memories across sessions |
 | **Timeline** | `eywa_history`, `eywa_rewind`, `eywa_fork`, `eywa_bookmark`, `eywa_bookmarks`, `eywa_compare`, `eywa_pick`, `eywa_timelines`, `eywa_merge` | Git-like version control for agent work |
+| **Telemetry** | `eywa_heartbeat` | Report phase, token usage, sub-agents. Silence detection flags quiet agents. |
 | **Network** | `eywa_publish_insight`, `eywa_query_network`, `eywa_route` | Cross-room anonymized knowledge sharing and routing |
 
 ## How It Works

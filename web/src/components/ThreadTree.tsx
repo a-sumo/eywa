@@ -60,6 +60,14 @@ interface AgentOp {
   ts: string;
 }
 
+interface AgentHeartbeat {
+  phase: string;
+  tokenPercent: number | null;
+  detail: string | null;
+  subagents: number | null;
+  ts: string;
+}
+
 interface AgentState {
   agent: string;
   user: string;
@@ -75,6 +83,7 @@ interface AgentState {
   recentOps: AgentOp[];
   progress: AgentProgress | null;
   toolCallCount: number;
+  heartbeat: AgentHeartbeat | null;
 }
 
 // Context pressure thresholds (matches worker/src/lib/pressure.ts)
@@ -282,6 +291,7 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
         recentOps: [],
         progress: null,
         toolCallCount: 0,
+        heartbeat: null,
       };
       agents.set(m.agent, state);
     }
@@ -304,6 +314,17 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
         task: (meta.task as string) || "",
         status: (meta.status as string) || "working",
         detail: (meta.detail as string) || null,
+        ts: m.ts,
+      };
+    }
+
+    // Capture latest heartbeat (telemetry)
+    if (meta.event === "heartbeat" && !state.heartbeat) {
+      state.heartbeat = {
+        phase: (meta.phase as string) || "working",
+        tokenPercent: (meta.token_percent as number) ?? null,
+        detail: (meta.detail as string) ?? ((m.content ?? "").slice(0, 80) || null),
+        subagents: (meta.subagents as number) ?? null,
         ts: m.ts,
       };
     }
@@ -649,6 +670,41 @@ function AgentCard({
           {state.progress.detail && (
             <span className="hub-progress-detail">{state.progress.detail}</span>
           )}
+        </div>
+      )}
+      {/* Heartbeat telemetry */}
+      {state.heartbeat && (
+        <div className="hub-agent-heartbeat" style={{
+          display: "flex", gap: 8, alignItems: "center",
+          padding: "2px 0", fontSize: 11, color: "#94a3b8",
+        }}>
+          <span className="hub-pill" style={{
+            background: state.heartbeat.phase === "compacting" ? "#ef444418" :
+              state.heartbeat.phase === "waiting_approval" ? "#eab30818" :
+              state.heartbeat.phase === "error" ? "#ef444418" :
+              state.heartbeat.phase === "thinking" ? "#8b5cf618" : "#22c55e18",
+            color: state.heartbeat.phase === "compacting" ? "#ef4444" :
+              state.heartbeat.phase === "waiting_approval" ? "#eab308" :
+              state.heartbeat.phase === "error" ? "#ef4444" :
+              state.heartbeat.phase === "thinking" ? "#8b5cf6" : "#22c55e",
+          }}>
+            {state.heartbeat.phase}
+          </span>
+          {state.heartbeat.tokenPercent !== null && (
+            <span style={{
+              color: state.heartbeat.tokenPercent > 80 ? "#ef4444" :
+                state.heartbeat.tokenPercent > 60 ? "#eab308" : "#94a3b8",
+            }}>
+              {state.heartbeat.tokenPercent}% ctx
+            </span>
+          )}
+          {state.heartbeat.subagents !== null && state.heartbeat.subagents > 0 && (
+            <span>{state.heartbeat.subagents} sub-agent{state.heartbeat.subagents > 1 ? "s" : ""}</span>
+          )}
+          {state.heartbeat.detail && (
+            <span style={{ opacity: 0.7 }}>{state.heartbeat.detail}</span>
+          )}
+          <span style={{ opacity: 0.5 }}>{timeAgo(state.heartbeat.ts)}</span>
         </div>
       )}
       <div className="hub-agent-task">{state.task}</div>

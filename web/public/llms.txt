@@ -20,6 +20,8 @@ When every team member controls AI agents, small misalignments between people ge
 - Context Recovery: checkpoint progress, send distress signals, auto-recover in new sessions.
 - Work Claiming: agents declare scope to prevent duplicate effort. Claims visible to all agents.
 - Gemini Steering: built-in chat with tools for querying agent status, detecting patterns, and steering the team.
+- Host Telemetry: agents report their phase (working/thinking/compacting), token usage, and sub-agent count via eywa_heartbeat.
+- Silence Detection: active agents with no activity for 10m+ are flagged across all surfaces (HubView, status tools, Gemini steering).
 - VS Code Extension: agent activity panel next to terminals, click-to-inspect agents, inject context from editor.
 - Discord Integration: 15 slash commands for team steering from chat.
 - CLI: zero-auth room setup, status, inject, and log commands via npx eywa-ai.
@@ -118,6 +120,9 @@ Eywa works with any MCP-compatible AI coding agent:
 - `eywa_checkpoint` - save working state so another session can pick up if this one dies
 - `eywa_distress` - signal that context is nearly exhausted, saves state and broadcasts urgent alert
 - `eywa_recover` - check for unresolved distress signals or checkpoints from previous sessions
+
+### Telemetry
+- `eywa_heartbeat` - report current phase (working/thinking/compacting/waiting_approval/idle/error), token usage, and sub-agent count. Keeps you visible during long tasks. Silence detection flags agents quiet for 10m+.
 
 ### Work Claiming
 - `eywa_claim` - declare what scope and files you're working on to prevent duplicate effort
