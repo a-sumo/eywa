@@ -1188,7 +1188,7 @@
   Enabled: true
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Position: {x: 0.000000, y: -15.000000, z: -1.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -2115,15 +2115,15 @@
   PrefabRemaps:
     []
   Name: EywaVoice
-  Enabled: true
+  Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Position: {x: 0.000000, y: -20.000000, z: 0.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
   Children:
-    - !<own> 33ad14c4-2802-4b68-8d6a-eaa3e9555951
+    []
   Components:
     - !<own> 13501ea6-5d2a-41a2-9e8f-7309c82ef279
 - !<SceneObject/5d0fd01d-a7f6-432e-b50e-d0c6a689b942>
@@ -3657,6 +3657,34 @@
     - !<own> 9c6bdaf8-6f75-4c15-8f87-51a47efb49e9
   Components:
     []
+- !<ScriptComponent/af6a667b-685d-4f66-82fd-c2698d854d5f>
+  PrefabRemaps:
+    []
+  Name: RealtimeTextureReceiver
+  Enabled: false
+  ScriptAsset: !<reference> 01c4900d-1c43-455e-91ec-6644830e17ec
+  ScriptInputsDefault:
+    channelName: true
+    gridCols: true
+    gridRows: true
+    enableDebugLogs: true
+    logFrequency: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      snapCloudRequirements: !<MappingBased.AssignableType> 15221b26-20f6-42ab-a6e7-b358ab3bbf0f
+      channelName: demo
+      statusText: !<reference.Text> cdd2b857-28d8-47e8-8dbf-df8bde0a94ee
+      gridCols: !<float> 0.000000
+      gridRows: !<float> 0.000000
+      lobbyChannelName: demo
+      deviceId: editor
+      enableDebugLogs: true
+      logFrequency: !<float> 10.000000
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/af861ff2-397a-4d58-adf7-f1b8d2ec6fc5>
   PrefabRemaps:
     []
@@ -4128,14 +4156,16 @@
   Enabled: true
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 0.000000, z: 1.000000}
+    Position: {x: 0.000000, y: -5.000000, z: 1.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
   Children:
-    []
+    - !<own> 33ad14c4-2802-4b68-8d6a-eaa3e9555951
   Components:
     - !<own> 480a7dcc-bcc4-4fc0-9784-30d8c11287a3
+    - !<own> af6a667b-685d-4f66-82fd-c2698d854d5f
+    - !<own> e829936c-42df-4e34-943d-3e89ebebefd2
 - !<SceneObject/c1e4cdd6-40ff-4bbf-94e2-490af58b9b1d>
   PrefabRemaps:
     []
@@ -5172,6 +5202,73 @@
   Components:
     - !<own> e4a94c0a-e355-4962-8731-a4df8f8ee71c
     - !<own> 3abf1e7c-8d2d-4a88-83d1-b6f6d24f3d44
+- !<ScriptComponent/e829936c-42df-4e34-943d-3e89ebebefd2>
+  PrefabRemaps:
+    []
+  Name: ContainerFrame
+  Enabled: true
+  ScriptAsset: !<reference> 94ea82ba-1d42-4617-b71f-c92262f5960b
+  ScriptInputsDefault:
+    autoShowHide: true
+    innerSize: true
+    border: true
+    constantPadding: true
+    allowScaling: true
+    relativeZ: true
+    isContentInteractable: true
+    allowTranslation: true
+    cutOut: true
+    minimumSize: true
+    maximumSize: true
+    useBillboarding: true
+    xOnTranslate: true
+    xAlways: true
+    yOnTranslate: true
+    yAlways: true
+    useSnapping: true
+    itemSnapping: true
+    worldSnapping: true
+    showFollowButton: true
+    useFOVFollow: true
+    isFollowing: true
+    showCloseButton: true
+    _enableInteractionPlane: true
+    _targetingVisual: true
+    isSynced: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      autoShowHide: true
+      innerSize: !<Vec2> {x: 32.000000, y: 32.000000}
+      border: !<float> 4.000000
+      constantPadding: !<Vec2> {x: 0.000000, y: 0.000000}
+      allowScaling: true
+      autoScaleContent: false
+      relativeZ: false
+      isContentInteractable: false
+      allowTranslation: true
+      cutOut: false
+      minimumSize: !<Vec2> {x: 10.000000, y: 10.000000}
+      maximumSize: !<Vec2> {x: 300.000000, y: 300.000000}
+      useBillboarding: false
+      xOnTranslate: false
+      xAlways: false
+      yOnTranslate: false
+      yAlways: false
+      useSnapping: false
+      itemSnapping: false
+      worldSnapping: false
+      showFollowButton: false
+      useFOVFollow: false
+      isFollowing: false
+      showCloseButton: true
+      _enableInteractionPlane: false
+      _targetingVisual: !<float> 1.000000
+      isSynced: false
+  ScriptTypes:
+    "":
+      {}
 - !<Text/ea723dae-615f-41d9-bf02-9e405b82ccac>
   PrefabRemaps:
     []
