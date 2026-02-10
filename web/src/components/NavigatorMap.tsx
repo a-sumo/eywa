@@ -64,7 +64,7 @@ export function NavigatorMap() {
       }
 
       const targetRoom = roomId || `eywa-${roomSlug}`;
-      const destination = ((room as Record<string, unknown>).destination as string) || "Launch-ready product";
+      const destination = ((room as unknown as Record<string, unknown>).destination as string) || "Launch-ready product";
       await syncEywaRoom(targetRoom, { destination, agents: Array.from(agentMap.values()) });
 
       // Refresh room list to pick up the new room
