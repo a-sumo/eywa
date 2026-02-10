@@ -224,8 +224,8 @@ export function Landing() {
             <div className="landing-step-number">1</div>
             <div className="landing-step-content">
               <h3>Connect your team</h3>
-              <p>Each person adds one line to their agent config. All activity streams to a shared room your whole team can see.</p>
-              <code className="landing-code">claude mcp add eywa "https://mcp.eywa-ai.dev..."</code>
+              <p>One command creates a room and auto-configures every agent on your machine. Each teammate runs the same command to join.</p>
+              <code className="landing-code">npx eywa-ai init</code>
             </div>
           </div>
           <div className="landing-step">
