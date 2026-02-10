@@ -39,8 +39,8 @@ eywa-specs/*.lock
 # Vercel
 .vercel/
 
-# Claude Code local settings
-.claude/settings.local.json
+# Claude Code (may contain settings, keys, or private docs)
+.claude/
 
 # Generated assets
 web/scripts/avatar-pipeline/out/
