@@ -1,6 +1,5 @@
 /**
- * Capture screenshots of HubView for README banner gif.
- * Takes rapid screenshots and stitches them into a gif via ffmpeg.
+ * Capture a scrolling gif of the landing page for README banner.
  *
  * Usage:
  *   cd web && npx tsx demo/banner-capture.ts
@@ -10,19 +9,16 @@ import { chromium } from "playwright";
 import { mkdirSync } from "fs";
 import { join } from "path";
 
-const URL = process.env.DEMO_URL || "https://eywa-ai.dev/r/demo";
+const URL = process.env.DEMO_URL || "https://eywa-ai.dev";
 const FRAME_DIR = join("demo", "recordings", "banner-frames");
-const FPS = 10;
-const DURATION_S = 8;
-const TOTAL_FRAMES = FPS * DURATION_S;
-const FRAME_INTERVAL = 1000 / FPS;
+const FPS = 12;
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
 async function run() {
-  console.log("  Capturing HubView for banner gif...\n");
+  console.log("  Capturing landing page for banner gif...\n");
   mkdirSync(FRAME_DIR, { recursive: true });
 
   const browser = await chromium.launch({
@@ -38,23 +34,48 @@ async function run() {
 
   const page = await context.newPage();
 
-  console.log("  Loading page...");
+  console.log("  Loading landing page...");
   await page.goto(URL, { waitUntil: "networkidle" });
-  await sleep(6000); // Let data load and animations start
+  await sleep(4000);
 
-  console.log(`  Taking ${TOTAL_FRAMES} screenshots at ${FPS}fps...`);
-  for (let i = 0; i < TOTAL_FRAMES; i++) {
-    const path = join(FRAME_DIR, `frame-${String(i).padStart(4, "0")}.png`);
+  let frame = 0;
+  const snap = async () => {
+    const path = join(FRAME_DIR, `frame-${String(frame).padStart(4, "0")}.png`);
     await page.screenshot({ path, fullPage: false });
-    if (i % 10 === 0) process.stdout.write(`  ${i}/${TOTAL_FRAMES}\r`);
-    await sleep(FRAME_INTERVAL);
+    frame++;
+  };
+
+  // Hold on hero for 2s
+  console.log("  Hero section...");
+  for (let i = 0; i < FPS * 2; i++) {
+    await snap();
+    await sleep(1000 / FPS);
+  }
+
+  // Smooth scroll down the page over 6s
+  console.log("  Scrolling...");
+  const scrollHeight = await page.evaluate(() => document.body.scrollHeight - window.innerHeight);
+  const scrollDuration = 6000;
+  const scrollSteps = FPS * (scrollDuration / 1000);
+  const stepSize = scrollHeight / scrollSteps;
+
+  for (let i = 0; i < scrollSteps; i++) {
+    await page.evaluate((y) => window.scrollTo({ top: y }), stepSize * (i + 1));
+    await snap();
+    await sleep(1000 / FPS);
+  }
+
+  // Hold at bottom for 1.5s
+  console.log("  Bottom hold...");
+  for (let i = 0; i < FPS * 1.5; i++) {
+    await snap();
+    await sleep(1000 / FPS);
   }
 
   await browser.close();
 
-  console.log(`\n  ${TOTAL_FRAMES} frames captured in ${FRAME_DIR}/`);
-  console.log(`\n  Convert to gif:`);
-  console.log(`  ffmpeg -framerate ${FPS} -i ${FRAME_DIR}/frame-%04d.png -vf "scale=1200:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer" -loop 0 ../docs/banner.gif`);
+  console.log(`\n  ${frame} frames captured in ${FRAME_DIR}/`);
+  console.log(`  Converting to gif...`);
 }
 
 run().catch((e) => {
