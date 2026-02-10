@@ -1,0 +1,25 @@
+{
+  "name": "eywa-video",
+  "version": "1.0.0",
+  "description": "Programmatic video composition for Eywa demos",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render EywaDemo out/eywa-demo.mp4",
+    "render:linkedin": "remotion render EywaDemo out/eywa-linkedin.mp4 --scale=1",
+    "preview": "remotion preview"
+  },
+  "keywords": [],
+  "author": "Armand Sumo",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@remotion/bundler": "^4.0.420",
+    "@remotion/cli": "^4.0.420",
+    "@remotion/player": "^4.0.420",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remotion": "^4.0.420",
+    "typescript": "^5.9.3"
+  }
+}

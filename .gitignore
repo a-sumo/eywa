@@ -46,6 +46,9 @@ eywa-specs/*.lock
 web/scripts/avatar-pipeline/out/
 docs/frames/
 
+# Video files (large, not for git)
+*.mp4
+
 # Editors
 .vscode/
 *.sw?
