@@ -74,7 +74,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
 
   # ── Discord Bot → Docker + deploy ─────────────────────
   deploy-discord:
