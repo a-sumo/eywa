@@ -22,9 +22,6 @@ __pycache__/
 worker/.dev.vars
 
 # Lens Studio
-remix-specs/Cache/
-remix-specs/Support/
-remix-specs/BackUp/
 eywa-specs/Cache/
 eywa-specs/Support/
 eywa-specs/BackUp/
@@ -39,17 +36,17 @@ eywa-specs/*.lock
 # Vercel
 .vercel/
 
-# Claude Code (may contain settings, keys, or private docs)
+# Claude Code
 .claude/
 
 # Generated assets
-web/scripts/avatar-pipeline/out/
 docs/frames/
 
-# Video files (large, not for git)
+# Video and large media
 *.mp4
+*.mp3
 
-# Strategic docs (private, not for public repo)
+# Strategic docs (private)
 VISION.md
 DESIGN.md
 
@@ -60,5 +57,3 @@ DESIGN.md
 
 # Logs
 *.log
-web/demo/recordings/
-web/demo/generated-audio/
