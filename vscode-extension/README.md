@@ -8,15 +8,12 @@ Eywa gives you a live sidebar showing every agent session in your room, who's ac
 
 ## Quick Start
 
-1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=curvilinear.eywa-agents)
-2. Click the Eywa icon in the activity bar
-3. Click **Set Room** and enter your room slug (e.g. `my-project`)
+1. Run `npx eywa-ai init` in your terminal to create a room and auto-configure all your agents
+2. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=curvilinear.eywa-agents)
+3. Click the Eywa icon in the activity bar
+4. Click **Set Room** and enter the room slug from step 1
 
-That's it. The extension connects to the hosted Eywa instance by default. If you're self-hosting, run **Eywa: Login** to connect via browser.
-
-### Connect an agent
-
-Run **Eywa: Connect Agent** from the command palette. It generates an MCP URL and copies it to your clipboard. You can also open a terminal with the `claude mcp add` command pre-filled.
+That's it. Your agents are already configured and the extension connects to the hosted Eywa instance by default. If you're self-hosting, run **Eywa: Login** to connect via browser.
 
 ## Features
 

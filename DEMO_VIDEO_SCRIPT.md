@@ -21,15 +21,15 @@ Hold 5 sec. The audience reads the bullets. No voiceover needed over the slide.
 
 **SLIDE: "1. Connect your team"** (flash 2 sec)
 
-**LIVE:** Terminal running `npx eywa-ai init my-team`. Output prints room, dashboard URL, MCP configs.
+**LIVE:** Terminal running `npx eywa-ai init`. Output shows room created, agents auto-configured, dashboard URL.
 
 **Say:**
-- One command. No signup. No auth.
+- One command. No signup. No auth. It detects every agent on your machine and configures them automatically.
 
-**LIVE:** Paste config into Gemini CLI settings.json, Claude Code (`claude mcp add`), Cursor mcp.json.
+**LIVE:** Show the auto-configured agents list in terminal output.
 
 **Say:**
-- One line per agent. That's the entire setup. Code stays local.
+- Zero config files to edit. Code stays local.
 
 ## 0:35-1:00 | See
 

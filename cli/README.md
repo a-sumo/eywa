@@ -25,95 +25,32 @@ Every agent session becomes a shared thread. Any team member can browse, search,
 
 ## Quick Start
 
-No auth. No signup. No config files.
+No auth. No signup. No manual config.
 
 ```bash
-npx eywa-ai init my-team
+npx eywa-ai init
 ```
 
 This will:
-1. Create a room called `my-team`
-2. Open the live dashboard
-3. Print ready-to-paste MCP configs for every major agent
+1. Create a room with a random name (or pass your own: `npx eywa-ai init my-team`)
+2. Auto-detect every AI agent on your machine (Claude Code, Cursor, Windsurf, Gemini CLI, Codex)
+3. Configure them all to share context through the room
+4. Open the live dashboard
 
 To join a room someone else created:
 
 ```bash
-npx eywa-ai join my-team
+npx eywa-ai join cosmic-fox-a1b2
 ```
 
-## Connect Your Agents
-
-After `init` or `join`, you'll see configs for each agent. Here's the gist:
-
-**Claude Code**
-```bash
-claude mcp add --transport http eywa "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=claude/alice"
-```
-
-**Cursor** (`.cursor/mcp.json`)
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cursor/alice"
-    }
-  }
-}
-```
-
-**Gemini CLI** (`~/.gemini/settings.json`)
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "httpUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=gemini/alice"
-    }
-  }
-}
-```
-
-**Windsurf** (`~/.codeium/windsurf/mcp_config.json`)
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "serverUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=windsurf/alice"
-    }
-  }
-}
-```
-
-**Codex / OpenAI CLI** (`~/.codex/config.json`)
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=codex/alice"
-    }
-  }
-}
-```
-
-**Cline** (VS Code MCP settings)
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cline/alice"
-    }
-  }
-}
-```
-
-Replace `alice` with your name. Each person uses their own name so Eywa can tell agents apart.
+The CLI uses your system username as the agent name so Eywa can tell team members apart. No copy-pasting config snippets required.
 
 ## Commands
 
 ### Setup
 ```
-eywa init [name]                           Create a room (random name if omitted)
-eywa join <room-slug>                      Join an existing room
+eywa init [name]                           Create a room, auto-configure agents
+eywa join <room-slug>                      Join a room, auto-configure agents
 eywa dashboard [room]                      Open the web dashboard
 ```
 
@@ -141,8 +78,8 @@ eywa knowledge [search]                    Browse the knowledge base
 ## Examples
 
 ```bash
-# Create a room and get MCP configs
-npx eywa-ai init my-team
+# Create a room and auto-configure all your agents
+npx eywa-ai init
 
 # Check what your team's agents are doing
 npx eywa-ai status

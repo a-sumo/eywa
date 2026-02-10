@@ -302,6 +302,11 @@ export function IntegrationGuide() {
       </div>
 
       <h2>Setup Instructions</h2>
+      <p>
+        The fastest way is to run <code>npx eywa-ai init</code>, which
+        auto-detects {config.name} and configures it automatically. If you
+        prefer manual setup:
+      </p>
       <ol className="docs-steps">
         <li>
           <strong>Add the Eywa MCP endpoint to your config</strong>

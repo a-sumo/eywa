@@ -336,7 +336,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 async function showWelcome() {
   const action = await vscode.window.showInformationMessage(
-    "Welcome to Eywa. Set a room to start monitoring your agents.",
+    "Welcome to Eywa. Run `npx eywa-ai init` in your terminal to create a room and auto-configure your agents, then set the room here.",
     "Get Started",
     "Set Room",
   );

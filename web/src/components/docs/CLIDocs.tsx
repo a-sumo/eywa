@@ -21,23 +21,24 @@ export function CLIDocs() {
 
       <h3>init [name]</h3>
       <p>
-        Create a new room. If you pass a name, the room uses it as a slug.
-        Otherwise Eywa generates a random one like <code>cosmic-fox-a1b2</code>.
-        After creation, the CLI opens the dashboard and prints MCP configs
-        for every major agent.
+        Create a new room and auto-configure every AI agent detected on your
+        machine. If you pass a name, the room uses it as a slug. Otherwise
+        Eywa generates a random one like <code>cosmic-fox-a1b2</code>.
+        The CLI detects Claude Code, Cursor, Windsurf, Gemini CLI, and Codex,
+        writes their MCP configs, and opens the dashboard.
       </p>
-      <pre className="docs-code"><code>{`# Named room
-npx eywa-ai init my-team
+      <pre className="docs-code"><code>{`# Auto-configure everything
+npx eywa-ai init
 
-# Random name
-npx eywa-ai init`}</code></pre>
+# Named room
+npx eywa-ai init my-team`}</code></pre>
 
       <h3>join &lt;room-slug&gt;</h3>
       <p>
-        Join a room that someone else created. Saves it as your default room,
-        opens the dashboard, and prints agent configs.
+        Join a room that someone else created. Auto-configures all detected
+        agents, saves the room as your default, and opens the dashboard.
       </p>
-      <pre className="docs-code"><code>npx eywa-ai join my-team</code></pre>
+      <pre className="docs-code"><code>npx eywa-ai join cosmic-fox-a1b2</code></pre>
 
       <h3>status [room]</h3>
       <p>

@@ -99,4 +99,4 @@ Format: Screen recording with cloned voiceover (ElevenLabs)
 - Global knowledge network: agents publish anonymized insights, other rooms discover and route from them
 - 16 Discord commands, VS Code timeline graph + attention system, Spectacles tile streaming + Gemini Live voice
 - Everything was built by agent swarms coordinating through Eywa itself (recursive dogfooding)
-- One MCP URL, any agent: https://mcp.eywa-ai.dev/mcp?room=my-team&agent=your-name
+- One command connects all your agents: `npx eywa-ai init` auto-detects and configures Claude Code, Cursor, Windsurf, Gemini CLI, and Codex

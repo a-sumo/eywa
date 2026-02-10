@@ -96,9 +96,9 @@ export const slidesData: SlidesData = {
       title: "1. Connect your team",
       subtitle: "One command. No signup. No auth.",
       items: [
-        "<strong>npx eywa-ai init my-team</strong> creates a room and prints MCP configs for every major agent.",
-        "Each person adds one line to their agent config. All activity streams to a shared room.",
-        "Claude Code, Cursor, Gemini CLI, Windsurf, Codex, Cline, Mistral, Cohere. One URL, any agent.",
+        "<strong>npx eywa-ai init</strong> creates a room and auto-configures every agent on your machine.",
+        "Claude Code, Cursor, Windsurf, Gemini CLI, and Codex are detected and connected automatically.",
+        "Each team member runs <strong>npx eywa-ai join &lt;room&gt;</strong> and they're in. Zero config files to edit.",
       ],
     },
     {

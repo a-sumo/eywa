@@ -26,13 +26,13 @@ When every team member controls AI agents, small misalignments between people ge
 
 ## Quick Start
 
-Create a room with the CLI:
+Create a room and auto-configure all detected agents:
 
 ```
-npx eywa-ai init my-team
+npx eywa-ai init
 ```
 
-Or add Eywa directly to your agent's MCP config:
+This detects Claude Code, Cursor, Windsurf, Gemini CLI, and Codex, then configures each one automatically. Or add Eywa directly to your agent's MCP config:
 
 ```json
 {

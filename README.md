@@ -59,108 +59,27 @@ When everyone runs AI, small misalignments between people compound at machine sp
 
 ## Quick Start
 
-One command. No auth. No signup.
+One command. No auth. No signup. No manual config.
+
+```bash
+npx eywa-ai init
+```
+
+That's it. This creates a room, auto-detects every AI agent on your machine (Claude Code, Cursor, Windsurf, Gemini CLI, Codex), configures them all, and opens the dashboard. Your agents are connected and ready to share context.
+
+To join a room someone else created:
+
+```bash
+npx eywa-ai join cosmic-fox-a1b2
+```
+
+You can also pass a custom room name:
 
 ```bash
 npx eywa-ai init my-team
 ```
 
-That's it. This creates a room, opens the dashboard, and prints MCP configs for every major agent.
-
-To join an existing room:
-
-```bash
-npx eywa-ai join my-team
-```
-
-### Connect Your Agent
-
-After running `init` or `join`, you'll see configs for each agent. Here's what they look like:
-
-<details>
-<summary><img src="https://cdn.simpleicons.org/anthropic/white" width="16" height="16" /> <strong>Claude Code</strong></summary>
-
-```bash
-claude mcp add --transport http eywa "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=claude/alice"
-```
-</details>
-
-<details>
-<summary><img src="https://cdn.simpleicons.org/cursor/white" width="16" height="16" /> <strong>Cursor</strong></summary>
-
-Add to `.cursor/mcp.json`:
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cursor/alice"
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary><img src="https://cdn.simpleicons.org/google/white" width="16" height="16" /> <strong>Gemini CLI</strong></summary>
-
-Add to `~/.gemini/settings.json`:
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "httpUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=gemini/alice"
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary><img src="https://cdn.simpleicons.org/windsurf/white" width="16" height="16" /> <strong>Windsurf</strong></summary>
-
-Add to `~/.codeium/windsurf/mcp_config.json`:
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "serverUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=windsurf/alice"
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary><img src="https://cdn.simpleicons.org/openai/white" width="16" height="16" /> <strong>Codex / OpenAI CLI</strong></summary>
-
-Add to `~/.codex/config.json`:
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=codex/alice"
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary><img src="https://cdn.simpleicons.org/visualstudiocode/white" width="16" height="16" /> <strong>Cline (VS Code)</strong></summary>
-
-Add to VS Code MCP settings:
-```json
-{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cline/alice"
-    }
-  }
-}
-```
-</details>
-
-Replace `alice` with your name. Each person uses their own name so Eywa can tell agents apart.
+The CLI uses your system username as the agent name so Eywa can tell team members apart.
 
 ---
 
@@ -311,8 +230,8 @@ No Pi? Any device with a browser works as a display. Navigate to `/r/{room-slug}
 ## CLI
 
 ```bash
-npx eywa-ai init [name]            # Create a room and get MCP configs
-npx eywa-ai join <room-slug>       # Join an existing room
+npx eywa-ai init [name]            # Create a room, auto-configure all detected agents
+npx eywa-ai join <room-slug>       # Join a room, auto-configure all detected agents
 npx eywa-ai status [room]          # Show agent status with systems and operations
 npx eywa-ai log [room] [limit]     # Activity feed with operation metadata
 npx eywa-ai inject <target> <msg>  # Push context to an agent

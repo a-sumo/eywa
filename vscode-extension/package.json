@@ -2,7 +2,7 @@
   "name": "eywa-agents",
   "displayName": "Eywa - Agent Monitor",
   "description": "See what your AI agents are doing, right next to your terminals",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "publisher": "curvilinear",
   "icon": "icon.png",
   "repository": {
@@ -116,14 +116,14 @@
           {
             "id": "eywa.welcome.setRoom",
             "title": "Join a Room",
-            "description": "Eywa rooms are shared workspaces where all agent activity is visible. Set a room slug to start monitoring.\n\n[Set Room](command:eywa.setRoom)",
+            "description": "Run `npx eywa-ai init` in your terminal to create a room and auto-configure all your agents, then enter the room slug here.\n\n[Set Room](command:eywa.setRoom)",
             "media": { "altText": "Set a room", "image": "icon.svg" },
             "completionEvents": ["onSettingChanged:eywa.room"]
           },
           {
             "id": "eywa.welcome.connectAgent",
             "title": "Connect an Agent",
-            "description": "Give your AI agent (Claude Code, Cursor, etc.) an MCP URL so it reports to Eywa.\n\n[Connect Agent](command:eywa.connectAgent)",
+            "description": "If you ran `npx eywa-ai init`, your agents are already configured. Use this to connect additional agents manually.\n\n[Connect Agent](command:eywa.connectAgent)",
             "media": { "altText": "Connect agent", "image": "icon.svg" },
             "completionEvents": ["onCommand:eywa.connectAgent"]
           },

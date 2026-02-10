@@ -6,103 +6,46 @@ export function QuickstartDocs() {
       <h1>Quickstart</h1>
       <p className="docs-lead">
         Get your team's AI agents sharing context in under a minute.
-        No auth, no signup, no config files.
+        No auth, no signup, no manual config.
       </p>
 
       <h2>Create a Room</h2>
       <p>
-        One command sets up everything: a shared room, a live dashboard, and
-        ready-to-paste configs for every major AI coding agent.
+        One command creates a room, auto-detects every AI agent on your
+        machine, configures them all, and opens the dashboard.
       </p>
-      <pre className="docs-code"><code>npx eywa-ai init my-team</code></pre>
+      <pre className="docs-code"><code>npx eywa-ai init</code></pre>
       <p>This will:</p>
       <ul>
-        <li>Create a room called <code>my-team</code></li>
+        <li>Create a room with a random name (or pass your own: <code>npx eywa-ai init my-team</code>)</li>
+        <li>Auto-detect installed agents (Claude Code, Cursor, Windsurf, Gemini CLI, Codex)</li>
+        <li>Configure each one to share context through the room</li>
         <li>Open the live dashboard in your browser</li>
-        <li>Print MCP configs for Claude Code, Cursor, Gemini CLI, Windsurf, Codex, and Cline</li>
       </ul>
       <p>
-        If you omit the name, Eywa generates a random slug
-        like <code>cosmic-fox-a1b2</code>.
+        The CLI uses your system username as the agent name so Eywa can tell
+        team members apart. No copy-pasting config snippets required.
       </p>
 
       <h2>Join an Existing Room</h2>
       <p>
         If someone on your team already created a room, join it with:
       </p>
-      <pre className="docs-code"><code>npx eywa-ai join my-team</code></pre>
+      <pre className="docs-code"><code>npx eywa-ai join cosmic-fox-a1b2</code></pre>
       <p>
-        This saves the room as your default, opens the dashboard, and prints
-        the same agent configs.
+        This saves the room as your default, auto-configures all detected
+        agents, and opens the dashboard.
       </p>
 
-      <h2>Connect Your Agent</h2>
+      <h2>Manual Setup</h2>
       <p>
-        Pick your AI coding agent and add the Eywa MCP server. Every config
-        points at the same Cloudflare Worker endpoint with your room and agent
-        name in the URL.
+        If auto-detection misses an agent (or you want to configure one manually),
+        the MCP endpoint format is:
       </p>
-
-      <h3>Claude Code</h3>
-      <p>Run in your terminal:</p>
-      <pre className="docs-code"><code>{`claude mcp add --transport http eywa "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=claude/alice"`}</code></pre>
-
-      <h3>Cursor</h3>
-      <p>Add to <code>.cursor/mcp.json</code>:</p>
-      <pre className="docs-code"><code>{`{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cursor/alice"
-    }
-  }
-}`}</code></pre>
-
-      <h3>Gemini CLI</h3>
-      <p>Add to <code>~/.gemini/settings.json</code>:</p>
-      <pre className="docs-code"><code>{`{
-  "mcpServers": {
-    "eywa": {
-      "httpUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=gemini/alice"
-    }
-  }
-}`}</code></pre>
-
-      <h3>Windsurf</h3>
-      <p>Add to <code>~/.codeium/windsurf/mcp_config.json</code>:</p>
-      <pre className="docs-code"><code>{`{
-  "mcpServers": {
-    "eywa": {
-      "serverUrl": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=windsurf/alice"
-    }
-  }
-}`}</code></pre>
-
-      <h3>Codex / OpenAI CLI</h3>
-      <p>Add to <code>~/.codex/config.json</code>:</p>
-      <pre className="docs-code"><code>{`{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=codex/alice"
-    }
-  }
-}`}</code></pre>
-
-      <h3>Cline</h3>
-      <p>Add to VS Code MCP settings:</p>
-      <pre className="docs-code"><code>{`{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=cline/alice"
-    }
-  }
-}`}</code></pre>
-
-      <h2>Replace alice with Your Name</h2>
+      <pre className="docs-code"><code>{`https://mcp.eywa-ai.dev/mcp?room=<room-slug>&agent=<agent>/<your-name>`}</code></pre>
       <p>
-        Each person on the team uses their own name as the agent identifier
-        (the part after the slash). This is how Eywa tells agents apart. For
-        example, if your name is Bob and you use Cursor, your
-        URL would end with <code>agent=cursor/bob</code>.
+        See the <Link to="/docs/integrations/claude-code">integration guides</Link> for
+        agent-specific config file locations.
       </p>
 
       <h2>What's Next</h2>

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createClient } from "@supabase/supabase-js";
-import { exec } from "node:child_process";
+import { exec, execSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -64,6 +64,129 @@ function openBrowser(url) {
         ? "start"
         : "xdg-open";
   exec(`${cmd} "${url}"`);
+}
+
+function userName() {
+  return process.env.USER || process.env.USERNAME || "user";
+}
+
+function hasBin(bin) {
+  try {
+    execSync(`which ${bin}`, { stdio: "ignore" });
+    return true;
+  } catch { return false; }
+}
+
+// Auto-detect installed agents and configure MCP for each one.
+// Returns array of { agent, status, detail } results.
+function autoConfigureAgents(slug) {
+  const name = userName();
+  const results = [];
+  const home = homedir();
+
+  // Helper: merge eywa into a JSON config file
+  function mergeJsonConfig(filePath, urlKey, agentPrefix) {
+    const url = mcpUrl(slug, `${agentPrefix}/${name}`);
+    let existing = {};
+    try {
+      if (existsSync(filePath)) {
+        existing = JSON.parse(readFileSync(filePath, "utf-8"));
+      }
+    } catch {}
+
+    if (!existing.mcpServers) existing.mcpServers = {};
+
+    // Already configured with same room? Skip.
+    const current = existing.mcpServers.eywa;
+    if (current) {
+      const currentUrl = current.url || current.serverUrl || current.httpUrl || "";
+      if (currentUrl.includes(`room=${slug}`)) {
+        return { status: "exists", detail: filePath };
+      }
+    }
+
+    existing.mcpServers.eywa = { [urlKey]: url };
+
+    // Ensure parent dir exists
+    const dir = join(filePath, "..");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(filePath, JSON.stringify(existing, null, 2) + "\n");
+    return { status: "configured", detail: filePath };
+  }
+
+  // 1. Claude Code
+  if (hasBin("claude")) {
+    const url = mcpUrl(slug, `claude/${name}`);
+    try {
+      const list = execSync("claude mcp list 2>&1", { encoding: "utf-8" });
+      if (list.includes("eywa") && list.includes(slug)) {
+        results.push({ agent: "Claude Code", status: "exists", detail: "already configured" });
+      } else {
+        if (list.includes("eywa")) {
+          execSync("claude mcp remove eywa 2>/dev/null", { stdio: "ignore" });
+        }
+        execSync(`claude mcp add --transport http eywa "${url}"`, { stdio: "ignore" });
+        results.push({ agent: "Claude Code", status: "configured", detail: "via claude mcp add" });
+      }
+    } catch {
+      try {
+        execSync(`claude mcp add --transport http eywa "${url}"`, { stdio: "ignore" });
+        results.push({ agent: "Claude Code", status: "configured", detail: "via claude mcp add" });
+      } catch {
+        // Claude Code present but mcp command failed
+      }
+    }
+  }
+
+  // 2. Cursor
+  const cursorDir = join(home, ".cursor");
+  if (existsSync(cursorDir)) {
+    const configPath = join(cursorDir, "mcp.json");
+    const r = mergeJsonConfig(configPath, "url", "cursor");
+    results.push({ agent: "Cursor", ...r });
+  }
+
+  // 3. Windsurf
+  const windsurfDir = join(home, ".codeium", "windsurf");
+  if (existsSync(windsurfDir)) {
+    const configPath = join(windsurfDir, "mcp_config.json");
+    const r = mergeJsonConfig(configPath, "serverUrl", "windsurf");
+    results.push({ agent: "Windsurf", ...r });
+  }
+
+  // 4. Gemini CLI
+  if (hasBin("gemini") || existsSync(join(home, ".gemini"))) {
+    const configPath = join(home, ".gemini", "settings.json");
+    const r = mergeJsonConfig(configPath, "httpUrl", "gemini");
+    results.push({ agent: "Gemini CLI", ...r });
+  }
+
+  // 5. Codex
+  if (hasBin("codex") || existsSync(join(home, ".codex"))) {
+    const configPath = join(home, ".codex", "config.json");
+    const r = mergeJsonConfig(configPath, "url", "codex");
+    results.push({ agent: "Codex", ...r });
+  }
+
+  return results;
+}
+
+function printAgentResults(results) {
+  if (!results.length) {
+    console.log(dim("  No agents detected. Add manually:\n"));
+    return false;
+  }
+
+  console.log(bold("  Agents configured:\n"));
+  for (const r of results) {
+    if (r.status === "configured") {
+      console.log(`  ${green("✓")} ${bold(r.agent)} ${dim(r.detail)}`);
+    } else if (r.status === "exists") {
+      console.log(`  ${cyan("●")} ${bold(r.agent)} ${dim("already connected")}`);
+    }
+  }
+  console.log();
+  return true;
 }
 
 function progressBar(done, total, width = 20) {
@@ -237,17 +360,25 @@ async function cmdInit(nameArg) {
   // Save as default room
   saveConfig({ ...loadConfig(), room: slug });
 
+  // Auto-detect and configure agents
+  const results = await autoConfigureAgents(slug);
+  console.log();
+  const agentsFound = printAgentResults(results);
+
+  if (!agentsFound) {
+    printConfigs(slug, displayName);
+    console.log(
+      dim("  Replace {your-name} with your name (e.g. alice, bob)."),
+    );
+    console.log(
+      dim("  Each person uses their own name so Eywa can tell agents apart.\n"),
+    );
+  }
+
   const dashUrl = `${DASHBOARD_BASE}/${slug}`;
-  console.log(`\n  ${bold("Dashboard:")} ${cyan(dashUrl)}`);
-
-  printConfigs(slug, displayName);
-
-  console.log(
-    dim("  Replace {your-name} with your name (e.g. alice, bob)."),
-  );
-  console.log(
-    dim("  Each person uses their own name so Eywa can tell agents apart.\n"),
-  );
+  console.log(`  ${bold("Dashboard:")} ${cyan(dashUrl)}`);
+  console.log(`  ${dim("Agent name:")} ${userName()}`);
+  console.log();
 
   // Open dashboard
   openBrowser(dashUrl);
@@ -271,14 +402,22 @@ async function cmdJoin(slugArg) {
 
   console.log(`\n  ${green("Joined:")} ${bold(room.name)} ${dim("/" + room.slug)}`);
 
+  // Auto-detect and configure agents
+  const results = await autoConfigureAgents(room.slug);
+  console.log();
+  const agentsFound = printAgentResults(results);
+
+  if (!agentsFound) {
+    printConfigs(room.slug, room.name);
+    console.log(
+      dim("  Replace {your-name} with your name (e.g. alice, bob).\n"),
+    );
+  }
+
   const dashUrl = `${DASHBOARD_BASE}/${room.slug}`;
   console.log(`  ${bold("Dashboard:")} ${cyan(dashUrl)}`);
-
-  printConfigs(room.slug, room.name);
-
-  console.log(
-    dim("  Replace {your-name} with your name (e.g. alice, bob).\n"),
-  );
+  console.log(`  ${dim("Agent name:")} ${userName()}`);
+  console.log();
 }
 
 async function cmdStatus(slugArg) {
@@ -782,7 +921,7 @@ function banner() {
 function usage() {
   banner();
   console.log(`${bold("  Quick start:")}
-    ${cyan("npx eywa-ai init my-team")}              Create a room and get MCP configs
+    ${cyan("npx eywa-ai init")}                       Create a room and auto-configure all detected agents
     ${cyan("npx eywa-ai join cosmic-fox-a1b2")}       Join an existing room
 
 ${bold("  Observe:")}
@@ -801,13 +940,14 @@ ${bold("  Interact:")}
     knowledge [search]                    Browse the knowledge base
 
 ${bold("  Setup:")}
-    init [name]                           Create a new room (opens dashboard)
-    join <room-slug>                      Join an existing room
+    init [name]                           Create a room, auto-configure agents
+    join <room-slug>                      Join a room, auto-configure agents
     dashboard [room]                      Open the web dashboard
     help                                  Show this help
 
 ${bold("  Examples:")}
-    ${dim("$")} npx eywa-ai init                                       ${dim("# random room name")}
+    ${dim("$")} npx eywa-ai init                                       ${dim("# create room, configure all agents")}
+    ${dim("$")} npx eywa-ai init my-team                               ${dim("# named room")}
     ${dim("$")} npx eywa-ai status                                     ${dim("# check your agents")}
     ${dim("$")} npx eywa-ai dest set "Ship auth" "JWT,RBAC,Migration"  ${dim("# set destination")}
     ${dim("$")} npx eywa-ai dest check JWT                             ${dim("# mark milestone done")}
