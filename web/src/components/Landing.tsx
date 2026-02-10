@@ -579,7 +579,7 @@ export function Landing() {
       {/* Open Source Community */}
       <section className="landing-cta-section">
         <h2>Built in the open</h2>
-        <p>Eywa is MIT licensed and community driven. Contribute on GitHub or come talk to us on Discord.</p>
+        <p>Eywa is open source and community driven. Contribute on GitHub or come talk to us on Discord.</p>
         <div className="landing-community-links">
           <a href="https://github.com/a-sumo/eywa" className="btn-community btn-community-github" target="_blank" rel="noopener noreferrer">
             <IconGitHub />
