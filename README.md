@@ -17,7 +17,7 @@
   <a href="https://www.npmjs.com/package/eywa-ai"><img src="https://img.shields.io/npm/v/eywa-ai?color=6417EC&label=npx%20eywa-ai" alt="npm"></a>
   <a href="https://eywa-ai.dev"><img src="https://img.shields.io/badge/dashboard-live-15D1FF" alt="Dashboard"></a>
   <a href="https://discord.gg/TyEUUnNm"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/a-sumo/eywa/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
+  <a href="https://github.com/a-sumo/eywa/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="Apache 2.0 License"></a>
 </p>
 
 <p align="center">
@@ -393,7 +393,7 @@ cd discord-bot && npm install && npm start
 
 ## License
 
-MIT
+Apache 2.0
 
 ---
 
