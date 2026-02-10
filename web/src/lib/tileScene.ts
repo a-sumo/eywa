@@ -50,6 +50,10 @@ export class TileScene {
   private groups = new Map<string, GroupDescriptor>();
   private pendingOps: SceneOp[] = [];
   private pendingTextures: TexPayload[] = [];
+  // Lazy texture queue: tile IDs that need encoding + sending.
+  // Encoding is deferred to takeTextures() so we only pay toDataURL()
+  // cost for the N tiles we actually send per tick (not all dirty tiles).
+  private pendingTexIds: string[] = [];
 
   // JPEG quality per tile type
   private qualityMap: Record<string, number> = {
@@ -196,14 +200,8 @@ export class TileScene {
       if (!tile.visible) continue;
       if (tile.render()) {
         count++;
-        // Queue texture broadcast
-        const quality = this.qualityMap[tile.type] ?? 0.6;
-        this.pendingTextures.push({
-          id: tile.id,
-          image: tile.getBase64(quality),
-          w: tile.w,
-          h: tile.h,
-        });
+        // Queue tile ID for lazy encoding (actual toDataURL happens in takeTextures)
+        this.pendingTexIds.push(tile.id);
 
         // If this is a new tile, also queue create op
         if (!tile.created) {
@@ -255,12 +253,30 @@ export class TileScene {
   }
 
   /**
-   * Take up to `n` texture payloads from the pending queue.
-   * Leaves remaining textures for the next call.
+   * Take up to `n` texture payloads. Encoding (toDataURL) happens here,
+   * lazily, so we only pay the cost for tiles we actually send this tick.
    */
   takeTextures(n: number): TexPayload[] {
-    if (this.pendingTextures.length === 0) return [];
-    return this.pendingTextures.splice(0, n);
+    // Drain any pre-built textures first (from resync)
+    const result: TexPayload[] = [];
+    while (result.length < n && this.pendingTextures.length > 0) {
+      result.push(this.pendingTextures.shift()!);
+    }
+
+    // Then encode from the lazy queue
+    while (result.length < n && this.pendingTexIds.length > 0) {
+      const id = this.pendingTexIds.shift()!;
+      const tile = this.tiles.get(id);
+      if (!tile) continue;
+      const quality = this.qualityMap[tile.type] ?? 0.6;
+      result.push({
+        id: tile.id,
+        image: tile.getBase64(quality),
+        w: tile.w,
+        h: tile.h,
+      });
+    }
+    return result;
   }
 
   /**
@@ -274,7 +290,7 @@ export class TileScene {
    * Number of pending textures.
    */
   get pendingTexCount(): number {
-    return this.pendingTextures.length;
+    return this.pendingTextures.length + this.pendingTexIds.length;
   }
 
   /**

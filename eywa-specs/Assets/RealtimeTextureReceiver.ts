@@ -226,6 +226,15 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
       this.onMicroTex(msg.payload);
     });
 
+    // Batched texture updates (multiple tiles in one message, less network overhead)
+    this.realtimeChannel.on("broadcast", { event: "tex_batch" }, (msg) => {
+      const textures = msg.payload?.textures;
+      if (!textures || !Array.isArray(textures)) return;
+      for (const tex of textures) {
+        this.onMicroTex(tex);
+      }
+    });
+
     this.realtimeChannel.subscribe((status) => {
       this.log("Channel status: " + status + " (key: " + channelKey + ")");
       if (status === "SUBSCRIBED") {

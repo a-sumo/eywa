@@ -87,6 +87,10 @@ export class TilePanel extends BaseScriptComponent {
   @hint("Spawn colored test quads to verify mesh/material pipeline")
   public showTestQuads: boolean = false;
 
+  @input
+  @hint("If true, panel anchors to image marker. If false (default), panel floats 65cm in front of camera.")
+  public useMarkerTracking: boolean = false;
+
   // Live quads
   private quads: Map<string, QuadEntry> = new Map();
   private groups: Map<string, SceneObject> = new Map();
@@ -148,6 +152,19 @@ export class TilePanel extends BaseScriptComponent {
     this.buildPanelInteractor();
     this.cameraObj = this.findCameraObject();
 
+    // Marker-optional mode: detach from marker hierarchy so the panel floats freely.
+    // When useMarkerTracking is false, we reparent to a root-level object so the
+    // MarkerTrackingComponent on our old parent can't reposition us.
+    if (!this.useMarkerTracking) {
+      const oldParent = this.sceneObject.getParent();
+      if (oldParent) {
+        const panelRoot = global.scene.createSceneObject("PanelRoot");
+        panelRoot.layer = this.sceneObject.layer;
+        this.sceneObject.setParent(panelRoot);
+        print("[TilePanel] Marker-optional: detached from '" + oldParent.name + "', floating freely");
+      }
+    }
+
     // Log parent transform for debugging
     const worldPos = this.sceneObject.getTransform().getWorldPosition();
     const worldScale = this.sceneObject.getTransform().getWorldScale();
@@ -155,8 +172,6 @@ export class TilePanel extends BaseScriptComponent {
     print("[TilePanel] Parent world scale: (" + worldScale.x.toFixed(2) + ", " + worldScale.y.toFixed(2) + ", " + worldScale.z.toFixed(2) + ")");
 
     // Default placement: position panel 65cm in front of camera, 3cm below eye level.
-    // This ensures the panel is visible immediately even without marker detection.
-    // If marker is detected later, ExtendedMarkerTracking repositions us.
     {
       const camT = this.cameraObj.getTransform();
       const camPos = camT.getWorldPosition();
@@ -491,8 +506,10 @@ export class TilePanel extends BaseScriptComponent {
         this.setVisibility(op.id, op.visible);
         break;
       case "move":
+        this.moveQuad(op);
+        break;
       case "group-move":
-        // Ignored - static layout, no repositioning after creation
+        this.moveGroup(op);
         break;
       default:
         print("[TilePanel] Unknown op: " + op.op);
@@ -518,8 +535,11 @@ export class TilePanel extends BaseScriptComponent {
     const id = op.id as string;
     if (!id) return;
 
-    // Skip if quad already exists (static layout, no repositioning)
-    if (this.quads.has(id)) return;
+    // If quad already exists, update its position/scale instead of skipping
+    if (this.quads.has(id)) {
+      this.moveQuad(op);
+      return;
+    }
 
     // Reuse from pool or create new
     let entry = this.quadPool.pop();
@@ -530,6 +550,7 @@ export class TilePanel extends BaseScriptComponent {
       entry.h = op.h || 48;
       entry.layer = op.layer !== undefined ? op.layer : 0;
       entry.interactive = !!op.interactive;
+      entry.interactable = null as any; // Reset so setupInteraction rewires fresh
       entry.obj.enabled = true;
       entry.obj.name = "MT_" + id;
     } else {
@@ -587,24 +608,16 @@ export class TilePanel extends BaseScriptComponent {
     const mat = this.material.clone();
     rmv.mainMaterial = mat;
 
-    // Create a child for the collider (separate from visual scale)
-    const colliderObj = global.scene.createSceneObject("MT_col_" + id);
-    colliderObj.setParent(obj);
-    colliderObj.layer = this.sceneObject.layer;
-    colliderObj.getTransform().setLocalPosition(vec3.zero());
-    colliderObj.getTransform().setLocalScale(new vec3(1, 1, 0.01));
-
-    const collider = colliderObj.createComponent("Physics.ColliderComponent") as ColliderComponent;
-    const shape = Shape.createBoxShape();
-    shape.size = new vec3(1, 1, 0.01);
-    collider.shape = shape;
+    // No per-tile collider. All interaction goes through the single panel
+    // collider (buildPanelInteractor) which does AABB hit-testing in code.
+    // Per-tile colliders would block the panel raycast.
 
     return {
       id,
       obj,
       rmv,
       material: mat,
-      colliderObj,
+      colliderObj: null as any,
       interactable: null as any,
       layer,
       w,
@@ -731,6 +744,44 @@ export class TilePanel extends BaseScriptComponent {
     const entry = this.quads.get(id);
     if (!entry) return;
     entry.obj.enabled = visible;
+  }
+
+  private moveQuad(op: any) {
+    const entry = this.quads.get(op.id);
+    if (!entry) return;
+
+    const x = (op.x !== undefined ? op.x : 0) as number;
+    const y = (op.y !== undefined ? op.y : 0) as number;
+    const z = op.z !== undefined ? (op.z as number) : entry.obj.getTransform().getLocalPosition().z;
+    entry.obj.getTransform().setLocalPosition(new vec3(x, y, z));
+
+    // Update scale if dimensions changed
+    if (op.w !== undefined || op.h !== undefined) {
+      const w = (op.w !== undefined ? op.w : entry.w) as number;
+      const h = (op.h !== undefined ? op.h : entry.h) as number;
+      entry.w = w;
+      entry.h = h;
+      const s = (op.s !== undefined ? op.s : 1) as number;
+      entry.obj.getTransform().setLocalScale(new vec3(w / this.pixelsPerCm * s, h / this.pixelsPerCm * s, 1));
+    }
+
+    this.updatePanelColliderBounds();
+  }
+
+  private moveGroup(op: any) {
+    const groupObj = this.groups.get(op.id);
+    if (!groupObj) return;
+
+    const x = (op.x !== undefined ? op.x : 0) as number;
+    const y = (op.y !== undefined ? op.y : 0) as number;
+    const z = (op.z !== undefined ? op.z : 0) as number;
+    groupObj.getTransform().setLocalPosition(new vec3(x, y, z));
+
+    if (op.visible !== undefined) {
+      groupObj.enabled = op.visible as boolean;
+    }
+
+    this.updatePanelColliderBounds();
   }
 
   // ---- Texture handling ----

@@ -40,15 +40,6 @@ export function AppHeader() {
         </nav>
 
         <div className="global-header-actions">
-          <a
-            href="https://github.com/a-sumo/eywa"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="global-header-github"
-            title="GitHub"
-          >
-            <GitHubIcon />
-          </a>
           {!isRoom && (
             <>
               <button
@@ -63,6 +54,15 @@ export function AppHeader() {
               </Link>
             </>
           )}
+          <a
+            href="https://github.com/a-sumo/eywa"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="global-header-github"
+            title="GitHub"
+          >
+            <GitHubIcon />
+          </a>
         </div>
       </div>
     </header>

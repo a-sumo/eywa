@@ -412,18 +412,21 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   .ibtn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
   .ibtn svg { width: 14px; height: 14px; }
 
-  /* Agent graph (horizontal timeline) */
-  .agent-graph {
+  /* Agent topology map */
+  .agent-topo {
     border-bottom: 1px solid var(--vscode-panel-border);
     overflow: hidden;
   }
-  .agent-graph svg { display: block; width: 100%; }
-  .agent-graph .track-row { cursor: pointer; }
-  .agent-graph .track-bg { transition: opacity 0.12s ease-in-out; }
-  .agent-graph .track-row:hover .track-bg { opacity: 0.08 !important; }
-  .agent-graph .track-row.selected .track-bg { opacity: 0.12 !important; }
-  @keyframes pulse-dot { 0%,100% { opacity: 0.9; } 50% { opacity: 0.4; } }
-  .agent-graph .active-dot { animation: pulse-dot 2s ease-in-out infinite; }
+  .agent-topo canvas { display: block; width: 100%; cursor: pointer; }
+  .topo-legend {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 10px 5px; font-size: 9px; opacity: 0.35;
+  }
+  .topo-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    display: inline-block; margin-left: 6px;
+  }
+  .topo-dot:first-child { margin-left: 0; }
 
   /* Activity feed */
   .feed-header {
@@ -631,15 +634,186 @@ function dismissAttn(agent) {
   vscode.postMessage({ type: 'attentionDismiss', agent: agent });
 }
 
-function graphClick(e) {
-  var el = e.target;
-  while (el) {
-    if (el.dataset && el.dataset.agent) {
-      selectAgent(el.dataset.agent);
-      return;
+// Topology map state
+var topoLanes = [];
+var topoAnimId = 0;
+
+function drawTopology(canvas, agents, progressMap, destination) {
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.clientWidth;
+  var H = canvas.clientHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+
+  var LEFT = 70, RIGHT = W - 20, TOP = 10, BOTTOM = H - 10;
+  var LANE_W = RIGHT - LEFT;
+  var fg = getComputedStyle(document.documentElement).getPropertyValue('--vscode-foreground').trim() || '#ccc';
+
+  // Sort: active first, then finished, then idle
+  var sorted = agents.slice().sort(function(a, b) {
+    var order = { active: 0, finished: 1, idle: 2 };
+    return (order[a.status] || 2) - (order[b.status] || 2);
+  });
+
+  var lineH = 14;
+  var maxLanes = Math.max(1, Math.floor((BOTTOM - TOP) / lineH));
+  var visible = sorted.slice(0, maxLanes);
+
+  // Build lanes
+  topoLanes = [];
+  for (var i = 0; i < visible.length; i++) {
+    var a = visible[i];
+    var color = a.status === 'active' ? '#8b5cf6' : a.status === 'finished' ? '#6ee7b7' : '#64748b';
+    var jitter = ((hashStr(a.name) % 100) / 100) * 0.06;
+    var gp = progressMap[a.name];
+    var progress;
+    if (gp && gp.percent > 0) {
+      progress = gp.percent / 100;
+    } else if (a.status === 'active') {
+      progress = 0.55 + jitter;
+    } else if (a.status === 'finished') {
+      progress = 0.92 + jitter * 0.5;
+    } else {
+      progress = 0.08 + jitter * 2;
     }
-    el = el.parentNode;
+    var y = TOP + i * lineH + lineH / 2;
+    topoLanes.push({ agent: a, color: color, progress: progress, y: y });
   }
+
+  var t = 0;
+  cancelAnimationFrame(topoAnimId);
+
+  function frame() {
+    t += 0.004;
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw lanes
+    for (var li = 0; li < topoLanes.length; li++) {
+      var lane = topoLanes[li];
+      var y = lane.y;
+      var x1 = LEFT + lane.progress * LANE_W;
+      var sel = selectedAgent === lane.agent.name;
+
+      // Agent name (right-aligned)
+      var sn = shortName(lane.agent.name);
+      if (sn.length > 10) sn = sn.slice(0, 9) + '..';
+      ctx.font = (sel ? '600 ' : '') + '9px var(--vscode-font-family, sans-serif)';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = fg;
+      ctx.globalAlpha = lane.agent.status === 'active' ? 0.8 : (sel ? 0.6 : 0.3);
+      ctx.fillText(sn, LEFT - 6, y);
+      ctx.globalAlpha = 1;
+
+      // Trace line
+      ctx.strokeStyle = lane.color;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.15;
+      ctx.beginPath();
+      ctx.moveTo(LEFT, y);
+      ctx.lineTo(RIGHT, y);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Filled portion
+      if (lane.progress > 0.01) {
+        ctx.strokeStyle = lane.color;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.moveTo(LEFT, y);
+        ctx.lineTo(x1, y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Dot
+      var r = lane.agent.status === 'active' ? 3.5 : lane.agent.status === 'finished' ? 2.5 : 2;
+      if (sel) r += 1.5;
+      ctx.fillStyle = lane.color;
+      ctx.beginPath();
+      ctx.arc(x1, y, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pulse for active
+      if (lane.agent.status === 'active') {
+        var pulse = 0.3 + 0.7 * Math.abs(Math.sin(t * 3 + y * 0.1));
+        ctx.strokeStyle = lane.color;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = pulse * 0.3;
+        ctx.beginPath();
+        ctx.arc(x1, y, r + 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Selection ring
+      if (sel) {
+        ctx.strokeStyle = lane.color;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(x1, y, r + 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Destination bar on right
+    if (destination && destination.milestones) {
+      var ms = destination.milestones;
+      var prog = destination.progress || {};
+      var done = 0;
+      for (var mi = 0; mi < ms.length; mi++) { if (prog[ms[mi]]) done++; }
+      var pct = ms.length > 0 ? done / ms.length : 0;
+      var barH = BOTTOM - TOP;
+      var barX = RIGHT + 2;
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.12)';
+      ctx.fillRect(barX, TOP, 3, barH);
+      ctx.fillStyle = pct === 1 ? '#34d399' : '#8b5cf6';
+      ctx.fillRect(barX, BOTTOM - barH * pct, 3, barH * pct);
+    }
+
+    // Overflow label
+    if (sorted.length > maxLanes) {
+      ctx.fillStyle = fg;
+      ctx.globalAlpha = 0.2;
+      ctx.font = '8px var(--vscode-font-family, sans-serif)';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('+' + (sorted.length - maxLanes) + ' more', LEFT - 6, H - 2);
+      ctx.globalAlpha = 1;
+    }
+
+    topoAnimId = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function topoClick(e) {
+  var canvas = e.target;
+  var rect = canvas.getBoundingClientRect();
+  var y = e.clientY - rect.top;
+  var closest = null, bestDist = 999;
+  for (var i = 0; i < topoLanes.length; i++) {
+    var d = Math.abs(topoLanes[i].y - y);
+    if (d < bestDist) { bestDist = d; closest = topoLanes[i]; }
+  }
+  if (closest && bestDist < 10) {
+    selectAgent(closest.agent.name);
+  } else {
+    selectAgent(null);
+  }
+}
+
+function hashStr(s) {
+  var h = 0;
+  for (var i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
 }
 
 const LOGO = '<svg class="logo" viewBox="0 0 250 250" fill="none"><path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/><path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/><path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/><path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/><rect width="69.09" height="37.63" rx="18.81" transform="matrix(-0.682 -0.731 0.715 -0.7 165.13 184.31)"/><rect width="69.09" height="37.47" rx="18.73" transform="matrix(-0.682 0.731 -0.714 -0.7 182.38 88.9)"/><rect width="75.28" height="37.98" rx="18.99" transform="matrix(0.679 0.734 -0.717 0.697 95.87 64.43)"/><rect width="71.22" height="41.64" rx="20.82" transform="matrix(0.799 -0.601 0.583 0.813 55 149.83)"/></svg>';
@@ -788,75 +962,17 @@ function render(data) {
     + tendrils + bodyRects + eyeSvg
     + '</svg></div>';
 
-  // Agent graph (horizontal timeline)
+  // Agent topology map (compact progress tracker)
   if (agents.length > 0) {
-    const TH = 22, GP = 4, LW = 48, VW = 280, NR = 2.5;
-    const gh = GP * 2 + agents.length * TH;
-    const tw = VW - LW - GP;
-    // Time range from activity
-    let tMin = Infinity, tMax = -Infinity;
-    for (const ev of activity) {
-      const t = new Date(ev.ts).getTime();
-      if (t < tMin) tMin = t;
-      if (t > tMax) tMax = t;
-    }
-    const nowT = Date.now();
-    if (!isFinite(tMin)) { tMin = nowT - 3600000; tMax = nowT; }
-    if (tMax <= tMin) tMax = tMin + 1;
-    const tRange = tMax - tMin;
-
-    const agentIdx = {};
-    for (let ai = 0; ai < agents.length; ai++) agentIdx[agents[ai].name] = ai;
-    const SC = { active: '#3fb950', idle: '#d29922', finished: '#8b949e' };
-
-    let gSvg = '<svg viewBox="0 0 ' + VW + ' ' + gh + '">';
-
-    for (let gi = 0; gi < agents.length; gi++) {
-      const ag = agents[gi];
-      const cy = GP + gi * TH + TH / 2;
-      const c = SC[ag.status] || '#8b949e';
-      const sel = selectedAgent === ag.name;
-      const asrc = avatars[ag.name] || '';
-      let sn = shortName(ag.name);
-      if (sn.length > 8) sn = sn.slice(0, 7) + '..';
-
-      gSvg += '<g class="track-row' + (sel ? ' selected' : '') + '" data-agent="' + esc(ag.name) + '">';
-      gSvg += '<rect class="track-bg" x="0" y="' + (GP + gi * TH) + '" width="' + VW + '" height="' + TH + '" fill="' + c + '" opacity="0" rx="2"/>';
-      gSvg += '<image href="' + asrc + '" x="' + GP + '" y="' + (cy - 6) + '" width="12" height="12" style="image-rendering:pixelated"/>';
-      gSvg += '<text x="' + (GP + 16) + '" y="' + cy + '" font-size="7.5" fill="var(--vscode-foreground)" dominant-baseline="middle" opacity="' + (ag.status === 'active' ? '0.9' : '0.4') + '" font-weight="' + (ag.status === 'active' ? '600' : '400') + '">' + esc(sn) + '</text>';
-
-      // Track line
-      const dash = ag.status === 'idle' ? ' stroke-dasharray="4 2"' : (ag.status === 'finished' ? ' stroke-dasharray="2 2"' : '');
-      const lop = ag.status === 'finished' ? '0.12' : (ag.status === 'idle' ? '0.2' : '0.35');
-      gSvg += '<line x1="' + LW + '" y1="' + cy + '" x2="' + (VW - GP) + '" y2="' + cy + '" stroke="' + c + '" stroke-width="1.5" opacity="' + lop + '"' + dash + '/>';
-
-      // Status dot at track start
-      gSvg += '<circle cx="' + LW + '" cy="' + cy + '" r="2.5" fill="' + c + '"' + (ag.status === 'active' ? ' class="active-dot"' : ' opacity="0.5"') + '/>';
-
-      // Progress bar
-      const gp = progressMap[ag.name];
-      if (gp && gp.percent > 0) {
-        const bw = tw * (gp.percent / 100);
-        gSvg += '<rect x="' + LW + '" y="' + (cy + 5) + '" width="' + bw.toFixed(1) + '" height="1.5" fill="' + (gp.status === 'blocked' ? '#d29922' : '#7946FF') + '" rx="0.75" opacity="0.5"/>';
-      }
-      gSvg += '</g>';
-    }
-
-    // Activity dots on tracks
-    for (const ev of activity) {
-      const tidx = agentIdx[ev.agent];
-      if (tidx === undefined) continue;
-      const dx = LW + ((new Date(ev.ts).getTime() - tMin) / tRange) * tw;
-      const dy = GP + tidx * TH + TH / 2;
-      const dc = TYPE_COLORS[ev.type] || '#888';
-      gSvg += '<circle cx="' + dx.toFixed(1) + '" cy="' + dy + '" r="' + NR + '" fill="' + dc + '" opacity="0.7"><title>' + esc(ev.type) + ': ' + esc(ev.content.slice(0, 60)) + '</title></circle>';
-    }
-
-    // Now marker
-    gSvg += '<line x1="' + (VW - GP) + '" y1="' + GP + '" x2="' + (VW - GP) + '" y2="' + (gh - GP) + '" stroke="var(--vscode-foreground)" stroke-width="0.5" opacity="0.1"/>';
-    gSvg += '</svg>';
-
-    html += '<div class="agent-graph" onclick="graphClick(event)">' + gSvg + '</div>';
+    var topoH = Math.min(180, Math.max(80, agents.length * 14 + 24));
+    html += '<div class="agent-topo">';
+    html += '<canvas id="topoCanvas" style="height:' + topoH + 'px" onclick="topoClick(event)"></canvas>';
+    html += '<div class="topo-legend">';
+    html += '<span class="topo-dot" style="background:#8b5cf6"></span> active';
+    html += '<span class="topo-dot" style="background:#6ee7b7"></span> done';
+    html += '<span class="topo-dot" style="background:#64748b"></span> idle';
+    html += '<span style="opacity:0.5;margin-left:6px">\\u2192 destination</span>';
+    html += '</div></div>';
 
     // Agent detail panel (expanded below strip when an agent is selected)
     if (selectedAgent) {
@@ -907,6 +1023,12 @@ function render(data) {
   html += '</div>';
 
   root.innerHTML = html;
+
+  // Draw topology map after DOM update
+  var topoCanvas = document.getElementById('topoCanvas');
+  if (topoCanvas) {
+    drawTopology(topoCanvas, agents, progressMap, destination);
+  }
 }
 
 window.addEventListener('message', e => {

@@ -148,6 +148,7 @@
     pixelsPerCm: true
     showStatus: true
     showTestQuads: true
+    useMarkerTracking: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
@@ -161,6 +162,7 @@
       cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
       showStatus: true
       showTestQuads: false
+      useMarkerTracking: false
   ScriptTypes:
     "":
       {}
