@@ -284,7 +284,13 @@ async function handleGetAgentStatus(roomId: string): Promise<string> {
     const hasDistress = info.entries.some((e) => e.metadata?.event === "distress" && e.metadata?.resolved !== true);
     const distressTag = hasDistress ? " [DISTRESS]" : "";
 
-    lines.push(`[${status}]${distressTag} ${agent} (${info.sessions.size} sessions, last seen ${ago})`);
+    const silenceMin = Math.floor((now - new Date(info.lastTs).getTime()) / 60000);
+    const silenceTag = isActive && silenceMin >= 10
+      ? ` [SILENT ${silenceMin}m]`
+      : !isActive && silenceMin >= 30
+        ? ` [SILENT ${silenceMin >= 60 ? `${Math.floor(silenceMin / 60)}h ${silenceMin % 60}m` : `${silenceMin}m`}]`
+        : "";
+    lines.push(`[${status}]${distressTag}${silenceTag} ${agent} (${info.sessions.size} sessions, last seen ${ago})`);
     lines.push(`  Task: ${task}`);
   }
 
@@ -499,12 +505,38 @@ async function handleDetectPatterns(roomId: string): Promise<string> {
   }
 
   const activeAgents = [...byAgent.entries()].filter(([, mems]) => mems.length > 2);
-  if (activeAgents.length === 0) {
+
+  // Detect silent agents: had a session_start but no recent activity
+  const now = Date.now();
+  const silentAgents: string[] = [];
+  for (const [agent, mems] of byAgent) {
+    const lastTs = new Date(mems[0].ts).getTime();
+    const silenceMin = Math.floor((now - lastTs) / 60000);
+    const hasSessionStart = mems.some(
+      (m) => (m.metadata as Record<string, unknown>)?.event === "session_start"
+    );
+    const hasSessionEnd = mems.some(
+      (m) => {
+        const ev = (m.metadata as Record<string, unknown>)?.event;
+        return ev === "session_done" || ev === "session_end";
+      }
+    );
+    if (hasSessionStart && !hasSessionEnd && silenceMin >= 10) {
+      silentAgents.push(`${agent} (silent ${silenceMin}m, last activity: ${mems[0].content?.slice(0, 80)})`);
+    }
+  }
+
+  if (activeAgents.length === 0 && silentAgents.length === 0) {
     return `${data.length} events from ${byAgent.size} agents, but no agent has enough activity for analysis.`;
   }
 
   // Build compact profiles
   const profiles = activeAgents.map(([agent, mems]) => buildAgentProfile(agent, mems));
+
+  // Prepend silence warnings
+  if (silentAgents.length > 0) {
+    profiles.unshift(`SILENCE DETECTED:\n${silentAgents.map(s => `  - ${s}`).join("\n")}`);
+  }
 
   // Ask Gemini for semantic intent analysis
   const geminiResult = await analyzeWithGemini(profiles);

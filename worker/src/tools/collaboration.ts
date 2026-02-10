@@ -151,8 +151,15 @@ export function registerCollaborationTools(
         const kappa = computeCurvature(info.ops, durationMin);
         const kappaStr = info.ops.length > 0 ? `\n    Curvature: κ=${kappa}` : "";
 
+        // Silence detection
+        const silenceMs = Date.now() - new Date(info.lastSeen).getTime();
+        const silenceMin = Math.floor(silenceMs / 60000);
+        const silenceStr = info.status === "active" && silenceMin >= 10
+          ? `\n    ⚠ SILENT ${silenceMin >= 60 ? `${Math.floor(silenceMin / 60)}h ${silenceMin % 60}m` : `${silenceMin}m`}`
+          : "";
+
         lines.push(
-          `  ${name} [${info.status}]${durationStr} - ${info.description}${sysStr}${actStr}${opsStr}${outStr}${kappaStr}\n    Last seen: ${info.lastSeen}`,
+          `  ${name} [${info.status}]${durationStr} - ${info.description}${sysStr}${actStr}${opsStr}${outStr}${kappaStr}${silenceStr}\n    Last seen: ${info.lastSeen}`,
         );
       }
 

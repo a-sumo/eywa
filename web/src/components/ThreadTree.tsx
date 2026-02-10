@@ -71,6 +71,7 @@ interface AgentState {
   opCount: number;
   outcomes: { success: number; failure: number; blocked: number };
   lastSeen: string;
+  silenceMin: number;
   recentOps: AgentOp[];
   progress: AgentProgress | null;
   toolCallCount: number;
@@ -94,6 +95,34 @@ const PRESSURE_COLORS: Record<string, string> = {
   high: "#f97316",
   critical: "#ef4444",
 };
+
+// Silence thresholds (minutes)
+const SILENCE_WARN = 10;
+const SILENCE_HIGH = 30;
+const SILENCE_CRITICAL = 60;
+
+function getSilenceLevel(mins: number, status: string): "ok" | "warn" | "high" | "critical" {
+  if (status === "finished") return "ok";
+  if (mins >= SILENCE_CRITICAL) return "critical";
+  if (mins >= SILENCE_HIGH) return "high";
+  if (mins >= SILENCE_WARN) return "warn";
+  return "ok";
+}
+
+const SILENCE_COLORS: Record<string, string> = {
+  ok: "transparent",
+  warn: "#eab308",
+  high: "#f97316",
+  critical: "#ef4444",
+};
+
+function formatSilence(mins: number): string {
+  if (mins < 1) return "";
+  if (mins < 60) return `${mins}m silent`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}m silent` : `${h}h silent`;
+}
 
 interface DistressSignal {
   id: string;
@@ -249,6 +278,7 @@ function buildAgentStates(memories: Memory[]): Map<string, AgentState> {
         opCount: 0,
         outcomes: { success: 0, failure: 0, blocked: 0 },
         lastSeen: m.ts,
+        silenceMin: Math.floor((Date.now() - new Date(m.ts).getTime()) / 60000),
         recentOps: [],
         progress: null,
         toolCallCount: 0,
@@ -574,6 +604,19 @@ function AgentCard({
             {pressure === "critical" ? "CTX CRITICAL" : pressure === "high" ? "CTX HIGH" : "CTX WARN"}
           </span>
         )}
+        {(() => {
+          const silenceLevel = getSilenceLevel(state.silenceMin, state.status);
+          const silenceColor = SILENCE_COLORS[silenceLevel];
+          const silenceText = formatSilence(state.silenceMin);
+          return silenceLevel !== "ok" && silenceText ? (
+            <span className="hub-pill" style={{
+              background: `${silenceColor}18`,
+              color: silenceColor,
+            }}>
+              {silenceText}
+            </span>
+          ) : null;
+        })()}
         <span className="hub-agent-meta">{state.opCount} mem</span>
         <span className="hub-agent-meta">{timeAgo(state.lastSeen)}</span>
         <span className="hub-chevron">{expanded ? "\u25B2" : "\u25BC"}</span>

@@ -526,7 +526,9 @@ async function buildInstructions(
       const durationMin = (new Date(info.lastTs).getTime() - new Date(info.firstTs).getTime()) / 60000;
       const kappa = computeCurvature(info.ops, durationMin);
       const kappaStr = info.ops.length > 0 ? ` κ=${kappa}` : "";
-      lines.push(`  ${name} [${info.status}]${kappaStr} ${info.task}${sysStr}`);
+      const silenceMin = Math.floor((Date.now() - new Date(info.lastTs).getTime()) / 60000);
+      const silenceTag = info.status === "active" && silenceMin >= 10 ? ` SILENT:${silenceMin}m` : "";
+      lines.push(`  ${name} [${info.status}]${kappaStr}${silenceTag} ${info.task}${sysStr}`);
     }
   }
 
