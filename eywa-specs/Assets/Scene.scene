@@ -7,6 +7,7 @@
     - !<own> 5aa0f98b-e799-448c-a2dc-cae5d04fa2a4
     - !<own> 720ebb51-6836-48da-9489-225f7ab55992
     - !<own> 5ba7cf59-3e72-4756-8ab2-c681194059d0
+    - !<own> bb84fb85-981d-42ae-babc-30af04b6035f
   layers: !<Layers/267ee9a7-aff2-4f9d-9a49-f71214747d03>
     userLayers:
       []
@@ -1548,6 +1549,37 @@
     []
   Components:
     - !<own> 55be292f-0363-41f1-b55c-70fcb8e4dd25
+- !<ScriptComponent/480a7dcc-bcc4-4fc0-9784-30d8c11287a3>
+  PrefabRemaps:
+    []
+  Name: TilePanel
+  Enabled: true
+  ScriptAsset: !<reference> 67f9b941-2e35-4717-90f6-f4dcb72dbbd7
+  ScriptInputsDefault:
+    channelName: true
+    deviceId: true
+    positionOffset: true
+    pixelsPerCm: true
+    showStatus: true
+    showTestQuads: true
+    useMarkerTracking: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      snapCloudRequirements: !<MappingBased.AssignableType> 15221b26-20f6-42ab-a6e7-b358ab3bbf0f
+      channelName: demo
+      deviceId: editor
+      positionOffset: !<Vec3> {x: 0.000000, y: 0.000000, z: 0.000000}
+      material: !<reference.Material> fbfaad10-8f5f-4426-9a35-925d3feff052
+      pixelsPerCm: !<float> 16.000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
+      showStatus: true
+      showTestQuads: false
+      useMarkerTracking: false
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/4a8fba8e-5e79-4c17-9b90-eecc02c7b7dc>
   PrefabRemaps:
     []
@@ -1881,6 +1913,7 @@
     pixelsPerCm: true
     showStatus: true
     showTestQuads: true
+    useMarkerTracking: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
@@ -1894,6 +1927,7 @@
       cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
       showStatus: true
       showTestQuads: false
+      useMarkerTracking: false
   ScriptTypes:
     "":
       {}
@@ -4087,6 +4121,21 @@
     CapitalizationOverride: None
   DepthTest: false
   TwoSided: false
+- !<SceneObject/bb84fb85-981d-42ae-babc-30af04b6035f>
+  PrefabRemaps:
+    []
+  Name: Panel
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 1.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 480a7dcc-bcc4-4fc0-9784-30d8c11287a3
 - !<SceneObject/c1e4cdd6-40ff-4bbf-94e2-490af58b9b1d>
   PrefabRemaps:
     []

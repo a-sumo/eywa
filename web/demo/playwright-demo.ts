@@ -81,7 +81,7 @@ async function run() {
     deviceScaleFactor: 2,
     recordVideo: {
       dir: "demo/recordings",
-      size: { width: 1440, height: 900 },
+      size: { width: 2880, height: 1800 },
     },
   });
 

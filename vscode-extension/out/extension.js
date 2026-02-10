@@ -14534,41 +14534,21 @@ var LiveViewProvider = class {
   .ibtn:hover { opacity: 1; background: var(--vscode-toolbar-hoverBackground); }
   .ibtn svg { width: 14px; height: 14px; }
 
-  /* Agent strip */
-  .strip {
-    display: flex; gap: 2px; padding: 8px 10px;
-    overflow-x: auto; scrollbar-width: none;
+  /* Agent topology map */
+  .agent-topo {
     border-bottom: 1px solid var(--vscode-panel-border);
+    overflow: hidden;
   }
-  .strip::-webkit-scrollbar { display: none; }
-  .agent-chip {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 4px 6px; border-radius: 4px; min-width: 52px;
-    cursor: pointer;
+  .agent-topo canvas { display: block; width: 100%; cursor: pointer; }
+  .topo-legend {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 10px 5px; font-size: 9px; opacity: 0.35;
   }
-  .agent-chip:hover { background: var(--vscode-list-hoverBackground); }
-  .agent-chip.selected { background: var(--vscode-list-activeSelectionBackground); }
-  .agent-chip .av-wrap {
-    position: relative; width: 32px; height: 32px; margin-bottom: 3px;
+  .topo-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    display: inline-block; margin-left: 6px;
   }
-  .agent-chip .av-img {
-    width: 32px; height: 32px; border-radius: 50%; overflow: hidden;
-  }
-  .agent-chip .dot {
-    position: absolute; bottom: 0; right: 0;
-    width: 8px; height: 8px; border-radius: 50%;
-    border: 2px solid var(--vscode-sideBar-background, #1e1e1e);
-  }
-  .agent-chip.active .dot { background: #3fb950; }
-  .agent-chip.idle .dot { background: #d29922; }
-  .agent-chip.finished .dot { background: var(--vscode-disabledForeground); }
-  .agent-chip .name {
-    font-size: 9px; opacity: 0.7; max-width: 52px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    text-align: center;
-  }
-  .agent-chip.active .name { opacity: 1; font-weight: 600; }
-  .agent-chip.finished { opacity: 0.45; }
+  .topo-dot:first-child { margin-left: 0; }
 
   /* Activity feed */
   .feed-header {
@@ -14776,6 +14756,188 @@ function dismissAttn(agent) {
   vscode.postMessage({ type: 'attentionDismiss', agent: agent });
 }
 
+// Topology map state
+var topoLanes = [];
+var topoAnimId = 0;
+
+function drawTopology(canvas, agents, progressMap, destination) {
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  var dpr = window.devicePixelRatio || 1;
+  var W = canvas.clientWidth;
+  var H = canvas.clientHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+
+  var LEFT = 70, RIGHT = W - 20, TOP = 10, BOTTOM = H - 10;
+  var LANE_W = RIGHT - LEFT;
+  var fg = getComputedStyle(document.documentElement).getPropertyValue('--vscode-foreground').trim() || '#ccc';
+
+  // Sort: active first, then finished, then idle
+  var sorted = agents.slice().sort(function(a, b) {
+    var order = { active: 0, finished: 1, idle: 2 };
+    return (order[a.status] || 2) - (order[b.status] || 2);
+  });
+
+  var lineH = 14;
+  var maxLanes = Math.max(1, Math.floor((BOTTOM - TOP) / lineH));
+  var visible = sorted.slice(0, maxLanes);
+
+  // Build lanes
+  topoLanes = [];
+  for (var i = 0; i < visible.length; i++) {
+    var a = visible[i];
+    var color = a.status === 'active' ? '#8b5cf6' : a.status === 'finished' ? '#6ee7b7' : '#64748b';
+    var jitter = ((hashStr(a.name) % 100) / 100) * 0.06;
+    var gp = progressMap[a.name];
+    var progress;
+    if (gp && gp.percent > 0) {
+      progress = gp.percent / 100;
+    } else if (a.status === 'active') {
+      progress = 0.55 + jitter;
+    } else if (a.status === 'finished') {
+      progress = 0.92 + jitter * 0.5;
+    } else {
+      progress = 0.08 + jitter * 2;
+    }
+    var y = TOP + i * lineH + lineH / 2;
+    topoLanes.push({ agent: a, color: color, progress: progress, y: y });
+  }
+
+  var t = 0;
+  cancelAnimationFrame(topoAnimId);
+
+  function frame() {
+    t += 0.004;
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw lanes
+    for (var li = 0; li < topoLanes.length; li++) {
+      var lane = topoLanes[li];
+      var y = lane.y;
+      var x1 = LEFT + lane.progress * LANE_W;
+      var sel = selectedAgent === lane.agent.name;
+
+      // Agent name (right-aligned)
+      var sn = shortName(lane.agent.name);
+      if (sn.length > 10) sn = sn.slice(0, 9) + '..';
+      ctx.font = (sel ? '600 ' : '') + '9px var(--vscode-font-family, sans-serif)';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = fg;
+      ctx.globalAlpha = lane.agent.status === 'active' ? 0.8 : (sel ? 0.6 : 0.3);
+      ctx.fillText(sn, LEFT - 6, y);
+      ctx.globalAlpha = 1;
+
+      // Trace line
+      ctx.strokeStyle = lane.color;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.15;
+      ctx.beginPath();
+      ctx.moveTo(LEFT, y);
+      ctx.lineTo(RIGHT, y);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Filled portion
+      if (lane.progress > 0.01) {
+        ctx.strokeStyle = lane.color;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.moveTo(LEFT, y);
+        ctx.lineTo(x1, y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Dot
+      var r = lane.agent.status === 'active' ? 3.5 : lane.agent.status === 'finished' ? 2.5 : 2;
+      if (sel) r += 1.5;
+      ctx.fillStyle = lane.color;
+      ctx.beginPath();
+      ctx.arc(x1, y, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pulse for active
+      if (lane.agent.status === 'active') {
+        var pulse = 0.3 + 0.7 * Math.abs(Math.sin(t * 3 + y * 0.1));
+        ctx.strokeStyle = lane.color;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = pulse * 0.3;
+        ctx.beginPath();
+        ctx.arc(x1, y, r + 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Selection ring
+      if (sel) {
+        ctx.strokeStyle = lane.color;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(x1, y, r + 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Destination bar on right
+    if (destination && destination.milestones) {
+      var ms = destination.milestones;
+      var prog = destination.progress || {};
+      var done = 0;
+      for (var mi = 0; mi < ms.length; mi++) { if (prog[ms[mi]]) done++; }
+      var pct = ms.length > 0 ? done / ms.length : 0;
+      var barH = BOTTOM - TOP;
+      var barX = RIGHT + 2;
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.12)';
+      ctx.fillRect(barX, TOP, 3, barH);
+      ctx.fillStyle = pct === 1 ? '#34d399' : '#8b5cf6';
+      ctx.fillRect(barX, BOTTOM - barH * pct, 3, barH * pct);
+    }
+
+    // Overflow label
+    if (sorted.length > maxLanes) {
+      ctx.fillStyle = fg;
+      ctx.globalAlpha = 0.2;
+      ctx.font = '8px var(--vscode-font-family, sans-serif)';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('+' + (sorted.length - maxLanes) + ' more', LEFT - 6, H - 2);
+      ctx.globalAlpha = 1;
+    }
+
+    topoAnimId = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function topoClick(e) {
+  var canvas = e.target;
+  var rect = canvas.getBoundingClientRect();
+  var y = e.clientY - rect.top;
+  var closest = null, bestDist = 999;
+  for (var i = 0; i < topoLanes.length; i++) {
+    var d = Math.abs(topoLanes[i].y - y);
+    if (d < bestDist) { bestDist = d; closest = topoLanes[i]; }
+  }
+  if (closest && bestDist < 10) {
+    selectAgent(closest.agent.name);
+  } else {
+    selectAgent(null);
+  }
+}
+
+function hashStr(s) {
+  var h = 0;
+  for (var i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
 const LOGO = '<svg class="logo" viewBox="0 0 250 250" fill="none"><path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/><path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/><path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/><path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/><rect width="69.09" height="37.63" rx="18.81" transform="matrix(-0.682 -0.731 0.715 -0.7 165.13 184.31)"/><rect width="69.09" height="37.47" rx="18.73" transform="matrix(-0.682 0.731 -0.714 -0.7 182.38 88.9)"/><rect width="75.28" height="37.98" rx="18.99" transform="matrix(0.679 0.734 -0.717 0.697 95.87 64.43)"/><rect width="71.22" height="41.64" rx="20.82" transform="matrix(0.799 -0.601 0.583 0.813 55 149.83)"/></svg>';
 
 function render(data) {
@@ -14922,24 +15084,17 @@ function render(data) {
     + tendrils + bodyRects + eyeSvg
     + '</svg></div>';
 
-  // Agent strip
+  // Agent topology map (compact progress tracker)
   if (agents.length > 0) {
-    html += '<div class="strip">';
-    for (const a of agents) {
-      const src = avatars[a.name] || '';
-      const ap = progressMap[a.name];
-      const progTitle = ap ? '\\n' + ap.percent + '% ' + (ap.status || '') : '';
-      const isSelected = selectedAgent === a.name;
-      html += '<div class="agent-chip ' + a.status + (isSelected ? ' selected' : '') + '" onclick="selectAgent(\\'' + esc(a.name).replace(/'/g, "\\\\'") + '\\')" title="' + esc(a.name) + '">'
-        + '<div class="av-wrap"><img class="av-img" src="' + src + '" alt="' + esc(shortName(a.name)) + '"/><span class="dot"></span></div>'
-        + '<div class="name">' + esc(shortName(a.name)) + '</div>';
-      if (ap) {
-        html += '<div style="width:100%;height:2px;background:rgba(128,128,128,0.15);border-radius:1px;overflow:hidden;margin-top:2px">'
-          + '<div style="width:' + ap.percent + '%;height:100%;background:' + (ap.status === 'blocked' ? '#d29922' : '#7946FF') + ';border-radius:1px"></div></div>';
-      }
-      html += '</div>';
-    }
-    html += '</div>';
+    var topoH = Math.min(180, Math.max(80, agents.length * 14 + 24));
+    html += '<div class="agent-topo">';
+    html += '<canvas id="topoCanvas" style="height:' + topoH + 'px" onclick="topoClick(event)"></canvas>';
+    html += '<div class="topo-legend">';
+    html += '<span class="topo-dot" style="background:#8b5cf6"></span> active';
+    html += '<span class="topo-dot" style="background:#6ee7b7"></span> done';
+    html += '<span class="topo-dot" style="background:#64748b"></span> idle';
+    html += '<span style="opacity:0.5;margin-left:6px">\\u2192 destination</span>';
+    html += '</div></div>';
 
     // Agent detail panel (expanded below strip when an agent is selected)
     if (selectedAgent) {
@@ -14990,6 +15145,12 @@ function render(data) {
   html += '</div>';
 
   root.innerHTML = html;
+
+  // Draw topology map after DOM update
+  var topoCanvas = document.getElementById('topoCanvas');
+  if (topoCanvas) {
+    drawTopology(topoCanvas, agents, progressMap, destination);
+  }
 }
 
 window.addEventListener('message', e => {

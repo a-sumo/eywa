@@ -1067,6 +1067,214 @@ export const renderAgentMap: RenderFn = (ctx, w, h, data) => {
   ctx.textAlign = "left";
 };
 
+// --- Navigator Map: 2D semantic layout from Guild Navigator API ---
+// data: { nodes, trajectory, alignments, agents, flowOffset, room }
+export const renderNavigatorMap: RenderFn = (ctx, w, h, data) => {
+  const nodes = (data.nodes as Array<Record<string, unknown>>) || [];
+  const trajectory = (data.trajectory as Array<Record<string, unknown>>) || [];
+  const alignments = (data.alignments as Array<Record<string, unknown>>) || [];
+  const agents = (data.agents as string[]) || [];
+  const flowOffset = (data.flowOffset as number) || 0;
+  const room = (data.room as string) || "";
+
+  const cxC = w / 2;
+  const cyC = h / 2;
+  const pad = 16;
+  const mapR = Math.min(cxC, cyC) - pad;
+
+  // Background
+  ctx.fillStyle = "#050510";
+  ctx.fillRect(0, 0, w, h);
+
+  // Compute data bounds for proper scaling
+  let dMinX = Infinity, dMaxX = -Infinity, dMinY = Infinity, dMaxY = -Infinity;
+  for (const n of nodes) {
+    if (typeof n.x === "number" && typeof n.y === "number") {
+      dMinX = Math.min(dMinX, n.x as number); dMaxX = Math.max(dMaxX, n.x as number);
+      dMinY = Math.min(dMinY, n.y as number); dMaxY = Math.max(dMaxY, n.y as number);
+    }
+  }
+  if (!isFinite(dMinX)) { dMinX = -1; dMaxX = 1; dMinY = -1; dMaxY = 1; }
+  const dW = Math.max(dMaxX - dMinX, 0.01);
+  const dH = Math.max(dMaxY - dMinY, 0.01);
+  const dCx = (dMinX + dMaxX) / 2;
+  const dCy = (dMinY + dMaxY) / 2;
+  const sc = mapR / Math.max(dW, dH) * 1.7;
+
+  const toP = (nx: number, ny: number): [number, number] => [
+    cxC + (nx - dCx) * sc,
+    cyC - (ny - dCy) * sc,
+  ];
+
+  // Build alignment lookup
+  const alignMap = new Map<string, number>();
+  for (const a of alignments) {
+    const id = a.actionId as string;
+    const val = a.alignment as number;
+    const prev = alignMap.get(id);
+    if (prev === undefined || Math.abs(val) > Math.abs(prev)) alignMap.set(id, val);
+  }
+
+  // Polar grid rings
+  for (let r = 0.25; r <= 1.0; r += 0.25) {
+    ctx.strokeStyle = `rgba(21, 209, 255, ${0.03 + (1 - r) * 0.03})`;
+    ctx.lineWidth = 0.4;
+    ctx.beginPath();
+    ctx.arc(cxC, cyC, mapR * r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Pre-compute pixel positions
+  const posMap = new Map<string, [number, number]>();
+  for (const n of nodes) {
+    if (typeof n.x === "number" && typeof n.y === "number") {
+      posMap.set(n.id as string, toP(n.x as number, n.y as number));
+    }
+  }
+
+  // Draw thinned trajectory edges
+  const agentTrajs = new Map<string, Array<Record<string, unknown>>>();
+  for (const t of trajectory) {
+    const a = t.agent as string;
+    const list = agentTrajs.get(a) || [];
+    list.push(t);
+    agentTrajs.set(a, list);
+  }
+  for (const [agent, trajs] of agentTrajs) {
+    const color = agentColor(agent);
+    ctx.strokeStyle = `rgba(${hexR(color)}, ${hexG(color)}, ${hexB(color)}, 0.06)`;
+    ctx.lineWidth = 0.6;
+    const step = Math.max(1, Math.floor(trajs.length / 6));
+    for (let i = 0; i < trajs.length; i += step) {
+      const from = posMap.get(trajs[i].from as string);
+      const to = posMap.get(trajs[i].to as string);
+      if (!from || !to) continue;
+      ctx.beginPath();
+      ctx.moveTo(from[0], from[1]);
+      ctx.lineTo(to[0], to[1]);
+      ctx.stroke();
+    }
+  }
+
+  // Draw action/state dots (tiny, alignment-colored)
+  for (const n of nodes) {
+    const type = n.type as string;
+    if (type !== "action" && type !== "state") continue;
+    const pos = posMap.get(n.id as string);
+    if (!pos) continue;
+    const al = alignMap.get(n.id as string) ?? 0;
+    const dotR = type === "action" ? 1.5 : 1;
+    if (al > 0) {
+      ctx.fillStyle = `rgba(74, 222, 128, ${0.12 + al * 0.2})`;
+    } else if (al < 0) {
+      ctx.fillStyle = `rgba(248, 113, 113, ${0.12 + Math.abs(al) * 0.15})`;
+    } else {
+      ctx.fillStyle = "rgba(107, 114, 128, 0.08)";
+    }
+    ctx.beginPath();
+    ctx.arc(pos[0], pos[1], dotR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Draw source nodes (only label 8 most spread-out)
+  const srcNodes = nodes.filter(n => (n.type as string) === "source");
+  const srcSorted = [...srcNodes].sort((a, b) => {
+    const da = Math.sqrt((a.x as number) ** 2 + (a.y as number) ** 2);
+    const db = Math.sqrt((b.x as number) ** 2 + (b.y as number) ** 2);
+    return db - da;
+  });
+  const labelSet = new Set(srcSorted.slice(0, 8).map(n => n.id as string));
+
+  for (const n of srcNodes) {
+    const pos = posMap.get(n.id as string);
+    if (!pos) continue;
+    const idx = parseInt((n.id as string).replace("source-", ""));
+    const name = agents[idx] || (n.label as string) || "";
+    const color = agentColor(name);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(pos[0], pos[1], 3, 0, Math.PI * 2);
+    ctx.fill();
+    if (labelSet.has(n.id as string)) {
+      const short = name.includes("/") ? name.split("/").pop()! : name;
+      ctx.fillStyle = "rgba(230, 237, 243, 0.5)";
+      ctx.font = "5px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(short.replace(" (active)", ""), pos[0], pos[1] + 5);
+    }
+  }
+
+  // Draw goal nodes
+  for (const n of nodes) {
+    if ((n.type as string) !== "goal") continue;
+    const pos = posMap.get(n.id as string);
+    if (!pos) continue;
+    const r = 12;
+    const glow = ctx.createRadialGradient(pos[0], pos[1], 0, pos[0], pos[1], r * 2.5);
+    glow.addColorStop(0, "rgba(21, 209, 255, 0.2)");
+    glow.addColorStop(0.5, "rgba(21, 209, 255, 0.04)");
+    glow.addColorStop(1, "rgba(21, 209, 255, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(pos[0], pos[1], r * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#15D1FF";
+    ctx.beginPath();
+    ctx.arc(pos[0], pos[1], r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#0b1220";
+    ctx.font = "bold 6px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const label = (n.label as string) || "";
+    ctx.fillText(label.length > 16 ? label.slice(0, 14) + ".." : label, pos[0], pos[1]);
+  }
+
+  // Edge fades
+  const fadeW = 10;
+  const lG = ctx.createLinearGradient(0, 0, fadeW, 0);
+  lG.addColorStop(0, "rgba(5, 5, 16, 1)"); lG.addColorStop(1, "rgba(5, 5, 16, 0)");
+  ctx.fillStyle = lG; ctx.fillRect(0, 0, fadeW, h);
+  const rG = ctx.createLinearGradient(w - fadeW, 0, w, 0);
+  rG.addColorStop(0, "rgba(5, 5, 16, 0)"); rG.addColorStop(1, "rgba(5, 5, 16, 1)");
+  ctx.fillStyle = rG; ctx.fillRect(w - fadeW, 0, fadeW, h);
+  const tG = ctx.createLinearGradient(0, 0, 0, fadeW);
+  tG.addColorStop(0, "rgba(5, 5, 16, 1)"); tG.addColorStop(1, "rgba(5, 5, 16, 0)");
+  ctx.fillStyle = tG; ctx.fillRect(0, 0, w, fadeW);
+  const bG = ctx.createLinearGradient(0, h - fadeW, 0, h);
+  bG.addColorStop(0, "rgba(5, 5, 16, 0)"); bG.addColorStop(1, "rgba(5, 5, 16, 1)");
+  ctx.fillStyle = bG; ctx.fillRect(0, h - fadeW, w, fadeW);
+
+  // Header
+  const hdrG2 = ctx.createLinearGradient(0, 0, 0, 20);
+  hdrG2.addColorStop(0, "rgba(5, 5, 16, 0.9)");
+  hdrG2.addColorStop(1, "rgba(5, 5, 16, 0)");
+  ctx.fillStyle = hdrG2;
+  ctx.fillRect(0, 0, w, 20);
+
+  ctx.font = "bold 6px system-ui";
+  ctx.fillStyle = "#15D1FF";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText("DEMO", 6, 10);
+  ctx.fillStyle = "#e6edf3";
+  ctx.font = "bold 7px system-ui";
+  ctx.fillText("Navigator", 32, 10);
+  ctx.fillStyle = "#4b5563";
+  ctx.font = "6px system-ui";
+  ctx.textAlign = "right";
+  ctx.fillText(`${agents.length}a / ${nodes.length}n`, w - 6, 10);
+
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+};
+
+// Hex color component helpers
+function hexR(hex: string): number { return parseInt(hex.slice(1, 3), 16); }
+function hexG(hex: string): number { return parseInt(hex.slice(3, 5), 16); }
+function hexB(hex: string): number { return parseInt(hex.slice(5, 7), 16); }
+
 // --- Registry of active renderers ---
 // Atomic primitives used by the new layout system
 export const RENDERERS: Record<string, RenderFn> = {
@@ -1090,4 +1298,5 @@ export const RENDERERS: Record<string, RenderFn> = {
   "ctx-header": renderContextHeader,
   "mem-header": renderMemoriesHeader,
   "agent-map": renderAgentMap,
+  "navigator-map": renderNavigatorMap,
 };

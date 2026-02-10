@@ -988,9 +988,12 @@ export function computeLayout(params: {
         color: "#e6edf3",
         bg,
         align: "right",
+        padX: 6,
+        padY: 4,
         x: 0,
         y: 0,
         layer,
+        interactive: true,
       });
       const removePos = placeInCard({
         cardX: 0, cardY: 0, cardWpx, cardHpx,
