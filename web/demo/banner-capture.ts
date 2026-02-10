@@ -11,8 +11,8 @@ import { join } from "path";
 
 const URL = process.env.DEMO_URL || "https://eywa-ai.dev";
 const FRAME_DIR = join("demo", "recordings", "banner-frames");
-const FPS = 12;
-const DURATION_S = 6;
+const FPS = 10;
+const DURATION_S = 5;
 const TOTAL_FRAMES = FPS * DURATION_S;
 
 async function sleep(ms: number) {
