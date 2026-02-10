@@ -1,6 +1,6 @@
 {
   "name": "eywa-ai",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Agentic stewardship at scale. One command to connect.",
   "type": "module",
   "bin": {
