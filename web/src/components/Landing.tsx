@@ -601,8 +601,7 @@ export function Landing() {
               <h4>Product</h4>
               <a href="#features">Features</a>
               <a href="#pricing">Pricing</a>
-              <button className="landing-footer-link-btn" onClick={() => createDemoRoom()} disabled={creating}>Demo</button>
-              <a href="/slides">Slides</a>
+              <button className="landing-footer-link-btn" onClick={() => createDemoRoom()} disabled={creating}>Try the Demo</button>
             </div>
             <div className="landing-footer-col">
               <h4>Resources</h4>
