@@ -11,7 +11,7 @@ import { supabase } from "../lib/supabase";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
 const WS_URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${GEMINI_API_KEY}`;
-const MODEL = "models/gemini-2.0-flash-live-001";
+const MODEL = "models/gemini-2.0-flash-live-preview-04-09";
 
 export type VoiceEvent =
   | { type: "status"; text: string }
