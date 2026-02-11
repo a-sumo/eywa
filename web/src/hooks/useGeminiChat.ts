@@ -54,12 +54,19 @@ interface GeminiContent {
 
 const STEERING_PROMPT = `You are the steering agent for an Eywa room. Your job is to help the human navigate their agent swarm toward their destination.
 
-You have tools to query agent status, thread history, knowledge, detect patterns, check distress signals, and track the destination. Use them proactively: when the user asks about agents or activity, call get_agent_status or get_thread instead of guessing. When asked to analyze the room, call detect_patterns. Always check get_destination to know where the team is headed.
+You have READ tools to query agent status, thread history, knowledge, detect patterns, check distress signals, and track the destination. Use them proactively: when the user asks about agents or activity, call get_agent_status or get_thread instead of guessing.
+
+You have WRITE tools to take action:
+- inject_to_agent: Send instructions, context, or feedback to any agent (or broadcast to all). The agent sees it on their next tool call. Use this when the user wants to steer, redirect, or inform agents.
+- approve_action / deny_action: Resolve pending approval requests from agents. Agents call eywa_request_approval when they need human sign-off (destructive actions, deployments, architectural decisions). Check get_pending_approvals to see what's waiting.
+- get_pending_approvals: List all agents waiting for human approval.
+
+When you see pending approvals, proactively tell the user what agents are waiting for and recommend approve/deny. Unblocking agents is high priority.
 
 When analyzing activity, look for:
 - REDUNDANCY: Multiple agents doing similar work
 - DIVERGENCE: Agents pulling in conflicting directions
-- IDLENESS: Agents that could be productive but aren't
+- BLOCKED: Agents waiting for approval or stuck
 - PROGRESS: How close are we to the destination? Which milestones are done?
 - DISTRESS: Agents that exhausted context and need rescue
 
@@ -141,13 +148,14 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
     if (!roomId || autoContextFetched.current) return;
     autoContextFetched.current = true;
 
-    // Fetch agent status, distress signals, patterns, and destination in parallel
+    // Fetch agent status, distress signals, patterns, destination, and pending approvals in parallel
     Promise.all([
       executeTool(roomId, { name: "get_agent_status", args: {} }),
       executeTool(roomId, { name: "get_distress_signals", args: {} }),
       executeTool(roomId, { name: "detect_patterns", args: {} }),
       executeTool(roomId, { name: "get_destination", args: {} }),
-    ]).then(([statusResult, distressResult, patternsResult, destResult]) => {
+      executeTool(roomId, { name: "get_pending_approvals", args: {} }),
+    ]).then(([statusResult, distressResult, patternsResult, destResult, approvalsResult]) => {
       const parts: string[] = [statusResult.response.result];
 
       const distressText = distressResult.response.result;
@@ -165,18 +173,25 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
         parts.push("\n" + destText);
       }
 
+      const approvalsText = approvalsResult.response.result;
+      if (approvalsText && !approvalsText.includes("No pending approvals")) {
+        parts.push("\n" + approvalsText);
+      }
+
       setAutoContext(parts.join("\n"));
 
-      // If there are distress signals or patterns, show a proactive alert
+      // If there are distress signals, patterns, or pending approvals, show a proactive alert
       const hasDistress = distressText && distressText.includes("UNRESOLVED DISTRESS");
       const hasPatterns = patternsText && (
         patternsText.includes("REDUNDANCY") ||
         patternsText.includes("DIVERGENCE") ||
         patternsText.includes("DISTRESS")
       );
+      const hasPendingApprovals = approvalsText && approvalsText.includes("pending approval");
 
-      if (hasDistress || hasPatterns) {
+      if (hasDistress || hasPatterns || hasPendingApprovals) {
         const alertParts: string[] = [];
+        if (hasPendingApprovals) alertParts.push(approvalsText);
         if (hasDistress) alertParts.push(distressText);
         if (hasPatterns) alertParts.push(patternsText);
         setMessages((prev) => [

@@ -18,6 +18,7 @@ import { registerRecoveryTools } from "./tools/recovery.js";
 import { registerDestinationTools } from "./tools/destination.js";
 import { registerClaimTools, getActiveClaims } from "./tools/claim.js";
 import { registerTelemetryTools, storeHostTelemetry } from "./tools/telemetry.js";
+import { registerApprovalTools } from "./tools/approval.js";
 import { rateLimit, checkMemoryCap } from "./lib/ratelimit.js";
 
 export default {
@@ -99,6 +100,176 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
+function buildDemoMemories(roomId: string): Array<Record<string, unknown>> {
+  const now = Date.now();
+  const sessionId = "demo-seed-" + now;
+  const agents = [
+    "alice/bright-oak", "bob/swift-wolf", "carol/calm-reed",
+    "dave/keen-owl", "eve/rosy-dawn",
+  ];
+  const memories: Array<Record<string, unknown>> = [];
+
+  // Agent session starts
+  agents.forEach((agent, i) => {
+    memories.push({
+      room_id: roomId, session_id: sessionId, agent,
+      message_type: "resource",
+      content: "SESSION START: " + [
+        "Implementing user authentication with OAuth2",
+        "Refactoring database queries for performance",
+        "Building React dashboard components",
+        "Writing integration tests for API endpoints",
+        "Setting up CI/CD pipeline with GitHub Actions",
+      ][i],
+      metadata: { event: "session_start", task: [
+        "Implementing user authentication with OAuth2",
+        "Refactoring database queries for performance",
+        "Building React dashboard components",
+        "Writing integration tests for API endpoints",
+        "Setting up CI/CD pipeline with GitHub Actions",
+      ][i] },
+      ts: new Date(now - (30 - i * 2) * 60000).toISOString(),
+    });
+  });
+
+  // Activity logs with operation metadata
+  const activities = [
+    { agent: agents[0], content: "Added JWT token validation middleware", system: "api", action: "create", scope: "auth middleware", outcome: "success" },
+    { agent: agents[0], content: "Created login and register endpoints", system: "api", action: "create", scope: "auth routes", outcome: "success" },
+    { agent: agents[1], content: "Indexed users table on email column", system: "database", action: "write", scope: "users table", outcome: "success" },
+    { agent: agents[1], content: "Rewrote N+1 query in orders endpoint", system: "database", action: "write", scope: "orders query", outcome: "success" },
+    { agent: agents[2], content: "Built AgentCard component with progress bars", system: "editor", action: "create", scope: "dashboard UI", outcome: "success" },
+    { agent: agents[2], content: "Added realtime subscription for live updates", system: "browser", action: "create", scope: "realtime hook", outcome: "success" },
+    { agent: agents[3], content: "Auth endpoint tests passing (12/12)", system: "terminal", action: "test", scope: "auth tests", outcome: "success" },
+    { agent: agents[3], content: "Found race condition in session refresh", system: "terminal", action: "debug", scope: "session refresh", outcome: "blocked" },
+    { agent: agents[4], content: "GitHub Actions workflow created", system: "ci", action: "create", scope: "CI pipeline", outcome: "success" },
+    { agent: agents[4], content: "Deployed staging environment", system: "deploy", action: "deploy", scope: "staging", outcome: "success" },
+    { agent: agents[0], content: "Pushed auth branch, ready for review", system: "git", action: "write", scope: "auth branch", outcome: "success" },
+    { agent: agents[2], content: "Dashboard renders agent cards with live data", system: "browser", action: "test", scope: "dashboard", outcome: "success" },
+  ];
+  activities.forEach((a, i) => {
+    memories.push({
+      room_id: roomId, session_id: sessionId, agent: a.agent,
+      message_type: "assistant", content: a.content,
+      metadata: { system: a.system, action: a.action, scope: a.scope, outcome: a.outcome },
+      ts: new Date(now - (25 - i * 2) * 60000).toISOString(),
+    });
+  });
+
+  // Injections
+  memories.push({
+    room_id: roomId, session_id: sessionId, agent: agents[3],
+    message_type: "injection",
+    content: "[INJECT -> all] (race condition found): Found a race condition in session refresh. If you touch auth tokens, check the mutex in sessionStore.ts before modifying.",
+    metadata: { event: "context_injection", target: "all", label: "race condition found", priority: "high" },
+    ts: new Date(now - 8 * 60000).toISOString(),
+  });
+  memories.push({
+    room_id: roomId, session_id: sessionId, agent: agents[4],
+    message_type: "injection",
+    content: "[INJECT -> all] (staging deployed): Staging is live at staging.example.com. All branches merged to main are auto-deployed.",
+    metadata: { event: "context_injection", target: "all", label: "staging deployed", priority: "normal" },
+    ts: new Date(now - 5 * 60000).toISOString(),
+  });
+
+  // Knowledge entries
+  memories.push({
+    room_id: roomId, session_id: sessionId, agent: agents[0],
+    message_type: "knowledge",
+    content: "Auth tokens use RS256 signing. Public key is at /api/.well-known/jwks.json. Tokens expire after 1 hour, refresh tokens after 7 days.",
+    metadata: { event: "knowledge", title: "Auth token architecture", tags: ["auth", "api", "convention"] },
+    ts: new Date(now - 15 * 60000).toISOString(),
+  });
+  memories.push({
+    room_id: roomId, session_id: sessionId, agent: agents[1],
+    message_type: "knowledge",
+    content: "Database uses connection pooling (max 20). Never use raw SQL in route handlers. Always go through the query builder in lib/db.ts.",
+    metadata: { event: "knowledge", title: "Database access patterns", tags: ["database", "convention", "gotcha"] },
+    ts: new Date(now - 12 * 60000).toISOString(),
+  });
+
+  // Destination
+  memories.push({
+    room_id: roomId, session_id: sessionId, agent: "system",
+    message_type: "knowledge",
+    content: "Ship v1.0: authenticated dashboard with live agent monitoring, deployed to production.",
+    metadata: {
+      event: "destination",
+      destination: "Ship v1.0: authenticated dashboard with live agent monitoring, deployed to production.",
+      milestones: [
+        "User authentication (OAuth2 + JWT)",
+        "Database schema and query layer",
+        "React dashboard with live updates",
+        "Integration test suite",
+        "CI/CD pipeline",
+        "Production deployment",
+      ],
+      progress: {
+        "User authentication (OAuth2 + JWT)": true,
+        "Database schema and query layer": true,
+        "React dashboard with live updates": true,
+        "Integration test suite": false,
+        "CI/CD pipeline": true,
+        "Production deployment": false,
+      },
+    },
+    ts: new Date(now - 20 * 60000).toISOString(),
+  });
+
+  // Progress reports
+  agents.forEach((agent, i) => {
+    memories.push({
+      room_id: roomId, session_id: sessionId, agent,
+      message_type: "resource",
+      content: "PROGRESS [" + [85, 90, 75, 60, 95][i] + "% " + ["working", "working", "working", "blocked", "deploying"][i] + "]: " + [
+        "User authentication", "Database optimization", "Dashboard components", "Integration tests", "CI/CD pipeline",
+      ][i],
+      metadata: {
+        event: "progress",
+        task: ["User authentication", "Database optimization", "Dashboard components", "Integration tests", "CI/CD pipeline"][i],
+        percent: [85, 90, 75, 60, 95][i],
+        status: ["working", "working", "working", "blocked", "deploying"][i],
+      },
+      ts: new Date(now - (4 - i) * 60000).toISOString(),
+    });
+  });
+
+  // Pending approval requests (agents waiting for human sign-off)
+  memories.push({
+    room_id: roomId, session_id: sessionId, agent: agents[4],
+    message_type: "approval_request",
+    content: "APPROVAL REQUEST: Deploy to production (v1.0-rc1)",
+    metadata: {
+      event: "approval_request",
+      status: "pending",
+      action_description: "Deploy to production (v1.0-rc1). All CI checks pass, staging is green.",
+      scope: "production environment, DNS, CDN cache invalidation",
+      risk_level: "high",
+      context: "This is the first production deployment. Staging has been stable for 2 hours.",
+      requested_at: new Date(now - 2 * 60000).toISOString(),
+    },
+    ts: new Date(now - 2 * 60000).toISOString(),
+  });
+
+  memories.push({
+    room_id: roomId, session_id: sessionId, agent: agents[1],
+    message_type: "approval_request",
+    content: "APPROVAL REQUEST: Drop and recreate orders index",
+    metadata: {
+      event: "approval_request",
+      status: "pending",
+      action_description: "Drop and recreate the composite index on orders(user_id, created_at). Requires brief lock on the orders table.",
+      scope: "orders table, database",
+      risk_level: "medium",
+      context: "Current index is suboptimal. New index reduces query time from 450ms to 12ms. Brief table lock expected (< 5 seconds).",
+      requested_at: new Date(now - 6 * 60000).toISOString(),
+    },
+    ts: new Date(now - 6 * 60000).toISOString(),
+  });
+
+  return memories;
+}
+
 async function handleCloneDemo(request: Request, env: Env): Promise<Response> {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -120,26 +291,14 @@ async function handleCloneDemo(request: Request, env: Env): Promise<Response> {
     );
   }
 
-  const body = await request.json() as { slug?: string; source_slug?: string };
+  const body = await request.json() as { slug?: string };
   const newSlug = body.slug;
-  const sourceSlug = body.source_slug || "demo";
 
   if (!newSlug) {
     return Response.json({ error: "slug is required" }, { status: 400, headers: corsHeaders });
   }
 
   const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
-
-  // Find source room
-  const sourceRooms = await db.select<RoomRow>("rooms", {
-    select: "id",
-    slug: `eq.${sourceSlug}`,
-    limit: "1",
-  });
-  if (!sourceRooms.length) {
-    return Response.json({ error: `Source room '${sourceSlug}' not found` }, { status: 404, headers: corsHeaders });
-  }
-  const sourceRoomId = sourceRooms[0].id;
 
   // Create new room
   const newRooms = await db.insert<RoomRow>("rooms", {
@@ -150,37 +309,17 @@ async function handleCloneDemo(request: Request, env: Env): Promise<Response> {
   });
   const newRoom = newRooms[0];
 
-  // Fetch source memories
-  const sourceMemories = await db.select<MemoryRow>("memories", {
-    select: "agent,session_id,message_type,content,token_count,metadata,ts",
-    room_id: `eq.${sourceRoomId}`,
-    order: "ts.asc",
-    limit: "500",
-  });
-
-  // Clone memories into new room
-  if (sourceMemories.length > 0) {
-    // Insert in batches of 50 to avoid payload limits
-    const batchSize = 50;
-    for (let i = 0; i < sourceMemories.length; i += batchSize) {
-      const batch = sourceMemories.slice(i, i + batchSize).map((m) => ({
-        room_id: newRoom.id,
-        agent: m.agent,
-        session_id: m.session_id,
-        message_type: m.message_type,
-        content: m.content,
-        token_count: m.token_count,
-        metadata: m.metadata,
-        ts: m.ts,
-      }));
-      await db.insertMany("memories", batch);
-    }
+  // Seed with demo data (no dependency on a source room existing)
+  const seeds = buildDemoMemories(newRoom.id);
+  const batchSize = 50;
+  for (let i = 0; i < seeds.length; i += batchSize) {
+    await db.insertMany("memories", seeds.slice(i, i + batchSize));
   }
 
   return Response.json({
     id: newRoom.id,
     slug: newSlug,
-    cloned: sourceMemories.length,
+    seeded: seeds.length,
   }, { headers: corsHeaders });
 }
 
@@ -375,6 +514,7 @@ async function handleMcp(
   registerDestinationTools(server, db, ctx);
   registerClaimTools(server, db, ctx);
   registerTelemetryTools(server, db, ctx);
+  registerApprovalTools(server, db, ctx);
 
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);

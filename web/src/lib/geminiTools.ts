@@ -132,6 +132,77 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
       },
     },
   },
+  // --- Write tools ---
+  {
+    name: "inject_to_agent",
+    description:
+      "Send instructions, context, or feedback to a running agent. The agent will see this on their next tool call. Use 'all' to broadcast to every agent in the room. Use this when the user wants to steer an agent, give it new instructions, or share context.",
+    parameters: {
+      type: "object",
+      properties: {
+        target: {
+          type: "string",
+          description: "Agent name (e.g. 'alice/bright-oak') or 'all' for broadcast.",
+        },
+        content: {
+          type: "string",
+          description: "The instructions, context, or feedback to send.",
+        },
+        priority: {
+          type: "string",
+          description: "Priority: 'normal', 'high', or 'urgent'. Defaults to 'normal'.",
+        },
+      },
+      required: ["target", "content"],
+    },
+  },
+  {
+    name: "approve_action",
+    description:
+      "Approve a pending agent action. Agents request approval via eywa_request_approval and wait for a response. Call this to unblock them with an approved decision and optional instructions.",
+    parameters: {
+      type: "object",
+      properties: {
+        approval_id: {
+          type: "string",
+          description: "The ID of the pending approval to approve.",
+        },
+        message: {
+          type: "string",
+          description: "Optional message to send with the approval (e.g. 'go ahead' or 'approved, but also fix the tests').",
+        },
+      },
+      required: ["approval_id"],
+    },
+  },
+  {
+    name: "deny_action",
+    description:
+      "Deny a pending agent action. The agent will see the denial and your reason on their next tool call.",
+    parameters: {
+      type: "object",
+      properties: {
+        approval_id: {
+          type: "string",
+          description: "The ID of the pending approval to deny.",
+        },
+        reason: {
+          type: "string",
+          description: "Why the action is denied. The agent will see this.",
+        },
+      },
+      required: ["approval_id", "reason"],
+    },
+  },
+  {
+    name: "get_pending_approvals",
+    description:
+      "List all pending approval requests from agents. Shows what agents are waiting for human sign-off on. Use this when asked about blocked agents or pending decisions.",
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
 ];
 
 /** Wrapped for the Gemini REST API tools array. */
@@ -188,6 +259,31 @@ export async function executeTool(
           call.args.domain as string | undefined,
           call.args.search as string | undefined,
         );
+        break;
+      case "inject_to_agent":
+        result = await handleInjectToAgent(
+          roomId,
+          call.args.target as string,
+          call.args.content as string,
+          (call.args.priority as string) || "normal",
+        );
+        break;
+      case "approve_action":
+        result = await handleApproveAction(
+          roomId,
+          call.args.approval_id as string,
+          call.args.message as string | undefined,
+        );
+        break;
+      case "deny_action":
+        result = await handleDenyAction(
+          roomId,
+          call.args.approval_id as string,
+          call.args.reason as string,
+        );
+        break;
+      case "get_pending_approvals":
+        result = await handleGetPendingApprovals(roomId);
         break;
       default:
         result = `Unknown tool: ${call.name}`;
@@ -744,4 +840,195 @@ async function handleQueryNetwork(
   }
 
   return lines.join("\n\n");
+}
+
+// ---------------------------------------------------------------------------
+// inject_to_agent (WRITE)
+// ---------------------------------------------------------------------------
+
+async function handleInjectToAgent(
+  roomId: string,
+  target: string,
+  content: string,
+  priority: string,
+): Promise<string> {
+  const validPriority = ["normal", "high", "urgent"].includes(priority) ? priority : "normal";
+
+  const { error } = await supabase.from("memories").insert({
+    room_id: roomId,
+    agent: "gemini-steering",
+    session_id: `gemini_${Date.now()}`,
+    message_type: "injection",
+    content: `[INJECT -> ${target}]: ${content}`,
+    token_count: Math.floor(content.length / 4),
+    metadata: {
+      event: "context_injection",
+      from_agent: "gemini-steering",
+      target_agent: target,
+      priority: validPriority,
+      label: null,
+    },
+  });
+
+  if (error) return `Failed to inject: ${error.message}`;
+  return `Injected to ${target === "all" ? "all agents" : target} (${validPriority} priority). They will see this on their next tool call.`;
+}
+
+// ---------------------------------------------------------------------------
+// Approval queue
+// ---------------------------------------------------------------------------
+//
+// Approvals use the memories table with message_type "approval_request".
+// metadata.event = "approval_request" (pending) or "approval_response" (resolved)
+// metadata.status = "pending" | "approved" | "denied"
+// metadata.resolved_by = who approved/denied
+// metadata.response_message = approval message or denial reason
+//
+// Agents create requests via eywa_request_approval (MCP tool).
+// Humans resolve them via approve_action / deny_action (Gemini tools).
+// The resolution is delivered as an injection piggyback on the agent's next tool call.
+
+async function handleApproveAction(
+  roomId: string,
+  approvalId: string,
+  message?: string,
+): Promise<string> {
+  // Fetch the approval request
+  const { data: req, error: fetchErr } = await supabase
+    .from("memories")
+    .select("*")
+    .eq("id", approvalId)
+    .eq("room_id", roomId)
+    .single();
+
+  if (fetchErr || !req) return `Approval request not found: ${approvalId}`;
+
+  const meta = (req.metadata || {}) as Record<string, unknown>;
+  if (meta.event !== "approval_request") return `Memory ${approvalId} is not an approval request.`;
+  if (meta.status !== "pending") return `This request was already ${meta.status}.`;
+
+  // Update the request status
+  const { error: updateErr } = await supabase
+    .from("memories")
+    .update({
+      metadata: {
+        ...meta,
+        status: "approved",
+        resolved_by: "gemini-steering",
+        resolved_at: new Date().toISOString(),
+        response_message: message || "Approved",
+      },
+    })
+    .eq("id", approvalId);
+
+  if (updateErr) return `Failed to update approval: ${updateErr.message}`;
+
+  // Inject the approval as a message to the requesting agent
+  const responseContent = message
+    ? `APPROVED: ${message}`
+    : "APPROVED: Your request has been approved. Proceed.";
+
+  await supabase.from("memories").insert({
+    room_id: roomId,
+    agent: "gemini-steering",
+    session_id: `gemini_${Date.now()}`,
+    message_type: "injection",
+    content: `[APPROVAL -> ${req.agent}]: ${responseContent}`,
+    token_count: Math.floor(responseContent.length / 4),
+    metadata: {
+      event: "approval_response",
+      from_agent: "gemini-steering",
+      target_agent: req.agent,
+      approval_id: approvalId,
+      decision: "approved",
+      priority: "high",
+    },
+  });
+
+  return `Approved request from ${req.agent}. They will see the approval on their next tool call.`;
+}
+
+async function handleDenyAction(
+  roomId: string,
+  approvalId: string,
+  reason: string,
+): Promise<string> {
+  const { data: req, error: fetchErr } = await supabase
+    .from("memories")
+    .select("*")
+    .eq("id", approvalId)
+    .eq("room_id", roomId)
+    .single();
+
+  if (fetchErr || !req) return `Approval request not found: ${approvalId}`;
+
+  const meta = (req.metadata || {}) as Record<string, unknown>;
+  if (meta.event !== "approval_request") return `Memory ${approvalId} is not an approval request.`;
+  if (meta.status !== "pending") return `This request was already ${meta.status}.`;
+
+  const { error: updateErr } = await supabase
+    .from("memories")
+    .update({
+      metadata: {
+        ...meta,
+        status: "denied",
+        resolved_by: "gemini-steering",
+        resolved_at: new Date().toISOString(),
+        response_message: reason,
+      },
+    })
+    .eq("id", approvalId);
+
+  if (updateErr) return `Failed to update approval: ${updateErr.message}`;
+
+  await supabase.from("memories").insert({
+    room_id: roomId,
+    agent: "gemini-steering",
+    session_id: `gemini_${Date.now()}`,
+    message_type: "injection",
+    content: `[DENIED -> ${req.agent}]: ${reason}`,
+    token_count: Math.floor(reason.length / 4),
+    metadata: {
+      event: "approval_response",
+      from_agent: "gemini-steering",
+      target_agent: req.agent,
+      approval_id: approvalId,
+      decision: "denied",
+      priority: "high",
+    },
+  });
+
+  return `Denied request from ${req.agent}. Reason delivered: "${reason}"`;
+}
+
+async function handleGetPendingApprovals(roomId: string): Promise<string> {
+  const { data, error } = await supabase
+    .from("memories")
+    .select("id, agent, ts, content, metadata")
+    .eq("room_id", roomId)
+    .eq("metadata->>event", "approval_request")
+    .eq("metadata->>status", "pending")
+    .order("ts", { ascending: false })
+    .limit(20);
+
+  if (error) return `Database error: ${error.message}`;
+  if (!data || data.length === 0) return "No pending approvals. All agents are unblocked.";
+
+  const lines: string[] = [`${data.length} pending approval(s):\n`];
+  for (const row of data) {
+    const meta = (row.metadata || {}) as Record<string, unknown>;
+    const action = (meta.action_description as string) || row.content || "No description";
+    const scope = (meta.scope as string) || "";
+    const risk = (meta.risk_level as string) || "unknown";
+
+    lines.push(`ID: ${row.id}`);
+    lines.push(`  Agent: ${row.agent}`);
+    lines.push(`  Action: ${action.slice(0, 200)}`);
+    if (scope) lines.push(`  Scope: ${scope}`);
+    lines.push(`  Risk: ${risk}`);
+    lines.push(`  Requested: ${formatTimeAgo(row.ts)}`);
+    lines.push("");
+  }
+
+  return lines.join("\n");
 }

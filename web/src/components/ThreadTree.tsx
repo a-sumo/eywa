@@ -809,6 +809,132 @@ function DistressAlert({ signal }: { signal: DistressSignal }) {
   );
 }
 
+// --- Approval Card ---
+
+interface PendingApproval {
+  id: string;
+  agent: string;
+  action: string;
+  scope: string;
+  risk: string;
+  context: string;
+  ts: string;
+}
+
+const RISK_COLORS: Record<string, string> = {
+  low: "#22c55e",
+  medium: "#eab308",
+  high: "#f97316",
+  critical: "#ef4444",
+};
+
+function ApprovalCard({ approval, roomId }: { approval: PendingApproval; roomId: string }) {
+  const [resolving, setResolving] = useState(false);
+  const [resolved, setResolved] = useState<"approved" | "denied" | null>(null);
+
+  async function handleResolve(decision: "approved" | "denied") {
+    setResolving(true);
+    try {
+      // Update the approval request status
+      await supabase
+        .from("memories")
+        .update({
+          metadata: {
+            event: "approval_request",
+            status: decision,
+            action_description: approval.action,
+            scope: approval.scope || null,
+            risk_level: approval.risk,
+            resolved_by: "web-user",
+            resolved_at: new Date().toISOString(),
+            response_message: decision === "approved" ? "Approved from dashboard" : "Denied from dashboard",
+          },
+        })
+        .eq("id", approval.id);
+
+      // Inject the decision to the agent
+      const content = decision === "approved"
+        ? `APPROVED: Your request "${approval.action.slice(0, 100)}" has been approved. Proceed.`
+        : `DENIED: Your request "${approval.action.slice(0, 100)}" was denied.`;
+
+      await supabase.from("memories").insert({
+        room_id: roomId,
+        agent: "web-user",
+        session_id: `web_${Date.now()}`,
+        message_type: "injection",
+        content: `[APPROVAL -> ${approval.agent}]: ${content}`,
+        token_count: Math.floor(content.length / 4),
+        metadata: {
+          event: "approval_response",
+          from_agent: "web-user",
+          target_agent: approval.agent,
+          approval_id: approval.id,
+          decision,
+          priority: "high",
+        },
+      });
+
+      setResolved(decision);
+    } finally {
+      setResolving(false);
+    }
+  }
+
+  if (resolved) {
+    return (
+      <div className="hub-approval-card" style={{
+        borderLeftColor: resolved === "approved" ? "#22c55e" : "#ef4444",
+        opacity: 0.6,
+      }}>
+        <span style={{ color: resolved === "approved" ? "#22c55e" : "#ef4444" }}>
+          {resolved === "approved" ? "Approved" : "Denied"}
+        </span>
+        <span className="hub-activity-time">{approval.agent}</span>
+      </div>
+    );
+  }
+
+  const riskColor = RISK_COLORS[approval.risk] || RISK_COLORS.medium;
+
+  return (
+    <div className="hub-approval-card" style={{ borderLeftColor: riskColor }}>
+      <div className="hub-approval-header">
+        <AgentAvatar name={approval.agent.split("/")[0]} size={18} />
+        <span className="hub-agent-name" style={{ color: agentColor(approval.agent) }}>
+          {approval.agent.split("/")[1] || approval.agent}
+        </span>
+        <span className="hub-pill" style={{ background: `${riskColor}18`, color: riskColor }}>
+          {approval.risk}
+        </span>
+        <span className="hub-activity-time">{timeAgo(approval.ts)}</span>
+      </div>
+      <div className="hub-approval-action">{approval.action}</div>
+      {approval.scope && (
+        <div className="hub-approval-scope">{approval.scope}</div>
+      )}
+      {approval.context && (
+        <div className="hub-approval-context">{approval.context}</div>
+      )}
+      <div className="hub-approval-buttons">
+        <button
+          className="hub-approve-btn"
+          onClick={() => handleResolve("approved")}
+          disabled={resolving}
+        >
+          Approve
+        </button>
+        <button
+          className="hub-deny-btn"
+          onClick={() => handleResolve("denied")}
+          disabled={resolving}
+        >
+          Deny
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // --- Main ---
 
 export function ThreadTree() {
@@ -889,6 +1015,27 @@ export function ThreadTree() {
   const distressSignals = useMemo(() => extractDistress(memories), [memories]);
   const unresolvedDistress = distressSignals.filter((d) => !d.resolved);
   const destination = useMemo(() => extractDestination(memories), [memories]);
+
+  // Pending approvals
+  const pendingApprovals = useMemo(() => {
+    return memories
+      .filter((m) => {
+        const meta = (m.metadata ?? {}) as Record<string, unknown>;
+        return meta.event === "approval_request" && meta.status === "pending";
+      })
+      .map((m) => {
+        const meta = (m.metadata ?? {}) as Record<string, unknown>;
+        return {
+          id: m.id,
+          agent: m.agent,
+          action: (meta.action_description as string) || m.content || "",
+          scope: (meta.scope as string) || "",
+          risk: (meta.risk_level as string) || "medium",
+          context: (meta.context as string) || "",
+          ts: m.ts,
+        };
+      });
+  }, [memories]);
 
   // Network routes: fetch global insights and match against remaining milestones
   const [networkRoutes, setNetworkRoutes] = useState<
@@ -1000,8 +1147,9 @@ export function ThreadTree() {
     });
   }
 
-  // Empty state - onboarding
-  if (!loading && memories.length === 0) {
+  // Empty state - onboarding (skip for demo rooms, they always have seeded data)
+  const isDemo = room?.is_demo ?? false;
+  if (!loading && memories.length === 0 && !isDemo) {
     return (
       <div className="hub-view">
         <div className="hub-header">
@@ -1150,6 +1298,16 @@ export function ThreadTree() {
       {/* Agent topology map */}
       {sortedAgents.length > 0 && (
         <AgentTopologyMap agents={sortedAgents} destination={destination} />
+      )}
+
+      {/* Pending approvals */}
+      {pendingApprovals.length > 0 && (
+        <div className="hub-approvals">
+          <div className="hub-section-label">Pending Approvals ({pendingApprovals.length})</div>
+          {pendingApprovals.map((a) => (
+            <ApprovalCard key={a.id} approval={a} roomId={room?.id || ""} />
+          ))}
+        </div>
       )}
 
       {/* Distress alerts */}

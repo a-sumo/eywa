@@ -215,10 +215,11 @@ export function useRoom() {
     const slug = "demo-" + Math.random().toString(36).substring(2, 6);
 
     try {
+      // Worker creates the room and seeds it with demo data (needs service key for RLS)
       const res = await fetch("https://mcp.eywa-ai.dev/clone-demo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, source_slug: "demo" }),
+        body: JSON.stringify({ slug }),
       });
 
       if (!res.ok) {
@@ -226,9 +227,9 @@ export function useRoom() {
         throw new Error((err as { error?: string }).error || `HTTP ${res.status}`);
       }
 
-      const result = await res.json() as { id: string; slug: string; cloned: number };
+      const result = await res.json() as { id: string; slug: string; seeded: number };
 
-      // Fetch the full room record for the return value
+      // Fetch the full room record
       const { data } = await supabase
         .from("rooms")
         .select("*")
@@ -239,7 +240,7 @@ export function useRoom() {
       navigate(`/r/${slug}`);
       return data;
     } catch (err) {
-      console.warn("Clone demo failed:", err);
+      console.warn("Create demo failed:", err);
       setCreating(false);
       setError("Failed to create demo room");
       return null;

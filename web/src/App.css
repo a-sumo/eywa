@@ -3985,6 +3985,88 @@ body {
   margin-top: 4px;
 }
 
+/* Approval queue */
+.hub-approvals {
+  margin-bottom: 10px;
+}
+
+.hub-approval-card {
+  background: rgba(234, 179, 8, 0.06);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+  border-left: 3px solid #eab308;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  transition: border-color 0.2s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.hub-approval-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hub-approval-action {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 4px;
+}
+
+.hub-approval-scope {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+}
+
+.hub-approval-context {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+}
+
+.hub-approval-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.hub-approve-btn,
+.hub-deny-btn {
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  transition: background 0.15s ease-in-out, opacity 0.15s ease-in-out;
+}
+
+.hub-approve-btn {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #22c55e;
+}
+
+.hub-approve-btn:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.25);
+}
+
+.hub-deny-btn {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.hub-deny-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.hub-approve-btn:disabled,
+.hub-deny-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Destination banner */
 .hub-destination {
   background: rgba(139, 92, 246, 0.06);

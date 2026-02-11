@@ -42,6 +42,14 @@ export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?:
           setMemories((prev) => [payload.new as Memory, ...prev].slice(0, limit));
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "memories", filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          const updated = payload.new as Memory;
+          setMemories((prev) => prev.map((m) => m.id === updated.id ? updated : m));
+        }
+      )
       .subscribe();
 
     return () => {
