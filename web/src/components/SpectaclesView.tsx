@@ -20,11 +20,23 @@ import {
 } from "../lib/navigatorClient";
 
 // --- Canvas map renderer ---
+// Agent color palette (matches tileRenderers.ts)
+const AGENT_PALETTE = [
+  "#E64980", "#CC5DE8", "#845EF7", "#5C7CFA",
+  "#339AF0", "#22B8CF", "#20C997", "#51CF66",
+];
+function mapAgentColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AGENT_PALETTE[Math.abs(hash) % AGENT_PALETTE.length];
+}
+function hexR(hex: string): number { return parseInt(hex.slice(1, 3), 16); }
+function hexG(hex: string): number { return parseInt(hex.slice(3, 5), 16); }
+function hexB(hex: string): number { return parseInt(hex.slice(5, 7), 16); }
 
 interface MapRenderOpts {
   nodes: NavigatorNode[];
   trajectory: NavigatorMapResponse["trajectory"];
-  alignments: NavigatorMapResponse["alignments"];
   width: number;
   height: number;
   dark: boolean;
@@ -34,67 +46,50 @@ interface MapRenderOpts {
 }
 
 function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRenderOpts) {
-  const { nodes, trajectory, alignments, width, height, dark, panX, panY, zoom } = opts;
+  const { nodes, trajectory, width: W, height: H, dark, panX, panY, zoom } = opts;
 
-  // Colors
-  const bg = dark ? "#0a0a14" : "#f5f5f5";
-  const gridColor = dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)";
-  const textColor = dark ? "#e6edf3" : "#1a1a1a";
-  const dimText = dark ? "#484f58" : "#999";
-  const edgeColor = dark ? "rgba(139,92,246,0.3)" : "rgba(139,92,246,0.4)";
-  const alignColor = (a: number) =>
-    a > 0.5
-      ? dark ? "rgba(74,222,128,0.4)" : "rgba(34,197,94,0.4)"
-      : a > 0
-        ? dark ? "rgba(250,204,21,0.3)" : "rgba(202,138,4,0.3)"
-        : dark ? "rgba(248,113,113,0.3)" : "rgba(220,38,38,0.3)";
-
-  const nodeColors: Record<string, string> = {
-    goal: "#15D1FF",
-    source: "#8b5cf6",
-    action: dark ? "#4ade80" : "#16a34a",
-    state: dark ? "#fbbf24" : "#ca8a04",
-  };
+  // Theme colors
+  const bg = dark ? "#080a08" : "#fafafa";
+  const gridColor = dark ? "rgba(0, 220, 100, 0.08)" : "rgba(60, 60, 70, 0.12)";
+  const textColor = dark ? [0, 210, 110] : [50, 50, 60];
+  const dimText = dark ? "rgba(0, 210, 110, 0.4)" : "rgba(100, 100, 110, 0.6)";
+  const ringColor = dark ? [0, 180, 90] : [80, 60, 140];
+  const bgRgb = dark ? "8, 10, 8" : "250, 250, 250";
 
   // Clear
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(0, 0, W, H);
 
   if (nodes.length === 0) {
     ctx.fillStyle = dimText;
-    ctx.font = "16px Inter, system-ui, sans-serif";
+    ctx.font = `${Math.max(12, W / 50)}px Inter, system-ui, sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText("Syncing map data...", width / 2, height / 2);
+    ctx.textBaseline = "middle";
+    ctx.fillText("Syncing map data...", W / 2, H / 2);
     return;
   }
 
-  // Grid
+  // Responsive grid spacing
+  const pad = 30;
+  const spacing = Math.max(28, Math.min(48, W / 22));
   ctx.strokeStyle = gridColor;
   ctx.lineWidth = 1;
-  const gridStep = 60 * zoom;
-  const gx0 = (panX * zoom + width / 2) % gridStep;
-  const gy0 = (panY * zoom + height / 2) % gridStep;
-  for (let x = gx0; x < width; x += gridStep) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
-    ctx.stroke();
+  const gx0 = ((panX * zoom + W / 2) % spacing + spacing) % spacing;
+  const gy0 = ((panY * zoom + H / 2) % spacing + spacing) % spacing;
+  for (let x = gx0; x < W; x += spacing) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
   }
-  for (let y = gy0; y < height; y += gridStep) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
+  for (let y = gy0; y < H; y += spacing) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
 
-  // Transform: node coords are roughly [-1, 1], map to canvas with pan/zoom
-  const scale = Math.min(width, height) * 0.35 * zoom;
-  const cx = width / 2 + panX * zoom;
-  const cy = height / 2 + panY * zoom;
-
+  // Coordinate transform
+  const scale = Math.min(W, H) * 0.38 * zoom;
+  const cx = W / 2 + panX * zoom;
+  const cy = H / 2 + panY * zoom;
   const toScreen = (x: number, y: number): [number, number] => [
-    cx + x * scale,
-    cy - y * scale, // flip y
+    cx + x * scale * 0.85,
+    cy - y * scale * 0.85,
   ];
 
   // Build node position map
@@ -103,113 +98,179 @@ function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRend
     nodePos.set(n.id, toScreen(n.x, n.y));
   }
 
-  // Draw alignment lines (goal-action connections)
-  for (const a of alignments) {
-    const from = nodePos.get(a.actionId);
-    const to = nodePos.get(a.goalId);
-    if (!from || !to) continue;
-    ctx.strokeStyle = alignColor(a.alignment);
-    ctx.lineWidth = 1.5 * zoom;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(from[0], from[1]);
-    ctx.lineTo(to[0], to[1]);
-    ctx.stroke();
+  // Radial rings around goal
+  const goalNode = nodes.find(n => n.type === "goal");
+  if (goalNode) {
+    const [gx, gy] = nodePos.get(goalNode.id)!;
+    ctx.lineWidth = 0.8;
+    for (let r = 0.2; r <= 1.0; r += 0.2) {
+      ctx.strokeStyle = `rgba(${ringColor[0]}, ${ringColor[1]}, ${ringColor[2]}, ${r < 0.95 ? 0.1 : 0.18})`;
+      ctx.setLineDash([3, 5]);
+      ctx.beginPath();
+      ctx.arc(gx, gy, r * scale * 0.85, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.setLineDash([]);
   }
 
-  // Draw trajectory edges
-  const nodeById = new Map(nodes.map(n => [n.id, n]));
+  // Draw trajectory edges (agent-colored, curvature-weighted)
+  let maxCurv = 0;
+  for (const t of trajectory) {
+    const c = (t as unknown as { curvature?: number }).curvature || 0;
+    if (c > maxCurv) maxCurv = c;
+  }
   for (const t of trajectory) {
     const from = nodePos.get(t.from);
     const to = nodePos.get(t.to);
     if (!from || !to) continue;
-    ctx.strokeStyle = edgeColor;
-    ctx.lineWidth = 2 * zoom;
+    const color = mapAgentColor(t.agent);
+    const r = hexR(color), g = hexG(color), b = hexB(color);
+    const curv = (t as unknown as { curvature?: number }).curvature || 0;
+    const normCurv = maxCurv > 0 ? curv / maxCurv : 0;
+    ctx.lineWidth = (0.8 + normCurv * 1.4) * zoom;
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${(dark ? 0.5 : 0.35) + normCurv * 0.3})`;
+    if (normCurv > 0.5) ctx.setLineDash([]);
+    else ctx.setLineDash([3, 5]);
     ctx.beginPath();
     ctx.moveTo(from[0], from[1]);
     ctx.lineTo(to[0], to[1]);
     ctx.stroke();
-
-    // Arrow head
-    const dx = to[0] - from[0];
-    const dy = to[1] - from[1];
-    const len = Math.sqrt(dx * dx + dy * dy);
-    if (len > 0) {
-      const ux = dx / len;
-      const uy = dy / len;
-      const arrowLen = 8 * zoom;
-      const ax = to[0] - ux * arrowLen;
-      const ay = to[1] - uy * arrowLen;
-      ctx.fillStyle = edgeColor;
-      ctx.beginPath();
-      ctx.moveTo(to[0], to[1]);
-      ctx.lineTo(ax - uy * 4 * zoom, ay + ux * 4 * zoom);
-      ctx.lineTo(ax + uy * 4 * zoom, ay - ux * 4 * zoom);
-      ctx.closePath();
-      ctx.fill();
-    }
   }
+  ctx.setLineDash([]);
 
-  // Draw nodes
+  // Font sizes that scale with canvas
+  const labelFont = Math.max(10, Math.min(14, W / 60));
+  const smallFont = Math.max(8, Math.min(11, W / 80));
+
+  // Draw action nodes (small filled circles + glow)
   for (const n of nodes) {
+    if (n.type !== "action") continue;
     const pos = nodePos.get(n.id);
     if (!pos) continue;
-    const [sx, sy] = pos;
-    const color = nodeColors[n.type] || "#8b949e";
-    const radius = n.type === "goal" ? 14 * zoom : 8 * zoom;
+    const color = n.agent ? mapAgentColor(n.agent) : (dark ? "#4ade80" : "#16a34a");
+    const r = hexR(color), g = hexG(color), b = hexB(color);
+    const rad = 4 * zoom;
+    // Glow
+    const glow = ctx.createRadialGradient(pos[0], pos[1], rad * 0.5, pos[0], pos[1], rad * 4);
+    glow.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${dark ? 0.12 : 0.06})`);
+    glow.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(pos[0], pos[1], rad * 4, 0, Math.PI * 2);
+    ctx.fill();
+    // Dot
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${dark ? 0.9 : 0.75})`;
+    ctx.beginPath();
+    ctx.arc(pos[0], pos[1], rad, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 1)`;
+    ctx.lineWidth = 1.2 * zoom;
+    ctx.stroke();
+  }
 
-    // Glow for goals
-    if (n.type === "goal") {
-      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius * 2.5);
-      grad.addColorStop(0, color + "40");
-      grad.addColorStop(1, color + "00");
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(sx, sy, radius * 2.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
+  // Draw state nodes (ring outline)
+  for (const n of nodes) {
+    if (n.type !== "state") continue;
+    const pos = nodePos.get(n.id);
+    if (!pos) continue;
+    const color = n.agent ? mapAgentColor(n.agent) : (dark ? "#fbbf24" : "#ca8a04");
+    const r = hexR(color), g = hexG(color), b = hexB(color);
+    const rad = 4.5 * zoom;
+    ctx.fillStyle = dark ? "rgba(10, 14, 10, 0.9)" : "rgba(255, 255, 255, 0.85)";
+    ctx.beginPath();
+    ctx.arc(pos[0], pos[1], rad, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${dark ? 0.8 : 0.6})`;
+    ctx.lineWidth = 1.5 * zoom;
+    ctx.stroke();
+  }
 
-    // Node circle
+  // Draw source nodes
+  for (const n of nodes) {
+    if (n.type !== "source") continue;
+    const pos = nodePos.get(n.id);
+    if (!pos) continue;
+    const name = n.agent || n.label || n.id;
+    const color = mapAgentColor(name);
+    const rad = 6 * zoom;
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+    ctx.arc(pos[0], pos[1], rad, 0, Math.PI * 2);
     ctx.fill();
-
-    // Border
-    ctx.strokeStyle = dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
     // Label
-    const label = n.label.length > 24 ? n.label.slice(0, 22) + ".." : n.label;
-    ctx.fillStyle = textColor;
-    ctx.font = `${Math.max(10, 11 * zoom)}px Inter, system-ui, sans-serif`;
+    const short = name.includes("/") ? name.split("/").pop()! : name;
+    ctx.fillStyle = `rgba(${textColor[0]}, ${textColor[1]}, ${textColor[2]}, 0.7)`;
+    ctx.font = `${smallFont * zoom}px Inter, system-ui, sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText(label, sx, sy + radius + 14 * zoom);
-
-    // Type tag
-    if (n.type !== "action") {
-      ctx.fillStyle = dimText;
-      ctx.font = `${Math.max(8, 9 * zoom)}px Inter, system-ui, sans-serif`;
-      ctx.fillText(n.type, sx, sy + radius + 26 * zoom);
-    }
-
-    // Agent tag
-    if (n.agent) {
-      const short = n.agent.includes("/") ? n.agent.split("/").pop()! : n.agent;
-      ctx.fillStyle = "#8b5cf6";
-      ctx.font = `${Math.max(8, 9 * zoom)}px Inter, system-ui, sans-serif`;
-      ctx.fillText(short, sx, sy - radius - 6 * zoom);
-    }
+    ctx.textBaseline = "top";
+    ctx.fillText(short.replace(" (active)", ""), pos[0], pos[1] + rad + 4);
   }
+
+  // Draw goal nodes (4-point star + glow)
+  for (const n of nodes) {
+    if (n.type !== "goal") continue;
+    const pos = nodePos.get(n.id);
+    if (!pos) continue;
+    const sz = 18 * zoom;
+    // Glow
+    const glow = ctx.createRadialGradient(pos[0], pos[1], 0, pos[0], pos[1], sz * 2.5);
+    const gc = dark ? [0, 255, 200] : [200, 160, 40];
+    glow.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.25)`);
+    glow.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.06)`);
+    glow.addColorStop(1, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0)`);
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(pos[0], pos[1], sz * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    // Star
+    ctx.save();
+    ctx.translate(pos[0], pos[1]);
+    const outerV = sz, outerH = sz * 0.6, pinch = sz * 0.08;
+    ctx.beginPath();
+    ctx.moveTo(0, -outerV);
+    ctx.quadraticCurveTo(pinch, -pinch, outerH, 0);
+    ctx.quadraticCurveTo(pinch, pinch, 0, outerV);
+    ctx.quadraticCurveTo(-pinch, pinch, -outerH, 0);
+    ctx.quadraticCurveTo(-pinch, -pinch, 0, -outerV);
+    ctx.closePath();
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, sz);
+    grad.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.6)`);
+    grad.addColorStop(0.35, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.3)`);
+    grad.addColorStop(1, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.06)`);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
+    // Label below
+    const label = n.label.length > 24 ? n.label.slice(0, 22) + ".." : n.label;
+    ctx.fillStyle = `rgba(${textColor[0]}, ${textColor[1]}, ${textColor[2]}, 0.9)`;
+    ctx.font = `bold ${labelFont * zoom}px Inter, system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText(label, pos[0], pos[1] + sz + 6);
+  }
+
+  // Edge fades (vignette)
+  const fadeW = Math.max(16, W / 40);
+  const lG = ctx.createLinearGradient(0, 0, fadeW, 0);
+  lG.addColorStop(0, `rgba(${bgRgb}, 0.8)`); lG.addColorStop(1, `rgba(${bgRgb}, 0)`);
+  ctx.fillStyle = lG; ctx.fillRect(0, 0, fadeW, H);
+  const rG = ctx.createLinearGradient(W - fadeW, 0, W, 0);
+  rG.addColorStop(0, `rgba(${bgRgb}, 0)`); rG.addColorStop(1, `rgba(${bgRgb}, 0.8)`);
+  ctx.fillStyle = rG; ctx.fillRect(W - fadeW, 0, fadeW, H);
+  const tG = ctx.createLinearGradient(0, 0, 0, fadeW);
+  tG.addColorStop(0, `rgba(${bgRgb}, 0.8)`); tG.addColorStop(1, `rgba(${bgRgb}, 0)`);
+  ctx.fillStyle = tG; ctx.fillRect(0, 0, W, fadeW);
+  const bG = ctx.createLinearGradient(0, H - fadeW, 0, H);
+  bG.addColorStop(0, `rgba(${bgRgb}, 0)`); bG.addColorStop(1, `rgba(${bgRgb}, 0.8)`);
+  ctx.fillStyle = bG; ctx.fillRect(0, H - fadeW, W, fadeW);
 
   // Title
   ctx.fillStyle = dimText;
-  ctx.font = "11px Inter, system-ui, sans-serif";
+  ctx.font = `${smallFont}px Inter, system-ui, sans-serif`;
   ctx.textAlign = "left";
-  ctx.fillText("Eywa Navigator", 12, 20);
-  ctx.fillText(`${nodes.length} nodes`, 12, 34);
+  ctx.textBaseline = "top";
+  ctx.fillText("Eywa Navigator", 12, 10);
+  ctx.fillText(`${nodes.length} nodes`, 12, 10 + smallFont + 4);
 }
 
 // --- Main Component ---
@@ -407,7 +468,6 @@ export function SpectaclesView() {
       renderMapToCanvas(ctx, {
         nodes: mapData?.nodes || [],
         trajectory: mapData?.trajectory || [],
-        alignments: mapData?.alignments || [],
         width: W,
         height: H,
         dark: themeRef.current === "dark",
