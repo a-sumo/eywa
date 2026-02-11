@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { RoomProvider } from "./context/RoomContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -64,11 +64,16 @@ function App() {
 }
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
+  const prevPath = useRef(pathname);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [pathname]);
+    if (hash) return; // let browser handle anchor links
+    if (prevPath.current !== pathname) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+    prevPath.current = pathname;
+  }, [pathname, hash]);
 
   return null;
 }
