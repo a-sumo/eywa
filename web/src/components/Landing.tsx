@@ -2,7 +2,22 @@ import { Link } from "react-router-dom";
 import { useRoom } from "../hooks/useRoom";
 import { FlowBackground } from "./FlowBackground";
 import EywaLogo from "./EywaLogo";
-import HyperbolicStarLogo from "./HyperbolicStarLogo";
+// Static SVG of Curvilinear's hyperbolic star logo
+const CurvilinearLogo = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="curv-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#0080ff" />
+        <stop offset="50%" stopColor="#1ae6ff" />
+        <stop offset="100%" stopColor="#33e680" />
+      </linearGradient>
+    </defs>
+    <path
+      d="M50 2C50 2 52 30 50 42C48 30 50 2 50 2ZM50 98C50 98 48 70 50 58C52 70 50 98 50 98ZM2 50C2 50 30 48 42 50C30 52 2 50 2 50ZM98 50C98 50 70 52 58 50C70 48 98 50 98 50ZM14.6 14.6C14.6 14.6 34.8 27 40.8 36.4C27 34.8 14.6 14.6 14.6 14.6ZM85.4 85.4C85.4 85.4 65.2 73 59.2 63.6C73 65.2 85.4 85.4 85.4 85.4ZM14.6 85.4C14.6 85.4 27 65.2 36.4 59.2C34.8 73 14.6 85.4 14.6 85.4ZM85.4 14.6C85.4 14.6 73 34.8 63.6 40.8C65.2 27 85.4 14.6 85.4 14.6Z"
+      fill="url(#curv-grad)"
+    />
+  </svg>
+);
 
 // Animated SVG Icons - aurora colored, heartbeat-synced animations
 const IconThreads = () => (
@@ -597,7 +612,7 @@ export function Landing() {
             </div>
             <a href="https://curvilinear.space" target="_blank" rel="noopener noreferrer" className="landing-curvilinear-badge">
               <span className="curvilinear-by">by</span>
-              <HyperbolicStarLogo size={28} autoplay rotationSpeed={0.003} grain={0.1} resolution={30} />
+              <CurvilinearLogo size={22} />
               <span className="curvilinear-name">Curvilinear</span>
             </a>
           </div>
@@ -628,7 +643,7 @@ export function Landing() {
                 <IconGitHub />
                 <div>
                   <span className="footer-community-label">GitHub</span>
-                  <span className="footer-community-desc">Star the repo</span>
+                  <span className="footer-community-desc">View the source</span>
                 </div>
               </a>
               <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer" className="footer-community-card">
