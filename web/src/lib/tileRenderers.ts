@@ -1101,8 +1101,8 @@ export const renderNavigatorMap: RenderFn = (ctx, w, h, data) => {
 
   // Grid
   const spacing = Math.max(28, Math.min(48, w / 22));
-  ctx.strokeStyle = "rgba(0, 220, 100, 0.08)";
-  ctx.lineWidth = 0.5;
+  ctx.strokeStyle = "rgba(0, 220, 100, 0.07)";
+  ctx.lineWidth = 0.8;
   for (let y = pad; y <= h - pad; y += spacing) {
     ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w - pad, y); ctx.stroke();
   }
@@ -1123,6 +1123,16 @@ export const renderNavigatorMap: RenderFn = (ctx, w, h, data) => {
       ctx.stroke();
     }
     ctx.setLineDash([]);
+    // Ring labels with units
+    const ringFontSize = Math.max(7, Math.min(10, w / 35));
+    ctx.font = `500 ${ringFontSize}px system-ui`;
+    ctx.fillStyle = "rgba(0, 210, 110, 0.35)";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    for (let r = 0.2; r <= 1.0; r += 0.2) {
+      const label = r >= 0.95 ? "1 kh" : `${(r * 10).toFixed(0)} rd`;
+      ctx.fillText(label, gx + r * scale * 0.85 + 4, gy - 4);
+    }
   }
 
   // Pre-compute pixel positions
@@ -1155,14 +1165,29 @@ export const renderNavigatorMap: RenderFn = (ctx, w, h, data) => {
       if (!from || !to) continue;
       const curv = (t.curvature as number) || 0;
       const normCurv = maxCurv > 0 ? curv / maxCurv : 0;
-      ctx.lineWidth = 0.8 + normCurv * 1.4;
-      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.5 + normCurv * 0.3})`;
-      if (normCurv > 0.5) ctx.setLineDash([]);
-      else ctx.setLineDash([3, 5]);
+      const lineW = 1.5 + normCurv * 2;
+      ctx.lineWidth = lineW;
+      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.5 + normCurv * 0.25})`;
+      ctx.setLineDash([]);
       ctx.beginPath();
       ctx.moveTo(from[0], from[1]);
       ctx.lineTo(to[0], to[1]);
       ctx.stroke();
+      // Arrowhead at midpoint showing direction
+      const edx = to[0] - from[0], edy = to[1] - from[1];
+      const elen = Math.sqrt(edx * edx + edy * edy);
+      if (elen > 16) {
+        const mx = (from[0] + to[0]) / 2, my = (from[1] + to[1]) / 2;
+        const ux = edx / elen, uy = edy / elen;
+        const arrowSize = Math.min(5, elen * 0.15);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.55 + normCurv * 0.2})`;
+        ctx.beginPath();
+        ctx.moveTo(mx + ux * arrowSize, my + uy * arrowSize);
+        ctx.lineTo(mx - ux * arrowSize * 0.6 + uy * arrowSize * 0.5, my - uy * arrowSize * 0.6 - ux * arrowSize * 0.5);
+        ctx.lineTo(mx - ux * arrowSize * 0.6 - uy * arrowSize * 0.5, my - uy * arrowSize * 0.6 + ux * arrowSize * 0.5);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
   }
   ctx.setLineDash([]);
@@ -1177,20 +1202,20 @@ export const renderNavigatorMap: RenderFn = (ctx, w, h, data) => {
     const color = agent ? agentColor(agent) : "#4ade80";
     const r = hexR(color), g = hexG(color), b = hexB(color);
     // Glow
-    const glow = ctx.createRadialGradient(pos[0], pos[1], 2, pos[0], pos[1], 16);
+    const glow = ctx.createRadialGradient(pos[0], pos[1], 2.5, pos[0], pos[1], 20);
     glow.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.12)`);
     glow.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(pos[0], pos[1], 16, 0, Math.PI * 2);
+    ctx.arc(pos[0], pos[1], 20, 0, Math.PI * 2);
     ctx.fill();
     // Dot
     ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
     ctx.beginPath();
-    ctx.arc(pos[0], pos[1], 4, 0, Math.PI * 2);
+    ctx.arc(pos[0], pos[1], 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 1.0)`;
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 1.5;
     ctx.stroke();
   }
 
@@ -1205,10 +1230,10 @@ export const renderNavigatorMap: RenderFn = (ctx, w, h, data) => {
     const r = hexR(color), g = hexG(color), b = hexB(color);
     ctx.fillStyle = "rgba(10, 14, 10, 0.9)";
     ctx.beginPath();
-    ctx.arc(pos[0], pos[1], 4.5, 0, Math.PI * 2);
+    ctx.arc(pos[0], pos[1], 5.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.8;
     ctx.stroke();
   }
 
@@ -1230,7 +1255,7 @@ export const renderNavigatorMap: RenderFn = (ctx, w, h, data) => {
     const color = agentColor(name);
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(pos[0], pos[1], 5, 0, Math.PI * 2);
+    ctx.arc(pos[0], pos[1], 6, 0, Math.PI * 2);
     ctx.fill();
     if (labelSet.has(n.id as string)) {
       const short = name.includes("/") ? name.split("/").pop()! : name;
