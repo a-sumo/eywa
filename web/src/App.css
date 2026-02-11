@@ -1163,6 +1163,8 @@ body {
   justify-content: center;
   gap: 2rem;
   flex-wrap: wrap;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .landing-surface-item {
