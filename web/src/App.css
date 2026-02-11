@@ -2088,44 +2088,9 @@ body {
 }
 
 .landing-footer-brand p {
-  font-size: 1.15rem;
+  font-size: 1.35rem;
   color: rgba(240, 240, 245, 0.5);
   margin: 0.5rem 0 0;
-}
-
-.landing-curvilinear-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
-  text-decoration: none;
-  transition: opacity 0.2s;
-  opacity: 0.8;
-}
-
-.landing-curvilinear-badge:hover {
-  opacity: 1;
-}
-
-.curvilinear-by {
-  font-size: 1.1rem;
-  color: rgba(240, 240, 245, 0.45);
-}
-
-.curvilinear-logo-img {
-  width: 88px;
-  height: 88px;
-  object-fit: contain;
-  mix-blend-mode: screen;
-}
-
-.curvilinear-name {
-  font-size: 1.15rem;
-  font-weight: 600;
-  background: linear-gradient(135deg, #0080ff 0%, #1ae6ff 50%, #33e680 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .landing-footer-links {
