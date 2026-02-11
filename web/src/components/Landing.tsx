@@ -541,7 +541,7 @@ export function Landing() {
           <div className="landing-pricing-card landing-pricing-featured">
             <div className="landing-pricing-badge">For Teams</div>
             <h3>Pro</h3>
-            <div className="landing-pricing-price">$5<span>/seat/month</span></div>
+            <div className="landing-pricing-price">Coming soon</div>
             <ul className="landing-pricing-features">
               <li>Unlimited team members</li>
               <li>90-day history</li>
@@ -549,9 +549,9 @@ export function Landing() {
               <li>Team knowledge base</li>
               <li>Timeline rewind + forking</li>
             </ul>
-            <button className="btn-landing-primary" style={{ width: "100%" }} onClick={() => createRoom()}>
-              Start Pro Trial
-            </button>
+            <a href="mailto:eywa.ai.team@gmail.com" className="btn-landing-primary" style={{ width: "100%" }}>
+              Contact Us
+            </a>
           </div>
           <div className="landing-pricing-card">
             <h3>Enterprise</h3>
@@ -563,7 +563,7 @@ export function Landing() {
               <li>Custom integrations</li>
               <li>Volume discounts</li>
             </ul>
-            <a href="https://discord.gg/TyEUUnNm" className="btn-landing-secondary" style={{ width: "100%" }} target="_blank" rel="noopener noreferrer">
+            <a href="mailto:eywa.ai.team@gmail.com" className="btn-landing-secondary" style={{ width: "100%" }}>
               Contact Us
             </a>
           </div>
@@ -614,7 +614,7 @@ export function Landing() {
             <div className="landing-footer-col">
               <h4>Company</h4>
               <a href="https://curvilinear.space/about" target="_blank" rel="noopener noreferrer">About</a>
-              <a href="https://curvilinear.space/contact" target="_blank" rel="noopener noreferrer">Contact</a>
+              <a href="mailto:eywa.ai.team@gmail.com">Contact</a>
             </div>
           </div>
           <div className="landing-footer-social">
