@@ -46,10 +46,6 @@ docs/frames/
 *.mp4
 *.mp3
 
-# Strategic docs (private)
-VISION.md
-DESIGN.md
-
 # Editors
 .vscode/
 *.sw?
