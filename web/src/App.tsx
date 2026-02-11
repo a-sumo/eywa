@@ -19,6 +19,7 @@ import { SpectaclesReceiver } from "./components/SpectaclesReceiver";
 import { GlobalKnowledgeHub } from "./components/GlobalKnowledgeHub";
 import { NavigatorMap } from "./components/NavigatorMap";
 import { OperationsView } from "./components/OperationsView";
+import { VoicesView } from "./components/VoicesView";
 import { DocsLayout, DocsOverview } from "./components/DocsLayout";
 import { IntegrationGuide } from "./components/IntegrationGuide";
 import { QuickstartDocs } from "./components/docs/QuickstartDocs";
@@ -56,6 +57,7 @@ function App() {
           <Route path="/r/:slug/phone" element={<RoomProvider><MiniEywa /></RoomProvider>} />
           <Route path="/r/:slug/spectacles" element={<RoomProvider><SpectaclesView /></RoomProvider>} />
           <Route path="/r/:slug/spectacles/rx" element={<RoomProvider><SpectaclesReceiver /></RoomProvider>} />
+          <Route path="/r/:slug/voices" element={<RoomProvider><VoicesView /></RoomProvider>} />
           <Route path="/r/:slug/*" element={<RoomRoutes />} />
         </Routes>
       </BrowserRouter>
