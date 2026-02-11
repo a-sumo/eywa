@@ -11,31 +11,13 @@ import { useRoomContext } from "../context/RoomContext";
 import { useGeminiLive, type VoiceEvent } from "../hooks/useGeminiLive";
 import { useParams } from "react-router-dom";
 
-const VOICES_PASSWORD = import.meta.env.VITE_VOICES_PASSWORD as string;
+const HASH = "cbcddb8aaa85d82b43e4c1674b2a4d7c8bf8dfdcff8259ca20524ac241c3fabf";
 const STORAGE_KEY = "eywa-voices-auth";
 
-function usePasswordGate() {
-  const [authed, setAuthed] = useState(() => {
-    if (!VOICES_PASSWORD) return true;
-    return sessionStorage.getItem(STORAGE_KEY) === "1";
-  });
-  const [error, setError] = useState(false);
-  const inputRef = useRef("");
-
-  const setInput = (v: string) => { inputRef.current = v; };
-
-  const submit = useCallback(() => {
-    const val = inputRef.current.trim();
-    if (val === VOICES_PASSWORD) {
-      sessionStorage.setItem(STORAGE_KEY, "1");
-      setAuthed(true);
-      setError(false);
-    } else {
-      setError(true);
-    }
-  }, []);
-
-  return { authed, inputRef, setInput, submit, error };
+async function checkPassword(input: string): Promise<boolean> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return hash === HASH;
 }
 
 interface LogEntry {
@@ -48,7 +30,9 @@ interface LogEntry {
 export function VoicesView() {
   const { room } = useRoomContext();
   const { slug } = useParams<{ slug: string }>();
-  const gate = usePasswordGate();
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem(STORAGE_KEY) === "1");
+  const [pwError, setPwError] = useState(false);
+  const pwRef = useRef<HTMLInputElement>(null);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [status, setStatus] = useState("Tap to connect");
   const [currentResponse, setCurrentResponse] = useState("");
@@ -116,7 +100,18 @@ export function VoicesView() {
     }
   };
 
-  if (!gate.authed) {
+  const handlePassword = async () => {
+    const val = pwRef.current?.value || "";
+    if (await checkPassword(val)) {
+      sessionStorage.setItem(STORAGE_KEY, "1");
+      setAuthed(true);
+      setPwError(false);
+    } else {
+      setPwError(true);
+    }
+  };
+
+  if (!authed) {
     return (
       <div style={styles.container}>
         <div style={styles.gateBox}>
@@ -124,16 +119,15 @@ export function VoicesView() {
             eywa voices
           </div>
           <input
+            ref={pwRef}
             type="password"
-            ref={(el) => { if (el && !gate.inputRef.current) el.focus(); }}
-            onChange={(e) => gate.setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && gate.submit()}
+            onKeyDown={(e) => e.key === "Enter" && handlePassword()}
             placeholder="Password"
             autoFocus
             style={styles.gateInput}
           />
-          {gate.error && <div style={{ color: "#ff6666", fontSize: "13px", marginTop: "8px" }}>Wrong password</div>}
-          <button onClick={gate.submit} style={{ ...styles.mainButton, backgroundColor: "#00ff88", color: "#0a0a14", border: "none", marginTop: "16px", maxWidth: "200px" }}>
+          {pwError && <div style={{ color: "#ff6666", fontSize: "13px", marginTop: "8px" }}>Wrong password</div>}
+          <button onClick={handlePassword} style={{ ...styles.mainButton, backgroundColor: "#00ff88", color: "#0a0a14", border: "none", marginTop: "16px", maxWidth: "200px" }}>
             Enter
           </button>
         </div>
