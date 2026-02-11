@@ -11,6 +11,30 @@ import { useRoomContext } from "../context/RoomContext";
 import { useGeminiLive, type VoiceEvent } from "../hooks/useGeminiLive";
 import { useParams } from "react-router-dom";
 
+const VOICES_PASSWORD = import.meta.env.VITE_VOICES_PASSWORD as string;
+const STORAGE_KEY = "eywa-voices-auth";
+
+function usePasswordGate() {
+  const [authed, setAuthed] = useState(() => {
+    if (!VOICES_PASSWORD) return true;
+    return sessionStorage.getItem(STORAGE_KEY) === "1";
+  });
+  const [input, setInput] = useState("");
+  const [error, setError] = useState(false);
+
+  const submit = () => {
+    if (input === VOICES_PASSWORD) {
+      sessionStorage.setItem(STORAGE_KEY, "1");
+      setAuthed(true);
+      setError(false);
+    } else {
+      setError(true);
+    }
+  };
+
+  return { authed, input, setInput, submit, error };
+}
+
 interface LogEntry {
   id: number;
   type: VoiceEvent["type"];
@@ -21,6 +45,7 @@ interface LogEntry {
 export function VoicesView() {
   const { room } = useRoomContext();
   const { slug } = useParams<{ slug: string }>();
+  const gate = usePasswordGate();
   const [log, setLog] = useState<LogEntry[]>([]);
   const [status, setStatus] = useState("Tap to connect");
   const [currentResponse, setCurrentResponse] = useState("");
@@ -87,6 +112,31 @@ export function VoicesView() {
       connect();
     }
   };
+
+  if (!gate.authed) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.gateBox}>
+          <div style={{ fontSize: "14px", color: "#666", textTransform: "uppercase" as const, letterSpacing: "1px", marginBottom: "16px" }}>
+            eywa voices
+          </div>
+          <input
+            type="password"
+            value={gate.input}
+            onChange={(e) => gate.setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && gate.submit()}
+            placeholder="Password"
+            autoFocus
+            style={styles.gateInput}
+          />
+          {gate.error && <div style={{ color: "#ff6666", fontSize: "13px", marginTop: "8px" }}>Wrong password</div>}
+          <button onClick={gate.submit} style={{ ...styles.mainButton, backgroundColor: "#00ff88", color: "#0a0a14", border: "none", marginTop: "16px", maxWidth: "200px" }}>
+            Enter
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
@@ -276,5 +326,25 @@ const styles: Record<string, React.CSSProperties> = {
   hint: {
     fontSize: "12px",
     color: "#555",
+  },
+  gateBox: {
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    padding: "24px",
+  },
+  gateInput: {
+    backgroundColor: "#1a1a2e",
+    border: "1px solid #333",
+    borderRadius: "12px",
+    padding: "12px 16px",
+    color: "#e0e0e0",
+    fontSize: "16px",
+    width: "100%",
+    maxWidth: "240px",
+    textAlign: "center" as const,
+    outline: "none",
   },
 };

@@ -53,6 +53,7 @@ export function RoomLayout({ children }: RoomLayoutProps) {
         <Link to={`${basePath}/knowledge`} className={isTabActive(`${basePath}/knowledge`) ? "active" : ""}>Knowledge</Link>
         <Link to={`${basePath}/graph`} className={isTabActive(`${basePath}/graph`) ? "active" : ""}>Graph</Link>
         <Link to={`${basePath}/map`} className={isTabActive(`${basePath}/map`) ? "active" : ""}>Map</Link>
+        <Link to={`${basePath}/voices`} className={isTabActive(`${basePath}/voices`) ? "active" : ""}>Voices</Link>
       </nav>
     </div>
   );
