@@ -19,20 +19,23 @@ function usePasswordGate() {
     if (!VOICES_PASSWORD) return true;
     return sessionStorage.getItem(STORAGE_KEY) === "1";
   });
-  const [input, setInput] = useState("");
   const [error, setError] = useState(false);
+  const inputRef = useRef("");
 
-  const submit = () => {
-    if (input === VOICES_PASSWORD) {
+  const setInput = (v: string) => { inputRef.current = v; };
+
+  const submit = useCallback(() => {
+    const val = inputRef.current.trim();
+    if (val === VOICES_PASSWORD) {
       sessionStorage.setItem(STORAGE_KEY, "1");
       setAuthed(true);
       setError(false);
     } else {
       setError(true);
     }
-  };
+  }, []);
 
-  return { authed, input, setInput, submit, error };
+  return { authed, inputRef, setInput, submit, error };
 }
 
 interface LogEntry {
@@ -122,7 +125,7 @@ export function VoicesView() {
           </div>
           <input
             type="password"
-            value={gate.input}
+            ref={(el) => { if (el && !gate.inputRef.current) el.focus(); }}
             onChange={(e) => gate.setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && gate.submit()}
             placeholder="Password"
