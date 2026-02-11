@@ -698,9 +698,9 @@ body {
 .landing-footer-link-btn {
   background: none;
   border: none;
-  padding: 0;
-  color: rgba(240, 240, 245, 0.5);
-  font-size: 0.85rem;
+  padding: 0.25rem 0;
+  color: rgba(240, 240, 245, 0.6);
+  font-size: 1.05rem;
   font-family: inherit;
   cursor: pointer;
   text-align: left;
@@ -708,7 +708,7 @@ body {
 }
 
 .landing-footer-link-btn:hover {
-  color: rgba(240, 240, 245, 0.8);
+  color: #f0f0f5;
 }
 
 /* Mobile hamburger menu */
