@@ -13,16 +13,12 @@ import { Chat } from "./components/Chat";
 import { MiniEywa } from "./components/MiniEywa";
 import { MiniEywaEink } from "./components/MiniEywaEink";
 import { CLIAuth } from "./components/CLIAuth";
-import { SlidePresentation } from "./components/SlidePresentation";
 import { SessionGraph } from "./components/SessionGraph";
 import { SpectaclesView } from "./components/SpectaclesView";
 import { SpectaclesReceiver } from "./components/SpectaclesReceiver";
 import { GlobalKnowledgeHub } from "./components/GlobalKnowledgeHub";
 import { NavigatorMap } from "./components/NavigatorMap";
 import { OperationsView } from "./components/OperationsView";
-import { BroadcastTest } from "./components/BroadcastTest";
-import { LogoGlowTuner } from "./components/LogoGlowTuner";
-import { JellyEditor } from "./components/JellyEditor";
 import { DocsLayout, DocsOverview } from "./components/DocsLayout";
 import { IntegrationGuide } from "./components/IntegrationGuide";
 import { QuickstartDocs } from "./components/docs/QuickstartDocs";
@@ -43,9 +39,6 @@ function App() {
         <AppHeader />
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/slides" element={<SlidePresentation />} />
-          <Route path="/logo-glow" element={<LogoGlowTuner />} />
-          <Route path="/jelly" element={<JellyEditor />} />
           <Route path="/cli-auth" element={<CLIAuth />} />
           <Route path="/docs" element={<DocsLayout />}>
             <Route index element={<DocsOverview />} />
@@ -63,7 +56,6 @@ function App() {
           <Route path="/r/:slug/phone" element={<RoomProvider><MiniEywa /></RoomProvider>} />
           <Route path="/r/:slug/spectacles" element={<RoomProvider><SpectaclesView /></RoomProvider>} />
           <Route path="/r/:slug/spectacles/rx" element={<RoomProvider><SpectaclesReceiver /></RoomProvider>} />
-          <Route path="/r/:slug/spectacles/test" element={<RoomProvider><BroadcastTest /></RoomProvider>} />
           <Route path="/r/:slug/*" element={<RoomRoutes />} />
         </Routes>
       </BrowserRouter>
