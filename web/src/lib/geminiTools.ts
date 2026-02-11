@@ -203,6 +203,106 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
       properties: {},
     },
   },
+  // --- Task tools ---
+  {
+    name: "create_task",
+    description:
+      "Create a task in the room's task queue. Tasks are structured work items that agents can pick up and track. Use this when the user wants to queue work, assign tasks, or break down goals into actionable items.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          description: "Short title for the task.",
+        },
+        description: {
+          type: "string",
+          description: "Detailed description of what needs to be done.",
+        },
+        priority: {
+          type: "string",
+          description: "Priority: 'low', 'normal', 'high', or 'urgent'. Defaults to 'normal'.",
+        },
+        assigned_to: {
+          type: "string",
+          description: "Agent or user name to assign to.",
+        },
+        milestone: {
+          type: "string",
+          description: "Links to a destination milestone.",
+        },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "get_tasks",
+    description:
+      "List tasks in the room. Returns tasks sorted by priority then time. Filter by status or milestone. Use this when asked about what needs to be done, task queue, or work items.",
+    parameters: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          description: "Filter by status: 'open', 'claimed', 'in_progress', 'done', 'blocked'. Comma-separated for multiple.",
+        },
+        milestone: {
+          type: "string",
+          description: "Filter by milestone name.",
+        },
+      },
+    },
+  },
+  {
+    name: "update_task",
+    description:
+      "Update a task's status, assignment, or add notes. Use this to reassign tasks, mark them done, or add progress notes.",
+    parameters: {
+      type: "object",
+      properties: {
+        task_id: {
+          type: "string",
+          description: "The ID of the task to update.",
+        },
+        status: {
+          type: "string",
+          description: "New status: 'open', 'claimed', 'in_progress', 'done', 'blocked'.",
+        },
+        assigned_to: {
+          type: "string",
+          description: "Reassign to another agent/user.",
+        },
+        notes: {
+          type: "string",
+          description: "Add notes about progress or blockers.",
+        },
+      },
+      required: ["task_id"],
+    },
+  },
+  {
+    name: "set_destination",
+    description:
+      "Set or update the room's destination (point B) and milestones. Use this when the user wants to define a goal, update progress, or change the team's direction.",
+    parameters: {
+      type: "object",
+      properties: {
+        destination: {
+          type: "string",
+          description: "The target state. What does 'done' look like?",
+        },
+        milestones: {
+          type: "string",
+          description: "Comma-separated list of milestone names.",
+        },
+        notes: {
+          type: "string",
+          description: "Free-form notes about the destination.",
+        },
+      },
+      required: ["destination"],
+    },
+  },
 ];
 
 /** Wrapped for the Gemini REST API tools array. */
@@ -284,6 +384,40 @@ export async function executeTool(
         break;
       case "get_pending_approvals":
         result = await handleGetPendingApprovals(roomId);
+        break;
+      case "create_task":
+        result = await handleCreateTask(
+          roomId,
+          call.args.title as string,
+          call.args.description as string | undefined,
+          (call.args.priority as string) || "normal",
+          call.args.assigned_to as string | undefined,
+          call.args.milestone as string | undefined,
+        );
+        break;
+      case "get_tasks":
+        result = await handleGetTasks(
+          roomId,
+          call.args.status as string | undefined,
+          call.args.milestone as string | undefined,
+        );
+        break;
+      case "update_task":
+        result = await handleUpdateTask(
+          roomId,
+          call.args.task_id as string,
+          call.args.status as string | undefined,
+          call.args.assigned_to as string | undefined,
+          call.args.notes as string | undefined,
+        );
+        break;
+      case "set_destination":
+        result = await handleSetDestination(
+          roomId,
+          call.args.destination as string,
+          call.args.milestones as string | undefined,
+          call.args.notes as string | undefined,
+        );
         break;
       default:
         result = `Unknown tool: ${call.name}`;
@@ -1031,4 +1165,282 @@ async function handleGetPendingApprovals(roomId: string): Promise<string> {
   }
 
   return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Task tools
+// ---------------------------------------------------------------------------
+
+const PRIORITY_ORDER: Record<string, number> = {
+  urgent: 0,
+  high: 1,
+  normal: 2,
+  low: 3,
+};
+
+async function handleCreateTask(
+  roomId: string,
+  title: string,
+  description?: string,
+  priority = "normal",
+  assignedTo?: string,
+  milestone?: string,
+): Promise<string> {
+  const validPriority = ["low", "normal", "high", "urgent"].includes(priority) ? priority : "normal";
+
+  // Check for duplicate titles in active tasks
+  const { data: existing } = await supabase
+    .from("memories")
+    .select("id, metadata")
+    .eq("room_id", roomId)
+    .eq("message_type", "task")
+    .order("ts", { ascending: false })
+    .limit(100);
+
+  if (existing) {
+    for (const row of existing) {
+      const meta = (row.metadata || {}) as Record<string, unknown>;
+      const status = meta.status as string;
+      if (
+        ["open", "claimed", "in_progress", "blocked"].includes(status) &&
+        (meta.title as string)?.toLowerCase() === title.toLowerCase()
+      ) {
+        return `Duplicate: active task already exists with title "${title}" (ID: ${row.id}, status: ${status}).`;
+      }
+    }
+  }
+
+  const { data, error } = await supabase.from("memories").insert({
+    room_id: roomId,
+    agent: "gemini-steering",
+    session_id: `gemini_${Date.now()}`,
+    message_type: "task",
+    content: `TASK: ${title}${description ? ` - ${description}` : ""}`,
+    token_count: Math.floor((title.length + (description?.length || 0)) / 4),
+    metadata: {
+      event: "task",
+      status: assignedTo ? "claimed" : "open",
+      title,
+      description: description || null,
+      priority: validPriority,
+      assigned_to: assignedTo || null,
+      parent_task: null,
+      milestone: milestone || null,
+      created_by: "gemini-steering",
+      claimed_at: assignedTo ? new Date().toISOString() : null,
+      completed_at: null,
+      blocked_reason: null,
+      notes: null,
+    },
+  }).select("id");
+
+  if (error) return `Failed to create task: ${error.message}`;
+
+  const taskId = data?.[0]?.id || "unknown";
+  const parts = [`Task created (ID: ${taskId}).`, `Title: ${title}`, `Priority: ${validPriority}`];
+  if (assignedTo) parts.push(`Assigned to: ${assignedTo}`);
+  if (milestone) parts.push(`Milestone: ${milestone}`);
+  return parts.join("\n");
+}
+
+async function handleGetTasks(
+  roomId: string,
+  status?: string,
+  milestone?: string,
+): Promise<string> {
+  const { data, error } = await supabase
+    .from("memories")
+    .select("id, agent, ts, content, metadata")
+    .eq("room_id", roomId)
+    .eq("message_type", "task")
+    .order("ts", { ascending: false })
+    .limit(100);
+
+  if (error) return `Database error: ${error.message}`;
+  if (!data || data.length === 0) return "No tasks in this room.";
+
+  let tasks = data.map((row: any) => {
+    const meta = (row.metadata || {}) as Record<string, unknown>;
+    return {
+      id: row.id,
+      title: (meta.title as string) || "",
+      description: (meta.description as string) || null,
+      status: (meta.status as string) || "open",
+      priority: (meta.priority as string) || "normal",
+      assigned_to: (meta.assigned_to as string) || null,
+      milestone: (meta.milestone as string) || null,
+      parent_task: (meta.parent_task as string) || null,
+      created_by: (meta.created_by as string) || row.agent,
+      notes: (meta.notes as string) || null,
+      blocked_reason: (meta.blocked_reason as string) || null,
+      ts: row.ts,
+    };
+  });
+
+  // Apply filters
+  if (status) {
+    const statuses = status.split(",").map((s: string) => s.trim());
+    tasks = tasks.filter((t: any) => statuses.includes(t.status));
+  } else {
+    // Default: exclude done
+    tasks = tasks.filter((t: any) => t.status !== "done");
+  }
+
+  if (milestone) {
+    tasks = tasks.filter((t: any) =>
+      t.milestone?.toLowerCase().includes(milestone.toLowerCase()),
+    );
+  }
+
+  // Sort by priority then time
+  tasks.sort((a: any, b: any) => {
+    const pa = PRIORITY_ORDER[a.priority] ?? 2;
+    const pb = PRIORITY_ORDER[b.priority] ?? 2;
+    if (pa !== pb) return pa - pb;
+    return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+  });
+
+  if (tasks.length === 0) return "No tasks match the filters.";
+
+  const lines: string[] = [`${tasks.length} task(s):\n`];
+  for (const t of tasks) {
+    const assignee = t.assigned_to ? ` -> ${t.assigned_to}` : "";
+    const ms = t.milestone ? ` [${t.milestone}]` : "";
+    const blocked = t.blocked_reason ? ` BLOCKED: ${t.blocked_reason}` : "";
+    lines.push(`[${t.priority.toUpperCase()}] ${t.status} | ${t.title}${assignee}${ms}${blocked}`);
+    lines.push(`  ID: ${t.id}`);
+    if (t.description) lines.push(`  ${t.description.slice(0, 200)}`);
+    if (t.notes) lines.push(`  Notes: ${t.notes.slice(0, 150)}`);
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+async function handleUpdateTask(
+  roomId: string,
+  taskId: string,
+  status?: string,
+  assignedTo?: string,
+  notes?: string,
+): Promise<string> {
+  const { data: req, error: fetchErr } = await supabase
+    .from("memories")
+    .select("*")
+    .eq("id", taskId)
+    .eq("room_id", roomId)
+    .eq("message_type", "task")
+    .single();
+
+  if (fetchErr || !req) return `Task not found: ${taskId}`;
+
+  const meta = (req.metadata || {}) as Record<string, unknown>;
+  const updates: Record<string, unknown> = { ...meta };
+
+  if (status) updates.status = status;
+  if (assignedTo !== undefined) updates.assigned_to = assignedTo;
+  if (notes) {
+    const existing = (meta.notes as string) || "";
+    updates.notes = existing ? `${existing}\n[${new Date().toISOString()}] ${notes}` : notes;
+  }
+  if (status === "done") updates.completed_at = new Date().toISOString();
+
+  const { error: updateErr } = await supabase
+    .from("memories")
+    .update({ metadata: updates })
+    .eq("id", taskId);
+
+  if (updateErr) return `Failed to update task: ${updateErr.message}`;
+
+  const title = (meta.title as string) || "";
+  const newStatus = (updates.status as string) || (meta.status as string);
+  const parts = [`Updated task: ${title}`, `Status: ${newStatus}`];
+  if (notes) parts.push(`Notes: ${notes}`);
+  return parts.join("\n");
+}
+
+async function handleSetDestination(
+  roomId: string,
+  destination: string,
+  milestonesStr?: string,
+  notes?: string,
+): Promise<string> {
+  const milestones = milestonesStr
+    ? milestonesStr.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  // Check if destination already exists
+  const { data: existing } = await supabase
+    .from("memories")
+    .select("id, metadata")
+    .eq("room_id", roomId)
+    .eq("message_type", "knowledge")
+    .eq("metadata->>event", "destination")
+    .order("ts", { ascending: false })
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    // Update existing destination
+    const oldMeta = (existing[0].metadata || {}) as Record<string, unknown>;
+    const oldMilestones = (oldMeta.milestones as string[]) || [];
+    const oldProgress = (oldMeta.progress as Record<string, boolean>) || {};
+
+    const newMilestones = milestones.length > 0 ? milestones : oldMilestones;
+    const newProgress: Record<string, boolean> = {};
+    for (const m of newMilestones) {
+      newProgress[m] = oldProgress[m] ?? false;
+    }
+
+    // Create new entry (append-only)
+    const { error } = await supabase.from("memories").insert({
+      room_id: roomId,
+      agent: "gemini-steering",
+      session_id: `gemini_${Date.now()}`,
+      message_type: "knowledge",
+      content: `DESTINATION: ${destination}`,
+      token_count: Math.floor(destination.length / 4),
+      metadata: {
+        event: "destination",
+        destination,
+        milestones: newMilestones,
+        progress: newProgress,
+        notes: notes || oldMeta.notes || null,
+        set_by: oldMeta.set_by || "gemini-steering",
+        last_updated_by: "gemini-steering",
+      },
+    });
+
+    if (error) return `Failed to update destination: ${error.message}`;
+
+    const done = newMilestones.filter((m) => newProgress[m]).length;
+    return `Destination updated: ${destination}\nProgress: ${done}/${newMilestones.length} milestones.${notes ? `\nNotes: ${notes}` : ""}`;
+  }
+
+  // Create new destination
+  const initialProgress: Record<string, boolean> = {};
+  for (const m of milestones) {
+    initialProgress[m] = false;
+  }
+
+  const { error } = await supabase.from("memories").insert({
+    room_id: roomId,
+    agent: "gemini-steering",
+    session_id: `gemini_${Date.now()}`,
+    message_type: "knowledge",
+    content: `DESTINATION: ${destination}`,
+    token_count: Math.floor(destination.length / 4),
+    metadata: {
+      event: "destination",
+      destination,
+      milestones,
+      progress: initialProgress,
+      notes: notes || null,
+      set_by: "gemini-steering",
+    },
+  });
+
+  if (error) return `Failed to set destination: ${error.message}`;
+
+  const msText = milestones.length > 0 ? `\nMilestones: ${milestones.join(", ")}` : "";
+  return `Destination set: ${destination}${msText}${notes ? `\nNotes: ${notes}` : ""}`;
 }

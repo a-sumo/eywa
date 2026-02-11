@@ -7,6 +7,8 @@ import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import { ConnectAgent } from "./ConnectAgent";
 import { useGeminiChat, type ChatMessage } from "../hooks/useGeminiChat";
+// useVoiceInput.ts provides global Window type declarations for SpeechRecognition
+import "../hooks/useVoiceInput";
 
 // --- Destination ---
 
@@ -36,6 +38,125 @@ function extractDestination(memories: Memory[]): Destination | null {
     }
   }
   return null;
+}
+
+// --- Tasks ---
+
+interface TaskItem {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  assignedTo: string | null;
+  milestone: string | null;
+  parentTask: string | null;
+  createdBy: string;
+  notes: string | null;
+  blockedReason: string | null;
+  ts: string;
+}
+
+const TASK_PRIORITY_ORDER: Record<string, number> = {
+  urgent: 0,
+  high: 1,
+  normal: 2,
+  low: 3,
+};
+
+function extractTasks(memories: Memory[]): TaskItem[] {
+  const tasks: TaskItem[] = [];
+  for (const m of memories) {
+    if (m.message_type !== "task") continue;
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    if (meta.event !== "task") continue;
+    tasks.push({
+      id: m.id,
+      title: (meta.title as string) || "",
+      description: (meta.description as string) || null,
+      status: (meta.status as string) || "open",
+      priority: (meta.priority as string) || "normal",
+      assignedTo: (meta.assigned_to as string) || null,
+      milestone: (meta.milestone as string) || null,
+      parentTask: (meta.parent_task as string) || null,
+      createdBy: (meta.created_by as string) || m.agent,
+      notes: (meta.notes as string) || null,
+      blockedReason: (meta.blocked_reason as string) || null,
+      ts: m.ts,
+    });
+  }
+  // Sort: priority then time
+  tasks.sort((a, b) => {
+    const pa = TASK_PRIORITY_ORDER[a.priority] ?? 2;
+    const pb = TASK_PRIORITY_ORDER[b.priority] ?? 2;
+    if (pa !== pb) return pa - pb;
+    return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+  });
+  return tasks;
+}
+
+const TASK_PRIORITY_COLORS: Record<string, string> = {
+  urgent: "#ef4444",
+  high: "#f97316",
+  normal: "#8b5cf6",
+  low: "#64748b",
+};
+
+const TASK_STATUS_COLORS: Record<string, string> = {
+  open: "#3b82f6",
+  claimed: "#eab308",
+  in_progress: "#8b5cf6",
+  done: "#22c55e",
+  blocked: "#ef4444",
+};
+
+function TaskCard({ task }: { task: TaskItem }) {
+  const priorityColor = TASK_PRIORITY_COLORS[task.priority] || "#8b5cf6";
+  const statusColor = TASK_STATUS_COLORS[task.status] || "#64748b";
+
+  return (
+    <div className="hub-task-card" style={{ borderLeftColor: priorityColor }}>
+      <div className="hub-task-header">
+        <span className="hub-pill" style={{ background: `${statusColor}18`, color: statusColor }}>
+          {task.status.replace("_", " ")}
+        </span>
+        <span className="hub-pill" style={{ background: `${priorityColor}18`, color: priorityColor }}>
+          {task.priority}
+        </span>
+        {task.assignedTo && (
+          <span className="hub-task-assignee">{task.assignedTo}</span>
+        )}
+        {task.milestone && (
+          <span className="hub-task-milestone">{task.milestone}</span>
+        )}
+        <span className="hub-activity-time">{timeAgo(task.ts)}</span>
+      </div>
+      <div className="hub-task-title">{task.title}</div>
+      {task.description && (
+        <div className="hub-task-description">{task.description.slice(0, 200)}</div>
+      )}
+      {task.blockedReason && (
+        <div className="hub-task-blocked">Blocked: {task.blockedReason}</div>
+      )}
+      {task.notes && (
+        <div className="hub-task-notes">{task.notes.slice(0, 150)}</div>
+      )}
+    </div>
+  );
+}
+
+function TaskQueue({ tasks }: { tasks: TaskItem[] }) {
+  const activeTasks = tasks.filter((t) => t.status !== "done");
+  if (activeTasks.length === 0) return null;
+
+  return (
+    <div className="hub-task-queue">
+      <div className="hub-section-label">Tasks ({activeTasks.length})</div>
+      {activeTasks.map((t) => (
+        <TaskCard key={t.id} task={t} />
+      ))}
+    </div>
+  );
 }
 
 // --- Types ---
@@ -966,8 +1087,59 @@ export function ThreadTree() {
   const [chatInput, setChatInput] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
+  // Voice-to-text: simple SpeechRecognition mic button
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<{ stop(): void } | null>(null);
 
+  const toggleRecording = useCallback(() => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
 
+    const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Ctor) {
+      alert("Speech recognition is not supported in this browser. Try Chrome.");
+      return;
+    }
+
+    const recognition = new Ctor();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    let accumulated = "";
+
+    recognition.onresult = (event) => {
+      let interim = "";
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          accumulated += result[0].transcript;
+        } else {
+          interim = result[0].transcript;
+        }
+      }
+      setChatInput(accumulated + interim);
+    };
+
+    recognition.onerror = () => {
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsRecording(true);
+  }, [isRecording]);
+
+  useEffect(() => {
+    return () => { recognitionRef.current?.stop(); };
+  }, []);
 
   const handleChatSend = useCallback(() => {
     if (!chatInput.trim()) return;
@@ -1016,6 +1188,7 @@ export function ThreadTree() {
   const distressSignals = useMemo(() => extractDistress(memories), [memories]);
   const unresolvedDistress = distressSignals.filter((d) => !d.resolved);
   const destination = useMemo(() => extractDestination(memories), [memories]);
+  const tasks = useMemo(() => extractTasks(memories), [memories]);
 
   // Pending approvals
   const pendingApprovals = useMemo(() => {
@@ -1255,7 +1428,28 @@ export function ThreadTree() {
                   {destination.milestones.map((m) => (
                     <span
                       key={m}
-                      className={`hub-milestone ${destination.progress[m] ? "hub-milestone-done" : ""}`}
+                      className={`hub-milestone hub-milestone-clickable ${destination.progress[m] ? "hub-milestone-done" : ""}`}
+                      onClick={async () => {
+                        if (!room) return;
+                        const newProgress = { ...destination.progress, [m]: !destination.progress[m] };
+                        await supabase.from("memories").insert({
+                          room_id: room.id,
+                          agent: "web-user",
+                          session_id: `web_${Date.now()}`,
+                          message_type: "knowledge",
+                          content: `DESTINATION: ${destination.destination}`,
+                          token_count: Math.floor(destination.destination.length / 4),
+                          metadata: {
+                            event: "destination",
+                            destination: destination.destination,
+                            milestones: destination.milestones,
+                            progress: newProgress,
+                            notes: destination.notes,
+                            set_by: destination.setBy,
+                            last_updated_by: "web-user",
+                          },
+                        });
+                      }}
                     >
                       {destination.progress[m] ? "\u2713 " : ""}{m}
                     </span>
@@ -1310,6 +1504,9 @@ export function ThreadTree() {
           ))}
         </div>
       )}
+
+      {/* Task queue */}
+      <TaskQueue tasks={tasks} />
 
       {/* Distress alerts */}
       {unresolvedDistress.map((d) => (
@@ -1447,24 +1644,51 @@ export function ThreadTree() {
           </div>
           <div className="hub-chat-input-row">
             <input
-              className="hub-command-input"
-              placeholder={inputMode === "gemini"
-                ? "Ask Gemini about agents, patterns, progress..."
-                : "Send instructions to agents..."
+              className={`hub-command-input ${isRecording ? "hub-input-recording" : ""}`}
+              placeholder={isRecording
+                ? "Listening..."
+                : inputMode === "gemini"
+                  ? "Ask Gemini about agents, patterns, progress..."
+                  : "Send instructions to agents..."
               }
               value={inputMode === "gemini" ? chatInput : injectContent}
               onChange={(e) => inputMode === "gemini" ? setChatInput(e.target.value) : setInjectContent(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
+                  if (isRecording) {
+                    recognitionRef.current?.stop();
+                    setIsRecording(false);
+                  }
                   if (inputMode === "gemini") handleChatSend();
                   else handleInject();
                 }
               }}
             />
+            {inputMode === "gemini" && (
+              <button
+                className={`hub-mic-btn ${isRecording ? "hub-mic-recording" : ""}`}
+                onClick={toggleRecording}
+                title={isRecording ? "Stop recording" : "Voice input"}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              </button>
+            )}
             <button
               className="hub-command-send"
-              onClick={inputMode === "gemini" ? handleChatSend : handleInject}
+              onClick={() => {
+                if (isRecording) {
+                  recognitionRef.current?.stop();
+                  setIsRecording(false);
+                }
+                if (inputMode === "gemini") handleChatSend();
+                else handleInject();
+              }}
               disabled={inputMode === "gemini"
                 ? (chatLoading || !chatInput.trim())
                 : (injectSending || !injectContent.trim())

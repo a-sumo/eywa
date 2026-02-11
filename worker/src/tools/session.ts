@@ -208,6 +208,41 @@ export function registerSessionTools(
         lines.push("Use eywa_destination to update progress.");
       }
 
+      // Tasks assigned to this agent/user
+      try {
+        const taskRows = await db.select<MemoryRow>("memories", {
+          select: "id,metadata,ts",
+          room_id: `eq.${ctx.roomId}`,
+          message_type: "eq.task",
+          order: "ts.desc",
+          limit: "50",
+        });
+
+        const myTasks = taskRows.filter((row) => {
+          const meta = (row.metadata ?? {}) as Record<string, unknown>;
+          const status = meta.status as string;
+          if (!["open", "claimed", "in_progress", "blocked"].includes(status)) return false;
+          const assignee = meta.assigned_to as string | null;
+          return !assignee || assignee === ctx.agent || assignee === ctx.user || assignee.includes(ctx.user);
+        });
+
+        if (myTasks.length > 0) {
+          lines.push(`\n=== Tasks (${myTasks.length}) ===`);
+          for (const row of myTasks) {
+            const meta = (row.metadata ?? {}) as Record<string, unknown>;
+            const title = (meta.title as string) || "";
+            const status = (meta.status as string) || "open";
+            const priority = (meta.priority as string) || "normal";
+            const assignee = meta.assigned_to as string | null;
+            const tag = assignee ? ` -> ${assignee}` : " (unassigned)";
+            lines.push(`  [${priority.toUpperCase()}] ${status} | ${title}${tag} (${row.id.slice(0, 8)})`);
+          }
+          lines.push("Use eywa_pick_task to claim, eywa_update_task to update status.");
+        }
+      } catch {
+        // Don't break session start if task query fails
+      }
+
       lines.push("\nUse eywa_log with system/action/outcome fields to tag your operations.");
 
       // Proactive knowledge surfacing: match task_description against knowledge + insights

@@ -19,6 +19,7 @@ import { registerDestinationTools } from "./tools/destination.js";
 import { registerClaimTools, getActiveClaims } from "./tools/claim.js";
 import { registerTelemetryTools, storeHostTelemetry } from "./tools/telemetry.js";
 import { registerApprovalTools } from "./tools/approval.js";
+import { registerTaskTools } from "./tools/task.js";
 import { rateLimit, checkMemoryCap } from "./lib/ratelimit.js";
 
 export default {
@@ -515,6 +516,7 @@ async function handleMcp(
   registerClaimTools(server, db, ctx);
   registerTelemetryTools(server, db, ctx);
   registerApprovalTools(server, db, ctx);
+  registerTaskTools(server, db, ctx);
 
   // Delegate to the MCP handler (handles Streamable HTTP + SSE)
   const handler = createMcpHandler(server);
