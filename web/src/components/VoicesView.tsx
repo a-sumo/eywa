@@ -1,347 +1,338 @@
 /**
  * VoicesView.tsx - Ambient voice interface for eywa.
  *
- * Full-screen, phone-friendly page. Tap to connect, talk to control
- * your agent swarm. Works from anywhere: AirPods, phone speaker,
- * laptop mic. Bookmark on your phone and use it while buying groceries.
+ * Pulsing orb UI inspired by ChatGPT voice mode / Gemini Live.
+ * Tap orb to connect, talk hands-free. Audio-reactive visualization.
+ * Transcript streams below. Phone-first, works from anywhere.
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRoomContext } from "../context/RoomContext";
-import { useGeminiLive, type VoiceEvent } from "../hooks/useGeminiLive";
+import { useGeminiLive, type VoiceEvent, type VoiceState } from "../hooks/useGeminiLive";
 import { useParams } from "react-router-dom";
 
-const HASH = "cbcddb8aaa85d82b43e4c1674b2a4d7c8bf8dfdcff8259ca20524ac241c3fabf";
-const STORAGE_KEY = "eywa-voices-auth";
+// --- Orb component ---
+function Orb({ state, micLevelRef }: { state: VoiceState; micLevelRef: React.RefObject<number> }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef(0);
+  const smoothLevel = useRef(0);
 
-async function checkPassword(input: string): Promise<boolean> {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
-  const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-  return hash === HASH;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    const size = 280;
+    canvas.width = size * 2;
+    canvas.height = size * 2;
+    ctx.scale(2, 2); // retina
+
+    const draw = (time: number) => {
+      const mic = micLevelRef.current ?? 0;
+      // Smooth the mic level
+      smoothLevel.current += (mic - smoothLevel.current) * 0.15;
+      const level = smoothLevel.current;
+
+      ctx.clearRect(0, 0, size, size);
+      const cx = size / 2;
+      const cy = size / 2;
+
+      // Outer glow layers
+      const baseRadius = 60;
+      const pulseSpeed = state === "speaking" ? 0.003 : 0.0015;
+      const breathe = Math.sin(time * pulseSpeed) * 0.08;
+      const micPulse = state === "listening" ? level * 200 : 0;
+      const speakPulse = state === "speaking" ? 8 + Math.sin(time * 0.005) * 6 : 0;
+      const radius = baseRadius + baseRadius * breathe + micPulse + speakPulse;
+
+      // Colors based on state
+      let coreColor: string;
+      let glowColor: string;
+      let outerGlow: string;
+
+      switch (state) {
+        case "listening":
+          coreColor = "#00ff88";
+          glowColor = "rgba(0, 255, 136, 0.3)";
+          outerGlow = "rgba(0, 255, 136, 0.08)";
+          break;
+        case "speaking":
+          coreColor = "#8866ff";
+          glowColor = "rgba(136, 102, 255, 0.35)";
+          outerGlow = "rgba(136, 102, 255, 0.1)";
+          break;
+        case "connecting":
+          coreColor = "#ffaa00";
+          glowColor = "rgba(255, 170, 0, 0.25)";
+          outerGlow = "rgba(255, 170, 0, 0.06)";
+          break;
+        default:
+          coreColor = "#334";
+          glowColor = "rgba(51, 51, 68, 0.2)";
+          outerGlow = "rgba(51, 51, 68, 0.05)";
+      }
+
+      // Outer glow
+      const outerGrad = ctx.createRadialGradient(cx, cy, radius, cx, cy, radius * 2.5);
+      outerGrad.addColorStop(0, outerGlow);
+      outerGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = outerGrad;
+      ctx.fillRect(0, 0, size, size);
+
+      // Mid glow
+      const midGrad = ctx.createRadialGradient(cx, cy, radius * 0.5, cx, cy, radius * 1.6);
+      midGrad.addColorStop(0, glowColor);
+      midGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = midGrad;
+      ctx.fillRect(0, 0, size, size);
+
+      // Core orb
+      const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      coreGrad.addColorStop(0, coreColor);
+      coreGrad.addColorStop(0.7, glowColor);
+      coreGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner bright core
+      const innerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 0.4);
+      innerGrad.addColorStop(0, "rgba(255,255,255,0.9)");
+      innerGrad.addColorStop(0.5, coreColor);
+      innerGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = innerGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      animRef.current = requestAnimationFrame(draw);
+    };
+
+    animRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [state, micLevelRef]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ width: 280, height: 280, cursor: "pointer" }}
+    />
+  );
 }
 
-interface LogEntry {
+// --- Transcript entry ---
+interface TranscriptEntry {
   id: number;
-  type: VoiceEvent["type"];
+  role: "user" | "eywa" | "tool" | "status" | "error";
   text: string;
-  ts: number;
 }
 
+// --- Main view ---
 export function VoicesView() {
   const { room } = useRoomContext();
   const { slug } = useParams<{ slug: string }>();
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem(STORAGE_KEY) === "1");
-  const [pwError, setPwError] = useState(false);
-  const pwRef = useRef<HTMLInputElement>(null);
-  const [log, setLog] = useState<LogEntry[]>([]);
-  const [status, setStatus] = useState("Tap to connect");
-  const [currentResponse, setCurrentResponse] = useState("");
-  const [currentUserSpeech, setCurrentUserSpeech] = useState("");
-  const idRef = useRef(0);
-  const logEndRef = useRef<HTMLDivElement>(null);
 
-  const addLog = useCallback((type: VoiceEvent["type"], text: string) => {
-    if (!text) return;
-    setLog((prev) => {
-      const next = [...prev, { id: ++idRef.current, type, text, ts: Date.now() }];
-      // Keep last 50 entries
-      return next.slice(-50);
-    });
-    setTimeout(() => logEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+  // Transcript
+  const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  const [liveUser, setLiveUser] = useState("");
+  const [liveResponse, setLiveResponse] = useState("");
+  const idRef = useRef(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const bootstrapRef = useRef(true); // suppress first user_speech (auto-briefing trigger)
+
+  const addEntry = useCallback((role: TranscriptEntry["role"], text: string) => {
+    if (!text.trim()) return;
+    setTranscript(prev => [...prev.slice(-30), { id: ++idRef.current, role, text }]);
+    setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   }, []);
 
-  const onEvent = useCallback(
-    (event: VoiceEvent) => {
-      switch (event.type) {
-        case "status":
-          setStatus(event.text);
-          break;
-        case "user_speech":
-          setCurrentUserSpeech((prev) => prev + event.text);
-          break;
-        case "response":
-          if (event.final) {
-            if (currentResponse) {
-              addLog("response", currentResponse);
-            }
-            if (currentUserSpeech) {
-              addLog("user_speech", currentUserSpeech);
-              setCurrentUserSpeech("");
-            }
-            setCurrentResponse("");
-          } else if (event.text) {
-            setCurrentResponse((prev) => prev + event.text);
-          }
-          break;
-        case "tool_call":
-          addLog("tool_call", `${event.name}: ${event.result}`);
-          break;
-        case "error":
-          setStatus(event.text);
-          addLog("error", event.text);
-          break;
-      }
-    },
-    [addLog, currentResponse, currentUserSpeech]
-  );
+  const onEvent = useCallback((event: VoiceEvent) => {
+    switch (event.type) {
+      case "user_speech":
+        // Suppress the auto-briefing bootstrap message from transcript
+        if (bootstrapRef.current) {
+          bootstrapRef.current = false;
+          return;
+        }
+        setLiveUser(prev => prev + event.text);
+        break;
+      case "response":
+        if (event.final) {
+          if (liveResponse) addEntry("eywa", liveResponse);
+          if (liveUser) { addEntry("user", liveUser); setLiveUser(""); }
+          setLiveResponse("");
+        } else if (event.text) {
+          setLiveResponse(prev => prev + event.text);
+        }
+        break;
+      case "tool_call":
+        addEntry("tool", `${event.name}: ${(event.result || "").slice(0, 120)}`);
+        break;
+      case "status":
+        addEntry("status", event.text);
+        break;
+      case "error":
+        addEntry("error", event.text);
+        break;
+    }
+  }, [addEntry, liveResponse, liveUser]);
 
-  const { connected, listening, connect, disconnect } = useGeminiLive({
+  const { connected, voiceState, micLevelRef, connect, disconnect } = useGeminiLive({
     roomId: room?.id || null,
     roomSlug: slug || "",
     onEvent,
   });
 
-  const handleTap = () => {
+  // Reset bootstrap flag when disconnecting
+  useEffect(() => {
+    if (!connected) {
+      bootstrapRef.current = true;
+    }
+  }, [connected]);
+
+  const handleOrbTap = () => {
     if (connected) {
       disconnect();
-      setStatus("Disconnected");
     } else {
       connect();
     }
   };
 
-  const handlePassword = async () => {
-    const val = pwRef.current?.value || "";
-    if (await checkPassword(val)) {
-      sessionStorage.setItem(STORAGE_KEY, "1");
-      setAuthed(true);
-      setPwError(false);
-    } else {
-      setPwError(true);
-    }
+  const stateLabel: Record<VoiceState, string> = {
+    idle: "Tap to connect",
+    connecting: "Connecting...",
+    listening: "Listening",
+    speaking: "Eywa is speaking",
   };
 
-  if (!authed) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.gateBox}>
-          <div style={{ fontSize: "14px", color: "#666", textTransform: "uppercase" as const, letterSpacing: "1px", marginBottom: "16px" }}>
-            eywa voices
-          </div>
-          <input
-            ref={pwRef}
-            type="password"
-            onKeyDown={(e) => e.key === "Enter" && handlePassword()}
-            placeholder="Password"
-            autoFocus
-            style={styles.gateInput}
-          />
-          {pwError && <div style={{ color: "#ff6666", fontSize: "13px", marginTop: "8px" }}>Wrong password</div>}
-          <button onClick={handlePassword} style={{ ...styles.mainButton, backgroundColor: "#00ff88", color: "#0a0a14", border: "none", marginTop: "16px", maxWidth: "200px" }}>
-            Enter
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={styles.container}>
-      {/* Status bar */}
-      <div style={styles.header}>
-        <div style={styles.roomName}>{room?.name || slug || "eywa"}</div>
-        <div style={styles.statusRow}>
-          <span
-            style={{
-              ...styles.dot,
-              backgroundColor: connected ? (listening ? "#00ff88" : "#ffaa00") : "#555",
-            }}
-          />
-          <span style={styles.statusText}>{status}</span>
-        </div>
+    <div style={S.page}>
+      {/* Room name */}
+      <div style={S.roomLabel}>{room?.name || slug || "eywa"}</div>
+
+      {/* Orb area */}
+      <div style={S.orbArea} onClick={handleOrbTap}>
+        <Orb state={voiceState} micLevelRef={micLevelRef} />
+        <div style={S.stateLabel}>{stateLabel[voiceState]}</div>
       </div>
 
-      {/* Log */}
-      <div style={styles.log}>
-        {log.map((entry) => (
-          <div key={entry.id} style={styles.logEntry}>
-            {entry.type === "user_speech" && (
-              <div style={styles.userBubble}>{entry.text}</div>
-            )}
-            {entry.type === "response" && (
-              <div style={styles.responseBubble}>{entry.text}</div>
-            )}
-            {entry.type === "tool_call" && (
-              <div style={styles.toolBubble}>{entry.text}</div>
-            )}
-            {entry.type === "error" && (
-              <div style={styles.errorBubble}>{entry.text}</div>
-            )}
+      {/* Transcript */}
+      <div style={S.transcript}>
+        {transcript.map(entry => (
+          <div key={entry.id} style={S.entry}>
+            {entry.role === "user" && <div style={S.userText}>{entry.text}</div>}
+            {entry.role === "eywa" && <div style={S.eywaText}>{entry.text}</div>}
+            {entry.role === "tool" && <div style={S.toolText}>{entry.text}</div>}
+            {entry.role === "status" && <div style={S.statusText}>{entry.text}</div>}
+            {entry.role === "error" && <div style={S.errorText}>{entry.text}</div>}
           </div>
         ))}
-
-        {/* Live transcriptions */}
-        {currentUserSpeech && (
-          <div style={styles.logEntry}>
-            <div style={{ ...styles.userBubble, opacity: 0.7 }}>{currentUserSpeech}...</div>
-          </div>
-        )}
-        {currentResponse && (
-          <div style={styles.logEntry}>
-            <div style={{ ...styles.responseBubble, opacity: 0.7 }}>{currentResponse}...</div>
-          </div>
-        )}
-
-        <div ref={logEndRef} />
+        {liveUser && <div style={S.entry}><div style={{ ...S.userText, opacity: 0.6 }}>{liveUser}</div></div>}
+        {liveResponse && <div style={S.entry}><div style={{ ...S.eywaText, opacity: 0.6 }}>{liveResponse}</div></div>}
+        <div ref={scrollRef} />
       </div>
 
-      {/* Connect button */}
-      <div style={styles.buttonArea}>
-        <button
-          onClick={handleTap}
-          style={{
-            ...styles.mainButton,
-            backgroundColor: connected ? "#1a1a2e" : "#00ff88",
-            color: connected ? "#00ff88" : "#0a0a14",
-            border: connected ? "2px solid #00ff88" : "2px solid transparent",
-          }}
-        >
-          {connected ? (listening ? "Listening..." : "Connecting...") : "Connect"}
-        </button>
-        {connected && (
-          <div style={styles.hint}>Speak naturally. Eywa is listening.</div>
-        )}
-      </div>
+      {/* Disconnect button (only when connected) */}
+      {connected && (
+        <button onClick={disconnect} style={S.endBtn}>End</button>
+      )}
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
+// --- Styles ---
+const S: Record<string, React.CSSProperties> = {
+  page: {
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
     height: "100vh",
     width: "100%",
     backgroundColor: "#0a0a14",
     color: "#e0e0e0",
-    fontFamily: "'SF Pro', -apple-system, system-ui, sans-serif",
+    fontFamily: "-apple-system, system-ui, sans-serif",
     overflow: "hidden",
     position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    inset: 0,
     zIndex: 9999,
   },
-  header: {
-    padding: "20px 24px 12px",
-    borderBottom: "1px solid #1a1a2e",
+  roomLabel: {
+    fontSize: "12px",
+    color: "#444",
+    textTransform: "uppercase",
+    letterSpacing: "2px",
+    marginTop: "16px",
     flexShrink: 0,
   },
-  roomName: {
-    fontSize: "14px",
-    color: "#666",
-    textTransform: "uppercase" as const,
-    letterSpacing: "1px",
-    marginBottom: "4px",
-  },
-  statusRow: {
+  orbArea: {
     display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  dot: {
-    width: "8px",
-    height: "8px",
-    borderRadius: "50%",
-    flexShrink: 0,
-  },
-  statusText: {
-    fontSize: "13px",
-    color: "#888",
-  },
-  log: {
-    flex: 1,
-    overflowY: "auto" as const,
-    padding: "16px 24px",
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "12px",
-  },
-  logEntry: {
-    display: "flex",
-    flexDirection: "column" as const,
-  },
-  userBubble: {
-    alignSelf: "flex-end" as const,
-    backgroundColor: "#1a2a1a",
-    color: "#aaffaa",
-    padding: "10px 14px",
-    borderRadius: "16px 16px 4px 16px",
-    maxWidth: "85%",
-    fontSize: "15px",
-    lineHeight: "1.4",
-  },
-  responseBubble: {
-    alignSelf: "flex-start" as const,
-    backgroundColor: "#1a1a2e",
-    color: "#e0e0e0",
-    padding: "10px 14px",
-    borderRadius: "16px 16px 16px 4px",
-    maxWidth: "85%",
-    fontSize: "15px",
-    lineHeight: "1.4",
-  },
-  toolBubble: {
-    alignSelf: "center" as const,
-    backgroundColor: "#2a1a2e",
-    color: "#cc88ff",
-    padding: "6px 12px",
-    borderRadius: "8px",
-    fontSize: "12px",
-    fontFamily: "monospace",
-    maxWidth: "90%",
-    textAlign: "center" as const,
-  },
-  errorBubble: {
-    alignSelf: "center" as const,
-    backgroundColor: "#2e1a1a",
-    color: "#ff6666",
-    padding: "6px 12px",
-    borderRadius: "8px",
-    fontSize: "12px",
-  },
-  buttonArea: {
-    padding: "16px 24px 32px",
-    display: "flex",
-    flexDirection: "column" as const,
-    alignItems: "center",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  mainButton: {
-    width: "100%",
-    maxWidth: "320px",
-    padding: "16px 32px",
-    borderRadius: "28px",
-    fontSize: "18px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    outline: "none",
-  },
-  hint: {
-    fontSize: "12px",
-    color: "#555",
-  },
-  gateBox: {
-    display: "flex",
-    flexDirection: "column" as const,
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
-    padding: "24px",
+    cursor: "pointer",
+    flexShrink: 0,
+    paddingTop: "20px",
   },
-  gateInput: {
-    backgroundColor: "#1a1a2e",
-    border: "1px solid #333",
-    borderRadius: "12px",
-    padding: "12px 16px",
-    color: "#e0e0e0",
-    fontSize: "16px",
+  stateLabel: {
+    fontSize: "14px",
+    color: "#666",
+    marginTop: "-8px",
+    letterSpacing: "0.5px",
+  },
+  transcript: {
+    flex: 1,
+    overflowY: "auto",
     width: "100%",
-    maxWidth: "240px",
-    textAlign: "center" as const,
-    outline: "none",
+    maxWidth: "480px",
+    padding: "16px 24px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  entry: {},
+  userText: {
+    textAlign: "right",
+    color: "#88ccaa",
+    fontSize: "15px",
+    lineHeight: "1.5",
+    padding: "4px 0",
+  },
+  eywaText: {
+    color: "#ccc",
+    fontSize: "15px",
+    lineHeight: "1.5",
+    padding: "4px 0",
+  },
+  toolText: {
+    color: "#8866ff",
+    fontSize: "12px",
+    fontFamily: "monospace",
+    textAlign: "center",
+    padding: "2px 0",
+    opacity: 0.7,
+  },
+  statusText: {
+    color: "#555",
+    fontSize: "11px",
+    textAlign: "center",
+    padding: "2px 0",
+    fontStyle: "italic",
+  },
+  errorText: {
+    color: "#ff6666",
+    fontSize: "12px",
+    textAlign: "center",
+    padding: "2px 0",
+  },
+  endBtn: {
+    background: "none",
+    border: "1px solid #333",
+    color: "#666",
+    borderRadius: "20px",
+    padding: "8px 32px",
+    fontSize: "14px",
+    cursor: "pointer",
+    marginBottom: "32px",
+    flexShrink: 0,
   },
 };
