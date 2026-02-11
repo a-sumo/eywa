@@ -79,7 +79,10 @@ export async function loadScenario(roomId: string, scenario: {
 
 export async function getMap(roomId: string): Promise<NavigatorMapResponse> {
   const res = await fetch(`${BASE_URL}/api/rooms/${roomId}/map`);
-  return res.json();
+  const data = await res.json();
+  // Strip alignment data: it's never rendered and bloats the stored response
+  data.alignments = [];
+  return data;
 }
 
 export async function listRooms(): Promise<Array<{
@@ -153,9 +156,9 @@ export async function syncEywaRoom(
     .map(a => ({
       agent: a.name,
       source: a.name,
-      steps: a.memories.slice(-20).map(m => ({
-        action: m.action || m.content.slice(0, 120),
-        state: m.content.slice(0, 200),
+      steps: a.memories.slice(-10).map(m => ({
+        action: m.action || m.content.slice(0, 80),
+        state: m.content.slice(0, 120),
       })),
     }));
 

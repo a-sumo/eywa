@@ -338,16 +338,21 @@ export function SpectaclesView() {
         const agent = agentMap.get(m.agent)!;
         if (now - new Date(m.ts).getTime() < 5 * 60 * 1000) agent.isActive = true;
         const meta = (m.metadata ?? {}) as Record<string, unknown>;
-        agent.memories.push({
-          content: m.content || "",
-          action: (meta.action as string) || undefined,
-        });
+        // Cap at 10 memories per agent to avoid overwhelming the map
+        if (agent.memories.length < 10) {
+          agent.memories.push({
+            content: (m.content || "").slice(0, 200),
+            action: (meta.action as string) || undefined,
+          });
+        }
       }
 
+      // Cap at 15 agents max
+      const agents = Array.from(agentMap.values()).slice(0, 15);
       const targetRoom = roomId || `eywa-${roomSlug}`;
       await syncEywaRoom(targetRoom, {
         destination: "Launch-ready product",
-        agents: Array.from(agentMap.values()),
+        agents,
       });
       setSynced(true);
     } catch (e) {
