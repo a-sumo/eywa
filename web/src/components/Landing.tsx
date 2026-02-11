@@ -318,37 +318,31 @@ export function Landing() {
         </p>
         <div className="landing-surfaces-strip">
           <div className="landing-surface-item">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2"/>
-              <line x1="8" y1="21" x2="16" y2="21"/>
-              <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
+            <IconSurfaces />
             <span>Web Dashboard</span>
           </div>
           <div className="landing-surface-item">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="16,18 22,12 16,6"/>
-              <polyline points="8,6 2,12 8,18"/>
-            </svg>
+            <IconCode />
             <span>VS Code</span>
           </div>
           <div className="landing-surface-item">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-            </svg>
+            <IconChat />
             <span>Discord</span>
           </div>
           <div className="landing-surface-item">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="4,17 10,11 4,5"/>
-              <line x1="12" y1="19" x2="20" y2="19"/>
+            <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <polyline className="anim-bracket bl" points="10,22 4,14 10,6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <line className="anim-cursor-line" x1="16" y1="24" x2="26" y2="24" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
             <span>CLI</span>
           </div>
           <div className="landing-surface-item">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
-              <circle cx="12" cy="12" r="3"/>
+            <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <path className="anim-stream s1" d="M4 16h6" strokeWidth="2.5" strokeLinecap="round"/>
+              <path className="anim-stream s2" d="M22 16h6" strokeWidth="2.5" strokeLinecap="round"/>
+              <rect className="anim-cube-back" x="8" y="10" width="16" height="12" rx="3" strokeWidth="2.5"/>
+              <circle className="anim-target-center" cx="14" cy="16" r="1.5" fill="var(--aurora-cyan, #4eeaff)"/>
+              <circle className="anim-target-center" cx="18" cy="16" r="1.5" fill="var(--aurora-cyan, #4eeaff)"/>
             </svg>
             <span>Spectacles AR</span>
           </div>

@@ -1169,13 +1169,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 1.5rem;
+  gap: 0.75rem;
+  padding: 1.25rem 1.75rem;
   border-radius: var(--radius-lg);
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   transition: all var(--transition-normal);
-  min-width: 100px;
+  min-width: 120px;
 }
 
 .landing-surface-item:hover {
@@ -1184,8 +1184,8 @@ body {
 }
 
 .landing-surface-item svg {
-  opacity: 0.7;
-  stroke: var(--aurora-cyan, #4eeaff);
+  width: 32px;
+  height: 32px;
 }
 
 .landing-surface-item:hover svg {
@@ -1193,13 +1193,13 @@ body {
 }
 
 .landing-surface-item span {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .landing-surface-item:hover span {
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .landing-feature-icon {
@@ -7719,32 +7719,32 @@ body {
 .landing-highlight-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 1rem;
   text-align: left;
   flex: 1;
-  min-width: 200px;
-  max-width: 280px;
+  min-width: 220px;
+  max-width: 300px;
 }
 
 .landing-highlight-item svg {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   margin-top: 2px;
 }
 
 .landing-highlight-item strong {
   display: block;
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 
 .landing-highlight-item span {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 @media (max-width: 768px) {
