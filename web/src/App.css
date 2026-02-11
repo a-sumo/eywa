@@ -2093,6 +2093,34 @@ body {
   margin: 0.5rem 0 0;
 }
 
+.landing-curvilinear-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  text-decoration: none;
+  transition: opacity 0.2s;
+  opacity: 0.8;
+}
+
+.landing-curvilinear-badge:hover {
+  opacity: 1;
+}
+
+.curvilinear-by {
+  font-size: 1.1rem;
+  color: rgba(240, 240, 245, 0.45);
+}
+
+.curvilinear-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #0080ff 0%, #1ae6ff 50%, #33e680 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .landing-footer-links {
   display: flex;
   gap: 4rem;
@@ -2120,19 +2148,55 @@ body {
   color: #f0f0f5;
 }
 
-.landing-footer-social {
+.landing-footer-community h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(240, 240, 245, 0.4);
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.landing-footer-community-links {
   display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.landing-footer-social a {
+.footer-community-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  text-decoration: none;
   color: rgba(240, 240, 245, 0.5);
-  transition: color 0.2s;
+  transition: border-color 0.25s ease-in-out, background 0.25s ease-in-out, color 0.25s ease-in-out;
 }
 
-.landing-footer-social a:hover {
+.footer-community-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
   color: #f0f0f5;
+}
+
+.footer-community-card svg {
+  flex-shrink: 0;
+}
+
+.footer-community-label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(240, 240, 245, 0.85);
+}
+
+.footer-community-desc {
+  display: block;
+  font-size: 0.8rem;
+  color: rgba(240, 240, 245, 0.4);
 }
 
 .landing-footer-bottom {
@@ -2334,8 +2398,8 @@ body {
     gap: 2rem;
   }
 
-  .landing-footer-social {
-    justify-content: flex-start;
+  .landing-footer-community-links {
+    flex-direction: row;
   }
 }
 
