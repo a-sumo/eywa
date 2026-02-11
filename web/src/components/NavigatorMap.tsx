@@ -19,30 +19,20 @@ export function NavigatorMap() {
   const { room } = useRoomContext();
   const { memories } = useRealtimeMemories(room?.id ?? null, 200);
   const [syncing, setSyncing] = useState(false);
+  // Don't auto-load any room. Only show iframe after explicit sync.
   const [roomId, setRoomId] = useState<string | null>(null);
   const [availableRooms, setAvailableRooms] = useState<Array<{ id: string; items: number }>>([]);
 
   const roomSlug = room?.slug || "demo";
 
-  // Find best Navigator room on load
+  // Just fetch the room list for the selector, don't auto-pick a room
   useEffect(() => {
     listRooms().then(rooms => {
       setAvailableRooms(rooms.map(r => ({ id: r.id, items: r.items })));
-      // Find a room with our slug prefix that has data, or fall back to "demo"
-      const match = rooms
-        .filter(r => r.id.startsWith(`eywa-${roomSlug}`) || r.id === "demo")
-        .sort((a, b) => b.items - a.items)[0];
-      if (match && match.items > 0) {
-        setRoomId(match.id);
-      } else {
-        setRoomId(`eywa-${roomSlug}`);
-      }
-    }).catch(() => {
-      setRoomId("demo");
-    });
+    }).catch(() => {});
   }, [roomSlug]);
 
-  // Sync Eywa data to Guild Navigator
+  // Sync Eywa data to Guild Navigator (creates a fresh room each time)
   const syncData = useCallback(async () => {
     if (syncing || !room) return;
     setSyncing(true);
@@ -60,24 +50,30 @@ export function NavigatorMap() {
         const agent = agentMap.get(m.agent)!;
         if (now - new Date(m.ts).getTime() < 5 * 60 * 1000) agent.isActive = true;
         const meta = (m.metadata ?? {}) as Record<string, unknown>;
-        agent.memories.push({ content: m.content || "", action: (meta.action as string) || undefined });
+        // Cap at 10 memories per agent to avoid overwhelming the map
+        if (agent.memories.length < 10) {
+          agent.memories.push({ content: m.content || "", action: (meta.action as string) || undefined });
+        }
       }
 
-      const targetRoom = roomId || `eywa-${roomSlug}`;
-      const destination = ((room as unknown as Record<string, unknown>).destination as string) || "Launch-ready product";
-      await syncEywaRoom(targetRoom, { destination, agents: Array.from(agentMap.values()) });
+      // Cap at 15 agents max
+      const agents = Array.from(agentMap.values()).slice(0, 15);
 
-      // Refresh room list to pick up the new room
+      // Use a timestamped room to avoid polluting existing rooms
+      const targetRoom = `eywa-${roomSlug}-${Date.now().toString(36)}`;
+      const destination = ((room as unknown as Record<string, unknown>).destination as string) || "Launch-ready product";
+      await syncEywaRoom(targetRoom, { destination, agents });
+
+      // Refresh room list and select the new room
       const rooms = await listRooms();
       setAvailableRooms(rooms.map(r => ({ id: r.id, items: r.items })));
-      const match = rooms.find(r => r.id === targetRoom);
-      if (match) setRoomId(match.id);
+      setRoomId(targetRoom);
     } catch (e) {
       console.warn("[NavigatorMap] sync error:", e);
     } finally {
       setSyncing(false);
     }
-  }, [memories, room, roomId, roomSlug, syncing]);
+  }, [memories, room, roomSlug, syncing]);
 
   const handleRoomSelect = useCallback((id: string) => {
     setRoomId(id);
@@ -168,7 +164,7 @@ export function NavigatorMap() {
               width: "100%",
               height: "100%",
               border: "none",
-              background: "#fafafa",
+              background: "#0a0a14",
             }}
             title="Guild Navigator"
             allow="fullscreen"
@@ -176,13 +172,18 @@ export function NavigatorMap() {
         ) : (
           <div style={{
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             height: "100%",
             color: "#6b7280",
             fontSize: 13,
+            gap: 12,
           }}>
-            Loading rooms...
+            <span>Click "Sync Room Data" to generate a spatial map of agent activity.</span>
+            <span style={{ fontSize: 11, opacity: 0.5 }}>
+              Maps destination, agents, and their trajectories in polar coordinates.
+            </span>
           </div>
         )}
       </div>

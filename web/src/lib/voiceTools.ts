@@ -1,14 +1,13 @@
 /**
  * voiceTools.ts - Unified tool surface for the voice interface.
  *
- * Combines the 7 read tools from geminiTools.ts (agent status, threads,
- * knowledge, pattern detection, distress signals, destination, network)
- * with 3 write tools (inject, destination, message) so the voice has
- * full parity with the text-based steering agent.
+ * Imports all tools from geminiTools.ts (read + write including inject,
+ * approvals, etc.) and adds 2 voice-specific write tools (set_destination,
+ * send_message) that don't have equivalents in the text steering agent.
  */
 
 import {
-  TOOL_DECLARATIONS as READ_TOOL_DECLARATIONS,
+  TOOL_DECLARATIONS as GEMINI_TOOL_DECLARATIONS,
   executeTool,
   type GeminiFunctionCall,
   type GeminiFunctionResponse,
@@ -16,23 +15,10 @@ import {
 import { supabase } from "./supabase";
 
 // ---------------------------------------------------------------------------
-// Write tool declarations
+// Voice-specific write tool declarations
 // ---------------------------------------------------------------------------
 
-const WRITE_TOOL_DECLARATIONS = [
-  {
-    name: "inject_message",
-    description:
-      "Send a message to the room that ALL agents will see on their next check. Use this when the user wants to give instructions, steer agents, change direction, or broadcast information.",
-    parameters: {
-      type: "object" as const,
-      properties: {
-        message: { type: "string", description: "The instruction or message to inject" },
-        priority: { type: "string", description: "Priority: normal, high, or urgent" },
-      },
-      required: ["message"],
-    },
-  },
+const VOICE_WRITE_DECLARATIONS = [
   {
     name: "set_destination",
     description:
@@ -74,8 +60,8 @@ const WRITE_TOOL_DECLARATIONS = [
 // ---------------------------------------------------------------------------
 
 export const ALL_VOICE_TOOL_DECLARATIONS = [
-  ...READ_TOOL_DECLARATIONS,
-  ...WRITE_TOOL_DECLARATIONS,
+  ...GEMINI_TOOL_DECLARATIONS,
+  ...VOICE_WRITE_DECLARATIONS,
 ];
 
 /** Wrapped for the Gemini Live WebSocket setup message format. */
@@ -84,33 +70,10 @@ export function getVoiceToolsPayload() {
 }
 
 // ---------------------------------------------------------------------------
-// Write tool handlers
+// Voice-specific write tool handlers
 // ---------------------------------------------------------------------------
 
-const WRITE_TOOL_NAMES = new Set(["inject_message", "set_destination", "send_message"]);
-
-async function handleInject(
-  roomId: string,
-  message: string,
-  priority: string
-): Promise<string> {
-  const { error } = await supabase.from("memories").insert({
-    room_id: roomId,
-    session_id: `voices-${Date.now()}`,
-    agent: "voices/live",
-    message_type: "injection",
-    content: `[INJECT -> all] (voice command): ${message}`,
-    metadata: {
-      event: "injection",
-      target: "all",
-      label: "voice command",
-      priority,
-      source: "eywa-voices",
-    },
-  });
-
-  return error ? `Failed to inject: ${error.message}` : "Message injected. All agents will see it.";
-}
+const VOICE_WRITE_NAMES = new Set(["set_destination", "send_message"]);
 
 async function handleSetDestination(
   roomId: string,
@@ -176,25 +139,18 @@ async function handleSendMessage(
 // ---------------------------------------------------------------------------
 
 /**
- * Execute any voice tool call. Delegates read tools to geminiTools.executeTool
- * and handles write tools locally.
+ * Execute any voice tool call. Handles voice-specific write tools locally,
+ * delegates everything else (reads + gemini writes) to geminiTools.executeTool.
  */
 export async function executeVoiceTool(
   roomId: string,
   call: GeminiFunctionCall
 ): Promise<GeminiFunctionResponse> {
-  // Write tools handled here
-  if (WRITE_TOOL_NAMES.has(call.name)) {
+  // Voice-specific write tools handled here
+  if (VOICE_WRITE_NAMES.has(call.name)) {
     let result: string;
     try {
       switch (call.name) {
-        case "inject_message":
-          result = await handleInject(
-            roomId,
-            call.args.message as string,
-            (call.args.priority as string) || "normal"
-          );
-          break;
         case "set_destination":
           result = await handleSetDestination(roomId, call.args);
           break;
@@ -206,7 +162,7 @@ export async function executeVoiceTool(
           );
           break;
         default:
-          result = `Unknown write tool: ${call.name}`;
+          result = `Unknown voice tool: ${call.name}`;
       }
     } catch (err) {
       result = `Error executing ${call.name}: ${err instanceof Error ? err.message : String(err)}`;
@@ -214,6 +170,6 @@ export async function executeVoiceTool(
     return { name: call.name, response: { result } };
   }
 
-  // Read tools delegated to geminiTools
+  // Everything else (reads + gemini writes like inject_to_agent, approvals)
   return executeTool(roomId, call);
 }

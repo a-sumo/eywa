@@ -43,12 +43,13 @@ export function buildVoiceSystemPrompt(ctx: VoicePromptContext = {}): string {
   lines.push("");
   lines.push(
     "READ tools: get_agent_status, get_thread, get_knowledge, detect_patterns, " +
-    "get_distress_signals, get_destination, query_network. Use these to answer " +
-    "questions about agents, progress, patterns, or knowledge."
+    "get_distress_signals, get_destination, query_network, get_pending_approvals. " +
+    "Use these to answer questions about agents, progress, patterns, or knowledge."
   );
   lines.push(
-    "WRITE tools: inject_message (broadcast to all agents), set_destination " +
-    "(change team goal or mark milestones), send_message (post to chat). " +
+    "WRITE tools: inject_to_agent (send instructions to a specific agent or 'all'), " +
+    "set_destination (change team goal or mark milestones), send_message (post to chat), " +
+    "approve_action / deny_action (resolve pending agent approval requests). " +
     "When the user gives a command like 'tell the agents to...' or 'switch " +
     "focus to...', USE the tools. Do not just describe what you would do."
   );
@@ -58,9 +59,10 @@ export function buildVoiceSystemPrompt(ctx: VoicePromptContext = {}): string {
   // Auto-briefing behavior
   lines.push(
     "AUTO-BRIEFING: When you receive the first message after connecting, call " +
-    "get_agent_status and get_destination, then speak a natural 10-15 second " +
-    "summary covering: the destination and progress, how many agents are active " +
-    "vs idle, and anything that needs attention. Keep it conversational."
+    "get_agent_status, get_destination, and get_pending_approvals, then speak a " +
+    "natural 10-15 second summary covering: the destination and progress, how many " +
+    "agents are active vs idle, any pending approvals that need the user's decision, " +
+    "and anything else that needs attention. Keep it conversational."
   );
 
   lines.push("");
