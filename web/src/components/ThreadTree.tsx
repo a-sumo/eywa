@@ -7,7 +7,6 @@ import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import { ConnectAgent } from "./ConnectAgent";
 import { useGeminiChat, type ChatMessage } from "../hooks/useGeminiChat";
-import { useGeminiLive, type VoiceEvent, type VoiceState } from "../hooks/useGeminiLive";
 
 // --- Destination ---
 
@@ -936,20 +935,6 @@ function ApprovalCard({ approval, roomId }: { approval: PendingApproval; roomId:
   );
 }
 
-// --- Voice mini orb (CSS-animated, inline) ---
-
-function MiniOrb({ state }: { state: VoiceState }) {
-  return <div className={`hub-voice-orb hub-voice-orb-${state}`} />;
-}
-
-// --- Voice transcript entry ---
-
-interface VoiceEntry {
-  id: number;
-  role: "user" | "eywa" | "tool" | "status";
-  text: string;
-}
-
 // --- Main ---
 
 export function ThreadTree() {
@@ -968,8 +953,8 @@ export function ThreadTree() {
   // Collapsed groups
   const [showFinished, setShowFinished] = useState(false);
 
-  // Unified input mode: talk to Gemini, inject to agents, or voice
-  const [inputMode, setInputMode] = useState<"gemini" | "inject" | "voice">("gemini");
+  // Unified input mode: talk to Gemini or inject to agents
+  const [inputMode, setInputMode] = useState<"gemini" | "inject">("gemini");
   const {
     messages: chatMessages,
     loading: chatLoading,
@@ -1021,84 +1006,7 @@ export function ThreadTree() {
     }
   }, [injectContent, injectTarget, injectPriority, room]);
 
-  // --- Voice mode (full bidirectional Gemini Live) ---
-  const [voiceTranscript, setVoiceTranscript] = useState<VoiceEntry[]>([]);
-  const voiceLiveUserRef = useRef("");
-  const voiceLiveResponseRef = useRef("");
-  const voiceIdRef = useRef(0);
-  const [voiceThinking, setVoiceThinking] = useState(false);
-  const [, forceVoiceRender] = useState(0);
-
-  const onVoiceEvent = useCallback((event: VoiceEvent) => {
-    const addEntry = (role: VoiceEntry["role"], text: string) => {
-      if (!text.trim()) return;
-      setVoiceTranscript(prev => [...prev.slice(-30), { id: ++voiceIdRef.current, role, text }]);
-    };
-
-    // Commit accumulated user speech as a transcript entry
-    const commitUserSpeech = () => {
-      if (voiceLiveUserRef.current.trim()) {
-        addEntry("user", voiceLiveUserRef.current);
-        voiceLiveUserRef.current = "";
-      }
-    };
-
-    switch (event.type) {
-      case "user_speech":
-        setVoiceThinking(false);
-        voiceLiveUserRef.current += event.text;
-        forceVoiceRender(n => n + 1);
-        break;
-      case "response":
-        if (event.final) {
-          commitUserSpeech();
-          if (voiceLiveResponseRef.current.trim()) {
-            addEntry("eywa", voiceLiveResponseRef.current);
-          }
-          voiceLiveResponseRef.current = "";
-          setVoiceThinking(false);
-          forceVoiceRender(n => n + 1);
-        } else if (event.text) {
-          commitUserSpeech();
-          setVoiceThinking(false);
-          voiceLiveResponseRef.current += event.text;
-          forceVoiceRender(n => n + 1);
-        }
-        break;
-      case "tool_call":
-        commitUserSpeech();
-        setVoiceThinking(true);
-        addEntry("tool", `${event.name}: ${(event.result || "").slice(0, 120)}`);
-        break;
-      case "status":
-        addEntry("status", event.text);
-        break;
-      case "error":
-        addEntry("status", `Error: ${event.text}`);
-        break;
-    }
-  }, []);
-
-  const {
-    connected: voiceConnected,
-    voiceState,
-    connect: voiceConnect,
-    disconnect: voiceDisconnect,
-  } = useGeminiLive({
-    roomId: room?.id || null,
-    roomSlug: slug || "",
-    onEvent: onVoiceEvent,
-  });
-
-  // Switch back to gemini mode if voice disconnects unexpectedly
-  useEffect(() => {
-    if (!voiceConnected && inputMode === "voice") {
-      setInputMode("gemini");
-      setVoiceThinking(false);
-    }
-  }, [voiceConnected, inputMode]);
-
-  // --- Voice-to-text (SpeechRecognition for mic → text input) ---
+  // --- Voice-to-text (SpeechRecognition → fills text input) ---
   const recognitionRef = useRef<any>(null);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -1111,16 +1019,7 @@ export function ThreadTree() {
     }
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      // No browser support: fall back to full voice mode
-      setInputMode("voice");
-      setVoiceTranscript([]);
-      voiceLiveUserRef.current = "";
-      voiceLiveResponseRef.current = "";
-      setVoiceThinking(false);
-      voiceConnect();
-      return;
-    }
+    if (!SR) return;
 
     const recognition = new SR();
     recognition.continuous = true;
@@ -1147,17 +1046,17 @@ export function ThreadTree() {
     recognitionRef.current = recognition;
     recognition.start();
     setIsRecording(true);
-  }, [isRecording, voiceConnect]);
+  }, [isRecording]);
 
   // Cleanup recognition on unmount
   useEffect(() => {
     return () => { recognitionRef.current?.stop(); };
   }, []);
 
-  // Auto-scroll chat (text + voice)
+  // Auto-scroll chat
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, voiceTranscript]);
+  }, [chatMessages]);
 
   // Compute agent states
   const agentStates = useMemo(() => buildAgentStates(memories), [memories]);
@@ -1515,28 +1414,17 @@ export function ThreadTree() {
       {/* RIGHT: Gemini chat + activity panel */}
       <div className="hub-chat-panel">
         <div className="hub-chat-header">
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span className="hub-chat-title">{voiceConnected ? "Eywa Voice" : "Gemini"}</span>
-            {voiceConnected && <MiniOrb state={voiceState} />}
-            {voiceConnected && (
-              <span className="hub-voice-state-label">
-                {voiceState === "listening" ? "Listening" : voiceState === "speaking" ? "Speaking" : voiceState === "connecting" ? "Connecting..." : ""}
-              </span>
-            )}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {(chatMessages.length > 0 || voiceTranscript.length > 0) && (
-              <button onClick={() => { clearChat(); setVoiceTranscript([]); setVoiceThinking(false); }} className="hub-chat-clear" title="Clear">Clear</button>
-            )}
-          </div>
+          <span className="hub-chat-title">Gemini</span>
+          {chatMessages.length > 0 && (
+            <button onClick={clearChat} className="hub-chat-clear" title="Clear">Clear</button>
+          )}
         </div>
         <div className="hub-chat-messages">
-          {chatMessages.length === 0 && voiceTranscript.length === 0 && !chatLoading && !voiceConnected && (
+          {chatMessages.length === 0 && !chatLoading && (
             <div className="hub-steering-empty">
               Ask about agent status, patterns, progress, or course corrections.
             </div>
           )}
-          {/* Text chat messages */}
           {chatMessages.map((msg: ChatMessage, i: number) => (
             <div
               key={i}
@@ -1566,172 +1454,97 @@ export function ThreadTree() {
           {chatError && (
             <div className="hub-steering-error">{chatError}</div>
           )}
-          {/* Voice transcript (committed entries) */}
-          {voiceTranscript.map(entry => (
-            <div key={entry.id} className={`hub-steering-msg ${entry.role === "user" ? "hub-steering-user" : entry.role === "eywa" ? "hub-steering-model" : ""}`}>
-              {entry.role === "user" && (
-                <>
-                  <div className="hub-steering-msg-role">You (voice)</div>
-                  <div className="hub-steering-msg-content">{entry.text}</div>
-                </>
-              )}
-              {entry.role === "eywa" && (
-                <>
-                  <div className="hub-steering-msg-role">Eywa</div>
-                  <div className="hub-steering-msg-content">{entry.text}</div>
-                </>
-              )}
-              {entry.role === "tool" && (
-                <div className="hub-steering-tools">
-                  <span className="hub-steering-tool-pill">{entry.text}</span>
-                </div>
-              )}
-              {entry.role === "status" && (
-                <div className="hub-voice-status-msg">{entry.text}</div>
-              )}
-            </div>
-          ))}
-          {/* Live user speech (streaming transcription) */}
-          {voiceLiveUserRef.current && (
-            <div className="hub-steering-msg hub-steering-user" style={{ opacity: 0.6 }}>
-              <div className="hub-steering-msg-role">You (voice)</div>
-              <div className="hub-steering-msg-content">{voiceLiveUserRef.current}</div>
-            </div>
-          )}
-          {/* Thinking indicator (after user speech committed, before response) */}
-          {voiceThinking && (
-            <div className="hub-steering-msg hub-steering-model">
-              <div className="hub-steering-msg-role">Eywa</div>
-              <div className="hub-steering-msg-content hub-steering-typing">Thinking...</div>
-            </div>
-          )}
-          {/* Live response (streaming) */}
-          {voiceLiveResponseRef.current && (
-            <div className="hub-steering-msg hub-steering-model" style={{ opacity: 0.6 }}>
-              <div className="hub-steering-msg-role">Eywa</div>
-              <div className="hub-steering-msg-content">{voiceLiveResponseRef.current}</div>
-            </div>
-          )}
           <div ref={chatBottomRef} />
         </div>
         <div className="hub-chat-input-area">
-          {/* Voice mode: show voice bar (both connecting and connected) */}
-          {inputMode === "voice" && (
-            <div className="hub-voice-bar">
-              <MiniOrb state={voiceState} />
-              <span className="hub-voice-bar-label">
-                {voiceState === "listening" ? "Listening..." : voiceState === "speaking" ? "Eywa is speaking" : voiceState === "connecting" ? "Connecting..." : voiceConnected ? "Voice active" : "Starting..."}
-              </span>
-              <button className="hub-voice-end-btn" onClick={() => { voiceDisconnect(); setInputMode("gemini"); }}>End</button>
-            </div>
-          )}
-          {/* Text modes: mode row + input */}
-          {inputMode !== "voice" && (
-            <>
-              <div className="hub-chat-mode-row">
-                <button
-                  className={`hub-mode-btn ${inputMode === "gemini" ? "hub-mode-active" : ""}`}
-                  onClick={() => {
-                    if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
-                    if (voiceConnected) voiceDisconnect();
-                    setInputMode("gemini");
-                  }}
-                >Gemini</button>
-                <button
-                  className={`hub-mode-btn ${inputMode === "inject" ? "hub-mode-active" : ""}`}
-                  onClick={() => {
-                    if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
-                    if (voiceConnected) voiceDisconnect();
-                    setInputMode("inject");
-                  }}
-                >Inject</button>
-                <button
-                  className="hub-mode-btn"
-                  onClick={() => {
-                    if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
-                    setInputMode("voice");
-                    setVoiceTranscript([]);
-                    voiceLiveUserRef.current = "";
-                    voiceLiveResponseRef.current = "";
-                    setVoiceThinking(false);
-                    voiceConnect();
-                  }}
-                >Voice</button>
-                {inputMode === "inject" && (
-                  <>
-                    <select
-                      className="hub-inject-target"
-                      value={injectTarget}
-                      onChange={(e) => setInjectTarget(e.target.value)}
-                    >
-                      <option value="all">All agents</option>
-                      {allAgentNames.map((a) => (
-                        <option key={a} value={a}>{a}</option>
-                      ))}
-                    </select>
-                    <div className="hub-inject-priority">
-                      {(["normal", "high", "urgent"] as const).map((p) => (
-                        <button
-                          key={p}
-                          className={`hub-priority-btn ${injectPriority === p ? `hub-priority-${p}` : ""}`}
-                          onClick={() => setInjectPriority(p)}
-                        >
-                          {p}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="hub-chat-input-row">
-                <input
-                  className={`hub-command-input ${isRecording ? "hub-input-recording" : ""}`}
-                  placeholder={inputMode === "gemini"
-                    ? (isRecording ? "Listening..." : "Ask Gemini about agents, patterns, progress...")
-                    : "Send instructions to agents..."
-                  }
-                  value={inputMode === "gemini" ? chatInput : injectContent}
-                  onChange={(e) => inputMode === "gemini" ? setChatInput(e.target.value) : setInjectContent(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
-                      if (inputMode === "gemini") handleChatSend();
-                      else handleInject();
-                    }
-                  }}
-                />
-                <button
-                  className="hub-command-send"
-                  onClick={() => {
-                    if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
-                    if (inputMode === "gemini") handleChatSend();
-                    else handleInject();
-                  }}
-                  disabled={inputMode === "gemini"
-                    ? (chatLoading || !chatInput.trim())
-                    : (injectSending || !injectContent.trim())
-                  }
+          <div className="hub-chat-mode-row">
+            <button
+              className={`hub-mode-btn ${inputMode === "gemini" ? "hub-mode-active" : ""}`}
+              onClick={() => {
+                if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
+                setInputMode("gemini");
+              }}
+            >Gemini</button>
+            <button
+              className={`hub-mode-btn ${inputMode === "inject" ? "hub-mode-active" : ""}`}
+              onClick={() => {
+                if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
+                setInputMode("inject");
+              }}
+            >Inject</button>
+            {inputMode === "inject" && (
+              <>
+                <select
+                  className="hub-inject-target"
+                  value={injectTarget}
+                  onChange={(e) => setInjectTarget(e.target.value)}
                 >
-                  {(chatLoading || injectSending) ? "..." : "\u2192"}
-                </button>
-                {inputMode === "gemini" && (
-                  <button
-                    className={`hub-mic-btn ${isRecording ? "hub-mic-recording" : ""}`}
-                    onClick={toggleRecording}
-                    title={isRecording ? "Stop recording" : "Voice to text"}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                      <line x1="12" y1="19" x2="12" y2="23"/>
-                      <line x1="8" y1="23" x2="16" y2="23"/>
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </>
-          )}
+                  <option value="all">All agents</option>
+                  {allAgentNames.map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+                <div className="hub-inject-priority">
+                  {(["normal", "high", "urgent"] as const).map((p) => (
+                    <button
+                      key={p}
+                      className={`hub-priority-btn ${injectPriority === p ? `hub-priority-${p}` : ""}`}
+                      onClick={() => setInjectPriority(p)}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="hub-chat-input-row">
+            <input
+              className={`hub-command-input ${isRecording ? "hub-input-recording" : ""}`}
+              placeholder={inputMode === "gemini"
+                ? (isRecording ? "Listening..." : "Ask Gemini about agents, patterns, progress...")
+                : "Send instructions to agents..."
+              }
+              value={inputMode === "gemini" ? chatInput : injectContent}
+              onChange={(e) => inputMode === "gemini" ? setChatInput(e.target.value) : setInjectContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
+                  if (inputMode === "gemini") handleChatSend();
+                  else handleInject();
+                }
+              }}
+            />
+            <button
+              className="hub-command-send"
+              onClick={() => {
+                if (isRecording) { recognitionRef.current?.stop(); setIsRecording(false); }
+                if (inputMode === "gemini") handleChatSend();
+                else handleInject();
+              }}
+              disabled={inputMode === "gemini"
+                ? (chatLoading || !chatInput.trim())
+                : (injectSending || !injectContent.trim())
+              }
+            >
+              {(chatLoading || injectSending) ? "..." : "\u2192"}
+            </button>
+            {inputMode === "gemini" && (
+              <button
+                className={`hub-mic-btn ${isRecording ? "hub-mic-recording" : ""}`}
+                onClick={toggleRecording}
+                title={isRecording ? "Stop recording" : "Voice to text"}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
         {/* Activity stream */}
         <div className="hub-chat-activity">

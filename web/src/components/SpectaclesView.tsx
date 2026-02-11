@@ -69,24 +69,52 @@ function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRend
     return;
   }
 
-  // Responsive grid spacing
-  const pad = 30;
-  const spacing = Math.max(28, Math.min(48, W / 22));
-  ctx.strokeStyle = gridColor;
-  ctx.lineWidth = 1;
-  const gx0 = ((panX * zoom + W / 2) % spacing + spacing) % spacing;
-  const gy0 = ((panY * zoom + H / 2) % spacing + spacing) % spacing;
-  for (let x = gx0; x < W; x += spacing) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for (let y = gy0; y < H; y += spacing) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-
-  // Coordinate transform
+  // Coordinate transform (needed by grid and node rendering)
   const scale = Math.min(W, H) * 0.38 * zoom;
   const cx = W / 2 + panX * zoom;
   const cy = H / 2 + panY * zoom;
+
+  // Multi-level grid with smooth zoom transitions (like map applications)
+  const pad = 8;
+  const k = scale * 0.85;
+  const worldToScreenX = (wx: number) => cx + wx * k;
+  const worldToScreenY = (wy: number) => cy - wy * k;
+  const screenToWorldX = (sx: number) => (sx - cx) / k;
+  const screenToWorldY = (sy: number) => -(sy - cy) / k;
+
+  const wL = Math.min(screenToWorldX(pad), screenToWorldX(W - pad));
+  const wR = Math.max(screenToWorldX(pad), screenToWorldX(W - pad));
+  const wB = Math.min(screenToWorldY(pad), screenToWorldY(H - pad));
+  const wT = Math.max(screenToWorldY(pad), screenToWorldY(H - pad));
+
+  const allSpacings = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0];
+  const minGap = 24;
+  const maxGap = 140;
+  const gridBaseAlpha = dark ? 0.07 : 0.18;
+
+  for (const sp of allSpacings) {
+    const screenGap = sp * k;
+    if (screenGap < minGap || screenGap > 2000) continue;
+    const fade = Math.min(1, (screenGap - minGap) / (maxGap - minGap));
+    const alpha = fade * gridBaseAlpha;
+    const lineW = 0.5 + fade * 0.8;
+    const firstX = Math.floor(wL / sp) * sp;
+    const firstY = Math.floor(wB / sp) * sp;
+    ctx.lineWidth = lineW;
+    ctx.strokeStyle = dark ? `rgba(0, 220, 100, ${alpha.toFixed(4)})` : `rgba(60, 60, 70, ${alpha.toFixed(4)})`;
+    for (let wx = firstX; wx <= wR + sp * 0.5; wx += sp) {
+      const sx = worldToScreenX(wx);
+      if (sx < pad || sx > W - pad) continue;
+      ctx.beginPath(); ctx.moveTo(sx, pad); ctx.lineTo(sx, H - pad); ctx.stroke();
+    }
+    for (let wy = firstY; wy <= wT + sp * 0.5; wy += sp) {
+      const sy = worldToScreenY(wy);
+      if (sy < pad || sy > H - pad) continue;
+      ctx.beginPath(); ctx.moveTo(pad, sy); ctx.lineTo(W - pad, sy); ctx.stroke();
+    }
+  }
+
+  // Screen projection helper
   const toScreen = (x: number, y: number): [number, number] => [
     cx + x * scale * 0.85,
     cy - y * scale * 0.85,
@@ -98,19 +126,31 @@ function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRend
     nodePos.set(n.id, toScreen(n.x, n.y));
   }
 
-  // Radial rings around goal
+  // Radial rings around goal with zoom-scaled dashes and labels
   const goalNode = nodes.find(n => n.type === "goal");
   if (goalNode) {
     const [gx, gy] = nodePos.get(goalNode.id)!;
     ctx.lineWidth = 0.8;
+    const dashLen = Math.max(2, 3 * zoom);
+    const gapLen = Math.max(3, 5 * zoom);
     for (let r = 0.2; r <= 1.0; r += 0.2) {
       ctx.strokeStyle = `rgba(${ringColor[0]}, ${ringColor[1]}, ${ringColor[2]}, ${r < 0.95 ? 0.1 : 0.18})`;
-      ctx.setLineDash([3, 5]);
+      ctx.setLineDash([dashLen, gapLen]);
+      ctx.lineDashOffset = 0;
       ctx.beginPath();
       ctx.arc(gx, gy, r * scale * 0.85, 0, Math.PI * 2);
       ctx.stroke();
     }
     ctx.setLineDash([]);
+    // Ring labels with units
+    ctx.font = `500 ${Math.max(9, 11 * zoom)}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = `rgba(${textColor[0]}, ${textColor[1]}, ${textColor[2]}, 0.35)`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    for (let r = 0.2; r <= 1.0; r += 0.2) {
+      const label = r >= 0.95 ? "1 kh" : `${(r * 10).toFixed(0)} rd`;
+      ctx.fillText(label, gx + r * scale * 0.85 + 5, gy - 5);
+    }
   }
 
   // Draw trajectory edges (agent-colored, curvature-weighted)
@@ -127,16 +167,30 @@ function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRend
     const r = hexR(color), g = hexG(color), b = hexB(color);
     const curv = (t as unknown as { curvature?: number }).curvature || 0;
     const normCurv = maxCurv > 0 ? curv / maxCurv : 0;
-    ctx.lineWidth = (0.8 + normCurv * 1.4) * zoom;
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${(dark ? 0.5 : 0.35) + normCurv * 0.3})`;
-    if (normCurv > 0.5) ctx.setLineDash([]);
-    else ctx.setLineDash([3, 5]);
+    const lineW = (1.5 + normCurv * 2) * zoom;
+    ctx.lineWidth = lineW;
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${(dark ? 0.5 : 0.35) + normCurv * 0.25})`;
+    ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(from[0], from[1]);
     ctx.lineTo(to[0], to[1]);
     ctx.stroke();
+    // Arrowhead at midpoint showing direction
+    const edx = to[0] - from[0], edy = to[1] - from[1];
+    const elen = Math.sqrt(edx * edx + edy * edy);
+    if (elen > 20) {
+      const mx = (from[0] + to[0]) / 2, my = (from[1] + to[1]) / 2;
+      const ux = edx / elen, uy = edy / elen;
+      const arrowSize = Math.min(6 * zoom, elen * 0.15);
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${(dark ? 0.55 : 0.4) + normCurv * 0.2})`;
+      ctx.beginPath();
+      ctx.moveTo(mx + ux * arrowSize, my + uy * arrowSize);
+      ctx.lineTo(mx - ux * arrowSize * 0.6 + uy * arrowSize * 0.5, my - uy * arrowSize * 0.6 - ux * arrowSize * 0.5);
+      ctx.lineTo(mx - ux * arrowSize * 0.6 - uy * arrowSize * 0.5, my - uy * arrowSize * 0.6 + ux * arrowSize * 0.5);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
-  ctx.setLineDash([]);
 
   // Font sizes that scale with canvas
   const labelFont = Math.max(10, Math.min(14, W / 60));
@@ -149,7 +203,7 @@ function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRend
     if (!pos) continue;
     const color = n.agent ? mapAgentColor(n.agent) : (dark ? "#4ade80" : "#16a34a");
     const r = hexR(color), g = hexG(color), b = hexB(color);
-    const rad = 4 * zoom;
+    const rad = 5 * zoom;
     // Glow
     const glow = ctx.createRadialGradient(pos[0], pos[1], rad * 0.5, pos[0], pos[1], rad * 4);
     glow.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${dark ? 0.12 : 0.06})`);
@@ -164,7 +218,7 @@ function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRend
     ctx.arc(pos[0], pos[1], rad, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 1)`;
-    ctx.lineWidth = 1.2 * zoom;
+    ctx.lineWidth = 1.5 * zoom;
     ctx.stroke();
   }
 
@@ -175,13 +229,13 @@ function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRend
     if (!pos) continue;
     const color = n.agent ? mapAgentColor(n.agent) : (dark ? "#fbbf24" : "#ca8a04");
     const r = hexR(color), g = hexG(color), b = hexB(color);
-    const rad = 4.5 * zoom;
+    const rad = 5.5 * zoom;
     ctx.fillStyle = dark ? "rgba(10, 14, 10, 0.9)" : "rgba(255, 255, 255, 0.85)";
     ctx.beginPath();
     ctx.arc(pos[0], pos[1], rad, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${dark ? 0.8 : 0.6})`;
-    ctx.lineWidth = 1.5 * zoom;
+    ctx.lineWidth = 1.8 * zoom;
     ctx.stroke();
   }
 
@@ -192,7 +246,7 @@ function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRend
     if (!pos) continue;
     const name = n.agent || n.label || n.id;
     const color = mapAgentColor(name);
-    const rad = 6 * zoom;
+    const rad = 7 * zoom;
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(pos[0], pos[1], rad, 0, Math.PI * 2);
