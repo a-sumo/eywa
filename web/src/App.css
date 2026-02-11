@@ -4420,6 +4420,109 @@ body {
 
 /* (steering-clear removed, using hub-chat-clear in header) */
 
+/* Voice mode (integrated into chat panel) */
+
+.hub-voice-orb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #334;
+  flex-shrink: 0;
+}
+
+.hub-voice-orb-listening {
+  background: #00ff88;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+  animation: voice-orb-pulse 1.5s ease-in-out infinite;
+}
+
+.hub-voice-orb-speaking {
+  background: #8866ff;
+  box-shadow: 0 0 8px rgba(136, 102, 255, 0.4);
+  animation: voice-orb-pulse 0.8s ease-in-out infinite;
+}
+
+.hub-voice-orb-connecting {
+  background: #ffaa00;
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+  animation: voice-orb-pulse 2s ease-in-out infinite;
+}
+
+@keyframes voice-orb-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+.hub-voice-state-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.3px;
+}
+
+.hub-voice-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 2px;
+}
+
+.hub-voice-bar .hub-voice-orb {
+  width: 24px;
+  height: 24px;
+}
+
+.hub-voice-bar-label {
+  flex: 1;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.hub-voice-end-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.7rem;
+  padding: 4px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.hub-voice-end-btn:hover {
+  color: #fca5a5;
+  border-color: rgba(252, 165, 165, 0.3);
+}
+
+.hub-mic-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.hub-mic-btn:hover {
+  color: #00ff88;
+  border-color: rgba(0, 255, 136, 0.3);
+  background: rgba(0, 255, 136, 0.06);
+}
+
+.hub-voice-status-msg {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  padding: 2px 0;
+  font-style: italic;
+}
+
 /* Command bar input styles (inside chat panel, not fixed) */
 
 .hub-mode-btn {

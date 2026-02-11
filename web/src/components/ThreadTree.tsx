@@ -7,6 +7,7 @@ import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import { ConnectAgent } from "./ConnectAgent";
 import { useGeminiChat, type ChatMessage } from "../hooks/useGeminiChat";
+import { useGeminiLive, type VoiceEvent, type VoiceState } from "../hooks/useGeminiLive";
 
 // --- Destination ---
 
@@ -935,6 +936,20 @@ function ApprovalCard({ approval, roomId }: { approval: PendingApproval; roomId:
   );
 }
 
+// --- Voice mini orb (CSS-animated, inline) ---
+
+function MiniOrb({ state }: { state: VoiceState }) {
+  return <div className={`hub-voice-orb hub-voice-orb-${state}`} />;
+}
+
+// --- Voice transcript entry ---
+
+interface VoiceEntry {
+  id: number;
+  role: "user" | "eywa" | "tool" | "status";
+  text: string;
+}
+
 // --- Main ---
 
 export function ThreadTree() {
@@ -966,10 +981,7 @@ export function ThreadTree() {
   const [chatInput, setChatInput] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll chat
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
+  // Auto-scroll chat (moved after voice state declarations below)
 
 
 
@@ -1009,6 +1021,86 @@ export function ThreadTree() {
       setInjectSending(false);
     }
   }, [injectContent, injectTarget, injectPriority, room]);
+
+  // --- Voice mode ---
+  const [voiceTranscript, setVoiceTranscript] = useState<VoiceEntry[]>([]);
+  const voiceLiveUserRef = useRef("");
+  const voiceLiveResponseRef = useRef("");
+  const voiceIdRef = useRef(0);
+  const voiceBootstrapRef = useRef(true);
+  const [, forceVoiceRender] = useState(0);
+
+  const onVoiceEvent = useCallback((event: VoiceEvent) => {
+    const addEntry = (role: VoiceEntry["role"], text: string) => {
+      if (!text.trim()) return;
+      setVoiceTranscript(prev => [...prev.slice(-30), { id: ++voiceIdRef.current, role, text }]);
+    };
+
+    switch (event.type) {
+      case "user_speech":
+        if (voiceBootstrapRef.current) {
+          voiceBootstrapRef.current = false;
+          return;
+        }
+        voiceLiveUserRef.current += event.text;
+        forceVoiceRender(n => n + 1);
+        break;
+      case "response":
+        if (event.final) {
+          if (voiceLiveResponseRef.current) addEntry("eywa", voiceLiveResponseRef.current);
+          if (voiceLiveUserRef.current) addEntry("user", voiceLiveUserRef.current);
+          voiceLiveUserRef.current = "";
+          voiceLiveResponseRef.current = "";
+          forceVoiceRender(n => n + 1);
+        } else if (event.text) {
+          voiceLiveResponseRef.current += event.text;
+          forceVoiceRender(n => n + 1);
+        }
+        break;
+      case "tool_call":
+        addEntry("tool", `${event.name}: ${(event.result || "").slice(0, 120)}`);
+        break;
+      case "status":
+        addEntry("status", event.text);
+        break;
+      case "error":
+        addEntry("status", `Error: ${event.text}`);
+        break;
+    }
+  }, []);
+
+  const {
+    connected: voiceConnected,
+    voiceState,
+    connect: voiceConnect,
+    disconnect: voiceDisconnect,
+  } = useGeminiLive({
+    roomId: room?.id || null,
+    roomSlug: slug || "",
+    onEvent: onVoiceEvent,
+  });
+
+  useEffect(() => {
+    if (!voiceConnected) {
+      voiceBootstrapRef.current = true;
+    }
+  }, [voiceConnected]);
+
+  const handleVoiceToggle = useCallback(() => {
+    if (voiceConnected) {
+      voiceDisconnect();
+    } else {
+      setVoiceTranscript([]);
+      voiceLiveUserRef.current = "";
+      voiceLiveResponseRef.current = "";
+      voiceConnect();
+    }
+  }, [voiceConnected, voiceConnect, voiceDisconnect]);
+
+  // Auto-scroll chat (text + voice)
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, voiceTranscript]);
 
   // Compute agent states
   const agentStates = useMemo(() => buildAgentStates(memories), [memories]);
@@ -1366,10 +1458,20 @@ export function ThreadTree() {
       {/* RIGHT: Gemini chat + activity panel */}
       <div className="hub-chat-panel">
         <div className="hub-chat-header">
-          <span className="hub-chat-title">Gemini</span>
-          {chatMessages.length > 0 && (
-            <button onClick={clearChat} className="hub-chat-clear" title="Clear">Clear</button>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="hub-chat-title">{voiceConnected ? "Eywa Voice" : "Gemini"}</span>
+            {voiceConnected && <MiniOrb state={voiceState} />}
+            {voiceConnected && (
+              <span className="hub-voice-state-label">
+                {voiceState === "listening" ? "Listening" : voiceState === "speaking" ? "Speaking" : voiceState === "connecting" ? "Connecting..." : ""}
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {(chatMessages.length > 0 || voiceTranscript.length > 0) && (
+              <button onClick={() => { clearChat(); setVoiceTranscript([]); }} className="hub-chat-clear" title="Clear">Clear</button>
+            )}
+          </div>
         </div>
         <div className="hub-chat-messages">
           {chatMessages.length === 0 && !chatLoading && (
@@ -1406,72 +1508,135 @@ export function ThreadTree() {
           {chatError && (
             <div className="hub-steering-error">{chatError}</div>
           )}
+          {/* Voice transcript */}
+          {voiceTranscript.map(entry => (
+            <div key={entry.id} className={`hub-steering-msg ${entry.role === "user" ? "hub-steering-user" : entry.role === "eywa" ? "hub-steering-model" : ""}`}>
+              {entry.role === "user" && (
+                <>
+                  <div className="hub-steering-msg-role">You (voice)</div>
+                  <div className="hub-steering-msg-content">{entry.text}</div>
+                </>
+              )}
+              {entry.role === "eywa" && (
+                <>
+                  <div className="hub-steering-msg-role">Eywa</div>
+                  <div className="hub-steering-msg-content">{entry.text}</div>
+                </>
+              )}
+              {entry.role === "tool" && (
+                <div className="hub-steering-tools">
+                  <span className="hub-steering-tool-pill">{entry.text}</span>
+                </div>
+              )}
+              {entry.role === "status" && (
+                <div className="hub-voice-status-msg">{entry.text}</div>
+              )}
+            </div>
+          ))}
+          {voiceLiveUserRef.current && (
+            <div className="hub-steering-msg hub-steering-user" style={{ opacity: 0.6 }}>
+              <div className="hub-steering-msg-role">You (voice)</div>
+              <div className="hub-steering-msg-content">{voiceLiveUserRef.current}</div>
+            </div>
+          )}
+          {voiceLiveResponseRef.current && (
+            <div className="hub-steering-msg hub-steering-model" style={{ opacity: 0.6 }}>
+              <div className="hub-steering-msg-role">Eywa</div>
+              <div className="hub-steering-msg-content">{voiceLiveResponseRef.current}</div>
+            </div>
+          )}
           <div ref={chatBottomRef} />
         </div>
         <div className="hub-chat-input-area">
-          <div className="hub-chat-mode-row">
-            <button
-              className={`hub-mode-btn ${inputMode === "gemini" ? "hub-mode-active" : ""}`}
-              onClick={() => setInputMode("gemini")}
-            >Gemini</button>
-            <button
-              className={`hub-mode-btn ${inputMode === "inject" ? "hub-mode-active" : ""}`}
-              onClick={() => setInputMode("inject")}
-            >Inject</button>
-            {inputMode === "inject" && (
-              <>
-                <select
-                  className="hub-inject-target"
-                  value={injectTarget}
-                  onChange={(e) => setInjectTarget(e.target.value)}
-                >
-                  <option value="all">All agents</option>
-                  {allAgentNames.map((a) => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
-                <div className="hub-inject-priority">
-                  {(["normal", "high", "urgent"] as const).map((p) => (
-                    <button
-                      key={p}
-                      className={`hub-priority-btn ${injectPriority === p ? `hub-priority-${p}` : ""}`}
-                      onClick={() => setInjectPriority(p)}
+          {/* Voice bar (when connected) */}
+          {voiceConnected && (
+            <div className="hub-voice-bar">
+              <MiniOrb state={voiceState} />
+              <span className="hub-voice-bar-label">
+                {voiceState === "listening" ? "Listening..." : voiceState === "speaking" ? "Eywa is speaking" : voiceState === "connecting" ? "Connecting..." : "Voice active"}
+              </span>
+              <button className="hub-voice-end-btn" onClick={voiceDisconnect}>End</button>
+            </div>
+          )}
+          {!voiceConnected && (
+            <>
+              <div className="hub-chat-mode-row">
+                <button
+                  className={`hub-mode-btn ${inputMode === "gemini" ? "hub-mode-active" : ""}`}
+                  onClick={() => setInputMode("gemini")}
+                >Gemini</button>
+                <button
+                  className={`hub-mode-btn ${inputMode === "inject" ? "hub-mode-active" : ""}`}
+                  onClick={() => setInputMode("inject")}
+                >Inject</button>
+                {inputMode === "inject" && (
+                  <>
+                    <select
+                      className="hub-inject-target"
+                      value={injectTarget}
+                      onChange={(e) => setInjectTarget(e.target.value)}
                     >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-          <div className="hub-chat-input-row">
-            <input
-              className="hub-command-input"
-              placeholder={inputMode === "gemini"
-                ? "Ask Gemini about agents, patterns, progress..."
-                : "Send instructions to agents..."
-              }
-              value={inputMode === "gemini" ? chatInput : injectContent}
-              onChange={(e) => inputMode === "gemini" ? setChatInput(e.target.value) : setInjectContent(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  if (inputMode === "gemini") handleChatSend();
-                  else handleInject();
-                }
-              }}
-            />
-            <button
-              className="hub-command-send"
-              onClick={inputMode === "gemini" ? handleChatSend : handleInject}
-              disabled={inputMode === "gemini"
-                ? (chatLoading || !chatInput.trim())
-                : (injectSending || !injectContent.trim())
-              }
-            >
-              {(chatLoading || injectSending) ? "..." : "\u2192"}
-            </button>
-          </div>
+                      <option value="all">All agents</option>
+                      {allAgentNames.map((a) => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                    </select>
+                    <div className="hub-inject-priority">
+                      {(["normal", "high", "urgent"] as const).map((p) => (
+                        <button
+                          key={p}
+                          className={`hub-priority-btn ${injectPriority === p ? `hub-priority-${p}` : ""}`}
+                          onClick={() => setInjectPriority(p)}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="hub-chat-input-row">
+                <input
+                  className="hub-command-input"
+                  placeholder={inputMode === "gemini"
+                    ? "Ask Gemini about agents, patterns, progress..."
+                    : "Send instructions to agents..."
+                  }
+                  value={inputMode === "gemini" ? chatInput : injectContent}
+                  onChange={(e) => inputMode === "gemini" ? setChatInput(e.target.value) : setInjectContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (inputMode === "gemini") handleChatSend();
+                      else handleInject();
+                    }
+                  }}
+                />
+                <button
+                  className="hub-command-send"
+                  onClick={inputMode === "gemini" ? handleChatSend : handleInject}
+                  disabled={inputMode === "gemini"
+                    ? (chatLoading || !chatInput.trim())
+                    : (injectSending || !injectContent.trim())
+                  }
+                >
+                  {(chatLoading || injectSending) ? "..." : "\u2192"}
+                </button>
+                <button
+                  className="hub-mic-btn"
+                  onClick={handleVoiceToggle}
+                  title="Start voice mode"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                </button>
+              </div>
+            </>
+          )}
         </div>
         {/* Activity stream */}
         <div className="hub-chat-activity">
