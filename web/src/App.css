@@ -2112,6 +2112,13 @@ body {
   color: rgba(240, 240, 245, 0.45);
 }
 
+.curvilinear-logo-img {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  mix-blend-mode: screen;
+}
+
 .curvilinear-name {
   font-size: 1.15rem;
   font-weight: 600;
@@ -2204,6 +2211,11 @@ body {
   margin: 0 auto;
   padding: 1.5rem 2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .landing-footer-bottom p {
@@ -2398,8 +2410,12 @@ body {
     gap: 2rem;
   }
 
-  .landing-footer-community-links {
-    flex-direction: row;
+  .landing-surfaces-strip {
+    gap: 1rem;
+  }
+
+  .landing-surface-item {
+    padding: 1rem 1.25rem;
   }
 }
 
@@ -2446,6 +2462,19 @@ body {
     gap: 1rem;
   }
 
+  /* Surfaces strip: tighter on mobile */
+  .landing-surfaces-strip {
+    gap: 0.75rem;
+  }
+
+  .landing-surface-item {
+    padding: 0.75rem 1rem;
+  }
+
+  .landing-surface-item span {
+    font-size: 0.75rem;
+  }
+
   /* Gemini section mobile */
   .landing-gemini-title {
     font-size: 1.3rem;
@@ -2475,6 +2504,36 @@ body {
 
   .landing-cta-section p {
     font-size: 0.95rem;
+  }
+
+  /* Footer mobile */
+  .landing-footer-inner {
+    padding: 3rem 1.5rem 1.5rem;
+  }
+
+  .landing-footer-community-links {
+    flex-direction: row;
+  }
+
+  .footer-community-card {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .footer-community-label {
+    font-size: 0.85rem;
+  }
+
+  .footer-community-desc {
+    font-size: 0.7rem;
+  }
+
+  .landing-footer-bottom {
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   /* Pain words smaller on mobile */
