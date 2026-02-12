@@ -9821,3 +9821,379 @@ body {
   font-size: 0.65rem;
   color: var(--text-muted);
 }
+
+/* ============================================
+   ONBOARDING OVERLAY
+   Three-step wizard for empty rooms
+   ============================================ */
+
+.onboarding-overlay {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.onboarding-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.onboarding-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.onboarding-dismiss {
+  background: none;
+  border: 1px solid var(--border-default);
+  color: var(--text-tertiary);
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.onboarding-dismiss:hover {
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
+}
+
+/* Progress indicator */
+.onboarding-progress {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.onboarding-progress::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  background: var(--border-subtle);
+  z-index: 0;
+}
+
+.onboarding-step-indicator {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 1;
+}
+
+.onboarding-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-default);
+  color: var(--text-tertiary);
+  transition: all 300ms ease-in-out;
+}
+
+.onboarding-step-current .onboarding-step-dot {
+  border-color: var(--aurora-cyan);
+  color: var(--aurora-cyan);
+  background: rgba(21, 209, 255, 0.1);
+  box-shadow: 0 0 12px rgba(21, 209, 255, 0.2);
+}
+
+.onboarding-step-done .onboarding-step-dot {
+  border-color: var(--aurora-green);
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--aurora-green);
+}
+
+.onboarding-step-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  transition: color 200ms ease;
+}
+
+.onboarding-step-current .onboarding-step-label {
+  color: var(--text-secondary);
+}
+
+.onboarding-step-done .onboarding-step-label {
+  color: var(--aurora-green);
+}
+
+/* Step content */
+.onboarding-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+}
+
+.onboarding-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.onboarding-step-intro h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.onboarding-step-intro p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Destination form */
+.onboarding-dest-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.onboarding-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.onboarding-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.onboarding-textarea {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  resize: vertical;
+  transition: border-color 150ms ease;
+  line-height: 1.5;
+}
+
+.onboarding-textarea:focus {
+  outline: none;
+  border-color: var(--aurora-cyan);
+  box-shadow: 0 0 0 3px rgba(21, 209, 255, 0.1);
+}
+
+.onboarding-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Action buttons */
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 0.5rem;
+}
+
+.onboarding-btn-primary {
+  background: rgba(21, 209, 255, 0.12);
+  border: 1px solid rgba(21, 209, 255, 0.35);
+  color: var(--aurora-cyan);
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 200ms ease-in-out;
+}
+
+.onboarding-btn-primary:hover:not(:disabled) {
+  background: rgba(21, 209, 255, 0.2);
+  border-color: var(--aurora-cyan);
+  box-shadow: 0 0 16px rgba(21, 209, 255, 0.15);
+}
+
+.onboarding-btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.onboarding-btn-ghost {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.onboarding-btn-ghost:hover {
+  color: var(--text-secondary);
+}
+
+.onboarding-btn-back {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: auto;
+  transition: color 150ms ease;
+}
+
+.onboarding-btn-back:hover {
+  color: var(--text-secondary);
+}
+
+/* Step 3: Waiting state */
+.onboarding-step-waiting {
+  align-items: center;
+  text-align: center;
+}
+
+.onboarding-step-waiting h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.onboarding-step-waiting p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 420px;
+}
+
+.onboarding-step-waiting code {
+  background: rgba(21, 209, 255, 0.1);
+  color: var(--aurora-cyan);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.onboarding-waiting-icon {
+  margin-bottom: 0.5rem;
+}
+
+@keyframes onboarding-ring-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes onboarding-core-pulse {
+  0%, 100% { opacity: 0.2; r: 4; }
+  50% { opacity: 0.5; r: 6; }
+}
+
+@keyframes onboarding-dot-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.onboarding-waiting-ring {
+  animation: onboarding-ring-spin 8s linear infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+.onboarding-waiting-core {
+  animation: onboarding-core-pulse 3s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+.onboarding-waiting-dot {
+  animation: onboarding-dot-pulse 2s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+/* Checklist */
+.onboarding-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0.5rem 0;
+  width: 100%;
+  max-width: 300px;
+}
+
+.onboarding-check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.onboarding-check-done {
+  color: var(--aurora-green);
+}
+
+.onboarding-check-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.onboarding-check-done .onboarding-check-icon {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--aurora-green);
+}
+
+.onboarding-check-pending {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--border-default);
+  background: transparent;
+  animation: onboarding-dot-pulse 2s ease-in-out infinite;
+}
+
+.onboarding-check-waiting {
+  color: var(--text-muted);
+}
+
+/* ConnectAgent override within onboarding */
+.onboarding-overlay .connect-agent {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  background: var(--bg-elevated);
+}
+
+.onboarding-overlay .connect-agent-header {
+  display: none;
+}

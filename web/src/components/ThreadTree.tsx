@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase, type Memory, type GlobalInsight } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
-import { ConnectAgent } from "./ConnectAgent";
+import { OnboardingOverlay } from "./OnboardingOverlay";
 import { useGeminiChat, type ChatMessage } from "../hooks/useGeminiChat";
 // useVoiceInput.ts provides global Window type declarations for SpeechRecognition
 import "../hooks/useVoiceInput";
@@ -1525,63 +1525,11 @@ export function ThreadTree() {
   if (!loading && memories.length === 0 && !isDemo && !dismissedOnboarding) {
     return (
       <div className="hub-view">
-        <div className="hub-header">
-          <h2 className="hub-title">Hub</h2>
-          <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
-            <button
-              onClick={() => navigate(`/r/${slug}/seeds`)}
-              style={{
-                background: "rgba(78, 234, 255, 0.1)",
-                border: "1px solid rgba(78, 234, 255, 0.3)",
-                color: "#4eeaff",
-                padding: "4px 12px",
-                borderRadius: "4px",
-                fontSize: "12px",
-                cursor: "pointer",
-              }}
-            >
-              Seed Monitor
-            </button>
-            <button
-              onClick={() => setDismissedOnboarding(true)}
-              style={{
-                background: "none",
-                border: "1px solid rgba(255,255,255,0.15)",
-                color: "var(--text-secondary)",
-                padding: "4px 12px",
-                borderRadius: "4px",
-                fontSize: "12px",
-                cursor: "pointer",
-              }}
-            >
-              Skip
-            </button>
-          </div>
-        </div>
-        <div className="hub-onboarding">
-          <div className="hub-onboarding-welcome">
-            <h3>Your room is ready</h3>
-            <p>Connect an AI agent to start seeing its work here. Every session, decision, and file gets logged in real time so your whole team can see what's happening.</p>
-          </div>
-          {room ? <ConnectAgent slug={slug || ""} /> : null}
-          <div className="hub-onboarding-next">
-            <h4>What happens next</h4>
-            <div className="hub-onboarding-steps">
-              <div className="hub-onboarding-step">
-                <span className="hub-onboarding-num">1</span>
-                <span>Agent sessions appear here as live cards with progress and status</span>
-              </div>
-              <div className="hub-onboarding-step">
-                <span className="hub-onboarding-num">2</span>
-                <span>Use the Gemini chat panel to ask questions across all agent threads</span>
-              </div>
-              <div className="hub-onboarding-step">
-                <span className="hub-onboarding-num">3</span>
-                <span>Set a destination to track team progress toward a goal</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <OnboardingOverlay
+          slug={slug || ""}
+          roomId={room?.id || ""}
+          onDismiss={() => setDismissedOnboarding(true)}
+        />
       </div>
     );
   }
