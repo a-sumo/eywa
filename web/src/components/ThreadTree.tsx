@@ -1056,6 +1056,97 @@ function ApprovalCard({ approval, roomId }: { approval: PendingApproval; roomId:
   );
 }
 
+// --- Deploy Health ---
+
+interface DeployEntry {
+  id: string;
+  agent: string;
+  scope: string; // "worker" or "web"
+  outcome: string;
+  content: string;
+  ts: string;
+}
+
+function extractDeploys(memories: Memory[]): DeployEntry[] {
+  const deploys: DeployEntry[] = [];
+  for (const m of memories) {
+    const meta = (m.metadata ?? {}) as Record<string, unknown>;
+    if (meta.system === "deploy" && meta.action === "deploy") {
+      deploys.push({
+        id: m.id,
+        agent: m.agent,
+        scope: (meta.scope as string) || "unknown",
+        outcome: (meta.outcome as string) || "unknown",
+        content: (m.content ?? "").slice(0, 200),
+        ts: m.ts,
+      });
+    }
+  }
+  return deploys;
+}
+
+function DeployHealth({ deploys }: { deploys: DeployEntry[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (deploys.length === 0) return null;
+
+  const latest = deploys[0];
+  const isSuccess = latest.outcome === "success";
+  const recentCount = deploys.length;
+  const failCount = deploys.filter((d) => d.outcome === "failure").length;
+
+  return (
+    <div className="hub-deploy-health">
+      <div
+        className="hub-deploy-header"
+        onClick={() => setExpanded(!expanded)}
+        style={{ cursor: "pointer" }}
+      >
+        <span
+          className="hub-deploy-dot"
+          style={{ background: isSuccess ? "#22c55e" : "#ef4444" }}
+        />
+        <span className="hub-deploy-label">Deploys</span>
+        <span className="hub-deploy-latest">
+          {latest.scope} {isSuccess ? "live" : "failed"}
+        </span>
+        <span className="hub-activity-time">{timeAgo(latest.ts)}</span>
+        {failCount > 0 && (
+          <span className="hub-pill" style={{ background: "#ef444418", color: "#ef4444" }}>
+            {failCount} failed
+          </span>
+        )}
+        <span className="hub-deploy-count">{recentCount} total</span>
+        <span className="hub-chevron">{expanded ? "\u25B2" : "\u25BC"}</span>
+      </div>
+      {expanded && (
+        <div className="hub-deploy-list">
+          {deploys.slice(0, 20).map((d) => {
+            const outcomeColor = OUTCOME_COLORS[d.outcome] || "#888";
+            const shortAgent = d.agent.split("/")[1] || d.agent;
+            return (
+              <div key={d.id} className="hub-deploy-row">
+                <span
+                  className="hub-deploy-dot-sm"
+                  style={{ background: d.outcome === "success" ? "#22c55e" : "#ef4444" }}
+                />
+                <span className="hub-pill" style={{ background: `${outcomeColor}18`, color: outcomeColor }}>
+                  {d.outcome}
+                </span>
+                <span className="hub-deploy-scope">{d.scope}</span>
+                <span className="hub-deploy-agent" style={{ color: agentColor(d.agent) }}>
+                  {shortAgent}
+                </span>
+                <span className="hub-activity-time">{timeAgo(d.ts)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Main ---
 
 export function ThreadTree() {
@@ -1190,6 +1281,7 @@ export function ThreadTree() {
   const unresolvedDistress = distressSignals.filter((d) => !d.resolved);
   const destination = useMemo(() => extractDestination(memories), [memories]);
   const tasks = useMemo(() => extractTasks(memories), [memories]);
+  const deploys = useMemo(() => extractDeploys(memories), [memories]);
 
   // Pending approvals
   const pendingApprovals = useMemo(() => {
@@ -1495,6 +1587,9 @@ export function ThreadTree() {
           )}
         </div>
       )}
+
+      {/* Deploy health */}
+      <DeployHealth deploys={deploys} />
 
       {/* Network routes (cross-room intelligence) */}
       {networkRoutes.length > 0 && (
