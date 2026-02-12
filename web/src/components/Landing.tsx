@@ -163,7 +163,19 @@ export function Landing() {
               Create Your Room
             </button>
           </div>
-          {error && <p className="landing-error">{error}</p>}
+          {error && (
+            <div className="landing-error-banner">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{error}</span>
+              <button className="landing-error-retry" onClick={() => createDemoRoom()}>
+                Try again
+              </button>
+            </div>
+          )}
 
         </div>
       </section>
@@ -247,6 +259,128 @@ export function Landing() {
             <div className="landing-step-content">
               <h3>Steer the work</h3>
               <p>Inject context into any teammate's agent mid-session. Share decisions across boundaries. Keep the whole team pulling in the same direction.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Visual Proof - Animated Dashboard Mockup */}
+      <section className="landing-section landing-proof-section">
+        <h2 className="landing-section-title">See what your team is building, right now</h2>
+        <p className="landing-proof-subtitle">
+          This is what Eywa looks like when three people on your team are running agents.
+          Every card is a live agent session. Every line is a real operation.
+        </p>
+        <div className="landing-proof-mockup">
+          {/* Window chrome */}
+          <div className="landing-proof-chrome">
+            <div className="landing-proof-dots">
+              <span /><span /><span />
+            </div>
+            <div className="landing-proof-url">eywa.ai/room/acme-eng</div>
+          </div>
+
+          {/* Destination banner */}
+          <div className="landing-proof-destination">
+            <div className="landing-proof-dest-label">
+              <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="14" r="11" stroke="currentColor" strokeWidth="2.5"/>
+                <circle cx="16" cy="14" r="6" stroke="currentColor" strokeWidth="2"/>
+                <circle cx="16" cy="14" r="2" fill="var(--aurora-cyan)"/>
+              </svg>
+              Destination
+            </div>
+            <div className="landing-proof-dest-text">Ship auth system with SSO support by Friday</div>
+            <div className="landing-proof-dest-progress">
+              <div className="landing-proof-dest-bar">
+                <div className="landing-proof-dest-fill" />
+              </div>
+              <span>3/5 milestones</span>
+            </div>
+          </div>
+
+          {/* Agent cards grid */}
+          <div className="landing-proof-agents">
+            <div className="landing-proof-agent">
+              <div className="landing-proof-agent-header">
+                <span className="landing-proof-status landing-proof-status-active" />
+                <span className="landing-proof-agent-name">sarah/bright-fern</span>
+                <span className="landing-proof-agent-phase">working</span>
+              </div>
+              <div className="landing-proof-agent-task">Implementing SAML provider integration</div>
+              <div className="landing-proof-agent-progress-bar">
+                <div className="landing-proof-agent-fill" style={{ width: '68%' }} />
+              </div>
+              <div className="landing-proof-agent-meta">
+                <span className="landing-proof-tag landing-proof-tag-fs">filesystem</span>
+                <span className="landing-proof-tag landing-proof-tag-git">git</span>
+                <span className="landing-proof-agent-time">12m active</span>
+              </div>
+            </div>
+
+            <div className="landing-proof-agent">
+              <div className="landing-proof-agent-header">
+                <span className="landing-proof-status landing-proof-status-testing" />
+                <span className="landing-proof-agent-name">alex/quiet-moss</span>
+                <span className="landing-proof-agent-phase landing-proof-phase-test">testing</span>
+              </div>
+              <div className="landing-proof-agent-task">Auth middleware unit tests</div>
+              <div className="landing-proof-agent-progress-bar">
+                <div className="landing-proof-agent-fill landing-proof-fill-green" style={{ width: '91%' }} />
+              </div>
+              <div className="landing-proof-agent-meta">
+                <span className="landing-proof-tag landing-proof-tag-ci">ci</span>
+                <span className="landing-proof-tag landing-proof-tag-fs">filesystem</span>
+                <span className="landing-proof-agent-time">8m active</span>
+              </div>
+            </div>
+
+            <div className="landing-proof-agent">
+              <div className="landing-proof-agent-header">
+                <span className="landing-proof-status landing-proof-status-deploy" />
+                <span className="landing-proof-agent-name">mike/iron-tide</span>
+                <span className="landing-proof-agent-phase landing-proof-phase-deploy">deploying</span>
+              </div>
+              <div className="landing-proof-agent-task">Session token refresh endpoint</div>
+              <div className="landing-proof-agent-progress-bar">
+                <div className="landing-proof-agent-fill landing-proof-fill-purple" style={{ width: '100%' }} />
+              </div>
+              <div className="landing-proof-agent-meta">
+                <span className="landing-proof-tag landing-proof-tag-deploy">deploy</span>
+                <span className="landing-proof-tag landing-proof-tag-api">api</span>
+                <span className="landing-proof-agent-time">3m active</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Activity stream */}
+          <div className="landing-proof-stream">
+            <div className="landing-proof-stream-header">Activity</div>
+            <div className="landing-proof-stream-items">
+              <div className="landing-proof-stream-item landing-proof-stream-anim-1">
+                <span className="landing-proof-stream-dot" style={{ background: 'var(--aurora-green)' }} />
+                <span className="landing-proof-stream-agent">sarah/bright-fern</span>
+                <span className="landing-proof-stream-text">wrote src/auth/saml-provider.ts</span>
+                <span className="landing-proof-stream-time">now</span>
+              </div>
+              <div className="landing-proof-stream-item landing-proof-stream-anim-2">
+                <span className="landing-proof-stream-dot" style={{ background: 'var(--aurora-cyan)' }} />
+                <span className="landing-proof-stream-agent">alex/quiet-moss</span>
+                <span className="landing-proof-stream-text">tests passed (14/14)</span>
+                <span className="landing-proof-stream-time">12s ago</span>
+              </div>
+              <div className="landing-proof-stream-item landing-proof-stream-anim-3">
+                <span className="landing-proof-stream-dot" style={{ background: 'var(--aurora-purple)' }} />
+                <span className="landing-proof-stream-agent">mike/iron-tide</span>
+                <span className="landing-proof-stream-text">deployed to staging</span>
+                <span className="landing-proof-stream-time">45s ago</span>
+              </div>
+              <div className="landing-proof-stream-item landing-proof-stream-anim-4">
+                <span className="landing-proof-stream-dot" style={{ background: 'var(--aurora-pink)' }} />
+                <span className="landing-proof-stream-agent">sarah/bright-fern</span>
+                <span className="landing-proof-stream-text">injected SSO config to alex/quiet-moss</span>
+                <span className="landing-proof-stream-time">1m ago</span>
+              </div>
             </div>
           </div>
         </div>
