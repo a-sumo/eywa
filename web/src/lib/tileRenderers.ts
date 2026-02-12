@@ -1073,7 +1073,6 @@ export const renderNavigatorMap: RenderFn = (ctx, w, h, data) => {
   const nodes = (data.nodes as Array<Record<string, unknown>>) || [];
   const trajectory = (data.trajectory as Array<Record<string, unknown>>) || [];
   const agents = (data.agents as string[]) || [];
-  const room = (data.room as string) || "";
 
   const cx = w / 2;
   const cy = h / 2;

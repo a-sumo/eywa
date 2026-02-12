@@ -28,7 +28,7 @@ export function applyLayoutActions(groups: GroupLayout[], actions: LayoutAction[
         const axis = action.axis ?? "y";
         const offset = action.offsetCm ?? 1.0;
         const ids = action.groupIds;
-        next = next.map((g, i) => {
+        next = next.map((g) => {
           if (!ids.includes(g.id)) return g;
           const idx = ids.indexOf(g.id);
           const delta = (idx - (ids.length - 1) / 2) * offset;

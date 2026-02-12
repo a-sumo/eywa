@@ -958,7 +958,7 @@ async function handleQueryNetwork(
 
   // Client-side domain filter
   const filtered = domain
-    ? data.filter((r: any) => r.domain_tags?.includes(domain))
+    ? data.filter((r: Record<string, unknown>) => (r.domain_tags as string[] | undefined)?.includes(domain))
     : data;
 
   if (!filtered.length) {
@@ -1259,10 +1259,10 @@ async function handleGetTasks(
   if (error) return `Database error: ${error.message}`;
   if (!data || data.length === 0) return "No tasks in this room.";
 
-  let tasks = data.map((row: any) => {
-    const meta = (row.metadata || {}) as Record<string, unknown>;
+  let tasks = data.map((row) => {
+    const meta = ((row as Record<string, unknown>).metadata || {}) as Record<string, unknown>;
     return {
-      id: row.id,
+      id: (row as Record<string, unknown>).id as string,
       title: (meta.title as string) || "",
       description: (meta.description as string) || null,
       status: (meta.status as string) || "open",
@@ -1270,30 +1270,30 @@ async function handleGetTasks(
       assigned_to: (meta.assigned_to as string) || null,
       milestone: (meta.milestone as string) || null,
       parent_task: (meta.parent_task as string) || null,
-      created_by: (meta.created_by as string) || row.agent,
+      created_by: (meta.created_by as string) || (row as Record<string, unknown>).agent as string,
       notes: (meta.notes as string) || null,
       blocked_reason: (meta.blocked_reason as string) || null,
-      ts: row.ts,
+      ts: (row as Record<string, unknown>).ts as string,
     };
   });
 
   // Apply filters
   if (status) {
     const statuses = status.split(",").map((s: string) => s.trim());
-    tasks = tasks.filter((t: any) => statuses.includes(t.status));
+    tasks = tasks.filter((t) => statuses.includes(t.status));
   } else {
     // Default: exclude done
-    tasks = tasks.filter((t: any) => t.status !== "done");
+    tasks = tasks.filter((t) => t.status !== "done");
   }
 
   if (milestone) {
-    tasks = tasks.filter((t: any) =>
+    tasks = tasks.filter((t) =>
       t.milestone?.toLowerCase().includes(milestone.toLowerCase()),
     );
   }
 
   // Sort by priority then time
-  tasks.sort((a: any, b: any) => {
+  tasks.sort((a, b) => {
     const pa = PRIORITY_ORDER[a.priority] ?? 2;
     const pb = PRIORITY_ORDER[b.priority] ?? 2;
     if (pa !== pb) return pa - pb;

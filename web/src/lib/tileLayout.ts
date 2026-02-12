@@ -63,7 +63,6 @@ const COL_MID = 0;       // middle column x center (context)
 const COL_RIGHT = 14;    // right column x center (prompts + chat)
 const TOP_Y = 14;        // top of content area
 const ROW_GAP = 0.3;     // gap between tiles (cm)
-const AGENT_GAP = 0.15;
 const CARD_H_CM = 2.4;   // memory card height in cm
 const CTX_CARD_H_CM = 2.0;
 const BTN_H_CM = 3.0; // matches 48px / 16px-per-cm = 3cm
@@ -1390,7 +1389,7 @@ export function computeMapLayout(params: {
 }): { tiles: TileDescriptor[]; groups: GroupLayout[] } {
   const {
     agents, destination, progress, milestones,
-    chatMessages, chatLoading, chatError,
+    chatMessages, chatLoading,
     isListening, voiceTranscript, room,
     channelReady, deviceId, flowOffset,
   } = params;
