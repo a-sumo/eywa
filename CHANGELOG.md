@@ -2,6 +2,11 @@
 
 All notable features and changes. One line per feature. Agents append here after shipping.
 
+## 2026-02-12
+
+- ESLint cleanup: removed dead code (buildSeedMemories), unused variables, replaced `any` types with proper types in geminiTools task handling
+- Seed agent logging: added "What to Log" table and inline eywa_log examples to agent-prompt.md so seed agents log every file change, type check, commit, deploy, and decision
+
 ## 2026-02-10
 
 - MCP Host Telemetry spec: proposed MCP extension for agent hosts to emit lifecycle notifications (heartbeat, compacting, subagent_spawned, token_pressure, error). Published at docs/mcp-host-telemetry.md.
