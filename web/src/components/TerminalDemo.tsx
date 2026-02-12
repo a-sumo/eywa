@@ -27,12 +27,12 @@ const LINES: TermLine[] = [
   { text: "  Fold created.", color: "var(--aurora-green)", delay: 600 },
   { text: "", delay: 200 },
   { text: "  Configuring MCP server for all 3 agents...", color: "var(--text-secondary)", delay: 400 },
-  { text: "  Done. All agents now log to eywa.ai/r/acme-eng", color: "var(--aurora-green)", delay: 800 },
+  { text: "  Done. All agents now log to eywa.ai/f/acme-eng", color: "var(--aurora-green)", delay: 800 },
   { text: "", delay: 300 },
   { text: "  Share with your team:", color: "var(--text-secondary)", delay: 200 },
   { text: "    npx eywa-ai join acme-eng", color: "var(--aurora-cyan)", delay: 200 },
   { text: "", delay: 400 },
-  { text: "  Dashboard: https://eywa.ai/r/acme-eng", color: "var(--aurora-purple)", delay: 200 },
+  { text: "  Dashboard: https://eywa.ai/f/acme-eng", color: "var(--aurora-purple)", delay: 200 },
 ];
 
 const TOTAL_DURATION_ESTIMATE = LINES.reduce((sum, l) => sum + (l.delay || 0), 0) + 2000; // rough estimate

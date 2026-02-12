@@ -6,6 +6,7 @@ import { FlowBackground } from "./FlowBackground";
 import EywaLogo from "./EywaLogo";
 import { TerminalDemo } from "./TerminalDemo";
 import { LanguageSelector } from "./LanguageSelector";
+import { LiveTelemetry } from "./LiveTelemetry";
 
 function useGitHubStars() {
   const [stars, setStars] = useState<number | null>(null);
@@ -164,13 +165,20 @@ export function Landing() {
             {t("hero.subtitle")}
           </p>
           <div className="landing-hero-actions">
+            <Link
+              to="/f/eywa-dev"
+              className="btn-landing-primary btn-large btn-live"
+            >
+              <span className="live-dot" />
+              Watch Agents Live
+              <IconArrowRight />
+            </Link>
             <button
-              className="btn-landing-primary btn-large"
+              className="btn-landing-secondary"
               onClick={() => createDemoFold()}
               disabled={creating}
             >
               {creating ? tc("creating") : t("hero.tryDemo")}
-              {!creating && <IconArrowRight />}
             </button>
             <button
               className="btn-landing-secondary"
@@ -196,6 +204,9 @@ export function Landing() {
 
         </div>
       </section>
+
+      {/* Live: agents building Eywa right now */}
+      <LiveTelemetry />
 
       {/* Social proof stats strip */}
       <section className="landing-stats-strip">
