@@ -47,7 +47,7 @@ export function NotFound() {
           Home
         </Link>
         <Link
-          to="/rooms"
+          to="/folds"
           style={{
             padding: "10px 20px",
             borderRadius: 8,
@@ -57,7 +57,7 @@ export function NotFound() {
             fontSize: "0.9rem",
           }}
         >
-          Rooms
+          Folds
         </Link>
         <Link
           to="/docs"

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { FoldProvider } from "./context/FoldContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppHeader } from "./components/AppHeader";
@@ -74,6 +74,9 @@ function App() {
             <Route path="/f/:slug/spectacles/rx" element={<FoldProvider><SpectaclesReceiver /></FoldProvider>} />
             <Route path="/f/:slug/voices" element={<FoldProvider><VoicesView /></FoldProvider>} />
             <Route path="/f/:slug/*" element={<FoldRoutes />} />
+            {/* Backward compat: /r/:slug/* → /f/:slug/* */}
+            <Route path="/r/:slug/*" element={<RoomRedirect />} />
+            <Route path="/rooms" element={<Navigate to="/folds" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -95,6 +98,11 @@ function ScrollToTop() {
   }, [pathname, hash]);
 
   return null;
+}
+
+function RoomRedirect() {
+  const { slug, "*": rest } = useParams();
+  return <Navigate to={`/f/${slug}${rest ? `/${rest}` : ""}`} replace />;
 }
 
 function FoldRoutes() {
