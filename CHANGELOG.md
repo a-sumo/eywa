@@ -16,6 +16,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Rooms index: cross-subspace awareness at /rooms showing all rooms with live stats, destination progress, and active agent counts
 - Global nav: added "Rooms" link to AppHeader so users can discover /rooms from any page
 - VS Code task visibility: task queue now visible in the extension sidebar with priority badges, status pills, assignees, and real-time updates
+- Discord /approve command: view pending approvals, approve or deny agent requests from chat with /approve list, /approve yes, /approve no
 
 ## 2026-02-10
 

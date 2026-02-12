@@ -21,6 +21,7 @@ import * as course from "./course.js";
 import * as network from "./network.js";
 import * as claims from "./claims.js";
 import * as tasks from "./tasks.js";
+import * as approve from "./approve.js";
 
 export interface Command {
   data: SharedSlashCommand;
@@ -46,6 +47,7 @@ export const commands: Command[] = [
   network,
   claims,
   tasks,
+  approve,
 ];
 
 export const commandMap = new Map<string, Command>(

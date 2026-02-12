@@ -49,6 +49,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           "`/inject <target> <msg>` - send instructions to an agent",
           "`/inbox [target]` - view pending injections",
           "`/msg <text>` - send to team chat",
+          "`/approve list` - view pending approval requests",
+          "`/approve yes <id>` - approve an agent's request",
+          "`/approve no <id>` - deny a request (with optional reason)",
         ].join("\n"),
       },
       {
