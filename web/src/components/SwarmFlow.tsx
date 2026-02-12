@@ -31,7 +31,7 @@ const ACTION_DIRS: Record<string, { x: number; y: number }> = {
 
 function extractAgentVectors(
   memories: Memory[],
-  destinationDir: { x: number; y: number } | null,
+  destinationDir: { dx: number; dy: number; label: string } | null,
 ): AgentVector[] {
   const agentMap = new Map<string, {
     name: string;
@@ -92,7 +92,7 @@ function extractAgentVectors(
     // Alignment with destination
     let alignment = 0.5; // default: neutral
     if (destinationDir && mag > 0.1) {
-      const dot = dx * destinationDir.x + dy * destinationDir.y;
+      const dot = dx * destinationDir.dx + dy * destinationDir.dy;
       alignment = (dot + 1) / 2; // map -1..1 to 0..1
     }
 
