@@ -2,330 +2,26 @@
  * SpectaclesView.tsx
  *
  * Fullscreen Guild Navigator map for Spectacles streaming.
- * Web users see the interactive iframe. A hidden canvas renders the same
- * map data natively and broadcasts frames to Spectacles via Supabase Realtime.
+ * Web users see the interactive canvas (same renderer as NavigatorMap.tsx).
+ * A hidden canvas renders frames and broadcasts to Spectacles via Supabase Realtime.
+ *
+ * Both the visible and broadcast canvases use the vendored navigator-map.js
+ * for pixel-identical rendering with guild-navigator.
  */
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useRoomContext } from "../context/RoomContext";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { supabase, type Memory } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
+import { NavigatorMap as NavigatorMapRenderer } from "../lib/navigator-map.js";
+import type { NavigatorMapData } from "../lib/navigator-map.js";
 import {
   syncEywaRoom,
   getMap,
   listRooms,
+  connectStream,
   BASE_URL,
-  type NavigatorMapResponse,
-  type NavigatorNode,
 } from "../lib/navigatorClient";
-
-// --- Canvas map renderer ---
-// Agent color palette (matches tileRenderers.ts)
-const AGENT_PALETTE = [
-  "#E64980", "#CC5DE8", "#845EF7", "#5C7CFA",
-  "#339AF0", "#22B8CF", "#20C997", "#51CF66",
-];
-function mapAgentColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AGENT_PALETTE[Math.abs(hash) % AGENT_PALETTE.length];
-}
-function hexR(hex: string): number { return parseInt(hex.slice(1, 3), 16); }
-function hexG(hex: string): number { return parseInt(hex.slice(3, 5), 16); }
-function hexB(hex: string): number { return parseInt(hex.slice(5, 7), 16); }
-
-interface MapRenderOpts {
-  nodes: NavigatorNode[];
-  trajectory: NavigatorMapResponse["trajectory"];
-  width: number;
-  height: number;
-  dark: boolean;
-  panX: number;
-  panY: number;
-  zoom: number;
-}
-
-function renderMapToCanvas(ctx: OffscreenCanvasRenderingContext2D, opts: MapRenderOpts) {
-  const { nodes, trajectory, width: W, height: H, dark, panX, panY, zoom } = opts;
-
-  // Theme colors
-  const bg = dark ? "#080a08" : "#fafafa";
-  const gridColor = dark ? "rgba(0, 220, 100, 0.08)" : "rgba(60, 60, 70, 0.12)";
-  const textColor = dark ? [0, 210, 110] : [50, 50, 60];
-  const dimText = dark ? "rgba(0, 210, 110, 0.4)" : "rgba(100, 100, 110, 0.6)";
-  const ringColor = dark ? [0, 180, 90] : [80, 60, 140];
-  const bgRgb = dark ? "8, 10, 8" : "250, 250, 250";
-
-  // Clear
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  if (nodes.length === 0) {
-    ctx.fillStyle = dimText;
-    ctx.font = `${Math.max(12, W / 50)}px Inter, system-ui, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("Syncing map data...", W / 2, H / 2);
-    return;
-  }
-
-  // Coordinate transform (needed by grid and node rendering)
-  const scale = Math.min(W, H) * 0.38 * zoom;
-  const cx = W / 2 + panX * zoom;
-  const cy = H / 2 + panY * zoom;
-
-  // Multi-level grid with smooth zoom transitions (like map applications)
-  const pad = 8;
-  const k = scale * 0.85;
-  const worldToScreenX = (wx: number) => cx + wx * k;
-  const worldToScreenY = (wy: number) => cy - wy * k;
-  const screenToWorldX = (sx: number) => (sx - cx) / k;
-  const screenToWorldY = (sy: number) => -(sy - cy) / k;
-
-  const wL = Math.min(screenToWorldX(pad), screenToWorldX(W - pad));
-  const wR = Math.max(screenToWorldX(pad), screenToWorldX(W - pad));
-  const wB = Math.min(screenToWorldY(pad), screenToWorldY(H - pad));
-  const wT = Math.max(screenToWorldY(pad), screenToWorldY(H - pad));
-
-  const allSpacings = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0];
-  const minGap = 24;
-  const maxGap = 140;
-  const gridBaseAlpha = dark ? 0.07 : 0.18;
-
-  for (const sp of allSpacings) {
-    const screenGap = sp * k;
-    if (screenGap < minGap || screenGap > 2000) continue;
-    const fade = Math.min(1, (screenGap - minGap) / (maxGap - minGap));
-    const alpha = fade * gridBaseAlpha;
-    const lineW = 0.5 + fade * 0.8;
-    const firstX = Math.floor(wL / sp) * sp;
-    const firstY = Math.floor(wB / sp) * sp;
-    ctx.lineWidth = lineW;
-    ctx.strokeStyle = dark ? `rgba(0, 220, 100, ${alpha.toFixed(4)})` : `rgba(60, 60, 70, ${alpha.toFixed(4)})`;
-    for (let wx = firstX; wx <= wR + sp * 0.5; wx += sp) {
-      const sx = worldToScreenX(wx);
-      if (sx < pad || sx > W - pad) continue;
-      ctx.beginPath(); ctx.moveTo(sx, pad); ctx.lineTo(sx, H - pad); ctx.stroke();
-    }
-    for (let wy = firstY; wy <= wT + sp * 0.5; wy += sp) {
-      const sy = worldToScreenY(wy);
-      if (sy < pad || sy > H - pad) continue;
-      ctx.beginPath(); ctx.moveTo(pad, sy); ctx.lineTo(W - pad, sy); ctx.stroke();
-    }
-  }
-
-  // Screen projection helper
-  const toScreen = (x: number, y: number): [number, number] => [
-    cx + x * scale * 0.85,
-    cy - y * scale * 0.85,
-  ];
-
-  // Build node position map
-  const nodePos = new Map<string, [number, number]>();
-  for (const n of nodes) {
-    nodePos.set(n.id, toScreen(n.x, n.y));
-  }
-
-  // Radial rings around goal with zoom-scaled dashes and labels
-  const goalNode = nodes.find(n => n.type === "goal");
-  if (goalNode) {
-    const [gx, gy] = nodePos.get(goalNode.id)!;
-    ctx.lineWidth = 0.8;
-    const dashLen = Math.max(2, 3 * zoom);
-    const gapLen = Math.max(3, 5 * zoom);
-    for (let r = 0.2; r <= 1.0; r += 0.2) {
-      ctx.strokeStyle = `rgba(${ringColor[0]}, ${ringColor[1]}, ${ringColor[2]}, ${r < 0.95 ? 0.1 : 0.18})`;
-      ctx.setLineDash([dashLen, gapLen]);
-      ctx.lineDashOffset = 0;
-      ctx.beginPath();
-      ctx.arc(gx, gy, r * scale * 0.85, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    // Ring labels with units
-    ctx.font = `500 ${Math.max(9, 11 * zoom)}px Inter, system-ui, sans-serif`;
-    ctx.fillStyle = `rgba(${textColor[0]}, ${textColor[1]}, ${textColor[2]}, 0.35)`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    for (let r = 0.2; r <= 1.0; r += 0.2) {
-      const label = r >= 0.95 ? "1 kh" : `${(r * 10).toFixed(0)} rd`;
-      ctx.fillText(label, gx + r * scale * 0.85 + 5, gy - 5);
-    }
-  }
-
-  // Draw trajectory edges (agent-colored, curvature-weighted)
-  let maxCurv = 0;
-  for (const t of trajectory) {
-    const c = (t as unknown as { curvature?: number }).curvature || 0;
-    if (c > maxCurv) maxCurv = c;
-  }
-  for (const t of trajectory) {
-    const from = nodePos.get(t.from);
-    const to = nodePos.get(t.to);
-    if (!from || !to) continue;
-    const color = mapAgentColor(t.agent);
-    const r = hexR(color), g = hexG(color), b = hexB(color);
-    const curv = (t as unknown as { curvature?: number }).curvature || 0;
-    const normCurv = maxCurv > 0 ? curv / maxCurv : 0;
-    const lineW = (1.5 + normCurv * 2) * zoom;
-    ctx.lineWidth = lineW;
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${(dark ? 0.5 : 0.35) + normCurv * 0.25})`;
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo(from[0], from[1]);
-    ctx.lineTo(to[0], to[1]);
-    ctx.stroke();
-    // Arrowhead at midpoint showing direction
-    const edx = to[0] - from[0], edy = to[1] - from[1];
-    const elen = Math.sqrt(edx * edx + edy * edy);
-    if (elen > 20) {
-      const mx = (from[0] + to[0]) / 2, my = (from[1] + to[1]) / 2;
-      const ux = edx / elen, uy = edy / elen;
-      const arrowSize = Math.min(6 * zoom, elen * 0.15);
-      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${(dark ? 0.55 : 0.4) + normCurv * 0.2})`;
-      ctx.beginPath();
-      ctx.moveTo(mx + ux * arrowSize, my + uy * arrowSize);
-      ctx.lineTo(mx - ux * arrowSize * 0.6 + uy * arrowSize * 0.5, my - uy * arrowSize * 0.6 - ux * arrowSize * 0.5);
-      ctx.lineTo(mx - ux * arrowSize * 0.6 - uy * arrowSize * 0.5, my - uy * arrowSize * 0.6 + ux * arrowSize * 0.5);
-      ctx.closePath();
-      ctx.fill();
-    }
-  }
-
-  // Font sizes that scale with canvas
-  const labelFont = Math.max(10, Math.min(14, W / 60));
-  const smallFont = Math.max(8, Math.min(11, W / 80));
-
-  // Draw action nodes (small filled circles + glow)
-  for (const n of nodes) {
-    if (n.type !== "action") continue;
-    const pos = nodePos.get(n.id);
-    if (!pos) continue;
-    const color = n.agent ? mapAgentColor(n.agent) : (dark ? "#4ade80" : "#16a34a");
-    const r = hexR(color), g = hexG(color), b = hexB(color);
-    const rad = 5 * zoom;
-    // Glow
-    const glow = ctx.createRadialGradient(pos[0], pos[1], rad * 0.5, pos[0], pos[1], rad * 4);
-    glow.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${dark ? 0.12 : 0.06})`);
-    glow.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(pos[0], pos[1], rad * 4, 0, Math.PI * 2);
-    ctx.fill();
-    // Dot
-    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${dark ? 0.9 : 0.75})`;
-    ctx.beginPath();
-    ctx.arc(pos[0], pos[1], rad, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 1)`;
-    ctx.lineWidth = 1.5 * zoom;
-    ctx.stroke();
-  }
-
-  // Draw state nodes (ring outline)
-  for (const n of nodes) {
-    if (n.type !== "state") continue;
-    const pos = nodePos.get(n.id);
-    if (!pos) continue;
-    const color = n.agent ? mapAgentColor(n.agent) : (dark ? "#fbbf24" : "#ca8a04");
-    const r = hexR(color), g = hexG(color), b = hexB(color);
-    const rad = 5.5 * zoom;
-    ctx.fillStyle = dark ? "rgba(10, 14, 10, 0.9)" : "rgba(255, 255, 255, 0.85)";
-    ctx.beginPath();
-    ctx.arc(pos[0], pos[1], rad, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${dark ? 0.8 : 0.6})`;
-    ctx.lineWidth = 1.8 * zoom;
-    ctx.stroke();
-  }
-
-  // Draw source nodes
-  for (const n of nodes) {
-    if (n.type !== "source") continue;
-    const pos = nodePos.get(n.id);
-    if (!pos) continue;
-    const name = n.agent || n.label || n.id;
-    const color = mapAgentColor(name);
-    const rad = 7 * zoom;
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(pos[0], pos[1], rad, 0, Math.PI * 2);
-    ctx.fill();
-    // Label
-    const short = name.includes("/") ? name.split("/").pop()! : name;
-    ctx.fillStyle = `rgba(${textColor[0]}, ${textColor[1]}, ${textColor[2]}, 0.7)`;
-    ctx.font = `${smallFont * zoom}px Inter, system-ui, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    ctx.fillText(short.replace(" (active)", ""), pos[0], pos[1] + rad + 4);
-  }
-
-  // Draw goal nodes (4-point star + glow)
-  for (const n of nodes) {
-    if (n.type !== "goal") continue;
-    const pos = nodePos.get(n.id);
-    if (!pos) continue;
-    const sz = 18 * zoom;
-    // Glow
-    const glow = ctx.createRadialGradient(pos[0], pos[1], 0, pos[0], pos[1], sz * 2.5);
-    const gc = dark ? [0, 255, 200] : [200, 160, 40];
-    glow.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.25)`);
-    glow.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.06)`);
-    glow.addColorStop(1, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0)`);
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(pos[0], pos[1], sz * 2.5, 0, Math.PI * 2);
-    ctx.fill();
-    // Star
-    ctx.save();
-    ctx.translate(pos[0], pos[1]);
-    const outerV = sz, outerH = sz * 0.6, pinch = sz * 0.08;
-    ctx.beginPath();
-    ctx.moveTo(0, -outerV);
-    ctx.quadraticCurveTo(pinch, -pinch, outerH, 0);
-    ctx.quadraticCurveTo(pinch, pinch, 0, outerV);
-    ctx.quadraticCurveTo(-pinch, pinch, -outerH, 0);
-    ctx.quadraticCurveTo(-pinch, -pinch, 0, -outerV);
-    ctx.closePath();
-    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, sz);
-    grad.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.6)`);
-    grad.addColorStop(0.35, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.3)`);
-    grad.addColorStop(1, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.06)`);
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.restore();
-    // Label below
-    const label = n.label.length > 24 ? n.label.slice(0, 22) + ".." : n.label;
-    ctx.fillStyle = `rgba(${textColor[0]}, ${textColor[1]}, ${textColor[2]}, 0.9)`;
-    ctx.font = `bold ${labelFont * zoom}px Inter, system-ui, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    ctx.fillText(label, pos[0], pos[1] + sz + 6);
-  }
-
-  // Edge fades (vignette)
-  const fadeW = Math.max(16, W / 40);
-  const lG = ctx.createLinearGradient(0, 0, fadeW, 0);
-  lG.addColorStop(0, `rgba(${bgRgb}, 0.8)`); lG.addColorStop(1, `rgba(${bgRgb}, 0)`);
-  ctx.fillStyle = lG; ctx.fillRect(0, 0, fadeW, H);
-  const rG = ctx.createLinearGradient(W - fadeW, 0, W, 0);
-  rG.addColorStop(0, `rgba(${bgRgb}, 0)`); rG.addColorStop(1, `rgba(${bgRgb}, 0.8)`);
-  ctx.fillStyle = rG; ctx.fillRect(W - fadeW, 0, fadeW, H);
-  const tG = ctx.createLinearGradient(0, 0, 0, fadeW);
-  tG.addColorStop(0, `rgba(${bgRgb}, 0.8)`); tG.addColorStop(1, `rgba(${bgRgb}, 0)`);
-  ctx.fillStyle = tG; ctx.fillRect(0, 0, W, fadeW);
-  const bG = ctx.createLinearGradient(0, H - fadeW, 0, H);
-  bG.addColorStop(0, `rgba(${bgRgb}, 0)`); bG.addColorStop(1, `rgba(${bgRgb}, 0.8)`);
-  ctx.fillStyle = bG; ctx.fillRect(0, H - fadeW, W, fadeW);
-
-  // Title
-  ctx.fillStyle = dimText;
-  ctx.font = `${smallFont}px Inter, system-ui, sans-serif`;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  ctx.fillText("Eywa Navigator", 12, 10);
-  ctx.fillText(`${nodes.length} nodes`, 12, 10 + smallFont + 4);
-}
 
 // --- Main Component ---
 
@@ -346,24 +42,68 @@ export function SpectaclesView() {
     return params.get("device") || "editor";
   }, []);
 
-  // Refs for broadcast loop
+  // Refs
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const mapDataRef = useRef<NavigatorMapResponse | null>(null);
-  const broadcastCanvasRef = useRef<OffscreenCanvas | null>(null);
+  const mapDataRef = useRef<NavigatorMapData | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const themeRef = useRef(theme);
   themeRef.current = theme;
+
+  // Visible canvas + renderer
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mapRef = useRef<NavigatorMapRenderer | null>(null);
+  const hoveredRef = useRef<import("../lib/navigator-map.js").NavigatorMapNode | null>(null);
+  const draggingRef = useRef(false);
+  const dragMovedRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const targetZoomRef = useRef(1);
+  const targetPanRef = useRef({ x: 0, y: 0 });
+  const viewAnimRef = useRef(false);
+
+  // Broadcast canvas + renderer (hidden, fixed size for Spectacles)
+  const broadcastCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const broadcastMapRef = useRef<NavigatorMapRenderer | null>(null);
+
+  // --- Initialize visible renderer ---
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const map = new NavigatorMapRenderer(canvas, { theme });
+    mapRef.current = map;
+    map.draw(null);
+    return () => { map.destroy(); mapRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Theme sync
+  useEffect(() => {
+    mapRef.current?.setTheme(theme);
+    broadcastMapRef.current?.setTheme(theme);
+    redraw();
+  }, [theme]);
+
+  // Resize
+  useEffect(() => {
+    const onResize = () => { mapRef.current?.resize(); redraw(); };
+    window.addEventListener("resize", onResize);
+    const ro = new ResizeObserver(onResize);
+    if (canvasRef.current?.parentElement) ro.observe(canvasRef.current.parentElement);
+    return () => { window.removeEventListener("resize", onResize); ro.disconnect(); };
+  }, []);
+
+  function redraw() {
+    const map = mapRef.current;
+    if (!map) return;
+    requestAnimationFrame(() => map.draw(hoveredRef.current));
+  }
 
   // Find best Navigator room on load
   useEffect(() => {
     listRooms()
       .then((rooms) => {
         const match = rooms
-          .filter(
-            (r) =>
-              r.id.startsWith(`eywa-${roomSlug}`) ||
-              r.id === roomSlug ||
-              r.id === "demo"
+          .filter((r) =>
+            r.id.startsWith(`eywa-${roomSlug}`) || r.id === roomSlug || r.id === "demo"
           )
           .sort((a, b) => b.items - a.items)[0];
         setRoomId(match && match.items > 0 ? match.id : `eywa-${roomSlug}`);
@@ -378,11 +118,7 @@ export function SpectaclesView() {
     try {
       const agentMap = new Map<
         string,
-        {
-          name: string;
-          isActive: boolean;
-          memories: Array<{ content: string; action?: string }>;
-        }
+        { name: string; isActive: boolean; memories: Array<{ content: string; action?: string }> }
       >();
       const now = Date.now();
       for (const m of memories) {
@@ -392,7 +128,6 @@ export function SpectaclesView() {
         const agent = agentMap.get(m.agent)!;
         if (now - new Date(m.ts).getTime() < 5 * 60 * 1000) agent.isActive = true;
         const meta = (m.metadata ?? {}) as Record<string, unknown>;
-        // Cap at 10 memories per agent to avoid overwhelming the map
         if (agent.memories.length < 10) {
           agent.memories.push({
             content: (m.content || "").slice(0, 200),
@@ -401,13 +136,9 @@ export function SpectaclesView() {
         }
       }
 
-      // Cap at 15 agents max
       const agents = Array.from(agentMap.values()).slice(0, 15);
       const targetRoom = roomId || `eywa-${roomSlug}`;
-      await syncEywaRoom(targetRoom, {
-        destination: "Launch-ready product",
-        agents,
-      });
+      await syncEywaRoom(targetRoom, { destination: "Launch-ready product", agents });
       setSynced(true);
     } catch (e) {
       console.warn("[SpectaclesView] sync error:", e);
@@ -416,14 +147,12 @@ export function SpectaclesView() {
     }
   }, [memories, room, roomId, roomSlug, syncing]);
 
-  // Auto-sync once when we have data
+  // Auto-sync once
   useEffect(() => {
-    if (!synced && roomId && memories.length > 0) {
-      syncData();
-    }
+    if (!synced && roomId && memories.length > 0) syncData();
   }, [synced, roomId, memories.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch map data + re-sync every 30s
+  // Fetch map data via SSE + periodic re-sync
   useEffect(() => {
     if (!roomId) return;
     let cancelled = false;
@@ -431,21 +160,32 @@ export function SpectaclesView() {
     const fetchMap = async () => {
       try {
         const map = await getMap(roomId);
-        if (!cancelled) mapDataRef.current = map;
+        if (cancelled) return;
+        const d = map as NavigatorMapData;
+        mapDataRef.current = d;
+        mapRef.current?.setData(d);
+        broadcastMapRef.current?.setData(d);
+        redraw();
       } catch (e) {
         console.warn("[SpectaclesView] map fetch error:", e);
       }
     };
 
-    // Also re-sync Eywa data periodically
-    const tick = async () => {
-      await syncData();
-      await fetchMap();
-    };
+    // SSE for live updates
+    const cleanupSSE = connectStream(roomId, (state) => {
+      const d = state as NavigatorMapData;
+      mapDataRef.current = d;
+      mapRef.current?.setData(d);
+      broadcastMapRef.current?.setData(d);
+      redraw();
+    });
 
-    fetchMap(); // initial fetch
+    // Also periodic re-sync + fetch
+    const tick = async () => { await syncData(); await fetchMap(); };
+    fetchMap();
     const interval = setInterval(tick, 30_000);
-    return () => { cancelled = true; clearInterval(interval); };
+
+    return () => { cancelled = true; clearInterval(interval); cleanupSSE(); };
   }, [roomId, syncData]);
 
   // Supabase broadcast channel
@@ -472,16 +212,27 @@ export function SpectaclesView() {
     };
   }, [room?.slug, deviceId]);
 
-  // Broadcast loop: render map to hidden canvas, send via scene+tex protocol
-  // that TilePanel expects (create one big tile, update its texture each frame)
+  // Broadcast loop: render map to hidden canvas using NavigatorMap, send frames
   useEffect(() => {
     if (!channelReady) return;
 
     const TILE_ID = "navigator-map";
     const W = 1024;
     const H = 768;
-    const offscreen = new OffscreenCanvas(W, H);
-    broadcastCanvasRef.current = offscreen;
+
+    // Create hidden canvas for broadcast rendering
+    const bCanvas = document.createElement("canvas");
+    bCanvas.style.cssText = "position:absolute;left:-9999px;width:1024px;height:768px";
+    document.body.appendChild(bCanvas);
+    broadcastCanvasRef.current = bCanvas;
+
+    // Create a NavigatorMap renderer for the broadcast canvas
+    const bMap = new NavigatorMapRenderer(bCanvas, { theme: themeRef.current });
+    broadcastMapRef.current = bMap;
+
+    // Seed with current data if available
+    if (mapDataRef.current) bMap.setData(mapDataRef.current);
+
     setBroadcasting(true);
     let tileCreated = false;
 
@@ -494,12 +245,10 @@ export function SpectaclesView() {
 
     // Broadcast at ~5fps
     const loop = setInterval(async () => {
-      const mapData = mapDataRef.current;
-      const ctx = offscreen.getContext("2d");
       const channel = channelRef.current;
-      if (!ctx || !channel) return;
+      if (!channel) return;
 
-      // Create the tile quad on first frame (TilePanel scene op protocol)
+      // Create tile quad on first frame
       if (!tileCreated) {
         channel.send({
           type: "broadcast",
@@ -508,68 +257,144 @@ export function SpectaclesView() {
             ops: [{
               op: "create",
               id: TILE_ID,
-              x: 0,
-              y: 0,
-              z: 0.5,
-              w: W,
-              h: H,
-              scale: 1,
-              layer: 0,
-              visible: true,
-              interactive: false,
-              draggable: false,
+              x: 0, y: 0, z: 0.5,
+              w: W, h: H, scale: 1,
+              layer: 0, visible: true, interactive: false, draggable: false,
             }],
           },
         });
         tileCreated = true;
       }
 
-      renderMapToCanvas(ctx, {
-        nodes: mapData?.nodes || [],
-        trajectory: mapData?.trajectory || [],
-        width: W,
-        height: H,
-        dark: themeRef.current === "dark",
-        panX: 0,
-        panY: 0,
-        zoom: 1,
-      });
+      // Sync theme
+      if (bMap.themeName !== themeRef.current) bMap.setTheme(themeRef.current);
 
-      // Encode to JPEG and send as tex_batch (what TilePanel listens for)
+      // Render frame
+      bMap.draw(null);
+
+      // Capture and send
       try {
-        const blob = await offscreen.convertToBlob({ type: "image/jpeg", quality: 0.8 });
+        const blob = await new Promise<Blob | null>((resolve) => bCanvas.toBlob(resolve, "image/jpeg", 0.8));
+        if (!blob) return;
         const reader = new FileReader();
         reader.onload = () => {
           const base64 = (reader.result as string).split(",")[1];
           channel.send({
             type: "broadcast",
             event: "tex_batch",
-            payload: {
-              textures: [{ id: TILE_ID, image: base64 }],
-            },
+            payload: { textures: [{ id: TILE_ID, image: base64 }] },
           });
         };
         reader.readAsDataURL(blob);
       } catch {
         // encoding can fail if tab is backgrounded
       }
-    }, 33); // ~30fps
+    }, 200); // ~5fps
 
     intervalRef.current = loop;
     return () => {
       clearInterval(loop);
       intervalRef.current = null;
+      bMap.destroy();
+      broadcastMapRef.current = null;
+      document.body.removeChild(bCanvas);
+      broadcastCanvasRef.current = null;
       setBroadcasting(false);
     };
   }, [channelReady, deviceId]);
 
-  const iframeSrc = useMemo(() => {
-    if (!roomId) return null;
-    return `${BASE_URL}?room=${roomId}&theme=${theme}&scenario=saas-deploy`;
-  }, [roomId, theme]);
+  // --- Interaction handlers (same pattern as NavigatorMap.tsx) ---
+  const VIEW_LERP = 0.18;
+
+  function startViewAnim() {
+    if (viewAnimRef.current) return;
+    viewAnimRef.current = true;
+    requestAnimationFrame(viewAnimFrame);
+  }
+
+  function viewAnimFrame() {
+    const map = mapRef.current;
+    if (!map) { viewAnimRef.current = false; return; }
+    map.zoom += (targetZoomRef.current - map.zoom) * VIEW_LERP;
+    map.panX += (targetPanRef.current.x - map.panX) * VIEW_LERP;
+    map.panY += (targetPanRef.current.y - map.panY) * VIEW_LERP;
+    map.recalcGoalScreen();
+    map.draw(hoveredRef.current);
+    const dz = Math.abs(targetZoomRef.current - map.zoom);
+    const dp = Math.abs(targetPanRef.current.x - map.panX) + Math.abs(targetPanRef.current.y - map.panY);
+    if (dz > 0.002 || dp > 0.5) {
+      requestAnimationFrame(viewAnimFrame);
+    } else {
+      map.zoom = targetZoomRef.current;
+      map.panX = targetPanRef.current.x;
+      map.panY = targetPanRef.current.y;
+      map.recalcGoalScreen();
+      map.draw(hoveredRef.current);
+      viewAnimRef.current = false;
+    }
+  }
+
+  function onWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    const map = mapRef.current;
+    if (!map) return;
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(0.1, Math.min(20, targetZoomRef.current * factor));
+    const mx = e.clientX - map.cx;
+    const my = e.clientY - map.cy;
+    targetPanRef.current = {
+      x: mx - (mx - targetPanRef.current.x) * (newZoom / targetZoomRef.current),
+      y: my - (my - targetPanRef.current.y) * (newZoom / targetZoomRef.current),
+    };
+    targetZoomRef.current = newZoom;
+    startViewAnim();
+  }
+
+  function onMouseDown(e: React.MouseEvent) {
+    draggingRef.current = true;
+    dragMovedRef.current = false;
+    const map = mapRef.current;
+    if (!map) return;
+    dragStartRef.current = { x: e.clientX, y: e.clientY, panX: map.panX, panY: map.panY };
+  }
+
+  function onMouseMove(e: React.MouseEvent) {
+    const map = mapRef.current;
+    if (!map) return;
+    if (draggingRef.current) {
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      if (Math.abs(dx) + Math.abs(dy) > 3) dragMovedRef.current = true;
+      map.setPan(dragStartRef.current.panX + dx, dragStartRef.current.panY + dy);
+      targetPanRef.current = { x: map.panX, y: map.panY };
+      redraw();
+      return;
+    }
+    const node = map.hitTest(e.clientX, e.clientY);
+    if (node !== hoveredRef.current) { hoveredRef.current = node; redraw(); }
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.style.cursor = (node || map.hitTestLegend(e.clientX, e.clientY)) ? "pointer" : "default";
+    }
+  }
+
+  function onMouseUp() { draggingRef.current = false; }
+
+  function onClick(e: React.MouseEvent) {
+    if (dragMovedRef.current) return;
+    const map = mapRef.current;
+    if (!map) return;
+    const agent = map.hitTestLegend(e.clientX, e.clientY);
+    if (agent) { map.toggleAgent(agent); redraw(); }
+  }
+
+  function onDoubleClick() {
+    targetZoomRef.current = 1;
+    targetPanRef.current = { x: 0, y: 0 };
+    startViewAnim();
+  }
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
-
   const isDark = theme === "dark";
 
   return (
@@ -579,7 +404,7 @@ export function SpectaclesView() {
         flexDirection: "column",
         height: "100vh",
         width: "100vw",
-        background: isDark ? "#050508" : "#f5f5f5",
+        background: isDark ? "#080a08" : "#fafafa",
         color: isDark ? "#e6edf3" : "#1a1a1a",
         overflow: "hidden",
       }}
@@ -596,14 +421,10 @@ export function SpectaclesView() {
           flexShrink: 0,
         }}
       >
-        <span
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#15D1FF",
-            fontFamily: "var(--font-display, 'Plus Jakarta Sans', system-ui, sans-serif)",
-          }}
-        >
+        <span style={{
+          fontSize: 13, fontWeight: 600, color: "#15D1FF",
+          fontFamily: "var(--font-display, 'Plus Jakarta Sans', system-ui, sans-serif)",
+        }}>
           Eywa
         </span>
         <span style={{ fontSize: 11, color: isDark ? "#484f58" : "#999" }}>
@@ -611,54 +432,37 @@ export function SpectaclesView() {
         </span>
 
         {broadcasting && (
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: "#4ade80",
-              background: "rgba(74,222,128,0.12)",
-              padding: "2px 6px",
-              borderRadius: 3,
-              letterSpacing: "0.5px",
-            }}
-          >
+          <span style={{
+            fontSize: 10, fontWeight: 700, color: "#4ade80",
+            background: "rgba(74,222,128,0.12)", padding: "2px 6px",
+            borderRadius: 3, letterSpacing: "0.5px",
+          }}>
             BROADCASTING
           </span>
         )}
 
         <div style={{ flex: 1 }} />
 
-        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
           style={{
             background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
             color: isDark ? "#e6edf3" : "#333",
             border: `1px solid ${isDark ? "#30363d" : "#ddd"}`,
-            borderRadius: 6,
-            padding: "4px 10px",
-            fontSize: 11,
-            cursor: "pointer",
+            borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer",
           }}
         >
           {isDark ? "Light" : "Dark"}
         </button>
 
-        {/* Sync button */}
         <button
           onClick={syncData}
           disabled={syncing}
           style={{
-            background: syncing
-              ? isDark ? "#1e1e2e" : "#eee"
-              : "rgba(21,209,255,0.12)",
-            color: syncing
-              ? isDark ? "#6b7280" : "#999"
-              : "#15D1FF",
+            background: syncing ? (isDark ? "#1e1e2e" : "#eee") : "rgba(21,209,255,0.12)",
+            color: syncing ? (isDark ? "#6b7280" : "#999") : "#15D1FF",
             border: "1px solid rgba(21,209,255,0.3)",
-            borderRadius: 6,
-            padding: "4px 10px",
-            fontSize: 11,
+            borderRadius: 6, padding: "4px 10px", fontSize: 11,
             cursor: syncing ? "default" : "pointer",
           }}
         >
@@ -666,31 +470,25 @@ export function SpectaclesView() {
         </button>
       </div>
 
-      {/* Navigator map iframe - takes all remaining space */}
-      <div style={{ flex: 1, position: "relative" }}>
-        {iframeSrc ? (
-          <iframe
-            src={iframeSrc}
-            style={{
-              width: "100%",
-              height: "100%",
-              border: "none",
-              background: isDark ? "#0a0a14" : "#fafafa",
-            }}
-            title="Eywa Navigator Map"
-            allow="fullscreen"
-          />
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "100%",
-              color: isDark ? "#484f58" : "#999",
-              fontSize: 13,
-            }}
-          >
+      {/* Navigator map canvas */}
+      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", height: "100%", display: "block" }}
+          onWheel={onWheel}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
+          onClick={onClick}
+          onDoubleClick={onDoubleClick}
+        />
+        {!mapDataRef.current && (
+          <div style={{
+            position: "absolute", inset: 0, display: "flex",
+            alignItems: "center", justifyContent: "center",
+            color: isDark ? "#484f58" : "#999", fontSize: 13, pointerEvents: "none",
+          }}>
             {syncing ? "Syncing room data..." : "Connecting..."}
           </div>
         )}

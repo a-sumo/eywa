@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase, type Memory, type GlobalInsight } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
@@ -1061,6 +1061,7 @@ function ApprovalCard({ approval, roomId }: { approval: PendingApproval; roomId:
 export function ThreadTree() {
   const { room } = useRoomContext();
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
 
   // Time range
   const [timeRange, setTimeRange] = useState(24);
@@ -1323,11 +1324,42 @@ export function ThreadTree() {
 
   // Empty state - onboarding (skip for demo rooms, they always have seeded data)
   const isDemo = room?.is_demo ?? false;
-  if (!loading && memories.length === 0 && !isDemo) {
+  const [dismissedOnboarding, setDismissedOnboarding] = useState(false);
+  if (!loading && memories.length === 0 && !isDemo && !dismissedOnboarding) {
     return (
       <div className="hub-view">
         <div className="hub-header">
           <h2 className="hub-title">Hub</h2>
+          <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
+            <button
+              onClick={() => navigate(`/r/${slug}/seeds`)}
+              style={{
+                background: "rgba(78, 234, 255, 0.1)",
+                border: "1px solid rgba(78, 234, 255, 0.3)",
+                color: "#4eeaff",
+                padding: "4px 12px",
+                borderRadius: "4px",
+                fontSize: "12px",
+                cursor: "pointer",
+              }}
+            >
+              Seed Monitor
+            </button>
+            <button
+              onClick={() => setDismissedOnboarding(true)}
+              style={{
+                background: "none",
+                border: "1px solid rgba(255,255,255,0.15)",
+                color: "var(--text-secondary)",
+                padding: "4px 12px",
+                borderRadius: "4px",
+                fontSize: "12px",
+                cursor: "pointer",
+              }}
+            >
+              Skip
+            </button>
+          </div>
         </div>
         <div className="hub-onboarding">
           <div className="hub-onboarding-welcome">

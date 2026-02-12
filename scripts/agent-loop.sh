@@ -40,16 +40,15 @@ while [ "$SPAWN" -lt "$MAX_RESPAWNS" ]; do
     PROMPT="$PROMPT Continue from previous agent: $BATON (use eywa_start with continue_from to pick up their state)."
   fi
 
-  # Run the agent. Capture output to extract agent name for baton passing.
+  # Run the agent. Output goes to log file, visibility comes from Eywa dashboard.
   set +e
   claude -p "$PROMPT" \
     --dangerously-skip-permissions \
     --append-system-prompt "$(cat "$SCRIPT_DIR/agent-prompt.md")" \
     --mcp-config "$SCRIPT_DIR/seed-mcp.json" \
     --max-turns 50 \
-    --output-format stream-json \
-    --verbose \
-    2>&1 | tee "$LOG_FILE"
+    --output-format text \
+    > "$LOG_FILE" 2>&1
   EXIT_CODE=$?
   set -e
 

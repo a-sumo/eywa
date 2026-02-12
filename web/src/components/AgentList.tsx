@@ -34,6 +34,12 @@ export function AgentList() {
         Hub
       </button>
       <button
+        className={`agent-chip ${isActive(`${basePath}/seeds`) ? "active" : ""}`}
+        onClick={() => navigate(`${basePath}/seeds`)}
+      >
+        Seeds
+      </button>
+      <button
         className={`agent-chip ${isActive(`${basePath}/knowledge`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/knowledge`)}
       >

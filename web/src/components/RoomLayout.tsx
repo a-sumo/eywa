@@ -50,6 +50,7 @@ export function RoomLayout({ children }: RoomLayoutProps) {
       </div>
       <nav className="mobile-tabs">
         <Link to={basePath} className={isTabActive(basePath) ? "active" : ""}>Hub</Link>
+        <Link to={`${basePath}/seeds`} className={isTabActive(`${basePath}/seeds`) ? "active" : ""}>Seeds</Link>
         <Link to={`${basePath}/knowledge`} className={isTabActive(`${basePath}/knowledge`) ? "active" : ""}>Knowledge</Link>
         <Link to={`${basePath}/graph`} className={isTabActive(`${basePath}/graph`) ? "active" : ""}>Graph</Link>
         <Link to={`${basePath}/map`} className={isTabActive(`${basePath}/map`) ? "active" : ""}>Map</Link>

@@ -39,6 +39,9 @@ eywa-specs/*.lock
 # Claude Code
 .claude/
 
+# Agent run logs
+scripts/agent-runs/
+
 # Generated assets
 docs/frames/
 
@@ -53,3 +56,5 @@ docs/frames/
 
 # Logs
 *.log
+.vercel
+.env*.local
