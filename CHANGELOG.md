@@ -4,6 +4,7 @@ All notable features and changes. One line per feature. Agents append here after
 
 ## 2026-02-12
 
+- Landing page visual proof: animated dashboard mockup showing agent cards with live status, destination banner with progress, and activity stream
 - useChat error handling: fetch and insert errors now surfaced via `error` state so consumers can display them
 - useGeminiChat auto-context fallback: Promise.allSettled so individual tool failures don't break auto-context, graceful degradation when API is down
 - Hook error display: ThreadTree, OperationsView, Feed, and Chat now show Supabase query errors instead of silently failing
