@@ -10,6 +10,24 @@
 
 function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
 
+// Frosted glass panel background. Draws a rounded rect with translucent fill + subtle border.
+function drawGlassPanel(ctx, x, y, w, h, bgRgb, dark) {
+  const r = 8;
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  // Semi-transparent background
+  ctx.fillStyle = dark
+    ? `rgba(${bgRgb[0]},${bgRgb[1]},${bgRgb[2]},0.7)`
+    : `rgba(${bgRgb[0]},${bgRgb[1]},${bgRgb[2]},0.75)`;
+  ctx.fill();
+  // Subtle border
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+  ctx.restore();
+}
+
 const THEMES = {
   light: {
     bg: '#fafafa',
@@ -107,6 +125,9 @@ export class NavigatorMap {
 
     this.nodeSize = { source: 18, action: 10, state: 12, goal: 22 };
 
+    // grid view mode (small multiples)
+    this.gridMode = false;
+
     this.resize();
   }
 
@@ -175,6 +196,8 @@ export class NavigatorMap {
     return null;
   }
 
+  setGridMode(on) { this.gridMode = !!on; }
+
   toggleAgent(agent) {
     if (this.dimmedAgents.has(agent)) this.dimmedAgents.delete(agent);
     else this.dimmedAgents.add(agent);
@@ -234,6 +257,11 @@ export class NavigatorMap {
       this.drawGraduations();
       this.drawLegend();
       return false;
+    }
+
+    if (this.gridMode && data.meta?.agents?.length > 1) {
+      this.drawGridView(hoveredNode);
+      return true;
     }
 
     this.drawGrid();
@@ -464,76 +492,174 @@ export class NavigatorMap {
     return this.dimmedAgents.has(agent) ? 0.1 : 1;
   }
 
+  // Build ordered node chains per agent from trajectory edges.
+  // Returns Map<agent, string[]> where each value is an ordered list of node IDs.
+  _buildAgentChains() {
+    const { data } = this;
+    if (!data?.trajectory) return new Map();
+
+    const byAgent = {};
+    for (const e of data.trajectory) {
+      const a = e.agent || '_default';
+      if (!byAgent[a]) byAgent[a] = [];
+      byAgent[a].push(e);
+    }
+
+    const chains = new Map();
+    for (const [agent, edges] of Object.entries(byAgent)) {
+      const next = {};
+      const isTarget = new Set();
+      for (const e of edges) {
+        next[e.from] = e.to;
+        isTarget.add(e.to);
+      }
+      // Find chain start: appears as 'from' but never as 'to'
+      let start = null;
+      for (const e of edges) {
+        if (!isTarget.has(e.from)) { start = e.from; break; }
+      }
+      if (!start) start = edges[0].from;
+
+      const ids = [start];
+      let cur = start;
+      const visited = new Set([cur]);
+      while (next[cur]) {
+        const nxt = next[cur];
+        if (visited.has(nxt)) break;
+        visited.add(nxt);
+        ids.push(nxt);
+        cur = nxt;
+      }
+      chains.set(agent, ids);
+    }
+    return chains;
+  }
+
+  // Draw a Catmull-Rom spline through screen-space points.
+  // points: [{sx, sy}, ...]. Adds to current path (caller must beginPath/stroke).
+  _drawCatmullRom(ctx, pts) {
+    if (pts.length < 2) return;
+    ctx.moveTo(pts[0].sx, pts[0].sy);
+    if (pts.length === 2) {
+      ctx.lineTo(pts[1].sx, pts[1].sy);
+      return;
+    }
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      // Catmull-Rom → cubic Bezier: CP1 = P1 + (P2-P0)/6, CP2 = P2 - (P3-P1)/6
+      ctx.bezierCurveTo(
+        p1.sx + (p2.sx - p0.sx) / 6, p1.sy + (p2.sy - p0.sy) / 6,
+        p2.sx - (p3.sx - p1.sx) / 6, p2.sy - (p3.sy - p1.sy) / 6,
+        p2.sx, p2.sy
+      );
+    }
+  }
+
   drawTrajectory() {
     const { ctx, data, t } = this;
     if (!data.trajectory || data.trajectory.length === 0) return;
+
     const nodeMap = {};
     data.nodes.forEach(n => { nodeMap[n.id] = n; });
 
-    // Find max curvature for normalization
+    // Edge lookup for per-edge metadata (curvature, duration)
+    const edgeLookup = {};
     let maxCurv = 0;
     for (const edge of data.trajectory) {
+      edgeLookup[edge.from + ':' + edge.to] = edge;
       if (edge.curvature > maxCurv) maxCurv = edge.curvature;
     }
 
+    const chains = this._buildAgentChains();
+
     ctx.save();
 
-    // Draw trajectory lines with arrowheads showing direction
-    for (const edge of data.trajectory) {
-      const from = nodeMap[edge.from];
-      const to = nodeMap[edge.to];
-      if (!from || !to) continue;
+    for (const [agent, nodeIds] of chains) {
+      const points = [];
+      for (const id of nodeIds) {
+        const node = nodeMap[id];
+        if (!node) continue;
+        const { sx, sy } = this.toScreen(node);
+        points.push({ sx, sy, id });
+      }
+      if (points.length < 2) continue;
 
-      const dim = this._dimFactor(edge.agent);
-      const alpha = Math.min(this.nodeAlphaFn(edge.from), this.nodeAlphaFn(edge.to)) * dim;
-      const c = this.agentColors[edge.agent] || this.agentPalette[0];
-      const { sx: fx, sy: fy } = this.toScreen(from);
-      const { sx: tx, sy: ty } = this.toScreen(to);
+      const dim = this._dimFactor(agent);
+      const c = this.agentColors[agent] || this.agentPalette[0];
 
-      // Curvature-based visual
-      const curv = edge.curvature || 0;
-      const normCurv = maxCurv > 0 ? curv / maxCurv : 0;
+      // Per-agent alpha: minimum across visible points
+      let pathAlpha = 1;
+      for (const p of points) {
+        const a = this.nodeAlphaFn(p.id) * dim;
+        if (a < pathAlpha) pathAlpha = a;
+      }
 
-      // Duration-based line width boost
-      const edgeDt = edge.dt || 0;
-      const dtNorm = edgeDt > 0 ? Math.min(1, edgeDt / 600) : 0;
-      const lineW = 1.5 + normCurv * 2 + dtNorm * 1.0;
-      ctx.lineWidth = lineW;
-      ctx.strokeStyle = rgba(c, (t.trajAlpha + normCurv * 0.25) * alpha);
+      // Draw smooth curve
+      ctx.strokeStyle = rgba(c, t.trajAlpha * pathAlpha);
+      ctx.lineWidth = 1.8;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.setLineDash([]);
+      ctx.beginPath();
+      this._drawCatmullRom(ctx, points);
+      ctx.stroke();
 
-      ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(tx, ty); ctx.stroke();
+      // Chevrons and duration labels at segment midpoints (on the actual curve)
+      for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i], p2 = points[i + 1];
+        const segAlpha = Math.min(this.nodeAlphaFn(p1.id), this.nodeAlphaFn(p2.id)) * dim;
+        const dx = p2.sx - p1.sx, dy = p2.sy - p1.sy;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 20) continue;
 
-      // Arrowhead at midpoint showing direction
-      const dx = tx - fx, dy = ty - fy;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      if (len > 20) {
-        const mx = (fx + tx) / 2, my = (fy + ty) / 2;
-        const ux = dx / len, uy = dy / len; // unit direction
+        // Evaluate Catmull-Rom curve at t=0.5 for true midpoint and tangent
+        const p0 = points[Math.max(0, i - 1)];
+        const p3 = points[Math.min(points.length - 1, i + 2)];
+        const cp1x = p1.sx + (p2.sx - p0.sx) / 6;
+        const cp1y = p1.sy + (p2.sy - p0.sy) / 6;
+        const cp2x = p2.sx - (p3.sx - p1.sx) / 6;
+        const cp2y = p2.sy - (p3.sy - p1.sy) / 6;
+        const mx = 0.125 * p1.sx + 0.375 * cp1x + 0.375 * cp2x + 0.125 * p2.sx;
+        const my = 0.125 * p1.sy + 0.375 * cp1y + 0.375 * cp2y + 0.125 * p2.sy;
+        const tx = 0.75 * (cp1x - p1.sx) + 1.5 * (cp2x - cp1x) + 0.75 * (p2.sx - cp2x);
+        const ty = 0.75 * (cp1y - p1.sy) + 1.5 * (cp2y - cp1y) + 0.75 * (p2.sy - cp2y);
+        const tlen = Math.sqrt(tx * tx + ty * ty);
+        if (tlen < 1) continue;
+        const ux = tx / tlen, uy = ty / tlen;
         const arrowSize = Math.min(6, len * 0.15);
 
-        ctx.fillStyle = rgba(c, (t.trajAlpha + 0.15 + normCurv * 0.2) * alpha);
+        ctx.strokeStyle = rgba(c, (t.trajAlpha + 0.2) * segAlpha);
+        ctx.lineWidth = 1.3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.beginPath();
-        ctx.moveTo(mx + ux * arrowSize, my + uy * arrowSize);
-        ctx.lineTo(mx - ux * arrowSize * 0.6 + uy * arrowSize * 0.5, my - uy * arrowSize * 0.6 - ux * arrowSize * 0.5);
-        ctx.lineTo(mx - ux * arrowSize * 0.6 - uy * arrowSize * 0.5, my - uy * arrowSize * 0.6 + ux * arrowSize * 0.5);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(mx - ux * arrowSize * 0.6 - uy * arrowSize * 0.45, my - uy * arrowSize * 0.6 + ux * arrowSize * 0.45);
+        ctx.lineTo(mx + ux * arrowSize * 0.5, my + uy * arrowSize * 0.5);
+        ctx.lineTo(mx - ux * arrowSize * 0.6 + uy * arrowSize * 0.45, my - uy * arrowSize * 0.6 - ux * arrowSize * 0.45);
+        ctx.stroke();
 
-        // Duration label on long edges
-        if (edgeDt > 60 && alpha > 0.3) {
+        // Duration label
+        const edge = edgeLookup[p1.id + ':' + p2.id];
+        const edgeDt = edge?.dt || 0;
+        if (edgeDt > 60 && segAlpha > 0.3) {
           let dtLabel;
           if (edgeDt >= 3600) dtLabel = (edgeDt / 3600).toFixed(1) + 'h';
           else if (edgeDt >= 60) dtLabel = Math.round(edgeDt / 60) + 'm';
           else dtLabel = Math.round(edgeDt) + 's';
           ctx.font = '500 9px Inter, system-ui, sans-serif';
-          ctx.fillStyle = rgba(c, 0.4 * alpha);
+          ctx.fillStyle = rgba(c, 0.4 * segAlpha);
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
           ctx.fillText(dtLabel, mx + uy * 12, my - ux * 12 - 2);
         }
       }
     }
+
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
     ctx.setLineDash([]);
     ctx.restore();
   }
@@ -595,6 +721,50 @@ export class NavigatorMap {
     ctx.restore();
   }
 
+  // Cartographic goal marker: filled circle with concentric ring (bullseye/target)
+  drawGoalMarker(scx, scy, size) {
+    const { ctx, t } = this;
+    const r = size * 0.7;
+    // Outer glow
+    const glow = ctx.createRadialGradient(scx, scy, r * 0.3, scx, scy, r * 3);
+    glow.addColorStop(0, rgba(t.goalGlow, 0.1));
+    glow.addColorStop(1, rgba(t.goalGlow, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(scx, scy, r * 3, 0, Math.PI * 2); ctx.fill();
+    // Filled outer circle
+    ctx.fillStyle = rgba(t.goal, 0.6);
+    ctx.beginPath(); ctx.arc(scx, scy, r, 0, Math.PI * 2); ctx.fill();
+    // Inner ring
+    ctx.strokeStyle = rgba(t.goal, 0.9);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(scx, scy, r * 0.5, 0, Math.PI * 2); ctx.stroke();
+    // Center dot
+    ctx.fillStyle = rgba(t.goal, 0.95);
+    ctx.beginPath(); ctx.arc(scx, scy, 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Cartographic source marker: filled circle with border (departure pin)
+  drawSourceMarker(scx, scy, size, c) {
+    const { ctx } = this;
+    const r = size * 0.6;
+    // Outer glow
+    const glow = ctx.createRadialGradient(scx, scy, r * 0.3, scx, scy, r * 2.5);
+    glow.addColorStop(0, rgba(c, 0.08));
+    glow.addColorStop(1, rgba(c, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(scx, scy, r * 2.5, 0, Math.PI * 2); ctx.fill();
+    // Filled circle
+    ctx.fillStyle = rgba(c, 0.35);
+    ctx.beginPath(); ctx.arc(scx, scy, r, 0, Math.PI * 2); ctx.fill();
+    // Border
+    ctx.strokeStyle = rgba(c, 0.7);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Center dot
+    ctx.fillStyle = rgba(c, 0.8);
+    ctx.beginPath(); ctx.arc(scx, scy, 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+
   nodeColor(node) {
     return this.agentColors[node.agent] || this.agentPalette[0];
   }
@@ -613,10 +783,10 @@ export class NavigatorMap {
       ctx.globalAlpha = alpha;
 
       if (node.type === 'goal') {
-        this.drawGoalStar(sx, sy, size);
+        this.drawGoalMarker(sx, sy, size);
       } else if (node.type === 'source') {
         const c = this.nodeColor(node);
-        this.drawSourceStar(sx, sy, size, c);
+        this.drawSourceMarker(sx, sy, size, c);
       } else if (node.type === 'action') {
         const c = this.nodeColor(node);
         const dotR = 5;
@@ -741,8 +911,7 @@ export class NavigatorMap {
 
       let label;
       if (node.type === 'goal') {
-        const goalIdx = data.meta.goalIds.indexOf(node.id);
-        label = data.meta.goalIds.length === 1 ? 'DESTINATION' : `DEST-${goalIdx}`;
+        label = this._shortGoalLabel(node);
       } else {
         label = node.agent ? node.agent.toUpperCase() : 'ORIGIN';
       }
@@ -780,6 +949,239 @@ export class NavigatorMap {
     }
   }
 
+  // --- Grid view: small multiples, one cell per agent ---
+
+  drawGridView(hoveredNode) {
+    const { ctx, W, H, data, t } = this;
+    const dark = this.themeName === 'dark';
+    const agents = data.meta.agents || [];
+    if (agents.length === 0) return;
+
+    // Grid layout: prefer landscape cells
+    const n = agents.length;
+    const aspect = W / H;
+    let cols = Math.round(Math.sqrt(n * aspect));
+    cols = Math.max(1, Math.min(n, cols));
+    const rows = Math.ceil(n / cols);
+    const cellW = W / cols;
+    const cellH = H / rows;
+    const pad = 6;
+    const headerH = 22;
+
+    // Build node lookup
+    const nodeMap = {};
+    data.nodes.forEach(nd => { nodeMap[nd.id] = nd; });
+
+    // Shared nodes (sources + goals)
+    const sharedNodes = data.nodes.filter(nd => nd.type === 'source' || nd.type === 'goal');
+
+    // Compute global coordinate bounds for consistent scaling across cells
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const nd of data.nodes) {
+      if (nd.x < minX) minX = nd.x;
+      if (nd.x > maxX) maxX = nd.x;
+      if (nd.y < minY) minY = nd.y;
+      if (nd.y > maxY) maxY = nd.y;
+    }
+    const rangeX = maxX - minX || 1;
+    const rangeY = maxY - minY || 1;
+    const midX = (minX + maxX) / 2;
+    const midY = (minY + maxY) / 2;
+
+    for (let i = 0; i < n; i++) {
+      const agent = agents[i];
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cellX = col * cellW;
+      const cellY = row * cellH;
+      const cx = cellX + cellW / 2;
+      const cy = cellY + headerH + (cellH - headerH) / 2;
+
+      // Usable area inside cell (minus header and padding)
+      const usableW = cellW - pad * 2;
+      const usableH = cellH - headerH - pad * 2;
+      const localScale = Math.min(usableW / rangeX, usableH / rangeY) * 0.85;
+
+      const toLocal = (nd) => ({
+        sx: cx + (nd.x - midX) * localScale,
+        sy: cy - (nd.y - midY) * localScale,
+      });
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(cellX + 1, cellY + 1, cellW - 2, cellH - 2);
+      ctx.clip();
+
+      // Cell background
+      ctx.fillStyle = dark ? 'rgba(12,16,12,0.6)' : 'rgba(245,245,248,0.6)';
+      ctx.fillRect(cellX + 1, cellY + 1, cellW - 2, cellH - 2);
+
+      // Cell border
+      ctx.strokeStyle = dark ? 'rgba(0,220,100,0.08)' : 'rgba(80,60,140,0.08)';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(cellX + pad, cellY + pad, cellW - pad * 2, cellH - pad * 2);
+
+      // Header label
+      const dimmed = this.dimmedAgents.has(agent);
+      const c = this.agentColors[agent] || this.agentPalette[0];
+      ctx.font = '600 11px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = dimmed ? rgba(c, 0.2) : rgba(c, 0.8);
+      ctx.fillText(agent, cx, cellY + pad + 2);
+
+      // Agent's nodes
+      const agentNodes = data.nodes.filter(nd => nd.agent === agent);
+      const agentNodeIds = new Set(agentNodes.map(nd => nd.id));
+      // Include source/goal in edge filtering
+      for (const nd of sharedNodes) agentNodeIds.add(nd.id);
+
+      // Trajectory edges for this agent
+      const agentEdges = (data.trajectory || []).filter(e =>
+        e.agent === agent && agentNodeIds.has(e.from) && agentNodeIds.has(e.to)
+      );
+
+      const alpha = dimmed ? 0.1 : 1;
+
+      // Build ordered chain for this agent's edges and draw smooth curve
+      {
+        // Build chain from agent edges
+        const edgeNext = {};
+        const edgeTargets = new Set();
+        for (const e of agentEdges) {
+          edgeNext[e.from] = e.to;
+          edgeTargets.add(e.to);
+        }
+        let chainStart = null;
+        for (const e of agentEdges) {
+          if (!edgeTargets.has(e.from)) { chainStart = e.from; break; }
+        }
+        if (!chainStart && agentEdges.length) chainStart = agentEdges[0].from;
+
+        const chainPts = [];
+        if (chainStart) {
+          let cur = chainStart;
+          const vis = new Set();
+          while (cur && !vis.has(cur)) {
+            vis.add(cur);
+            const nd = nodeMap[cur];
+            if (nd) {
+              const scr = toLocal(nd);
+              chainPts.push({ sx: scr.sx, sy: scr.sy, id: cur });
+            }
+            cur = edgeNext[cur];
+          }
+        }
+
+        if (chainPts.length >= 2) {
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = rgba(c, t.trajAlpha + 0.1);
+          ctx.lineWidth = 1.8;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          this._drawCatmullRom(ctx, chainPts);
+          ctx.stroke();
+
+          // Chevrons at segment midpoints
+          for (let ci = 0; ci < chainPts.length - 1; ci++) {
+            const cp1 = chainPts[ci], cp2 = chainPts[ci + 1];
+            const dx = cp2.sx - cp1.sx, dy = cp2.sy - cp1.sy;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            if (len > 12) {
+              const mx = (cp1.sx + cp2.sx) / 2, my = (cp1.sy + cp2.sy) / 2;
+              const ux = dx / len, uy = dy / len;
+              const as = Math.min(5, len * 0.12);
+              ctx.strokeStyle = rgba(c, (t.trajAlpha + 0.25) * alpha);
+              ctx.lineWidth = 1.2;
+              ctx.lineCap = 'round';
+              ctx.beginPath();
+              ctx.moveTo(mx - ux * as - uy * as * 0.5, my - uy * as + ux * as * 0.5);
+              ctx.lineTo(mx + ux * as * 0.5, my + uy * as * 0.5);
+              ctx.lineTo(mx - ux * as + uy * as * 0.5, my - uy * as - ux * as * 0.5);
+              ctx.stroke();
+            }
+          }
+          ctx.lineCap = 'butt';
+          ctx.lineJoin = 'miter';
+        }
+      }
+
+      // Draw shared nodes (goals, sources) - subdued
+      for (const nd of sharedNodes) {
+        const { sx, sy } = toLocal(nd);
+        ctx.globalAlpha = alpha * 0.6;
+        if (nd.type === 'goal') {
+          // Filled circle + inner ring (target/bullseye)
+          ctx.fillStyle = rgba(t.goal, 0.7);
+          ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = rgba(t.goal, 0.35);
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(sx, sy, 3.5, 0, Math.PI * 2); ctx.stroke();
+          // Short goal label
+          ctx.font = '500 9px Inter, system-ui, sans-serif';
+          ctx.fillStyle = rgba(t.text, 0.4 * alpha);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          const goalLabel = this._shortGoalLabel(nd);
+          ctx.fillText(goalLabel, sx, sy - 9);
+        } else {
+          // Source: filled circle with border
+          ctx.fillStyle = rgba(c, 0.3);
+          ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = rgba(c, 0.6);
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
+      }
+
+      // Draw agent's action + state nodes
+      for (const nd of agentNodes) {
+        if (nd.type === 'source' || nd.type === 'goal') continue;
+        const { sx, sy } = toLocal(nd);
+        ctx.globalAlpha = this.nodeAlphaFn(nd.id) * alpha;
+
+        if (nd.type === 'action') {
+          ctx.fillStyle = rgba(c, t.actionFill);
+          ctx.beginPath(); ctx.arc(sx, sy, 4.5, 0, Math.PI * 2); ctx.fill();
+        } else {
+          // state: ring
+          ctx.fillStyle = rgba(t.stateInner, t.stateInnerAlpha);
+          ctx.beginPath(); ctx.arc(sx, sy, 4, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = rgba(c, t.stateStroke);
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
+      }
+
+      // Step count badge
+      const stepCount = Math.floor(agentNodes.filter(nd => nd.type === 'action' || nd.type === 'state').length / 2);
+      if (stepCount > 0) {
+        ctx.globalAlpha = alpha;
+        ctx.font = '500 10px Inter, system-ui, sans-serif';
+        ctx.fillStyle = rgba(t.text, 0.35);
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(stepCount + ' steps', cellX + cellW - pad - 4, cellY + cellH - pad - 2);
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+  }
+
+  // Extract a short label from a goal node
+  _shortGoalLabel(node) {
+    if (!node.label) return 'goal';
+    // Try to extract quoted name or first meaningful words
+    const qMatch = node.label.match(/"([^"]+)"/);
+    if (qMatch) return qMatch[1].slice(0, 20);
+    // First 25 chars of label, trimmed at word boundary
+    const short = node.label.slice(0, 25);
+    const lastSpace = short.lastIndexOf(' ');
+    return (lastSpace > 15 ? short.slice(0, lastSpace) : short) + (node.label.length > 25 ? '...' : '');
+  }
+
   drawEdgeFades() {
     const { ctx, W, H, t } = this;
     const fadeW = 22;
@@ -800,17 +1202,23 @@ export class NavigatorMap {
 
   drawAlignmentPanel() {
     const { ctx, goalId, data, H, agentColors, t } = this;
+    const dark = this.themeName === 'dark';
     if (!goalId || !data.alignments || data.alignments.length === 0) return;
     const panelX = 20;
     const barW = 140;
     const barH = 16;
     const gap = 6;
     const MAX_BARS = 8;
+    const bottomClear = 72; // clear HTML controls zone
     const allGoalAlignments = data.alignments.filter(a => a.goalId === goalId && !this.dimmedAgents.has(a.agent));
     if (allGoalAlignments.length === 0) return;
     const goalAlignments = allGoalAlignments.slice(-MAX_BARS);
     const truncated = allGoalAlignments.length > MAX_BARS;
-    let y = H - 20 - goalAlignments.length * (barH + gap);
+    let y = H - bottomClear - goalAlignments.length * (barH + gap);
+
+    // Glass panel
+    const panelH = goalAlignments.length * (barH + gap) + 28;
+    drawGlassPanel(ctx, panelX - 10, y - 28, barW + 120, panelH + 10, t.bgRgb, dark);
 
     ctx.font = '600 11px Inter, system-ui, sans-serif';
     ctx.fillStyle = rgba(t.text, 0.45);
@@ -842,6 +1250,7 @@ export class NavigatorMap {
 
   drawComparisonPanel() {
     const { ctx, data, agentColors, t, W, H } = this;
+    const dark = this.themeName === 'dark';
     if (!data?.meta?.agents || data.meta.agents.length <= 1) return;
 
     const agents = data.meta.agents;
@@ -850,7 +1259,8 @@ export class NavigatorMap {
     const barH = 16;
     const gap = 6;
     const panelX = W - 200;
-    let y = H - 20 - agents.length * (barH + gap);
+    const bottomClear = 72; // clear HTML controls zone
+    let y = H - bottomClear - agents.length * (barH + gap);
 
     // If curvature panel exists in dev mode, shift up
     if (this.devMode && data.meta?.curvature?.length) {
@@ -859,6 +1269,10 @@ export class NavigatorMap {
       const totalCurvRows = hasTemporal ? curvRows * 2 : curvRows;
       y -= totalCurvRows * (barH + gap) + 40;
     }
+
+    // Glass panel
+    const panelH = agents.length * (barH + gap) + 28;
+    drawGlassPanel(ctx, panelX - 10, y - 28, W - panelX + 10, panelH + 10, t.bgRgb, dark);
 
     ctx.font = '600 11px Inter, system-ui, sans-serif';
     ctx.fillStyle = rgba(t.text, 0.45);
@@ -939,6 +1353,7 @@ export class NavigatorMap {
   drawCurvaturePanel() {
     if (!this.devMode) return;
     const { ctx, data, agentColors, t, W } = this;
+    const dark = this.themeName === 'dark';
     if (!data.meta?.curvature || data.meta.curvature.length === 0) return;
 
     const hasTemporal = data.meta.curvature.some(c => c.meanVelocity != null);
@@ -949,7 +1364,13 @@ export class NavigatorMap {
     const gap = 6;
     // Extra rows for velocity if temporal data exists
     const totalRows = hasTemporal ? rows * 2 : rows;
-    let y = this.H - 20 - totalRows * (barH + gap);
+    const bottomClear = 72; // clear HTML controls zone
+    let y = this.H - bottomClear - totalRows * (barH + gap);
+
+    // Glass panel — include human baseline rows if present
+    const baselineRows = data.meta?.humanBaseline?.length || 0;
+    const totalH = (totalRows + baselineRows) * (barH + gap) + (baselineRows > 0 ? 30 : 0) + 28;
+    drawGlassPanel(ctx, panelX - 10, y - 28, W - panelX + 10, totalH + 10, t.bgRgb, dark);
 
     ctx.font = '600 11px Inter, system-ui, sans-serif';
     ctx.fillStyle = rgba(t.text, 0.45);
@@ -1037,7 +1458,28 @@ export class NavigatorMap {
 
   drawLegend() {
     const { ctx, data, t } = this;
+    const dark = this.themeName === 'dark';
     const lx = 20;
+    const pad = 10;
+    const agents = data ? (data.meta.agents || []) : [];
+
+    // Pre-calculate legend height for glass panel
+    let legendH = pad + 28 + 5 * 20; // header + 5 type rows
+    if (agents.length > 1) legendH += 14 + agents.length * 27;
+    if (Math.abs(this.zoom - 1) > 0.05) legendH += 30;
+    legendH += pad;
+
+    // Measure max pill width for panel width
+    ctx.font = '500 12px Inter, system-ui, sans-serif';
+    let maxPillW = 90; // minimum
+    for (const agent of agents) {
+      const tw = ctx.measureText(agent).width + 28;
+      if (tw > maxPillW) maxPillW = tw;
+    }
+    const legendW = Math.max(maxPillW + 8, 120);
+
+    drawGlassPanel(ctx, lx - pad, 24 - pad, legendW + pad * 2, legendH, t.bgRgb, dark);
+
     let ly = 24;
     ctx.font = '600 14px Inter, system-ui, sans-serif';
     ctx.textAlign = 'left';
@@ -1046,7 +1488,7 @@ export class NavigatorMap {
     ctx.fillText('GUILD NAVIGATOR', lx, ly);
     if (this.devMode) {
       const tw = ctx.measureText('GUILD NAVIGATOR').width;
-      ctx.fillStyle = this.themeName === 'dark' ? 'rgba(0,255,160,0.35)' : 'rgba(100,23,236,0.4)';
+      ctx.fillStyle = dark ? 'rgba(0,255,160,0.35)' : 'rgba(100,23,236,0.4)';
       ctx.font = '700 10px Inter, system-ui, sans-serif';
       ctx.fillText('DEV', lx + tw + 8, ly + 2);
     }
@@ -1101,35 +1543,58 @@ export class NavigatorMap {
     ctx.fillText('direction', lx + 18, ly);
     ly += 20;
 
-    const agents = data ? (data.meta.agents || []) : [];
     this._legendHits = [];
     if (agents.length > 1) {
-      ly += 10;
-      ctx.font = '600 11px Inter, system-ui, sans-serif';
-      ctx.fillStyle = rgba(t.text, 0.45);
-      ctx.fillText('AGENTS', lx, ly);
-      ly += 18;
+      ly += 14;
       ctx.font = '500 12px Inter, system-ui, sans-serif';
       for (const agent of agents) {
         const c = this.agentColors[agent];
         if (!c) continue;
         const dimmed = this.dimmedAgents.has(agent);
+        const label = agent;
+        const tw = ctx.measureText(label).width;
+        const pillW = tw + 28;
+        const pillH = 22;
+        const pillR = 11;
+        const px = lx - 2;
+
+        // Pill background
+        ctx.beginPath();
+        ctx.roundRect(px, ly - 2, pillW, pillH, pillR);
         if (dimmed) {
-          // Outlined swatch for dimmed agent
-          ctx.strokeStyle = rgba(c, 0.4);
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(lx + 1.5, ly + 1.5, 9, 9);
-          ctx.fillStyle = rgba(t.text, 0.25);
+          ctx.fillStyle = rgba(t.text, 0.03);
+          ctx.fill();
+          ctx.strokeStyle = rgba(c, 0.25);
+          ctx.lineWidth = 1;
+          ctx.stroke();
         } else {
-          // Filled swatch for active agent
-          ctx.fillStyle = rgba(c, 0.7);
-          ctx.fillRect(lx + 1, ly + 1, 10, 10);
-          ctx.fillStyle = rgba(t.text, 0.5);
+          ctx.fillStyle = rgba(c, 0.1);
+          ctx.fill();
+          ctx.strokeStyle = rgba(c, 0.35);
+          ctx.lineWidth = 1;
+          ctx.stroke();
         }
-        ctx.fillText(agent, lx + 18, ly);
-        // Store hit area for click detection
-        this._legendHits.push({ agent, x: lx, y: ly - 2, w: 120, h: 18 });
-        ly += 20;
+
+        // Color dot inside pill
+        const dotX = px + 12;
+        const dotY = ly + pillH / 2 - 2;
+        if (dimmed) {
+          ctx.strokeStyle = rgba(c, 0.35);
+          ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(dotX, dotY, 4, 0, Math.PI * 2); ctx.stroke();
+        } else {
+          ctx.fillStyle = rgba(c, 0.8);
+          ctx.beginPath(); ctx.arc(dotX, dotY, 4, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Label
+        ctx.fillStyle = dimmed ? rgba(t.text, 0.2) : rgba(t.text, 0.6);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, px + 22, dotY);
+
+        this._legendHits.push({ agent, x: px, y: ly - 2, w: pillW, h: pillH });
+        ly += pillH + 5;
       }
     }
 
