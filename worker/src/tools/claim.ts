@@ -181,6 +181,33 @@ export function registerClaimTools(
       const activeClaims = await getActiveClaims(db, ctx.roomId, ctx.agent);
       const conflicts = detectConflicts(scope, fileList, activeClaims);
 
+      // Scope lock: reject if any requested file already has 2+ active claimants
+      if (fileList.length > 0) {
+        const fileCounts = new Map<string, string[]>();
+        for (const claim of activeClaims) {
+          for (const f of claim.files) {
+            if (!fileCounts.has(f)) fileCounts.set(f, []);
+            fileCounts.get(f)!.push(claim.agent);
+          }
+        }
+        const locked: string[] = [];
+        for (const f of fileList) {
+          const claimants = fileCounts.get(f) ?? [];
+          if (claimants.length >= 2) {
+            const names = claimants.map(a => a.includes("/") ? a.split("/").pop()! : a);
+            locked.push(`${f} (claimed by ${names.join(", ")})`);
+          }
+        }
+        if (locked.length > 0) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: `SCOPE LOCKED: ${locked.length === 1 ? "File" : "Files"} already at max claimants (2):\n${locked.map(l => `  - ${l}`).join("\n")}\n\nPick different files or wait for a claim to release.`,
+            }],
+          };
+        }
+      }
+
       // Store the claim
       await db.insert("memories", {
         room_id: ctx.roomId,
