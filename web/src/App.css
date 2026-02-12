@@ -45,6 +45,31 @@ body {
 }
 
 /* ============================================
+   Route Loader (shown while lazy chunks load)
+   ============================================ */
+
+.route-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  width: 100%;
+}
+
+.route-loader-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--aurora-cyan, #4eeaff);
+  border-radius: 50%;
+  animation: route-spin 0.7s ease-in-out infinite;
+}
+
+@keyframes route-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
    Global Header (persistent across all pages)
    ============================================ */
 
