@@ -122,7 +122,7 @@ export function registerKnowledgeTools(
         const storedBy = meta.stored_by as string;
         const tagStr = tags.length ? ` {${tags.join(", ")}}` : "";
         const titleStr = title ? `**${title}**\n  ` : "";
-        lines.push(`${titleStr}${m.content?.replace(/^\[[^\]]*\]\s*/, "").slice(0, 500) ?? ""}${tagStr}\n  -- ${storedBy}, ${m.ts}`);
+        lines.push(`[${m.id}] ${titleStr}${m.content?.replace(/^\[[^\]]*\]\s*/, "").slice(0, 500) ?? ""}${tagStr}\n  -- ${storedBy}, ${m.ts}`);
       }
 
       return {

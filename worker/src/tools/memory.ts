@@ -272,7 +272,7 @@ export function registerMemoryTools(
         const agent = m.agent;
         const role = m.message_type ?? "";
         const content = m.content?.slice(0, 200) ?? "";
-        lines.push(`[${m.id.slice(0, 8)}] ${agent}:${role} (${m.ts}):\n  ${content}${(m.content?.length ?? 0) > 200 ? "..." : ""}`);
+        lines.push(`[${m.id}] ${agent}:${role} (${m.ts}):\n  ${content}${(m.content?.length ?? 0) > 200 ? "..." : ""}`);
       }
       lines.push("\nUse eywa_fetch(memory_id) to get full content.");
 
