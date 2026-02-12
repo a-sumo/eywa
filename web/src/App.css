@@ -8998,3 +8998,218 @@ body {
 .version-info-close:hover {
   background: rgba(21, 209, 255, 0.18);
 }
+
+/* ============================================
+   Rooms Index - Cross-subspace overview
+   ============================================ */
+
+.rooms-index {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  min-height: 100vh;
+  background: var(--bg-base);
+}
+
+.rooms-index-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.rooms-index-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.rooms-index-count {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.rooms-index-loading,
+.rooms-index-error {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.rooms-index-error {
+  color: var(--error);
+}
+
+.rooms-index-empty {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--text-tertiary);
+}
+
+.rooms-index-empty p {
+  margin-bottom: 1rem;
+}
+
+.rooms-index-cta {
+  display: inline-block;
+  padding: 0.5rem 1.25rem;
+  background: rgba(21, 209, 255, 0.1);
+  border: 1px solid rgba(21, 209, 255, 0.2);
+  border-radius: 8px;
+  color: var(--aurora-cyan);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.rooms-index-cta:hover {
+  background: rgba(21, 209, 255, 0.18);
+}
+
+.rooms-index-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.rooms-index-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease-in-out, background 0.15s ease-in-out;
+}
+
+.rooms-index-card:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-surface-hover);
+}
+
+.rooms-index-card-active {
+  border-color: rgba(21, 209, 255, 0.2);
+}
+
+.rooms-index-card-active:hover {
+  border-color: rgba(21, 209, 255, 0.35);
+}
+
+.rooms-index-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.rooms-index-card-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rooms-index-live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--aurora-green, #34d399);
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.5);
+  animation: rooms-pulse 2s ease-in-out infinite;
+}
+
+@keyframes rooms-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.rooms-index-card-slug {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono, monospace);
+}
+
+.rooms-index-card-destination {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rooms-index-card-dest-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.rooms-index-card-dest-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.rooms-index-card-progress {
+  position: relative;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.2rem;
+}
+
+.rooms-index-card-progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--aurora-cyan), var(--aurora-green, #34d399));
+  border-radius: 2px;
+  transition: width 0.3s ease-in-out;
+}
+
+.rooms-index-card-progress-label {
+  position: absolute;
+  right: 0;
+  top: 8px;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.rooms-index-card-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.rooms-index-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.rooms-index-stat-value {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.rooms-index-stat-active {
+  color: var(--aurora-green, #34d399);
+  font-size: 0.75rem;
+}
+
+.rooms-index-stat-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}

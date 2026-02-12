@@ -20,6 +20,7 @@ import { GlobalKnowledgeHub } from "./components/GlobalKnowledgeHub";
 import { NavigatorMap } from "./components/NavigatorMap";
 import { OperationsView } from "./components/OperationsView";
 import { SeedMonitor } from "./components/SeedMonitor";
+import { RoomsIndex } from "./components/RoomsIndex";
 import { VoicesView } from "./components/VoicesView";
 import { DocsLayout, DocsOverview } from "./components/DocsLayout";
 import { IntegrationGuide } from "./components/IntegrationGuide";
@@ -43,6 +44,7 @@ function App() {
         <AppHeader />
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/rooms" element={<RoomsIndex />} />
           <Route path="/cli-auth" element={<CLIAuth />} />
           <Route path="/docs" element={<DocsLayout />}>
             <Route index element={<DocsOverview />} />
