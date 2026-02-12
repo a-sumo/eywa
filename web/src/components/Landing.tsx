@@ -832,94 +832,10 @@ export function Landing() {
       {/* Quick Start Terminal */}
       <section className="landing-section" id="quickstart">
         <h2 className="landing-section-title">Running in 30 seconds</h2>
-        <p style={{ textAlign: "center", maxWidth: 560, margin: "0 auto 2rem", opacity: 0.6, fontSize: "0.95rem", lineHeight: 1.6 }}>
+        <p style={{ textAlign: "center", maxWidth: 560, margin: "0 auto 0", opacity: 0.6, fontSize: "0.95rem", lineHeight: 1.6 }}>
           One command creates your room, configures your agents, and connects your team.
         </p>
-        <div style={{
-          maxWidth: 640,
-          margin: "0 auto",
-          borderRadius: 12,
-          overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.08)",
-          background: "#0a0c14",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-        }}>
-          {/* Terminal chrome */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "10px 16px",
-            background: "rgba(255,255,255,0.03)",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
-          }}>
-            <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#ff5f57" }} />
-            <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#febc2e" }} />
-            <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#28c840" }} />
-            <span style={{ flex: 1, textAlign: "center", fontSize: "0.75rem", opacity: 0.4, fontFamily: "var(--font-sans)" }}>Terminal</span>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText("npx eywa-ai init");
-              }}
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 6,
-                padding: "3px 10px",
-                color: "rgba(255,255,255,0.5)",
-                fontSize: "0.7rem",
-                cursor: "pointer",
-                fontFamily: "var(--font-sans)",
-                transition: "all 0.2s ease-in-out",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-                e.currentTarget.style.color = "rgba(255,255,255,0.8)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                e.currentTarget.style.color = "rgba(255,255,255,0.5)";
-              }}
-            >
-              Copy
-            </button>
-          </div>
-          {/* Terminal body */}
-          <div style={{
-            padding: "20px 24px",
-            fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace",
-            fontSize: "0.85rem",
-            lineHeight: 1.8,
-            color: "var(--text-secondary)",
-          }}>
-            <div>
-              <span style={{ color: "var(--aurora-green)", opacity: 0.8 }}>$</span>{" "}
-              <span style={{ color: "var(--text-primary)" }}>npx eywa-ai init</span>
-            </div>
-            <div style={{ opacity: 0.5, marginTop: 4 }}>
-              Creating room...
-            </div>
-            <div style={{ marginTop: 4 }}>
-              <span style={{ color: "var(--aurora-green)" }}>✓</span>{" "}
-              Room created: <span style={{ color: "var(--aurora-cyan)" }}>acme-eng</span>
-            </div>
-            <div>
-              <span style={{ color: "var(--aurora-green)" }}>✓</span>{" "}
-              Configured Claude Code <span style={{ opacity: 0.4 }}>~/.claude/settings.json</span>
-            </div>
-            <div>
-              <span style={{ color: "var(--aurora-green)" }}>✓</span>{" "}
-              Configured Cursor <span style={{ opacity: 0.4 }}>~/.cursor/mcp.json</span>
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <span style={{ color: "var(--aurora-cyan)" }}>→</span>{" "}
-              Dashboard: <span style={{ color: "var(--aurora-purple)", textDecoration: "underline", textDecorationColor: "rgba(100,23,236,0.3)" }}>eywa.ai/r/acme-eng</span>
-            </div>
-            <div style={{ marginTop: 4, opacity: 0.5 }}>
-              Share this link with your team. Their agents auto-connect.
-            </div>
-          </div>
-        </div>
+        <TerminalDemo />
         <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
           <Link to="/docs/quickstart" className="btn-landing-secondary" style={{ fontSize: "0.85rem" }}>
             Read the full quickstart guide <IconArrowRight />
