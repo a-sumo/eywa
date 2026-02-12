@@ -1318,6 +1318,171 @@ async function cmdSeeds(slugArg) {
   }
 }
 
+// ── Approve ──────────────────────────────────────────
+
+const RISK_COLORS = { low: green, medium: yellow, high: red, critical: red };
+
+async function cmdApproveList(slugArg, showAll) {
+  const room = await resolveRoom(slugArg);
+
+  let query = supabase
+    .from("memories")
+    .select("id,agent,content,metadata,ts")
+    .eq("room_id", room.id)
+    .eq("message_type", "approval_request")
+    .order("ts", { ascending: false })
+    .limit(20);
+
+  if (!showAll) {
+    query = query.eq("metadata->>status", "pending");
+  }
+
+  const { data: rows, error } = await query;
+
+  if (error) {
+    console.error(red("Query failed:"), error.message);
+    process.exit(1);
+  }
+
+  if (!rows?.length) {
+    const msg = showAll ? "No approval requests found." : "No pending approval requests.";
+    console.log(dim(`\n  ${msg}\n`));
+    return;
+  }
+
+  const title = showAll ? "Approvals" : "Pending Approvals";
+  console.log(`\n  ${bold(title)} ${dim("/" + room.slug)} (${rows.length})\n`);
+
+  for (const row of rows) {
+    const meta = row.metadata ?? {};
+    const status = meta.status || "pending";
+    const risk = meta.risk_level || "medium";
+    const action = meta.action_description || "Unknown action";
+    const scope = meta.scope || null;
+    const ctx = meta.context || null;
+    const riskColor = RISK_COLORS[risk] || yellow;
+
+    let badge;
+    if (status === "pending") badge = yellow("? pending");
+    else if (status === "approved") badge = green("v approved");
+    else if (status === "denied") badge = red("x denied");
+    else badge = dim(status);
+
+    console.log(`  ${bold(action.slice(0, 120))}`);
+    console.log(`  ${cyan(row.id.slice(0, 8))}  ${badge}  ${riskColor(risk + " risk")}  by ${dim(row.agent)}  ${dim(timeAgo(row.ts))}`);
+    if (scope) console.log(`    ${dim("Scope:")} ${scope.slice(0, 100)}`);
+    if (ctx) console.log(`    ${dim("Context:")} ${ctx.slice(0, 100)}`);
+
+    if (status === "approved" || status === "denied") {
+      const resolvedBy = meta.resolved_by || "unknown";
+      const msg = meta.response_message || "";
+      console.log(`    ${dim(`${status === "approved" ? "Approved" : "Denied"} by ${resolvedBy}${msg ? ": " + msg.slice(0, 80) : ""}`)}`);
+    }
+    console.log();
+  }
+}
+
+async function cmdApproveResolve(idPrefix, decision, message) {
+  if (!idPrefix) {
+    console.error(`Usage: ${bold(`eywa approve ${decision === "approved" ? "yes" : "no"} <id-prefix> ["message"]`)}`);
+    process.exit(1);
+  }
+
+  const room = await resolveRoom(null);
+  const fromAgent = cliAgent();
+
+  // Find the approval by partial ID
+  let query = supabase
+    .from("memories")
+    .select("id,agent,metadata,content")
+    .eq("room_id", room.id)
+    .eq("message_type", "approval_request");
+
+  if (idPrefix.length < 36) {
+    query = query.ilike("id", `${idPrefix}%`);
+  } else {
+    query = query.eq("id", idPrefix);
+  }
+
+  const { data: rows, error } = await query.limit(5);
+
+  if (error) {
+    console.error(red("Query failed:"), error.message);
+    process.exit(1);
+  }
+
+  if (!rows?.length) {
+    console.error(red(`  Approval not found: ${idPrefix}`));
+    process.exit(1);
+  }
+
+  if (rows.length > 1) {
+    console.error(yellow(`  Multiple matches for "${idPrefix}":`));
+    for (const r of rows) {
+      const m = r.metadata ?? {};
+      console.error(`    ${cyan(r.id.slice(0, 8))} ${(m.action_description || "unknown").slice(0, 60)}`);
+    }
+    console.error(dim("  Provide a more specific ID."));
+    process.exit(1);
+  }
+
+  const row = rows[0];
+  const meta = row.metadata ?? {};
+
+  if (meta.status !== "pending") {
+    console.error(yellow(`  Already ${meta.status} by ${meta.resolved_by || "unknown"}.`));
+    process.exit(1);
+  }
+
+  // Update the approval
+  const updatedMeta = {
+    ...meta,
+    status: decision,
+    resolved_by: fromAgent,
+    resolved_at: new Date().toISOString(),
+    response_message: message ?? "",
+  };
+
+  const { error: updateErr } = await supabase
+    .from("memories")
+    .update({ metadata: updatedMeta })
+    .eq("id", row.id);
+
+  if (updateErr) {
+    console.error(red("Failed to update approval:"), updateErr.message);
+    process.exit(1);
+  }
+
+  // Inject notification to the requesting agent
+  const action = meta.action_description || "Unknown action";
+  const notifContent = decision === "approved"
+    ? `APPROVED by ${fromAgent}: ${action}${message ? ". " + message : ". Proceed."}`
+    : `DENIED by ${fromAgent}: ${action}${message ? ". Reason: " + message : ". Do NOT proceed."}`;
+
+  await supabase.from("memories").insert({
+    room_id: room.id,
+    agent: fromAgent,
+    session_id: `cli_${Date.now()}`,
+    message_type: "injection",
+    content: notifContent,
+    token_count: estimateTokens(notifContent),
+    metadata: {
+      event: "context_injection",
+      from_agent: fromAgent,
+      target_agent: row.agent,
+      label: `Approval ${decision}`,
+      priority: "high",
+    },
+  });
+
+  const verb = decision === "approved" ? "Approved" : "Denied";
+  const icon = decision === "approved" ? green("v") : red("x");
+  console.log(`\n  ${icon} ${bold(verb)}: ${action.slice(0, 120)}`);
+  console.log(`  ${dim(`ID: ${row.id.slice(0, 8)}, agent: ${row.agent}`)}`);
+  if (message) console.log(`  ${dim("Message:")} ${message}`);
+  console.log(dim("  The agent will see this on their next tool call.\n"));
+}
+
 // ── CLI Router ─────────────────────────────────────────
 
 const args = process.argv.slice(2);
@@ -1342,6 +1507,9 @@ ${bold("  Observe:")}
     claims [room]                         Active work claims (who's working on what)
     metrics [room]                        Team curvature, throughput, success rate
     seeds [room]                          Seed health: active, stalled, success rate
+    approve [room]                        List pending approval requests
+    approve yes <id> ["msg"]              Approve a request
+    approve no <id> ["reason"]            Deny a request
 
 ${bold("  Navigate:")}
     dest [room]                           View current destination
@@ -1433,6 +1601,21 @@ ${bold("  Examples:")}
       case "seeds":
         await cmdSeeds(args[1]);
         break;
+
+      case "approve": {
+        const sub = args[1];
+        if (sub === "yes") {
+          await cmdApproveResolve(args[2], "approved", args.slice(3).join(" ") || null);
+        } else if (sub === "no") {
+          await cmdApproveResolve(args[2], "denied", args.slice(3).join(" ") || null);
+        } else {
+          // "approve" or "approve <room-slug>" or "approve --all"
+          const showAll = args.includes("--all");
+          const slugArg = sub && sub !== "--all" ? sub : null;
+          await cmdApproveList(slugArg, showAll);
+        }
+        break;
+      }
 
       case "knowledge":
       case "kb":
