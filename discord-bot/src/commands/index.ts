@@ -22,6 +22,7 @@ import * as network from "./network.js";
 import * as claims from "./claims.js";
 import * as tasks from "./tasks.js";
 import * as approve from "./approve.js";
+import * as metrics from "./metrics.js";
 
 export interface Command {
   data: SharedSlashCommand;
@@ -48,6 +49,7 @@ export const commands: Command[] = [
   claims,
   tasks,
   approve,
+  metrics,
 ];
 
 export const commandMap = new Map<string, Command>(
