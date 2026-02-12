@@ -2344,6 +2344,108 @@ body {
   height: 16px;
 }
 
+/* Trust & Security Section */
+.landing-trust-section {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+.landing-trust-subtitle {
+  text-align: center;
+  max-width: 640px;
+  margin: -1.5rem auto 3rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: rgba(240, 240, 245, 0.6);
+}
+
+.landing-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto 3rem;
+}
+
+.landing-trust-card {
+  padding: 1.75rem;
+  border-radius: var(--radius-lg, 12px);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+}
+
+.landing-trust-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.landing-trust-card-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.landing-trust-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  color: #f0f0f5;
+}
+
+.landing-trust-card p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(240, 240, 245, 0.55);
+  margin: 0;
+}
+
+.landing-trust-dataflow {
+  max-width: 620px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.landing-trust-flow-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(240, 240, 245, 0.45);
+  margin-bottom: 0.75rem;
+}
+
+.landing-trust-flow-items {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.landing-trust-tag {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.landing-trust-tag.trust-yes {
+  background: rgba(78, 234, 255, 0.08);
+  border: 1px solid rgba(78, 234, 255, 0.2);
+  color: rgba(78, 234, 255, 0.85);
+}
+
+.landing-trust-tag.trust-no {
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+  color: rgba(248, 113, 113, 0.7);
+}
+
 /* Memory Persistence Section */
 .landing-memory-section {
   background: linear-gradient(180deg, rgba(10, 10, 15, 1) 0%, rgba(18, 14, 28, 1) 50%, rgba(10, 10, 15, 1) 100%);
@@ -2598,6 +2700,14 @@ body {
 
   .landing-gemini-section {
     padding: 3rem 1rem;
+  }
+
+  .landing-trust-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-trust-subtitle {
+    font-size: 0.95rem;
   }
 
   .landing-memory-section {
@@ -9136,6 +9246,150 @@ body {
   opacity: 0.6;
   margin-bottom: var(--space-2);
   display: block;
+}
+
+/* ============================================
+   Knowledge Page (tabbed: Room + Network)
+   ============================================ */
+
+.knowledge-page {
+  padding: var(--space-6);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.knowledge-page .knowledge-hub {
+  padding: 0;
+}
+
+.knowledge-page-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-2);
+}
+
+.knowledge-page-tab {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: -3px;
+}
+
+.knowledge-page-tab:hover {
+  color: var(--text-secondary);
+}
+
+.knowledge-page-tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--aurora-cyan, #15D1FF);
+}
+
+.room-knowledge-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.room-knowledge-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.room-knowledge-desc {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0 0 var(--space-4) 0;
+  line-height: var(--leading-relaxed);
+}
+
+.room-knowledge-desc code {
+  font-size: var(--text-xs);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  color: var(--aurora-cyan, #15D1FF);
+}
+
+.knowledge-card-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--aurora-purple, #A78BFA);
+  margin-bottom: var(--space-2);
+}
+
+.knowledge-card-agent {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  opacity: 0.7;
+}
+
+.knowledge-card-actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.knowledge-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  opacity: 0.4;
+  transition: all var(--transition-fast);
+}
+
+.knowledge-delete-btn:hover {
+  opacity: 1;
+  color: var(--aurora-pink, #EC4899);
+}
+
+.knowledge-delete-confirm {
+  background: rgba(236, 72, 153, 0.15);
+  border: 1px solid rgba(236, 72, 153, 0.3);
+  color: var(--aurora-pink, #EC4899);
+  font-size: var(--text-xs);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.knowledge-delete-confirm:hover {
+  background: rgba(236, 72, 153, 0.25);
+}
+
+.knowledge-delete-cancel {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.knowledge-delete-cancel:hover {
+  border-color: var(--border-default);
+  color: var(--text-secondary);
 }
 
 /* ============================================

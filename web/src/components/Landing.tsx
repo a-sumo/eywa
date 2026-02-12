@@ -556,6 +556,78 @@ export function Landing() {
         </div>
       </section>
 
+      {/* Trust & Security */}
+      <section className="landing-section landing-section-alt landing-trust-section">
+        <h2 className="landing-section-title">Built for teams that care about what they share</h2>
+        <p className="landing-trust-subtitle">
+          Eywa sees agent metadata: task names, progress, decisions, system operations.
+          Your source code and credentials never leave your machine.
+        </p>
+
+        <div className="landing-trust-grid">
+          <div className="landing-trust-card">
+            <div className="landing-trust-card-icon">
+              <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect className="anim-cube-back" x="4" y="4" width="24" height="24" rx="4" strokeWidth="2"/>
+                <path className="anim-stream s1" d="M16 4v24" strokeWidth="1.5" strokeDasharray="2 3"/>
+                <path className="anim-stream s2" d="M4 16h24" strokeWidth="1.5" strokeDasharray="2 3"/>
+                <circle className="anim-neuron n1" cx="10" cy="10" r="2.5" strokeWidth="2"/>
+                <circle className="anim-neuron n2" cx="22" cy="10" r="2.5" strokeWidth="2"/>
+                <circle className="anim-neuron n3" cx="10" cy="22" r="2.5" strokeWidth="2"/>
+                <circle className="anim-neuron n4" cx="22" cy="22" r="2.5" strokeWidth="2"/>
+              </svg>
+            </div>
+            <h3>Metadata only</h3>
+            <p>Eywa syncs what agents are doing, not what they're reading. Task descriptions, operation logs, and progress reports travel through the coordination layer. File contents, environment variables, and API keys stay local.</p>
+          </div>
+
+          <div className="landing-trust-card">
+            <div className="landing-trust-card-icon">
+              <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <polyline className="anim-bracket bl" points="11,6 4,16 11,26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline className="anim-bracket br" points="21,6 28,16 21,26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle className="anim-target-center" cx="16" cy="16" r="3" strokeWidth="2"/>
+              </svg>
+            </div>
+            <h3>Open source</h3>
+            <p>Every line of Eywa is on GitHub. The MCP server, the dashboard, the CLI, the Discord bot. You can read exactly what data flows where and verify it yourself.</p>
+          </div>
+
+          <div className="landing-trust-card">
+            <div className="landing-trust-card-icon">
+              <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect className="anim-cube-back" x="6" y="10" width="20" height="16" rx="3" strokeWidth="2"/>
+                <path className="anim-stream s1" d="M6 16h20" strokeWidth="1.5"/>
+                <circle className="anim-neuron n1" cx="16" cy="6" r="4" strokeWidth="2"/>
+                <path className="anim-synapse sy1" d="M12 10V8" strokeWidth="2" strokeLinecap="round"/>
+                <path className="anim-synapse sy2" d="M20 10V8" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <h3>Self-hostable</h3>
+            <p>Run the entire stack on your own infrastructure. The worker deploys to Cloudflare, the database to any Supabase instance (including self-hosted), the dashboard wherever you serve static files.</p>
+          </div>
+        </div>
+
+        <div className="landing-trust-dataflow">
+          <div className="landing-trust-flow-label">What Eywa sees</div>
+          <div className="landing-trust-flow-items">
+            <span className="landing-trust-tag trust-yes">Task descriptions</span>
+            <span className="landing-trust-tag trust-yes">Agent status</span>
+            <span className="landing-trust-tag trust-yes">Operation logs</span>
+            <span className="landing-trust-tag trust-yes">Decisions</span>
+            <span className="landing-trust-tag trust-yes">Progress</span>
+          </div>
+          <div className="landing-trust-flow-label">What stays on your machine</div>
+          <div className="landing-trust-flow-items">
+            <span className="landing-trust-tag trust-no">Source code</span>
+            <span className="landing-trust-tag trust-no">API keys</span>
+            <span className="landing-trust-tag trust-no">Environment variables</span>
+            <span className="landing-trust-tag trust-no">File contents</span>
+            <span className="landing-trust-tag trust-no">Credentials</span>
+          </div>
+        </div>
+      </section>
+
       {/* Powered by Gemini */}
       <section className="landing-section landing-gemini-section">
         <div className="landing-gemini-content">

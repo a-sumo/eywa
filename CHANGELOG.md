@@ -29,6 +29,7 @@ All notable features and changes. One line per feature. Agents append here after
 - NavigatorMap auto-sync: stable room IDs instead of creating new rooms each sync, periodic refresh based on seed activity
 - Agent prompt: added strategic mandate, vision document references, web browsing guidance, and expanded self-directing protocol
 - Landing page memory persistence: narrative section about stored context, permanence, structured knowledge, and data ownership with animated crystal icon
+- Landing page trust and security: three-card section (metadata only, open source, self-hostable) with data flow visualization showing what Eywa sees vs what stays local
 
 ## 2026-02-10
 
