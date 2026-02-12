@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useRoom } from "../hooks/useRoom";
+import { useFold } from "../hooks/useFold";
 import { FlowBackground } from "./FlowBackground";
 import EywaLogo from "./EywaLogo";
 import { TerminalDemo } from "./TerminalDemo";
@@ -140,7 +140,7 @@ const IconDiscord = () => (
 );
 
 export function Landing() {
-  const { createRoom, createDemoRoom, creating, error } = useRoom();
+  const { createFold, createDemoFold, creating, error } = useFold();
   const stars = useGitHubStars();
 
   return (
@@ -163,7 +163,7 @@ export function Landing() {
           <div className="landing-hero-actions">
             <button
               className="btn-landing-primary btn-large"
-              onClick={() => createDemoRoom()}
+              onClick={() => createDemoFold()}
               disabled={creating}
             >
               {creating ? "Creating..." : "Try the Demo"}
@@ -171,10 +171,10 @@ export function Landing() {
             </button>
             <button
               className="btn-landing-secondary"
-              onClick={() => createRoom()}
+              onClick={() => createFold()}
               disabled={creating}
             >
-              Create Your Room
+              Create Your Fold
             </button>
           </div>
           {error && (
@@ -185,7 +185,7 @@ export function Landing() {
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
               <span>{error}</span>
-              <button className="landing-error-retry" onClick={() => createDemoRoom()}>
+              <button className="landing-error-retry" onClick={() => createDemoFold()}>
                 Try again
               </button>
             </div>
@@ -289,7 +289,7 @@ export function Landing() {
             <div className="landing-step-number">1</div>
             <div className="landing-step-content">
               <h3>Connect your team</h3>
-              <p><code className="landing-code">npx eywa-ai init</code> creates a room and auto-configures every agent on your machine. Each teammate runs the same command to join.</p>
+              <p><code className="landing-code">npx eywa-ai init</code> creates a fold and auto-configures every agent on your machine. Each teammate runs the same command to join.</p>
             </div>
           </div>
           <div className="landing-step">
@@ -323,7 +323,7 @@ export function Landing() {
             <div className="landing-proof-dots">
               <span /><span /><span />
             </div>
-            <div className="landing-proof-url">eywa.ai/room/acme-eng</div>
+            <div className="landing-proof-url">eywa.ai/fold/acme-eng</div>
           </div>
 
           {/* Destination banner */}
@@ -464,7 +464,7 @@ export function Landing() {
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconNetwork /></div>
             <h3>Global Insights Network</h3>
-            <p>Publish anonymized patterns from your room. Query cross-room intelligence so your agents learn from what worked elsewhere.</p>
+            <p>Publish anonymized patterns from your fold. Query cross-fold intelligence so your agents learn from what worked elsewhere.</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconLink /></div>
@@ -484,7 +484,7 @@ export function Landing() {
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconChat /></div>
             <h3>Discord & CLI</h3>
-            <p>15 slash commands for team steering from Discord. Zero-auth CLI for room setup, status checks, and context injection from your terminal.</p>
+            <p>15 slash commands for team steering from Discord. Zero-auth CLI for fold setup, status checks, and context injection from your terminal.</p>
           </div>
         </div>
       </section>
@@ -730,7 +730,7 @@ export function Landing() {
             </svg>
             <div>
               <strong>Yours, not theirs</strong>
-              <span>Eywa is a conduit, not a syphon. Your memories stay in your room. They serve your team, not a training pipeline.</span>
+              <span>Eywa is a conduit, not a syphon. Your memories stay in your fold. They serve your team, not a training pipeline.</span>
             </div>
           </div>
         </div>
@@ -833,7 +833,7 @@ export function Landing() {
       <section className="landing-section" id="quickstart">
         <h2 className="landing-section-title">Running in 30 seconds</h2>
         <p style={{ textAlign: "center", maxWidth: 560, margin: "0 auto 0", opacity: 0.6, fontSize: "0.95rem", lineHeight: 1.6 }}>
-          One command creates your room, configures your agents, and connects your team.
+          One command creates your fold, configures your agents, and connects your team.
         </p>
         <TerminalDemo />
         <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
@@ -854,10 +854,10 @@ export function Landing() {
               <li>Up to 5 team members</li>
               <li>Unlimited workspaces</li>
               <li>7-day history</li>
-              <li>10,000 memories per room</li>
+              <li>10,000 memories per fold</li>
               <li>All integrations + agent types</li>
             </ul>
-            <button className="btn-landing-secondary" style={{ width: "100%" }} onClick={() => createDemoRoom()} disabled={creating}>
+            <button className="btn-landing-secondary" style={{ width: "100%" }} onClick={() => createDemoFold()} disabled={creating}>
               Get Started Free
             </button>
           </div>
@@ -868,7 +868,7 @@ export function Landing() {
             <ul className="landing-pricing-features">
               <li>Unlimited team members</li>
               <li>90-day history</li>
-              <li>100,000 memories per room</li>
+              <li>100,000 memories per fold</li>
               <li>Team knowledge base</li>
               <li>Timeline rewind + forking</li>
             </ul>
@@ -925,7 +925,7 @@ export function Landing() {
               <a href="#features">Features</a>
               <a href="#pricing">Pricing</a>
               <a href="#quickstart">Quick Start</a>
-              <button className="landing-footer-link-btn" onClick={() => createDemoRoom()} disabled={creating}>Try the Demo</button>
+              <button className="landing-footer-link-btn" onClick={() => createDemoFold()} disabled={creating}>Try the Demo</button>
             </div>
             <div className="landing-footer-col">
               <h4>Resources</h4>

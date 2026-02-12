@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase, type Memory, type GlobalInsight } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
@@ -44,11 +44,11 @@ function extractDestination(memories: Memory[]): Destination | null {
 
 function DestinationEditor({
   current,
-  roomId,
+  foldId,
   onClose,
 }: {
   current: Destination | null;
-  roomId: string;
+  foldId: string;
   onClose: () => void;
 }) {
   const [dest, setDest] = useState(current?.destination || "");
@@ -59,7 +59,7 @@ function DestinationEditor({
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    if (!dest.trim() || !roomId) return;
+    if (!dest.trim() || !foldId) return;
     setSaving(true);
     const milestones = milestoneText
       .split("\n")
@@ -71,7 +71,7 @@ function DestinationEditor({
       progress[m] = current?.progress[m] || false;
     }
     await supabase.from("memories").insert({
-      room_id: roomId,
+      fold_id: foldId,
       agent: "web-user",
       session_id: `web_${Date.now()}`,
       message_type: "knowledge",
@@ -1051,7 +1051,7 @@ const RISK_COLORS: Record<string, string> = {
   critical: "#ef4444",
 };
 
-function ApprovalCard({ approval, roomId }: { approval: PendingApproval; roomId: string }) {
+function ApprovalCard({ approval, foldId }: { approval: PendingApproval; foldId: string }) {
   const [resolving, setResolving] = useState(false);
   const [resolved, setResolved] = useState<"approved" | "denied" | null>(null);
 
@@ -1081,7 +1081,7 @@ function ApprovalCard({ approval, roomId }: { approval: PendingApproval; roomId:
         : `DENIED: Your request "${approval.action.slice(0, 100)}" was denied.`;
 
       await supabase.from("memories").insert({
-        room_id: roomId,
+        fold_id: foldId,
         agent: "web-user",
         session_id: `web_${Date.now()}`,
         message_type: "injection",
@@ -1252,7 +1252,7 @@ function DeployHealth({ deploys }: { deploys: DeployEntry[] }) {
 // --- Main ---
 
 export function ThreadTree() {
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
@@ -1260,7 +1260,7 @@ export function ThreadTree() {
   const [timeRange, setTimeRange] = useState(24);
   const sinceMs = timeRange > 0 ? timeRange * 60 * 60 * 1000 : undefined;
 
-  const { memories, loading, error } = useRealtimeMemories(room?.id ?? null, 500, sinceMs);
+  const { memories, loading, error } = useRealtimeMemories(fold?.id ?? null, 500, sinceMs);
 
   // Agent card expansion
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
@@ -1281,7 +1281,7 @@ export function ThreadTree() {
     send: sendChat,
     clear: clearChat,
     autoContextError,
-  } = useGeminiChat("", room?.id);
+  } = useGeminiChat("", fold?.id);
   const [chatInput, setChatInput] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
@@ -1352,11 +1352,11 @@ export function ThreadTree() {
   const [injectSending, setInjectSending] = useState(false);
 
   const handleInject = useCallback(async () => {
-    if (!injectContent.trim() || !room) return;
+    if (!injectContent.trim() || !fold) return;
     setInjectSending(true);
     try {
       await supabase.from("memories").insert({
-        room_id: room.id,
+        fold_id: fold.id,
         agent: "web-user",
         session_id: `web_${Date.now()}`,
         message_type: "injection",
@@ -1374,7 +1374,7 @@ export function ThreadTree() {
     } finally {
       setInjectSending(false);
     }
-  }, [injectContent, injectTarget, injectPriority, room]);
+  }, [injectContent, injectTarget, injectPriority, fold]);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -1521,14 +1521,14 @@ export function ThreadTree() {
   }
 
   // Empty state - onboarding (skip for demo rooms, they always have seeded data)
-  const isDemo = room?.is_demo ?? false;
+  const isDemo = fold?.is_demo ?? false;
   const [dismissedOnboarding, setDismissedOnboarding] = useState(false);
   if (!loading && memories.length === 0 && !isDemo && !dismissedOnboarding) {
     return (
       <div className="hub-view">
         <OnboardingOverlay
           slug={slug || ""}
-          roomId={room?.id || ""}
+          foldId={fold?.id || ""}
           onDismiss={() => setDismissedOnboarding(true)}
         />
       </div>
@@ -1593,7 +1593,7 @@ export function ThreadTree() {
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span>Could not load room data: {error}</span>
+          <span>Could not load fold data: {error}</span>
         </div>
       )}
 
@@ -1601,7 +1601,7 @@ export function ThreadTree() {
       {editingDest ? (
         <DestinationEditor
           current={destination}
-          roomId={room?.id || ""}
+          foldId={fold?.id || ""}
           onClose={() => setEditingDest(false)}
         />
       ) : destination ? (
@@ -1646,10 +1646,10 @@ export function ThreadTree() {
                       key={m}
                       className={`hub-milestone hub-milestone-clickable ${destination.progress[m] ? "hub-milestone-done" : ""}`}
                       onClick={async () => {
-                        if (!room) return;
+                        if (!fold) return;
                         const newProgress = { ...destination.progress, [m]: !destination.progress[m] };
                         await supabase.from("memories").insert({
-                          room_id: room.id,
+                          fold_id: fold.id,
                           agent: "web-user",
                           session_id: `web_${Date.now()}`,
                           message_type: "knowledge",
@@ -1690,7 +1690,7 @@ export function ThreadTree() {
       {/* Deploy health */}
       <DeployHealth deploys={deploys} />
 
-      {/* Network routes (cross-room intelligence) */}
+      {/* Network routes (cross-fold intelligence) */}
       {networkRoutes.length > 0 && (
         <div className="hub-network-routes">
           <div className="hub-network-routes-header">
@@ -1726,7 +1726,7 @@ export function ThreadTree() {
         <div className="hub-approvals">
           <div className="hub-section-label">Pending Approvals ({pendingApprovals.length})</div>
           {pendingApprovals.map((a) => (
-            <ApprovalCard key={a.id} approval={a} roomId={room?.id || ""} />
+            <ApprovalCard key={a.id} approval={a} foldId={fold?.id || ""} />
           ))}
         </div>
       )}
@@ -1798,7 +1798,7 @@ export function ThreadTree() {
         <div className="hub-chat-messages">
           {autoContextError && (
             <div className="hub-steering-empty" style={{ color: "var(--color-text-secondary)", fontSize: "0.75rem", opacity: 0.7 }}>
-              Room context unavailable. Steering works but without live agent data.
+              Fold context unavailable. Steering works but without live agent data.
             </div>
           )}
           {chatMessages.length === 0 && !chatLoading && !autoContextError && (

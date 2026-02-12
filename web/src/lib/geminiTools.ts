@@ -43,7 +43,7 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
   {
     name: "get_agent_status",
     description:
-      "Get current status of all agents in the room. Returns each agent's name, whether they are active (activity in last 5 minutes), their latest task/content, session count, and last seen time. Use this to answer questions about what agents are doing.",
+      "Get current status of all agents in the fold. Returns each agent's name, whether they are active (activity in last 5 minutes), their latest task/content, session count, and last seen time. Use this to answer questions about what agents are doing.",
     parameters: {
       type: "object",
       properties: {},
@@ -108,7 +108,7 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
   {
     name: "get_destination",
     description:
-      "Get the room's current destination (point B) and progress toward it. Returns the target state, milestones, completion percentage, and notes. Use this to answer questions about where the team is headed and how far along they are.",
+      "Get the fold's current destination (point B) and progress toward it. Returns the target state, milestones, completion percentage, and notes. Use this to answer questions about where the team is headed and how far along they are.",
     parameters: {
       type: "object",
       properties: {},
@@ -117,7 +117,7 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
   {
     name: "query_network",
     description:
-      "Search the global knowledge network for insights shared by agents across all workspaces. Use this to find patterns, gotchas, conventions, or discoveries that could help the current room. Returns anonymized insights with domain tags.",
+      "Search the global knowledge network for insights shared by agents across all workspaces. Use this to find patterns, gotchas, conventions, or discoveries that could help the current fold. Returns anonymized insights with domain tags.",
     parameters: {
       type: "object",
       properties: {
@@ -136,7 +136,7 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
   {
     name: "inject_to_agent",
     description:
-      "Send instructions, context, or feedback to a running agent. The agent will see this on their next tool call. Use 'all' to broadcast to every agent in the room. Use this when the user wants to steer an agent, give it new instructions, or share context.",
+      "Send instructions, context, or feedback to a running agent. The agent will see this on their next tool call. Use 'all' to broadcast to every agent in the fold. Use this when the user wants to steer an agent, give it new instructions, or share context.",
     parameters: {
       type: "object",
       properties: {
@@ -207,7 +207,7 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
   {
     name: "create_task",
     description:
-      "Create a task in the room's task queue. Tasks are structured work items that agents can pick up and track. Use this when the user wants to queue work, assign tasks, or break down goals into actionable items.",
+      "Create a task in the fold's task queue. Tasks are structured work items that agents can pick up and track. Use this when the user wants to queue work, assign tasks, or break down goals into actionable items.",
     parameters: {
       type: "object",
       properties: {
@@ -238,7 +238,7 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
   {
     name: "get_tasks",
     description:
-      "List tasks in the room. Returns tasks sorted by priority then time. Filter by status or milestone. Use this when asked about what needs to be done, task queue, or work items.",
+      "List tasks in the fold. Returns tasks sorted by priority then time. Filter by status or milestone. Use this when asked about what needs to be done, task queue, or work items.",
     parameters: {
       type: "object",
       properties: {
@@ -283,7 +283,7 @@ export const TOOL_DECLARATIONS: GeminiToolDeclaration[] = [
   {
     name: "set_destination",
     description:
-      "Set or update the room's destination (point B) and milestones. Use this when the user wants to define a goal, update progress, or change the team's direction.",
+      "Set or update the fold's destination (point B) and milestones. Use this when the user wants to define a goal, update progress, or change the team's direction.",
     parameters: {
       type: "object",
       properties: {
@@ -322,37 +322,37 @@ export function getToolsPayload() {
  * Execute a tool call and return the result string.
  */
 export async function executeTool(
-  roomId: string,
+  foldId: string,
   call: GeminiFunctionCall
 ): Promise<GeminiFunctionResponse> {
   let result: string;
   try {
     switch (call.name) {
       case "get_agent_status":
-        result = await handleGetAgentStatus(roomId);
+        result = await handleGetAgentStatus(foldId);
         break;
       case "get_thread":
         result = await handleGetThread(
-          roomId,
+          foldId,
           call.args.agent as string,
           (call.args.limit as number) || 30
         );
         break;
       case "get_knowledge":
         result = await handleGetKnowledge(
-          roomId,
+          foldId,
           call.args.search as string | undefined,
           call.args.tag as string | undefined
         );
         break;
       case "detect_patterns":
-        result = await handleDetectPatterns(roomId);
+        result = await handleDetectPatterns(foldId);
         break;
       case "get_distress_signals":
-        result = await handleGetDistressSignals(roomId);
+        result = await handleGetDistressSignals(foldId);
         break;
       case "get_destination":
-        result = await handleGetDestination(roomId);
+        result = await handleGetDestination(foldId);
         break;
       case "query_network":
         result = await handleQueryNetwork(
@@ -362,7 +362,7 @@ export async function executeTool(
         break;
       case "inject_to_agent":
         result = await handleInjectToAgent(
-          roomId,
+          foldId,
           call.args.target as string,
           call.args.content as string,
           (call.args.priority as string) || "normal",
@@ -370,24 +370,24 @@ export async function executeTool(
         break;
       case "approve_action":
         result = await handleApproveAction(
-          roomId,
+          foldId,
           call.args.approval_id as string,
           call.args.message as string | undefined,
         );
         break;
       case "deny_action":
         result = await handleDenyAction(
-          roomId,
+          foldId,
           call.args.approval_id as string,
           call.args.reason as string,
         );
         break;
       case "get_pending_approvals":
-        result = await handleGetPendingApprovals(roomId);
+        result = await handleGetPendingApprovals(foldId);
         break;
       case "create_task":
         result = await handleCreateTask(
-          roomId,
+          foldId,
           call.args.title as string,
           call.args.description as string | undefined,
           (call.args.priority as string) || "normal",
@@ -397,14 +397,14 @@ export async function executeTool(
         break;
       case "get_tasks":
         result = await handleGetTasks(
-          roomId,
+          foldId,
           call.args.status as string | undefined,
           call.args.milestone as string | undefined,
         );
         break;
       case "update_task":
         result = await handleUpdateTask(
-          roomId,
+          foldId,
           call.args.task_id as string,
           call.args.status as string | undefined,
           call.args.assigned_to as string | undefined,
@@ -413,7 +413,7 @@ export async function executeTool(
         break;
       case "set_destination":
         result = await handleSetDestination(
-          roomId,
+          foldId,
           call.args.destination as string,
           call.args.milestones as string | undefined,
           call.args.notes as string | undefined,
@@ -436,16 +436,16 @@ export async function executeTool(
 // get_agent_status
 // ---------------------------------------------------------------------------
 
-async function handleGetAgentStatus(roomId: string): Promise<string> {
+async function handleGetAgentStatus(foldId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .order("ts", { ascending: false })
     .limit(500);
 
   if (error) return `Database error: ${error.message}`;
-  if (!data || data.length === 0) return "No agent activity found in this room.";
+  if (!data || data.length === 0) return "No agent activity found in this fold.";
 
   // Group by agent
   const byAgent = new Map<
@@ -532,7 +532,7 @@ async function handleGetAgentStatus(roomId: string): Promise<string> {
     lines.push(`  Task: ${task}`);
   }
 
-  return `${sorted.length} agents in room:\n\n${lines.join("\n")}`;
+  return `${sorted.length} agents in fold:\n\n${lines.join("\n")}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -540,7 +540,7 @@ async function handleGetAgentStatus(roomId: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 async function handleGetThread(
-  roomId: string,
+  foldId: string,
   agent: string,
   limit: number
 ): Promise<string> {
@@ -548,7 +548,7 @@ async function handleGetThread(
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .ilike("agent", `%${agent}%`)
     .order("ts", { ascending: true })
     .limit(limit);
@@ -573,14 +573,14 @@ async function handleGetThread(
 // ---------------------------------------------------------------------------
 
 async function handleGetKnowledge(
-  roomId: string,
+  foldId: string,
   search?: string,
   tag?: string
 ): Promise<string> {
   let query = supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("message_type", "knowledge")
     .order("ts", { ascending: false })
     .limit(30);
@@ -672,7 +672,7 @@ function buildAgentProfile(agent: string, mems: Memory[]): string {
   return lines.join("\n");
 }
 
-const PATTERN_PROMPT = `You are analyzing AI agents working in the same room toward a shared destination. Below is each agent's recent activity profile.
+const PATTERN_PROMPT = `You are analyzing AI agents working in the same fold toward a shared destination. Below is each agent's recent activity profile.
 
 Identify ONLY patterns that matter for steering. Classify each as:
 - REDUNDANCY: Agents working toward the SAME goal with the SAME approach. Could be merged. Focus on semantic intent, not surface keywords or file names.
@@ -719,13 +719,13 @@ async function analyzeWithGemini(profiles: string[]): Promise<string | null> {
   return null;
 }
 
-async function handleDetectPatterns(roomId: string): Promise<string> {
+async function handleDetectPatterns(foldId: string): Promise<string> {
   const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .gte("ts", thirtyMinAgo)
     .order("ts", { ascending: false })
     .limit(300);
@@ -791,12 +791,12 @@ async function handleDetectPatterns(roomId: string): Promise<string> {
 // get_distress_signals
 // ---------------------------------------------------------------------------
 
-async function handleGetDistressSignals(roomId: string): Promise<string> {
+async function handleGetDistressSignals(foldId: string): Promise<string> {
   // Get distress signals
   const { data: distress, error: dErr } = await supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("metadata->>event", "distress")
     .order("ts", { ascending: false })
     .limit(10);
@@ -806,7 +806,7 @@ async function handleGetDistressSignals(roomId: string): Promise<string> {
   const { data: checkpoints, error: cErr } = await supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("metadata->>event", "checkpoint")
     .gte("ts", fourHoursAgo)
     .order("ts", { ascending: false })
@@ -868,11 +868,11 @@ async function handleGetDistressSignals(roomId: string): Promise<string> {
 // get_destination
 // ---------------------------------------------------------------------------
 
-async function handleGetDestination(roomId: string): Promise<string> {
+async function handleGetDestination(foldId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("message_type", "knowledge")
     .eq("metadata->>event", "destination")
     .order("ts", { ascending: false })
@@ -880,7 +880,7 @@ async function handleGetDestination(roomId: string): Promise<string> {
 
   if (error) return `Database error: ${error.message}`;
   if (!data || data.length === 0)
-    return "No destination set for this room. The team has no defined target state (point B).";
+    return "No destination set for this fold. The team has no defined target state (point B).";
 
   const row = data[0];
   const meta = row.metadata as Record<string, unknown>;
@@ -981,7 +981,7 @@ async function handleQueryNetwork(
 // ---------------------------------------------------------------------------
 
 async function handleInjectToAgent(
-  roomId: string,
+  foldId: string,
   target: string,
   content: string,
   priority: string,
@@ -989,7 +989,7 @@ async function handleInjectToAgent(
   const validPriority = ["normal", "high", "urgent"].includes(priority) ? priority : "normal";
 
   const { error } = await supabase.from("memories").insert({
-    room_id: roomId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "injection",
@@ -1023,7 +1023,7 @@ async function handleInjectToAgent(
 // The resolution is delivered as an injection piggyback on the agent's next tool call.
 
 async function handleApproveAction(
-  roomId: string,
+  foldId: string,
   approvalId: string,
   message?: string,
 ): Promise<string> {
@@ -1032,7 +1032,7 @@ async function handleApproveAction(
     .from("memories")
     .select("*")
     .eq("id", approvalId)
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .single();
 
   if (fetchErr || !req) return `Approval request not found: ${approvalId}`;
@@ -1063,7 +1063,7 @@ async function handleApproveAction(
     : "APPROVED: Your request has been approved. Proceed.";
 
   await supabase.from("memories").insert({
-    room_id: roomId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "injection",
@@ -1083,7 +1083,7 @@ async function handleApproveAction(
 }
 
 async function handleDenyAction(
-  roomId: string,
+  foldId: string,
   approvalId: string,
   reason: string,
 ): Promise<string> {
@@ -1091,7 +1091,7 @@ async function handleDenyAction(
     .from("memories")
     .select("*")
     .eq("id", approvalId)
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .single();
 
   if (fetchErr || !req) return `Approval request not found: ${approvalId}`;
@@ -1116,7 +1116,7 @@ async function handleDenyAction(
   if (updateErr) return `Failed to update approval: ${updateErr.message}`;
 
   await supabase.from("memories").insert({
-    room_id: roomId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "injection",
@@ -1135,11 +1135,11 @@ async function handleDenyAction(
   return `Denied request from ${req.agent}. Reason delivered: "${reason}"`;
 }
 
-async function handleGetPendingApprovals(roomId: string): Promise<string> {
+async function handleGetPendingApprovals(foldId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("id, agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("metadata->>event", "approval_request")
     .eq("metadata->>status", "pending")
     .order("ts", { ascending: false })
@@ -1179,7 +1179,7 @@ const PRIORITY_ORDER: Record<string, number> = {
 };
 
 async function handleCreateTask(
-  roomId: string,
+  foldId: string,
   title: string,
   description?: string,
   priority = "normal",
@@ -1192,7 +1192,7 @@ async function handleCreateTask(
   const { data: existing } = await supabase
     .from("memories")
     .select("id, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("message_type", "task")
     .order("ts", { ascending: false })
     .limit(100);
@@ -1211,7 +1211,7 @@ async function handleCreateTask(
   }
 
   const { data, error } = await supabase.from("memories").insert({
-    room_id: roomId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "task",
@@ -1244,20 +1244,20 @@ async function handleCreateTask(
 }
 
 async function handleGetTasks(
-  roomId: string,
+  foldId: string,
   status?: string,
   milestone?: string,
 ): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("id, agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("message_type", "task")
     .order("ts", { ascending: false })
     .limit(100);
 
   if (error) return `Database error: ${error.message}`;
-  if (!data || data.length === 0) return "No tasks in this room.";
+  if (!data || data.length === 0) return "No tasks in this fold.";
 
   let tasks = data.map((row) => {
     const meta = ((row as Record<string, unknown>).metadata || {}) as Record<string, unknown>;
@@ -1318,7 +1318,7 @@ async function handleGetTasks(
 }
 
 async function handleUpdateTask(
-  roomId: string,
+  foldId: string,
   taskId: string,
   status?: string,
   assignedTo?: string,
@@ -1328,7 +1328,7 @@ async function handleUpdateTask(
     .from("memories")
     .select("*")
     .eq("id", taskId)
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("message_type", "task")
     .single();
 
@@ -1360,7 +1360,7 @@ async function handleUpdateTask(
 }
 
 async function handleSetDestination(
-  roomId: string,
+  foldId: string,
   destination: string,
   milestonesStr?: string,
   notes?: string,
@@ -1373,7 +1373,7 @@ async function handleSetDestination(
   const { data: existing } = await supabase
     .from("memories")
     .select("id, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("message_type", "knowledge")
     .eq("metadata->>event", "destination")
     .order("ts", { ascending: false })
@@ -1393,7 +1393,7 @@ async function handleSetDestination(
 
     // Create new entry (append-only)
     const { error } = await supabase.from("memories").insert({
-      room_id: roomId,
+      fold_id: foldId,
       agent: "gemini-steering",
       session_id: `gemini_${Date.now()}`,
       message_type: "knowledge",
@@ -1423,7 +1423,7 @@ async function handleSetDestination(
   }
 
   const { error } = await supabase.from("memories").insert({
-    room_id: roomId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "knowledge",

@@ -24,13 +24,13 @@ function headRef(agent: string, sessionId: string): string {
 /** Get the current HEAD commit for a session */
 async function getHead(
   db: SupabaseClient,
-  roomId: string,
+  foldId: string,
   agent: string,
   sessionId: string,
 ): Promise<string | null> {
   const refs = await db.select<RefRow>("refs", {
     select: "commit_id",
-    room_id: `eq.${roomId}`,
+    fold_id: `eq.${foldId}`,
     name: `eq.${headRef(agent, sessionId)}`,
     limit: "1",
   });
@@ -40,17 +40,17 @@ async function getHead(
 /** Update or create HEAD ref */
 async function updateHead(
   db: SupabaseClient,
-  roomId: string,
+  foldId: string,
   agent: string,
   sessionId: string,
   commitId: string,
 ): Promise<void> {
   await db.upsert("refs", {
-    room_id: roomId,
+    fold_id: foldId,
     name: headRef(agent, sessionId),
     commit_id: commitId,
     created_by: agent,
-  }, "room_id,name");
+  }, "fold_id,name");
 }
 
 /** Format a memory for display */
@@ -91,7 +91,7 @@ export function registerTimelineTools(
 
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,message_type,content,ts,parent_id,metadata",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         session_id: `eq.${targetSession}`,
         order: "ts.desc",
         limit: String(limit),
@@ -135,7 +135,7 @@ export function registerTimelineTools(
     async ({ to }) => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,message_type,content,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         id: `eq.${to}`,
         limit: "1",
       });
@@ -143,7 +143,7 @@ export function registerTimelineTools(
       if (!rows.length) {
         const prefixRows = await db.select<MemoryRow>("memories", {
           select: "id,message_type,content,ts",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           id: `like.${to}*`,
           limit: "1",
         });
@@ -157,7 +157,7 @@ export function registerTimelineTools(
       }
 
       const target = rows[0];
-      await updateHead(db, ctx.roomId, ctx.agent, ctx.sessionId, target.id);
+      await updateHead(db, ctx.foldId, ctx.agent, ctx.sessionId, target.id);
 
       return {
         content: [{
@@ -185,7 +185,7 @@ export function registerTimelineTools(
       if (from) {
         const rows = await db.select<MemoryRow>("memories", {
           select: "id",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           id: `like.${from}*`,
           limit: "1",
         });
@@ -196,13 +196,13 @@ export function registerTimelineTools(
         }
         startCommit = rows[0].id;
       } else {
-        const head = await getHead(db, ctx.roomId, ctx.agent, ctx.sessionId);
+        const head = await getHead(db, ctx.foldId, ctx.agent, ctx.sessionId);
         if (head) {
           startCommit = head;
         } else {
           const latest = await db.select<MemoryRow>("memories", {
             select: "id",
-            room_id: `eq.${ctx.roomId}`,
+            fold_id: `eq.${ctx.foldId}`,
             session_id: `eq.${ctx.sessionId}`,
             order: "ts.desc",
             limit: "1",
@@ -219,11 +219,11 @@ export function registerTimelineTools(
       const branchName = `branches/${ctx.agent}/${name}`;
 
       await db.upsert("refs", {
-        room_id: ctx.roomId,
+        fold_id: ctx.foldId,
         name: branchName,
         commit_id: startCommit,
         created_by: ctx.agent,
-      }, "room_id,name");
+      }, "fold_id,name");
 
       return {
         content: [{
@@ -252,7 +252,7 @@ export function registerTimelineTools(
       if (at) {
         const rows = await db.select<MemoryRow>("memories", {
           select: "id",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           id: `like.${at}*`,
           limit: "1",
         });
@@ -265,7 +265,7 @@ export function registerTimelineTools(
       } else {
         const latest = await db.select<MemoryRow>("memories", {
           select: "id",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           session_id: `eq.${ctx.sessionId}`,
           order: "ts.desc",
           limit: "1",
@@ -281,7 +281,7 @@ export function registerTimelineTools(
       const bookmarkName = `bookmarks/${name}`;
 
       await db.insert("refs", {
-        room_id: ctx.roomId,
+        fold_id: ctx.foldId,
         name: bookmarkName,
         commit_id: commitId,
         created_by: ctx.agent,
@@ -299,7 +299,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_bookmarks",
-    "List all bookmarks in this room. Bookmarks mark important moments across all timelines.",
+    "List all bookmarks in this fold. Bookmarks mark important moments across all timelines.",
     {},
     {
       readOnlyHint: true,
@@ -308,7 +308,7 @@ export function registerTimelineTools(
     async () => {
       const refs = await db.select<RefRow>("refs", {
         select: "name,commit_id,created_by,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         name: "like.bookmarks/*",
         order: "ts.desc",
       });
@@ -348,7 +348,7 @@ export function registerTimelineTools(
     async ({ from, to }) => {
       const fromRows = await db.select<MemoryRow>("memories", {
         select: "id,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         id: `like.${from}*`,
         limit: "1",
       });
@@ -367,7 +367,7 @@ export function registerTimelineTools(
       if (to) {
         const toRows = await db.select<MemoryRow>("memories", {
           select: "id,ts",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           id: `like.${to}*`,
           limit: "1",
         });
@@ -381,7 +381,7 @@ export function registerTimelineTools(
       } else {
         const latest = await db.select<MemoryRow>("memories", {
           select: "id,ts",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           session_id: `eq.${ctx.sessionId}`,
           order: "ts.desc",
           limit: "1",
@@ -397,7 +397,7 @@ export function registerTimelineTools(
 
       const between = await db.select<MemoryRow>("memories", {
         select: "id,message_type,content,ts,agent,metadata",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         ts: `gte.${fromTs}`,
         order: "ts.asc",
       });
@@ -445,12 +445,12 @@ export function registerTimelineTools(
       const picked: string[] = [];
       const notFound: string[] = [];
 
-      let parentId = await getHead(db, ctx.roomId, ctx.agent, ctx.sessionId);
+      let parentId = await getHead(db, ctx.foldId, ctx.agent, ctx.sessionId);
 
       for (const id of ids) {
         const rows = await db.select<MemoryRow>("memories", {
           select: "message_type,content,metadata",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           id: `like.${id}*`,
           limit: "1",
         });
@@ -463,7 +463,7 @@ export function registerTimelineTools(
         const source = rows[0];
 
         const inserted = await db.insert<MemoryRow>("memories", {
-          room_id: ctx.roomId,
+          fold_id: ctx.foldId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
           parent_id: parentId,
@@ -484,7 +484,7 @@ export function registerTimelineTools(
       }
 
       if (parentId) {
-        await updateHead(db, ctx.roomId, ctx.agent, ctx.sessionId, parentId);
+        await updateHead(db, ctx.foldId, ctx.agent, ctx.sessionId, parentId);
       }
 
       const lines: string[] = [];
@@ -503,7 +503,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_timelines",
-    "List all timelines (branches) in this room. Shows what parallel work streams exist.",
+    "List all timelines (branches) in this fold. Shows what parallel work streams exist.",
     {},
     {
       readOnlyHint: true,
@@ -512,14 +512,14 @@ export function registerTimelineTools(
     async () => {
       const refs = await db.select<RefRow>("refs", {
         select: "name,commit_id,created_by,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         name: "like.branches/*",
         order: "ts.desc",
       });
 
       const heads = await db.select<RefRow>("refs", {
         select: "name,commit_id,created_by,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         name: "like.heads/*",
         order: "ts.desc",
       });
@@ -573,7 +573,7 @@ export function registerTimelineTools(
     async ({ timeline }) => {
       const refs = await db.select<RefRow>("refs", {
         select: "commit_id",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         name: `like.branches/%${timeline}`,
         limit: "1",
       });
@@ -588,7 +588,7 @@ export function registerTimelineTools(
 
       const branchMemories = await db.select<MemoryRow>("memories", {
         select: "id,message_type,content,metadata,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         id: `eq.${branchHead}`,
         limit: "1",
       });
@@ -599,10 +599,10 @@ export function registerTimelineTools(
         };
       }
 
-      let parentId = await getHead(db, ctx.roomId, ctx.agent, ctx.sessionId);
+      let parentId = await getHead(db, ctx.foldId, ctx.agent, ctx.sessionId);
 
       const mergeResult = await db.insert<MemoryRow>("memories", {
-        room_id: ctx.roomId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -618,7 +618,7 @@ export function registerTimelineTools(
       });
 
       if (mergeResult.length > 0) {
-        await updateHead(db, ctx.roomId, ctx.agent, ctx.sessionId, mergeResult[0].id);
+        await updateHead(db, ctx.foldId, ctx.agent, ctx.sessionId, mergeResult[0].id);
       }
 
       return {

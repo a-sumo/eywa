@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { supabase, type Room } from "../lib/supabase";
+import { supabase, type Fold } from "../lib/supabase";
 
 export function CLIAuth() {
   const [searchParams] = useSearchParams();
   const callbackPort = searchParams.get("port");
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [rooms, setRooms] = useState<Fold[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string>("");
   const [newSlug, setNewSlug] = useState("");
@@ -15,7 +15,7 @@ export function CLIAuth() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase
-        .from("rooms")
+        .from("folds")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
@@ -32,12 +32,12 @@ export function CLIAuth() {
 
     let roomSlug = selected;
 
-    // Create new room if requested
+    // Create new fold if requested
     if (selected === "__new" && newSlug.trim()) {
       roomSlug = newSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
       const name = roomSlug.split("-").slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-      const { error } = await supabase.from("rooms").insert({
+      const { error } = await supabase.from("folds").insert({
         slug: roomSlug,
         name,
         is_demo: false,
@@ -90,7 +90,7 @@ export function CLIAuth() {
           <div className="cli-auth-check">&#10003;</div>
           <h1>Logged in!</h1>
           <p>You can close this tab and return to your editor, or</p>
-          <a className="cli-auth-btn" href={`/r/${authorizedRoom}`}>Open Dashboard</a>
+          <a className="cli-auth-btn" href={`/f/${authorizedRoom}`}>Open Dashboard</a>
         </div>
       </div>
     );
@@ -111,10 +111,10 @@ export function CLIAuth() {
     <div className="cli-auth">
       <div className="cli-auth-card">
         <h1>Authorize Eywa</h1>
-        <p>Select a room to connect to:</p>
+        <p>Select a fold to connect to:</p>
 
         <div className="cli-auth-rooms">
-          {loading && <p className="cli-auth-loading">Loading rooms...</p>}
+          {loading && <p className="cli-auth-loading">Loading folds...</p>}
           {rooms.map((r) => (
             <button
               key={r.id}
@@ -129,14 +129,14 @@ export function CLIAuth() {
             className={`cli-auth-room cli-auth-new ${selected === "__new" ? "selected" : ""}`}
             onClick={() => setSelected("__new")}
           >
-            + Create new room
+            + Create new fold
           </button>
         </div>
 
         {selected === "__new" && (
           <input
             className="cli-auth-input"
-            placeholder="room-slug"
+            placeholder="fold-slug"
             value={newSlug}
             onChange={(e) => setNewSlug(e.target.value)}
             autoFocus

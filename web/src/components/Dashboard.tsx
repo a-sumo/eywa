@@ -1,6 +1,6 @@
 import { useRealtimeAgents, useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useNavigate, useParams } from "react-router-dom";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { EmptyState } from "./EmptyState";
 
 function agentColor(name: string): string {
@@ -23,10 +23,10 @@ function timeAgo(ts: string): string {
 }
 
 export function Dashboard() {
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const { slug } = useParams<{ slug: string }>();
-  const agents = useRealtimeAgents(room?.id ?? null);
-  const { memories } = useRealtimeMemories(room?.id ?? null, 200);
+  const agents = useRealtimeAgents(fold?.id ?? null);
+  const { memories } = useRealtimeMemories(fold?.id ?? null, 200);
   const navigate = useNavigate();
 
   const agentSummaries = agents.map((a) => {
@@ -54,7 +54,7 @@ export function Dashboard() {
           <div
             key={a.name}
             className="agent-card"
-            onClick={() => navigate(`/r/${slug}/agent/${encodeURIComponent(a.name)}`)}
+            onClick={() => navigate(`/f/${slug}/agent/${encodeURIComponent(a.name)}`)}
           >
             <div className="agent-card-header">
               <span

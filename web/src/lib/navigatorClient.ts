@@ -2,7 +2,7 @@
  * navigatorClient.ts - Client for the Guild Navigator spatial layout API.
  *
  * Guild Navigator positions events semantically in polar coordinates around goals.
- * We feed Eywa room data (destination, agents, memories) into Navigator and get
+ * We feed Eywa fold data (destination, agents, memories) into Navigator and get
  * back a 2D spatial map with node positions, trajectories, and alignment scores.
  */
 
@@ -127,7 +127,7 @@ export function connectStream(
 // --- Eywa Bridge ---
 
 /**
- * Sync Eywa room data into Guild Navigator.
+ * Sync Eywa fold data into Guild Navigator.
  * Maps: destination -> goal, agent sessions -> sources + trajectories.
  */
 export async function syncEywaRoom(

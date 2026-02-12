@@ -52,7 +52,7 @@ interface GeminiContent {
 // System prompt
 // ---------------------------------------------------------------------------
 
-const STEERING_PROMPT = `You are the steering agent for an Eywa room. Your job is to help the human navigate their agent swarm toward their destination.
+const STEERING_PROMPT = `You are the steering agent for an Eywa fold. Your job is to help the human navigate their agent swarm toward their destination.
 
 You have READ tools to query agent status, thread history, knowledge, detect patterns, check distress signals, and track the destination. Use them proactively: when the user asks about agents or activity, call get_agent_status or get_thread instead of guessing.
 
@@ -72,7 +72,7 @@ When analyzing activity, look for:
 
 Be direct. Highlight what matters. Skip noise. Use short paragraphs. No em dashes.`;
 
-const CONTEXT_PROMPT = `You are a helpful AI assistant analyzing shared context from multiple AI agent threads in an Eywa room.
+const CONTEXT_PROMPT = `You are a helpful AI assistant analyzing shared context from multiple AI agent threads in an Eywa fold.
 
 You have tools to query agent status, thread history, knowledge, and detect patterns. Use them when they would help answer the user's question more accurately.
 
@@ -88,7 +88,7 @@ function buildSystemInstruction(
   const parts: string[] = [base];
 
   if (autoContext) {
-    parts.push(`\nCurrent room snapshot:\n${autoContext}`);
+    parts.push(`\nCurrent fold snapshot:\n${autoContext}`);
   }
   if (hasManualContext) {
     parts.push(`\nUser-selected context:\n${roomContext}`);
@@ -101,13 +101,13 @@ function buildSystemInstruction(
 // Hook
 // ---------------------------------------------------------------------------
 
-function storageKey(roomId?: string | null): string {
-  return `eywa-chat-${roomId || "default"}`;
+function storageKey(foldId?: string | null): string {
+  return `eywa-chat-${foldId || "default"}`;
 }
 
-function loadMessages(roomId?: string | null): ChatMessage[] {
+function loadMessages(foldId?: string | null): ChatMessage[] {
   try {
-    const raw = localStorage.getItem(storageKey(roomId));
+    const raw = localStorage.getItem(storageKey(foldId));
     if (!raw) return [];
     const parsed = JSON.parse(raw) as ChatMessage[];
     // Drop any that were mid-stream
@@ -117,18 +117,18 @@ function loadMessages(roomId?: string | null): ChatMessage[] {
   }
 }
 
-function saveMessages(roomId: string | null | undefined, msgs: ChatMessage[]) {
+function saveMessages(foldId: string | null | undefined, msgs: ChatMessage[]) {
   try {
     // Only persist non-streaming messages
     const clean = msgs.filter((m) => !m.streaming);
-    localStorage.setItem(storageKey(roomId), JSON.stringify(clean));
+    localStorage.setItem(storageKey(foldId), JSON.stringify(clean));
   } catch {
     // localStorage full or unavailable
   }
 }
 
-export function useGeminiChat(systemContext: string, roomId?: string | null) {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessages(roomId));
+export function useGeminiChat(systemContext: string, foldId?: string | null) {
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadMessages(foldId));
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -139,24 +139,24 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
 
   // Persist messages to localStorage on every change
   useEffect(() => {
-    saveMessages(roomId, messages);
-  }, [messages, roomId]);
+    saveMessages(foldId, messages);
+  }, [messages, foldId]);
 
   // -----------------------------------------------------------------------
-  // Auto-context: fetch agent status on mount when we have a roomId
+  // Auto-context: fetch agent status on mount when we have a foldId
   // -----------------------------------------------------------------------
   useEffect(() => {
-    if (!roomId || autoContextFetched.current) return;
+    if (!foldId || autoContextFetched.current) return;
     autoContextFetched.current = true;
 
     // Fetch agent status, distress signals, patterns, destination, and pending approvals in parallel.
     // Use Promise.allSettled so individual tool failures don't break the entire auto-context.
     Promise.allSettled([
-      executeTool(roomId, { name: "get_agent_status", args: {} }),
-      executeTool(roomId, { name: "get_distress_signals", args: {} }),
-      executeTool(roomId, { name: "detect_patterns", args: {} }),
-      executeTool(roomId, { name: "get_destination", args: {} }),
-      executeTool(roomId, { name: "get_pending_approvals", args: {} }),
+      executeTool(foldId, { name: "get_agent_status", args: {} }),
+      executeTool(foldId, { name: "get_distress_signals", args: {} }),
+      executeTool(foldId, { name: "detect_patterns", args: {} }),
+      executeTool(foldId, { name: "get_destination", args: {} }),
+      executeTool(foldId, { name: "get_pending_approvals", args: {} }),
     ]).then(([statusResult, distressResult, patternsResult, destResult, approvalsResult]) => {
       const safeResult = (r: PromiseSettledResult<GeminiFunctionResponse>) =>
         r.status === "fulfilled" ? r.value.response.result : "";
@@ -223,16 +223,16 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
       // All tools failed or processing error. Gemini still works, just without auto-context.
       setAutoContextError(true);
     });
-  }, [roomId]);
+  }, [foldId]);
 
-  // Reset auto-context fetch flag when room changes
+  // Reset auto-context fetch flag when fold changes
   useEffect(() => {
     autoContextFetched.current = false;
     setAutoContext("");
     setAutoContextError(false);
     setAutoContextError(false);
-    setMessages(loadMessages(roomId));
-  }, [roomId]);
+    setMessages(loadMessages(foldId));
+  }, [foldId]);
 
   // -----------------------------------------------------------------------
   // Send message
@@ -300,7 +300,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
               temperature: 0.7,
               maxOutputTokens: 4096,
             },
-            tools: roomId ? getToolsPayload() : undefined,
+            tools: foldId ? getToolsPayload() : undefined,
           };
 
           let modelText = "";
@@ -398,7 +398,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
           }
 
           // If Gemini returned function calls, execute them and loop
-          if (functionCalls.length > 0 && roomId) {
+          if (functionCalls.length > 0 && foldId) {
             // Add the model's function call to the API conversation.
             // Use raw parts to preserve thought_signature for Gemini thinking models.
             apiContents.push({
@@ -415,7 +415,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
             for (const fc of functionCalls) {
               toolNames.push(fc.name);
               setStatus(`Calling ${fc.name}...`);
-              const result = await executeTool(roomId, fc);
+              const result = await executeTool(foldId, fc);
               responses.push(result);
             }
             setStatus("Analyzing results...");
@@ -491,7 +491,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
         abortRef.current = null;
       }
     },
-    [messages, systemContext, autoContext, roomId]
+    [messages, systemContext, autoContext, foldId]
   );
 
   const clear = useCallback(() => {
@@ -499,7 +499,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
     setMessages([]);
     setError(null);
     setLoading(false);
-    try { localStorage.removeItem(storageKey(roomId)); } catch {}
+    try { localStorage.removeItem(storageKey(foldId)); } catch {}
   }, []);
 
   const available = Boolean(GEMINI_API_KEY);

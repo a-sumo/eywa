@@ -6,11 +6,11 @@
  */
 
 import { useEffect, useState, useRef } from "react";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { supabase } from "../lib/supabase";
 
 export function SpectaclesReceiver() {
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const imgRef = useRef<HTMLImageElement>(null);
   const [status, setStatus] = useState<"disconnected" | "connecting" | "connected">("disconnected");
   const [frameCount, setFrameCount] = useState(0);
@@ -18,11 +18,11 @@ export function SpectaclesReceiver() {
   const [fps, setFps] = useState(0);
 
   useEffect(() => {
-    if (!room?.slug) return;
+    if (!fold?.slug) return;
 
     setStatus("connecting");
 
-    const channel = supabase.channel(`spectacles:${room.slug}`, {
+    const channel = supabase.channel(`spectacles:${fold.slug}`, {
       config: { broadcast: { ack: false, self: false } },
     });
 
@@ -58,7 +58,7 @@ export function SpectaclesReceiver() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [room?.slug]);
+  }, [fold?.slug]);
 
   const timeSinceFrame = lastFrameTime ? Math.floor((Date.now() - lastFrameTime) / 1000) : null;
 
@@ -96,7 +96,7 @@ export function SpectaclesReceiver() {
 
       <p style={{ color: "#8b949e", fontSize: "0.875rem", marginBottom: "1rem", textAlign: "center" }}>
         {status === "disconnected" && "Disconnected"}
-        {status === "connecting" && `Connecting to spectacles:${room?.slug}...`}
+        {status === "connecting" && `Connecting to spectacles:${fold?.slug}...`}
         {status === "connected" && frameCount === 0 && "Connected. Waiting for frames..."}
         {status === "connected" && frameCount > 0 && `Receiving frames at ${fps} fps`}
       </p>
@@ -129,7 +129,7 @@ export function SpectaclesReceiver() {
             <div style={{ fontSize: "0.75rem", marginTop: "0.5rem", color: "#484f58" }}>
               Open another tab at
               <br />
-              <code>/r/{room?.slug}/spectacles</code>
+              <code>/r/{fold?.slug}/spectacles</code>
               <br />
               and click "Broadcast"
             </div>

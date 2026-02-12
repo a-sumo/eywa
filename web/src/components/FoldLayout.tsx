@@ -1,19 +1,19 @@
 import { type ReactNode } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { AgentList } from "./AgentList";
 import { DemoBanner } from "./DemoBanner";
 
-interface RoomLayoutProps {
+interface FoldLayoutProps {
   children: ReactNode;
 }
 
-export function RoomLayout({ children }: RoomLayoutProps) {
+export function FoldLayout({ children }: FoldLayoutProps) {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
-  const { room, loading, error } = useRoomContext();
+  const { fold, loading, error } = useFoldContext();
 
-  const basePath = `/r/${slug}`;
+  const basePath = `/f/${slug}`;
   const isTabActive = (path: string) => {
     if (path === basePath) return location.pathname === basePath;
     return location.pathname.startsWith(path);
@@ -22,17 +22,17 @@ export function RoomLayout({ children }: RoomLayoutProps) {
   if (loading) {
     return (
       <div className="app">
-        <div className="loading-screen">Loading room...</div>
+        <div className="loading-screen">Loading fold...</div>
       </div>
     );
   }
 
-  if (error || !room) {
+  if (error || !fold) {
     return (
       <div className="app">
         <div className="error-screen">
-          <h2>Room not found</h2>
-          <p>The room "{slug}" doesn't exist.</p>
+          <h2>Fold not found</h2>
+          <p>The fold "{slug}" doesn't exist.</p>
           <Link to="/" className="btn-primary">Go Home</Link>
         </div>
       </div>

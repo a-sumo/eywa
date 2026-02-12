@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useChat } from "../hooks/useChat";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { VoiceButton } from "./VoiceButton";
 
 function timeStr(ts: string): string {
@@ -8,8 +8,8 @@ function timeStr(ts: string): string {
 }
 
 export function Chat() {
-  const { room } = useRoomContext();
-  const { messages, loading, error, send } = useChat(room?.id ?? null, "general");
+  const { fold } = useFoldContext();
+  const { messages, loading, error, send } = useChat(fold?.id ?? null, "general");
   const [input, setInput] = useState("");
   const [sender, setSender] = useState(
     () => localStorage.getItem("eywa_user") || ""

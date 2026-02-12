@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import EywaLogo from "./EywaLogo";
-import { useRoom } from "../hooks/useRoom";
+import { useFold } from "../hooks/useFold";
 
 const GitHubIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -10,10 +10,10 @@ const GitHubIcon = () => (
 
 export function AppHeader() {
   const location = useLocation();
-  const { createDemoRoom, creating, error } = useRoom();
+  const { createDemoFold, creating, error } = useFold();
 
   const isDocs = location.pathname.startsWith("/docs");
-  const isRoom = location.pathname.startsWith("/r/");
+  const isRoom = location.pathname.startsWith("/f/");
 
   // Extract slug from /r/:slug/...
   const slug = isRoom ? location.pathname.split("/")[2] : null;
@@ -33,10 +33,10 @@ export function AppHeader() {
         </Link>
 
         <nav className="global-header-nav">
-          <Link to="/rooms" className={location.pathname === "/rooms" ? "active" : ""}>Rooms</Link>
+          <Link to="/folds" className={location.pathname === "/folds" ? "active" : ""}>Folds</Link>
           <Link to="/docs" className={isDocs ? "active" : ""}>Docs</Link>
           {isRoom && slug && (
-            <Link to={`/r/${slug}`} className="global-header-room">/{slug}</Link>
+            <Link to={`/f/${slug}`} className="global-header-room">/{slug}</Link>
           )}
         </nav>
 
@@ -45,7 +45,7 @@ export function AppHeader() {
             <>
               <button
                 className="global-header-link"
-                onClick={() => createDemoRoom()}
+                onClick={() => createDemoFold()}
                 disabled={creating}
               >
                 {creating ? "Creating..." : "Try Demo"}

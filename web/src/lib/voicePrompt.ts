@@ -29,14 +29,14 @@ export function buildVoiceSystemPrompt(ctx: VoicePromptContext = {}): string {
     lines.push(`CURRENT DESTINATION (team goal): ${ctx.destinationText}`);
   }
   if (ctx.agentCount !== undefined) {
-    lines.push(`AGENTS IN ROOM: ${ctx.agentCount}`);
+    lines.push(`AGENTS IN FOLD: ${ctx.agentCount}`);
   }
 
   lines.push("");
 
   // Tool usage instructions
   lines.push(
-    "You have tools to read room state and act on it. ALWAYS use tools to get " +
+    "You have tools to read fold state and act on it. ALWAYS use tools to get " +
     "current information instead of guessing from the seed context above. The seed " +
     "context is a snapshot from connection time and goes stale quickly."
   );

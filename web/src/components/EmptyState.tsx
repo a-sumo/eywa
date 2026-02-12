@@ -1,17 +1,17 @@
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 
 interface EmptyStateProps {
   type: "agents" | "memories" | "messages";
 }
 
 export function EmptyState({ type }: EmptyStateProps) {
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
 
   const content = {
     agents: {
       title: "No agents connected",
       description: "Connect an agent using the MCP tool",
-      code: room ? `eywa_join("${room.slug}", "my-agent")` : 'eywa_join("slug", "name")',
+      code: fold ? `eywa_join("${fold.slug}", "my-agent")` : 'eywa_join("slug", "name")',
     },
     memories: {
       title: "No memories yet",

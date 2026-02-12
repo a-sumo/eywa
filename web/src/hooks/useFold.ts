@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, type Room } from "../lib/supabase";
+import { supabase, type Fold } from "../lib/supabase";
 
 function generateSlug(): string {
   const adjectives = ["cosmic", "lunar", "solar", "stellar", "quantum", "neural", "cyber", "astral"];
@@ -11,25 +11,25 @@ function generateSlug(): string {
   return `${adj}-${noun}-${code}`;
 }
 
-function generateRoomName(slug: string): string {
+function generateFoldName(slug: string): string {
   const words = slug.split("-").slice(0, 2);
   return words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
-export function useRoom() {
+export function useFold() {
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createRoom = useCallback(async (createdBy?: string): Promise<Room | null> => {
+  const createFold = useCallback(async (createdBy?: string): Promise<Fold | null> => {
     setCreating(true);
     setError(null);
 
     const slug = generateSlug();
-    const name = generateRoomName(slug);
+    const name = generateFoldName(slug);
 
     const { data, error: insertError } = await supabase
-      .from("rooms")
+      .from("folds")
       .insert({
         slug,
         name,
@@ -43,23 +43,30 @@ export function useRoom() {
 
     if (insertError || !data) {
       setError(insertError?.message
-        ? `Could not create room: ${insertError.message}`
-        : "Could not create room. Check your connection and try again.");
+        ? `Could not create fold: ${insertError.message}`
+        : "Could not create fold. Check your connection and try again.");
       return null;
     }
 
-    navigate(`/r/${slug}`);
+    // Store secret in localStorage for sharing
+    if (data.secret) {
+      try {
+        localStorage.setItem(`fold-secret-${slug}`, data.secret);
+      } catch {}
+    }
+
+    navigate(`/f/${slug}`);
     return data;
   }, [navigate]);
 
-  const createDemoRoom = useCallback(async (): Promise<Room | null> => {
+  const createDemoFold = useCallback(async (): Promise<Fold | null> => {
     setCreating(true);
     setError(null);
 
     const slug = "demo-" + Math.random().toString(36).substring(2, 6);
 
     try {
-      // Worker creates the room and seeds it with demo data (needs service key for RLS)
+      // Worker creates the fold and seeds it with demo data (needs service key for RLS)
       const res = await fetch("https://mcp.eywa-ai.dev/clone-demo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,15 +80,23 @@ export function useRoom() {
 
       const result = await res.json() as { id: string; slug: string; seeded: number };
 
-      // Fetch the full room record
+      // Fetch the full fold record
       const { data } = await supabase
-        .from("rooms")
+        .from("folds")
         .select("*")
         .eq("id", result.id)
         .single();
 
       setCreating(false);
-      navigate(`/r/${slug}`);
+
+      // Store secret in localStorage for sharing
+      if (data?.secret) {
+        try {
+          localStorage.setItem(`fold-secret-${slug}`, data.secret);
+        } catch {}
+      }
+
+      navigate(`/f/${slug}`);
       return data;
     } catch (err) {
       console.warn("Create demo failed:", err);
@@ -92,37 +107,44 @@ export function useRoom() {
       } else if (msg.includes("HTTP 5")) {
         setError("The server ran into a problem creating the demo. Try again in a moment.");
       } else {
-        setError(`Failed to create demo room: ${msg}`);
+        setError(`Failed to create demo fold: ${msg}`);
       }
       return null;
     }
   }, [navigate]);
 
-  const joinRoom = useCallback(async (slug: string): Promise<Room | null> => {
+  const joinFold = useCallback(async (slug: string): Promise<Fold | null> => {
     const { data, error: fetchError } = await supabase
-      .from("rooms")
+      .from("folds")
       .select("*")
       .eq("slug", slug)
       .single();
 
     if (fetchError || !data) {
-      setError("Room not found");
+      setError("Fold not found");
       return null;
     }
 
-    navigate(`/r/${slug}`);
+    navigate(`/f/${slug}`);
     return data;
   }, [navigate]);
 
   const getShareUrl = useCallback((slug: string): string => {
     const base = window.location.origin;
-    return `${base}/r/${slug}`;
+    const secret = (() => {
+      try {
+        return localStorage.getItem(`fold-secret-${slug}`);
+      } catch {
+        return null;
+      }
+    })();
+    return secret ? `${base}/f/${slug}?s=${secret}` : `${base}/f/${slug}`;
   }, []);
 
   return {
-    createRoom,
-    createDemoRoom,
-    joinRoom,
+    createFold,
+    createDemoFold,
+    joinFold,
     getShareUrl,
     creating,
     error,

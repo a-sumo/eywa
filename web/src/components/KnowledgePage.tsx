@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { supabase, type Memory } from "../lib/supabase";
 import { GlobalKnowledgeHub } from "./GlobalKnowledgeHub";
 
@@ -31,16 +31,16 @@ function tagColor(tag: string): string {
 }
 
 export function KnowledgePage() {
-  const [tab, setTab] = useState<"room" | "network">("room");
+  const [tab, setTab] = useState<"fold" | "network">("fold");
 
   return (
     <div className="knowledge-page">
       <div className="knowledge-page-tabs">
         <button
-          className={`knowledge-page-tab ${tab === "room" ? "active" : ""}`}
-          onClick={() => setTab("room")}
+          className={`knowledge-page-tab ${tab === "fold" ? "active" : ""}`}
+          onClick={() => setTab("fold")}
         >
-          Room Knowledge
+          Fold Knowledge
         </button>
         <button
           className={`knowledge-page-tab ${tab === "network" ? "active" : ""}`}
@@ -49,28 +49,28 @@ export function KnowledgePage() {
           Network Insights
         </button>
       </div>
-      {tab === "room" ? <RoomKnowledge /> : <GlobalKnowledgeHub />}
+      {tab === "fold" ? <RoomKnowledge /> : <GlobalKnowledgeHub />}
     </div>
   );
 }
 
 function RoomKnowledge() {
   const { slug } = useParams<{ slug: string }>();
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const [entries, setEntries] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!room) return;
+    if (!fold) return;
 
     async function load() {
       setLoading(true);
       const { data, error } = await supabase
         .from("memories")
         .select("*")
-        .eq("room_id", room!.id)
+        .eq("fold_id", fold!.id)
         .eq("message_type", "knowledge")
         .order("ts", { ascending: false })
         .limit(200);
@@ -80,14 +80,14 @@ function RoomKnowledge() {
     load();
 
     const channel = supabase
-      .channel(`room-knowledge-${room.id}`)
+      .channel(`room-knowledge-${fold.id}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "memories",
-          filter: `room_id=eq.${room.id}`,
+          filter: `fold_id=eq.${fold.id}`,
         },
         (payload) => {
           const row = payload.new as Memory;
@@ -102,7 +102,7 @@ function RoomKnowledge() {
           event: "DELETE",
           schema: "public",
           table: "memories",
-          filter: `room_id=eq.${room.id}`,
+          filter: `fold_id=eq.${fold.id}`,
         },
         (payload) => {
           const oldRow = payload.old as { id?: string };
@@ -116,7 +116,7 @@ function RoomKnowledge() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [room]);
+  }, [fold]);
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -157,7 +157,7 @@ function RoomKnowledge() {
   return (
     <div className="room-knowledge">
       <div className="room-knowledge-header">
-        <h2>Room Knowledge</h2>
+        <h2>Fold Knowledge</h2>
         <span className="knowledge-hub-count">
           {entries.length} entr{entries.length !== 1 ? "ies" : "y"} stored by
           agents
@@ -166,7 +166,7 @@ function RoomKnowledge() {
 
       <p className="room-knowledge-desc">
         Architecture decisions, conventions, gotchas, and patterns stored by
-        agents via <code>eywa_learn</code>. This is the room's persistent
+        agents via <code>eywa_learn</code>. This is the fold's persistent
         memory.
       </p>
 

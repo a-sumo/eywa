@@ -3,7 +3,7 @@ import { createMcpHandler } from "agents/mcp";
 import { SupabaseClient } from "./lib/supabase.js";
 import { InboxTracker } from "./lib/inbox.js";
 import { ContextPressureMonitor } from "./lib/pressure.js";
-import type { Env, EywaContext, MemoryRow, GlobalInsightRow, RoomRow } from "./lib/types.js";
+import type { Env, EywaContext, MemoryRow, GlobalInsightRow, FoldRow } from "./lib/types.js";
 import { matchKnowledge, matchInsights, milestonesToQuery } from "./lib/relevance.js";
 import { registerSessionTools } from "./tools/session.js";
 import { registerMemoryTools } from "./tools/memory.js";
@@ -32,11 +32,11 @@ export default {
         name: "eywa-mcp",
         version: "1.0.0",
         status: "ok",
-        docs: "Connect via MCP at /mcp?room=<slug>&agent=<name>",
+        docs: "Connect via MCP at /mcp?fold=<slug>&agent=<name>",
       });
     }
 
-    // Clone demo room endpoint
+    // Clone demo fold endpoint
     if (url.pathname === "/clone-demo") {
       if (request.method === "OPTIONS") {
         return new Response(null, {
@@ -74,13 +74,13 @@ export default {
   },
 
   // Scheduled cleanup: delete demo COPIES older than 24 hours.
-  // The source /demo room is NEVER touched.
+  // The source /demo fold is NEVER touched.
   async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
     const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    // Only target demo copies (slug starts with "demo-"), never the source "demo" room
-    const oldRooms = await db.select<RoomRow>("rooms", {
+    // Only target demo copies (slug starts with "demo-"), never the source "demo" fold
+    const oldFolds = await db.select<FoldRow>("folds", {
       select: "id,slug",
       is_demo: "eq.true",
       created_at: `lt.${cutoff}`,
@@ -88,20 +88,20 @@ export default {
       limit: "50",
     });
 
-    for (const room of oldRooms) {
-      await db.delete("memories", { room_id: `eq.${room.id}` });
-      await db.delete("links", { room_id: `eq.${room.id}` });
-      await db.delete("messages", { room_id: `eq.${room.id}` });
-      await db.delete("rooms", { id: `eq.${room.id}` });
+    for (const fold of oldFolds) {
+      await db.delete("memories", { fold_id: `eq.${fold.id}` });
+      await db.delete("links", { fold_id: `eq.${fold.id}` });
+      await db.delete("messages", { fold_id: `eq.${fold.id}` });
+      await db.delete("folds", { id: `eq.${fold.id}` });
     }
 
-    if (oldRooms.length > 0) {
-      console.log(`Cleaned up ${oldRooms.length} expired demo copies`);
+    if (oldFolds.length > 0) {
+      console.log(`Cleaned up ${oldFolds.length} expired demo copies`);
     }
   },
 } satisfies ExportedHandler<Env>;
 
-function buildDemoMemories(roomId: string): Array<Record<string, unknown>> {
+function buildDemoMemories(foldId: string): Array<Record<string, unknown>> {
   const now = Date.now();
   const min = 60000;
   const agents = [
@@ -112,7 +112,7 @@ function buildDemoMemories(roomId: string): Array<Record<string, unknown>> {
     { name: "eve/rosy-dawn", session: `session_eve_${now}`, task: "Setting up CI/CD pipeline with GitHub Actions" },
   ];
   const memories: Array<Record<string, unknown>> = [];
-  const m = (data: Record<string, unknown>) => { memories.push({ room_id: roomId, ...data }); };
+  const m = (data: Record<string, unknown>) => { memories.push({ fold_id: foldId, ...data }); };
 
   // Destination (set 2 hours ago)
   m({
@@ -285,7 +285,7 @@ function buildDemoMemories(roomId: string): Array<Record<string, unknown>> {
   m({
     session_id: agents[2].session, agent: agents[2].name,
     message_type: "knowledge",
-    content: "Dashboard components use Supabase Realtime for live updates. Subscribe to the memories table filtered by room_id. The useRealtime hook handles reconnection and cleanup automatically.",
+    content: "Dashboard components use Supabase Realtime for live updates. Subscribe to the memories table filtered by fold_id. The useRealtime hook handles reconnection and cleanup automatically.",
     metadata: { event: "knowledge", title: "Realtime subscription pattern", tags: ["frontend", "convention", "realtime"] },
     ts: new Date(now - 18 * min).toISOString(),
   });
@@ -405,7 +405,7 @@ async function handleCloneDemo(request: Request, env: Env): Promise<Response> {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Rate limit: 5 demo rooms per IP per hour
+  // Rate limit: 5 demo folds per IP per hour
   const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
   const rl = rateLimit(`clone-demo:${ip}`, 5, 60 * 60 * 1000);
   if (!rl.allowed) {
@@ -424,24 +424,25 @@ async function handleCloneDemo(request: Request, env: Env): Promise<Response> {
 
   const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-  // Create new room
-  const newRooms = await db.insert<RoomRow>("rooms", {
+  // Create new fold
+  const newFolds = await db.insert<FoldRow>("folds", {
     slug: newSlug,
-    name: "Demo Room",
+    name: "Demo Fold",
     created_by: "demo",
     is_demo: true,
+    secret: "public",
   });
-  const newRoom = newRooms[0];
+  const newFold = newFolds[0];
 
-  // Seed with demo data (no dependency on a source room existing)
-  const seeds = buildDemoMemories(newRoom.id);
+  // Seed with demo data (no dependency on a source fold existing)
+  const seeds = buildDemoMemories(newFold.id);
   const batchSize = 50;
   for (let i = 0; i < seeds.length; i += batchSize) {
     await db.insertMany("memories", seeds.slice(i, i + batchSize));
   }
 
   return Response.json({
-    id: newRoom.id,
+    id: newFold.id,
     slug: newSlug,
     seeded: seeds.length,
   }, { headers: corsHeaders });
@@ -482,21 +483,22 @@ async function handleMcp(
     );
   }
 
-  const roomSlug = url.searchParams.get("room");
+  const foldSlug = url.searchParams.get("fold");
   const baseAgent = url.searchParams.get("agent");
   const baton = url.searchParams.get("baton"); // optional: agent name to load context from
+  const secret = url.searchParams.get("secret") || request.headers.get("x-eywa-secret") || "";
 
-  if (!roomSlug || !baseAgent) {
+  if (!foldSlug || !baseAgent) {
     return Response.json(
-      { error: "Missing required query params: ?room=<slug>&agent=<name>" },
+      { error: "Missing required query params: ?fold=<slug>&agent=<name>" },
       { status: 400 },
     );
   }
 
-  // Validate room slug: alphanumeric, hyphens, underscores, 1-64 chars
-  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(roomSlug)) {
+  // Validate fold slug: alphanumeric, hyphens, underscores, 1-64 chars
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(foldSlug)) {
     return Response.json(
-      { error: "Invalid room slug. Use only letters, numbers, hyphens, underscores (max 64 chars)." },
+      { error: "Invalid fold slug. Use only letters, numbers, hyphens, underscores (max 64 chars)." },
       { status: 400 },
     );
   }
@@ -515,42 +517,51 @@ async function handleMcp(
 
   const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
-  // Resolve room slug → room row
-  const rooms = await db.select<RoomRow>("rooms", {
-    select: "id,name,slug,is_demo",
-    slug: `eq.${roomSlug}`,
+  // Resolve fold slug → fold row
+  const folds = await db.select<FoldRow>("folds", {
+    select: "id,name,slug,is_demo,secret",
+    slug: `eq.${foldSlug}`,
     limit: "1",
   });
 
-  if (!rooms.length) {
+  if (!folds.length) {
     return Response.json(
-      { error: `Room not found: ${roomSlug}. Create one at eywa-ai.dev first.` },
+      { error: `Fold not found: ${foldSlug}. Create one at eywa-ai.dev first.` },
       { status: 404 },
     );
   }
 
-  const room = rooms[0];
+  const fold = folds[0];
+
+  // Secret validation: non-public folds require a matching secret
+  if (fold.secret !== "public" && fold.secret !== secret) {
+    return Response.json(
+      { error: "Invalid or missing secret for this fold." },
+      { status: 403 },
+    );
+  }
+
   const sessionId = `session_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 15)}_${crypto.randomUUID()}`;
 
   const ctx: EywaContext = {
-    roomId: room.id,
-    roomSlug: room.slug,
-    roomName: room.name,
+    foldId: fold.id,
+    foldSlug: fold.slug,
+    foldName: fold.name,
     agent,
     user: baseAgent,
     sessionId,
   };
 
   // Connection is tracked implicitly via eywa_start (session_start event).
-  // No need to log "connected to room" - it's noise that drowns out real work.
+  // No need to log "connected to fold" - it's noise that drowns out real work.
 
-  // Build instructions string with room context + baton (delivered at MCP init, no tool call needed)
+  // Build instructions string with fold context + baton (delivered at MCP init, no tool call needed)
   let instructions: string;
   try {
     instructions = await buildInstructions(db, ctx, baton);
   } catch (err) {
     console.error("buildInstructions failed:", err instanceof Error ? err.message : String(err));
-    instructions = `You are ${ctx.agent} in room /${ctx.roomSlug} (${ctx.roomName}).\nUser: ${ctx.user} | Session: ${ctx.sessionId}\n\nCall eywa_start to get room context.`;
+    instructions = `You are ${ctx.agent} in fold /${ctx.foldSlug} (${ctx.foldName}).\nUser: ${ctx.user} | Session: ${ctx.sessionId}\n\nCall eywa_start to get fold context.`;
   }
 
   // Create MCP server and register all tools
@@ -560,8 +571,8 @@ async function handleMcp(
   // warnings on every tool response. Agents see both without explicit polling.
   const inbox = new InboxTracker();
   const pressure = new ContextPressureMonitor();
-  const isDemo = room.is_demo === true;
-  // Demo rooms: 500 memories on top of the ~272 base clone = 772 total cap
+  const isDemo = fold.is_demo === true;
+  // Demo folds: 500 memories on top of the ~272 base clone = 772 total cap
   const DEMO_MEMORY_CAP = 800;
   // Read-only tools that never insert memories (exempt from cap)
   const READ_ONLY_TOOLS = new Set([
@@ -581,13 +592,13 @@ async function handleMcp(
 
     if (typeof originalHandler === "function") {
       args[handlerIdx] = async function (...handlerArgs: any[]) {
-        // Memory cap for demo rooms: block write tools when over limit
+        // Memory cap for demo folds: block write tools when over limit
         if (isDemo && !READ_ONLY_TOOLS.has(toolName)) {
           try {
-            const { allowed, current } = await checkMemoryCap(db, ctx.roomId, DEMO_MEMORY_CAP);
+            const { allowed, current } = await checkMemoryCap(db, ctx.foldId, DEMO_MEMORY_CAP);
             if (!allowed) {
               return {
-                content: [{ type: "text" as const, text: `Demo room memory limit reached (${current}/${DEMO_MEMORY_CAP}). Create your own room at eywa-ai.dev to continue.` }],
+                content: [{ type: "text" as const, text: `Demo fold memory limit reached (${current}/${DEMO_MEMORY_CAP}). Create your own fold at eywa-ai.dev to continue.` }],
               };
             }
           } catch (err) {
@@ -647,7 +658,7 @@ async function handleMcp(
   return handler(request, env, execCtx);
 }
 
-/** Build MCP instructions string with room context + baton. Delivered at connection time, no tool call needed. */
+/** Build MCP instructions string with fold context + baton. Delivered at connection time, no tool call needed. */
 async function buildInstructions(
   db: SupabaseClient,
   ctx: EywaContext,
@@ -659,7 +670,7 @@ async function buildInstructions(
     // Active agents (skip connection spam, only real activity)
     db.select<MemoryRow>("memories", {
       select: "agent,content,metadata,ts",
-      room_id: `eq.${ctx.roomId}`,
+      fold_id: `eq.${ctx.foldId}`,
       "metadata->>event": "neq.agent_connected",
       order: "ts.desc",
       limit: "200",
@@ -667,7 +678,7 @@ async function buildInstructions(
     // Recent activity (skip connection spam)
     db.select<MemoryRow>("memories", {
       select: "agent,message_type,content,metadata,ts",
-      room_id: `eq.${ctx.roomId}`,
+      fold_id: `eq.${ctx.foldId}`,
       "metadata->>event": "neq.agent_connected",
       order: "ts.desc",
       limit: "8",
@@ -675,7 +686,7 @@ async function buildInstructions(
     // Pending injections
     db.select<MemoryRow>("memories", {
       select: "id",
-      room_id: `eq.${ctx.roomId}`,
+      fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.injection",
       "metadata->>target_agent": `in.(${ctx.agent},${ctx.user},all)`,
       limit: "50",
@@ -683,7 +694,7 @@ async function buildInstructions(
     // Knowledge entries with full content (for proactive surfacing)
     db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
-      room_id: `eq.${ctx.roomId}`,
+      fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.knowledge",
       order: "ts.desc",
       limit: "50",
@@ -691,7 +702,7 @@ async function buildInstructions(
     // Distress signals (unresolved, same user)
     db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
-      room_id: `eq.${ctx.roomId}`,
+      fold_id: `eq.${ctx.foldId}`,
       "metadata->>event": "eq.distress",
       "metadata->>resolved": "eq.false",
       "metadata->>user": `eq.${ctx.user}`,
@@ -701,7 +712,7 @@ async function buildInstructions(
     // Recent checkpoints (same user, last 2h)
     db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
-      room_id: `eq.${ctx.roomId}`,
+      fold_id: `eq.${ctx.foldId}`,
       "metadata->>event": "eq.checkpoint",
       "metadata->>user": `eq.${ctx.user}`,
       ts: `gte.${twoHoursAgo}`,
@@ -711,7 +722,7 @@ async function buildInstructions(
     // Current destination
     db.select<MemoryRow>("memories", {
       select: "content,metadata,ts",
-      room_id: `eq.${ctx.roomId}`,
+      fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.knowledge",
       "metadata->>event": "eq.destination",
       order: "ts.desc",
@@ -720,7 +731,7 @@ async function buildInstructions(
   ];
 
   // Active claims (uses staleness check, runs in parallel with other queries)
-  const activeClaimsPromise = getActiveClaims(db, ctx.roomId, ctx.agent);
+  const activeClaimsPromise = getActiveClaims(db, ctx.foldId, ctx.agent);
 
   // Global insights (separate query, different return type)
   const insightsPromise = db.select<GlobalInsightRow>("global_insights", {
@@ -734,7 +745,7 @@ async function buildInstructions(
     queries.push(
       db.select<MemoryRow>("memories", {
         select: "message_type,content,metadata,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         agent: `eq.${baton}`,
         order: "ts.desc",
         limit: "20",
@@ -785,7 +796,7 @@ async function buildInstructions(
 
   // Compose instructions
   const lines: string[] = [
-    `You are ${ctx.agent} in room /${ctx.roomSlug} (${ctx.roomName}).`,
+    `You are ${ctx.agent} in fold /${ctx.foldSlug} (${ctx.foldName}).`,
     `User: ${ctx.user} | Session: ${ctx.sessionId}`,
   ];
 
@@ -881,7 +892,7 @@ async function buildInstructions(
           }).filter(s => s.score > 0.15).sort((a, b) => b.score - a.score).slice(0, 3);
 
           if (scored.length > 0) {
-            lines.push(`\nNetwork routes (from ${insightRows.length} cross-room insights):`);
+            lines.push(`\nNetwork routes (from ${insightRows.length} cross-fold insights):`);
             lines.push("Use eywa_route for detailed recommendations.");
             for (const { ins, score } of scored) {
               const pct = Math.round(score * 100);
@@ -932,7 +943,7 @@ async function buildInstructions(
       lines.push(`${prefix}: ${(m.content ?? "").slice(0, 200)}${opTag}`);
     }
   } else if (baton) {
-    lines.push(`\nBaton: no memories found for ${baton} in this room.`);
+    lines.push(`\nBaton: no memories found for ${baton} in this fold.`);
   }
 
   lines.push("\nCall eywa_start to begin logging. Use eywa_log with system/action/outcome fields.");

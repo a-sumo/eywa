@@ -52,12 +52,12 @@ export function rateLimit(
   return { allowed, remaining, resetAt: win.resetAt };
 }
 
-/** Per-room memory cap check. */
+/** Per-fold memory cap check. */
 export async function checkMemoryCap(
   db: { count: (table: string, filters: Record<string, string>) => Promise<number> },
-  roomId: string,
+  foldId: string,
   cap: number,
 ): Promise<{ allowed: boolean; current: number }> {
-  const current = await db.count("memories", { room_id: `eq.${roomId}` });
+  const current = await db.count("memories", { fold_id: `eq.${foldId}` });
   return { allowed: current < cap, current };
 }

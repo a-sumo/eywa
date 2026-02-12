@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { supabase, type Memory } from "../lib/supabase";
 
-export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?: number) {
+export function useRealtimeMemories(foldId: string | null, limit = 50, sinceMs?: number) {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchInitial = useCallback(async () => {
-    if (!roomId) {
+    if (!foldId) {
       setMemories([]);
       setLoading(false);
       return;
@@ -16,7 +16,7 @@ export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?:
     let query = supabase
       .from("memories")
       .select("*")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .order("ts", { ascending: false })
       .limit(limit);
 
@@ -32,25 +32,25 @@ export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?:
       if (data) setMemories(data);
     }
     setLoading(false);
-  }, [roomId, limit, sinceMs]);
+  }, [foldId, limit, sinceMs]);
 
   useEffect(() => {
     fetchInitial();
 
-    if (!roomId) return;
+    if (!foldId) return;
 
     const channel = supabase
-      .channel(`memories-realtime-${roomId}`)
+      .channel(`memories-realtime-${foldId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "memories", filter: `room_id=eq.${roomId}` },
+        { event: "INSERT", schema: "public", table: "memories", filter: `fold_id=eq.${foldId}` },
         (payload) => {
           setMemories((prev) => [payload.new as Memory, ...prev].slice(0, limit));
         }
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "memories", filter: `room_id=eq.${roomId}` },
+        { event: "UPDATE", schema: "public", table: "memories", filter: `fold_id=eq.${foldId}` },
         (payload) => {
           const updated = payload.new as Memory;
           setMemories((prev) => prev.map((m) => m.id === updated.id ? updated : m));
@@ -61,12 +61,12 @@ export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?:
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchInitial, roomId, limit]);
+  }, [fetchInitial, foldId, limit]);
 
   return { memories, loading, error, refresh: fetchInitial };
 }
 
-export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
+export function useRealtimeAgents(foldId: string | null, sinceMs?: number) {
   const [agents, setAgents] = useState<
     { name: string; lastSeen: string; sessionCount: number; isActive: boolean }[]
   >([]);
@@ -87,7 +87,7 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
   }, []);
 
   const fetchAgents = useCallback(async () => {
-    if (!roomId) {
+    if (!foldId) {
       agentMapRef.current.clear();
       setAgents([]);
       return;
@@ -96,7 +96,7 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
     let query = supabase
       .from("memories")
       .select("agent, ts, session_id, metadata")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .order("ts", { ascending: false })
       .limit(1000);
 
@@ -128,18 +128,18 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
 
     agentMapRef.current = map;
     buildAgentList();
-  }, [roomId, sinceMs, buildAgentList]);
+  }, [foldId, sinceMs, buildAgentList]);
 
   useEffect(() => {
     fetchAgents();
 
-    if (!roomId) return;
+    if (!foldId) return;
 
     const channel = supabase
-      .channel(`agents-realtime-${roomId}`)
+      .channel(`agents-realtime-${foldId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "memories", filter: `room_id=eq.${roomId}` },
+        { event: "INSERT", schema: "public", table: "memories", filter: `fold_id=eq.${foldId}` },
         (payload) => {
           // Incremental update: merge new row into existing map
           const row = payload.new as { agent: string; ts: string; session_id: string; metadata: Record<string, unknown> };
@@ -168,7 +168,7 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchAgents, roomId, buildAgentList]);
+  }, [fetchAgents, foldId, buildAgentList]);
 
   return agents;
 }

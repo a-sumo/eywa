@@ -7,7 +7,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { useGeminiLive, type VoiceEvent, type VoiceState } from "../hooks/useGeminiLive";
 import { useParams } from "react-router-dom";
 
@@ -129,7 +129,7 @@ interface TranscriptEntry {
 
 // --- Main view ---
 export function VoicesView() {
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const { slug } = useParams<{ slug: string }>();
 
   // Transcript
@@ -178,8 +178,8 @@ export function VoicesView() {
   }, [addEntry, liveResponse, liveUser]);
 
   const { connected, voiceState, micLevelRef, connect, disconnect } = useGeminiLive({
-    roomId: room?.id || null,
-    roomSlug: slug || "",
+    foldId: fold?.id || null,
+    foldSlug: slug || "",
     onEvent,
   });
 
@@ -207,8 +207,8 @@ export function VoicesView() {
 
   return (
     <div style={S.page}>
-      {/* Room name */}
-      <div style={S.roomLabel}>{room?.name || slug || "eywa"}</div>
+      {/* Fold name */}
+      <div style={S.roomLabel}>{fold?.name || slug || "eywa"}</div>
 
       {/* Orb area */}
       <div style={S.orbArea} onClick={handleOrbTap}>

@@ -40,7 +40,7 @@ export function registerLinkTools(
       const source = sourceMems[0];
 
       const rows = await db.insert<LinkRow>("links", {
-        room_id: ctx.roomId,
+        fold_id: ctx.foldId,
         source_memory_id,
         target_agent,
         target_session_id,
@@ -73,7 +73,7 @@ export function registerLinkTools(
 
   server.tool(
     "eywa_links",
-    "List links in this room. Shows connections between memories and sessions.",
+    "List links in this fold. Shows connections between memories and sessions.",
     {
       limit: z.number().optional().default(20).describe("Maximum links to return"),
       target_agent: z.string().optional().describe("Filter by target agent"),
@@ -86,7 +86,7 @@ export function registerLinkTools(
     async ({ limit, target_agent, link_type }) => {
       const params: Record<string, string> = {
         select: "id,source_memory_id,target_agent,target_session_id,target_position,link_type,created_by,label,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         order: "ts.desc",
         limit: String(limit),
       };
@@ -134,7 +134,7 @@ export function registerLinkTools(
     async ({ link_id }) => {
       await db.delete("links", {
         id: `eq.${link_id}`,
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
       });
 
       return {
@@ -157,7 +157,7 @@ export function registerLinkTools(
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,agent,session_id,message_type,content,metadata,ts",
         id: `eq.${memory_id}`,
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         limit: "1",
       });
 

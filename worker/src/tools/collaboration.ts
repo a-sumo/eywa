@@ -47,7 +47,7 @@ export function registerCollaborationTools(
 ) {
   server.tool(
     "eywa_status",
-    "See what all agents are currently working on in this room, including what systems they're operating on and what actions they're taking.",
+    "See what all agents are currently working on in this fold, including what systems they're operating on and what actions they're taking.",
     {},
     {
       readOnlyHint: true,
@@ -56,7 +56,7 @@ export function registerCollaborationTools(
     async () => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "agent,content,ts,metadata",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         order: "ts.desc",
       });
 
@@ -186,7 +186,7 @@ export function registerCollaborationTools(
 
   server.tool(
     "eywa_summary",
-    "Get a token-efficient compressed summary of the room. Per-agent task, systems, and outcomes. Knowledge and injection counts. Designed for agents with limited context windows.",
+    "Get a token-efficient compressed summary of the fold. Per-agent task, systems, and outcomes. Knowledge and injection counts. Designed for agents with limited context windows.",
     {
       hours: z.number().optional().default(24).describe("How many hours back to summarize"),
     },
@@ -200,20 +200,20 @@ export function registerCollaborationTools(
       const [memRows, knowledgeRows, injectionRows] = await Promise.all([
         db.select<MemoryRow>("memories", {
           select: "agent,message_type,content,metadata,ts",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           ts: `gte.${since}`,
           order: "ts.desc",
           limit: "500",
         }),
         db.select<MemoryRow>("memories", {
           select: "id",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           limit: "100",
         }),
         db.select<MemoryRow>("memories", {
           select: "id,metadata",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.injection",
           ts: `gte.${since}`,
           limit: "100",
@@ -273,7 +273,7 @@ export function registerCollaborationTools(
         return target === ctx.agent || target === ctx.user || target === "all";
       });
 
-      const lines: string[] = [`Room summary (last ${hours}h):\n`];
+      const lines: string[] = [`Fold summary (last ${hours}h):\n`];
 
       for (const [name, info] of agents) {
         const sys = info.systems.size > 0 ? ` {${Array.from(info.systems).join(",")}}` : "";
@@ -307,7 +307,7 @@ export function registerCollaborationTools(
     async ({ agent, limit }) => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "message_type,content,ts,metadata",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         agent: `eq.${agent}`,
         order: "ts.desc",
         limit: String(limit),
@@ -352,7 +352,7 @@ export function registerCollaborationTools(
       // Find their most recent session
       const sessionRows = await db.select<MemoryRow>("memories", {
         select: "session_id",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         agent: `eq.${agent}`,
         order: "ts.desc",
         limit: "1",
@@ -373,7 +373,7 @@ export function registerCollaborationTools(
 
       const rows = await db.select<MemoryRow>("memories", {
         select: "message_type,content,ts,metadata",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         agent: `eq.${agent}`,
         session_id: `eq.${targetSession}`,
         order: "ts.asc",
@@ -421,7 +421,7 @@ export function registerCollaborationTools(
     },
     async ({ content, channel }) => {
       await db.insert("messages", {
-        room_id: ctx.roomId,
+        fold_id: ctx.foldId,
         sender: ctx.agent,
         channel,
         content,

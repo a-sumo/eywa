@@ -4,12 +4,12 @@ import { supabase } from "../lib/supabase";
 
 interface OnboardingOverlayProps {
   slug: string;
-  roomId: string;
+  foldId: string;
   onDismiss: () => void;
 }
 
-function onboardingKey(roomId: string) {
-  return `eywa-onboarding-dismissed-${roomId}`;
+function onboardingKey(foldId: string) {
+  return `eywa-onboarding-dismissed-${foldId}`;
 }
 
 /**
@@ -20,23 +20,23 @@ function onboardingKey(roomId: string) {
  *
  * Persists dismissal to localStorage so users don't see it again on refresh.
  */
-export function OnboardingOverlay({ slug, roomId, onDismiss }: OnboardingOverlayProps) {
+export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlayProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  // Auto-dismiss if already dismissed for this room
+  // Auto-dismiss if already dismissed for this fold
   useEffect(() => {
     try {
-      if (localStorage.getItem(onboardingKey(roomId))) {
+      if (localStorage.getItem(onboardingKey(foldId))) {
         onDismiss();
       }
     } catch {}
-  }, [roomId, onDismiss]);
+  }, [foldId, onDismiss]);
 
   // Wrap onDismiss to persist
   const handleDismiss = useCallback(() => {
-    try { localStorage.setItem(onboardingKey(roomId), "1"); } catch {}
+    try { localStorage.setItem(onboardingKey(foldId), "1"); } catch {}
     onDismiss();
-  }, [roomId, onDismiss]);
+  }, [foldId, onDismiss]);
 
   // Destination state
   const [dest, setDest] = useState("");
@@ -44,7 +44,7 @@ export function OnboardingOverlay({ slug, roomId, onDismiss }: OnboardingOverlay
   const [savingDest, setSavingDest] = useState(false);
 
   const handleSaveDestination = useCallback(async () => {
-    if (!dest.trim() || !roomId) return;
+    if (!dest.trim() || !foldId) return;
     setSavingDest(true);
     const milestones = milestoneText
       .split("\n")
@@ -55,7 +55,7 @@ export function OnboardingOverlay({ slug, roomId, onDismiss }: OnboardingOverlay
       progress[m] = false;
     }
     await supabase.from("memories").insert({
-      room_id: roomId,
+      fold_id: foldId,
       agent: "web-user",
       session_id: `web_${Date.now()}`,
       message_type: "knowledge",
@@ -73,7 +73,7 @@ export function OnboardingOverlay({ slug, roomId, onDismiss }: OnboardingOverlay
     });
     setSavingDest(false);
     setStep(3);
-  }, [dest, milestoneText, roomId]);
+  }, [dest, milestoneText, foldId]);
 
   const handleSkipDestination = useCallback(() => {
     setStep(3);
@@ -83,7 +83,7 @@ export function OnboardingOverlay({ slug, roomId, onDismiss }: OnboardingOverlay
     <div className="onboarding-overlay">
       {/* Header */}
       <div className="onboarding-header">
-        <h2 className="onboarding-title">Set up your room</h2>
+        <h2 className="onboarding-title">Set up your fold</h2>
         <button className="onboarding-dismiss" onClick={handleDismiss}>
           Skip setup
         </button>
@@ -219,7 +219,7 @@ export function OnboardingOverlay({ slug, roomId, onDismiss }: OnboardingOverlay
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </span>
-                Room created
+                Fold created
               </div>
               <div className={`onboarding-check-item ${step >= 2 ? "onboarding-check-done" : ""}`}>
                 <span className="onboarding-check-icon">

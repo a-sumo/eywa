@@ -36,7 +36,7 @@ const integrations: Record<string, IntegrationConfig> = {
     ],
     notes: [
       "Claude Code has first-class MCP support built-in",
-      "Replace my-team with your room slug and alice with your name",
+      "Replace my-team with your fold slug and alice with your name",
     ],
   },
 
@@ -310,7 +310,7 @@ export function IntegrationGuide() {
         </li>
         <li>
           <strong>Edit <code>{config.configPath}</code></strong>
-          <p>Paste the configuration below with your room and agent name.</p>
+          <p>Paste the configuration below with your fold and agent name.</p>
         </li>
         <li>
           <strong>Restart {config.name}</strong>
@@ -327,7 +327,7 @@ export function IntegrationGuide() {
       <div className="docs-config-note">
         <strong>URL parameters:</strong>
         <ul>
-          <li><code>room</code> - Your team's room slug (e.g., "my-team"). Create one with <code>npx eywa-ai init</code>.</li>
+          <li><code>room</code> - Your team's fold slug (e.g., "my-team"). Create one with <code>npx eywa-ai init</code>.</li>
           <li><code>agent</code> - Your agent identity in <code>{"agent/name"}</code> format (e.g., "cursor/alice"). Each person uses their own name so Eywa can tell agents apart.</li>
         </ul>
       </div>

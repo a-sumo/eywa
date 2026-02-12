@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { MemoryCard } from "./MemoryCard";
 import { useGeminiChat } from "../hooks/useGeminiChat";
 import type { Memory } from "../lib/supabase";
@@ -61,10 +61,10 @@ interface WorkspaceVersion {
 
 export function WorkspaceView() {
   const { slug } = useParams<{ slug: string }>();
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const { memories } = useRealtimeMemories(room?.id ?? null, 500);
+  const { memories } = useRealtimeMemories(fold?.id ?? null, 500);
 
   // Search filter for source panel
   const [search, setSearch] = useState("");
@@ -322,7 +322,7 @@ export function WorkspaceView() {
     send: sendChat,
     clear: clearChat,
     autoContextError,
-  } = useGeminiChat(contextSummary, room?.id);
+  } = useGeminiChat(contextSummary, fold?.id);
 
   const [chatInput, setChatInput] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -341,7 +341,7 @@ export function WorkspaceView() {
   return (
     <div className="eywa-view">
       <div className="eywa-header">
-        <button className="back-btn" onClick={() => navigate(`/r/${slug}`)}>
+        <button className="back-btn" onClick={() => navigate(`/f/${slug}`)}>
           &larr; Back
         </button>
         <h2>Session Mixer</h2>
@@ -586,7 +586,7 @@ export function WorkspaceView() {
           <div className="eywa-terminal">
             {autoContextError && (
               <div style={{ color: "var(--color-text-secondary)", fontSize: "0.75rem", opacity: 0.7, padding: "0.5rem 1rem" }}>
-                Room context unavailable. Chat works but without live agent data.
+                Fold context unavailable. Chat works but without live agent data.
               </div>
             )}
             {chatMessages.length === 0 && !chatLoading && (

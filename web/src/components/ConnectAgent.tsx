@@ -247,7 +247,7 @@ echo "Eywa configured for Codex"`;
         <div className="connect-agent-header">
           <h3>Connect an AI Agent</h3>
           <p>
-            Two steps to start logging your AI session to this room.
+            Two steps to start logging your AI session to this fold.
           </p>
         </div>
       )}

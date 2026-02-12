@@ -4,8 +4,8 @@ import type { SupabaseClient } from "../lib/supabase.js";
 import type { EywaContext, GlobalInsightRow, MemoryRow } from "../lib/types.js";
 
 /** SHA-256 hash for anonymizing source identity */
-async function hashSource(roomId: string, agent: string): Promise<string> {
-  const data = new TextEncoder().encode(`${roomId}:${agent}`);
+async function hashSource(foldId: string, agent: string): Promise<string> {
+  const data = new TextEncoder().encode(`${foldId}:${agent}`);
   const hash = await crypto.subtle.digest("SHA-256", data);
   const bytes = new Uint8Array(hash);
   return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
@@ -90,13 +90,13 @@ export function registerNetworkTools(
       openWorldHint: true,
     },
     async ({ insight, domain_tags }) => {
-      const sourceHash = await hashSource(ctx.roomId, ctx.agent);
+      const sourceHash = await hashSource(ctx.foldId, ctx.agent);
 
       const rows = await db.insert<GlobalInsightRow>("global_insights", {
         insight,
         domain_tags: domain_tags ?? [],
         source_hash: sourceHash,
-        room_id: ctx.roomId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
       });
 
@@ -169,21 +169,21 @@ export function registerNetworkTools(
 
   server.tool(
     "eywa_route",
-    "Get lane recommendations for a task based on cross-room intelligence. Analyzes what approaches worked for similar tasks across the network and returns recommended routes. Like Waze for agent swarms: routing from real telemetry.",
+    "Get lane recommendations for a task based on cross-fold intelligence. Analyzes what approaches worked for similar tasks across the network and returns recommended routes. Like Waze for agent swarms: routing from real telemetry.",
     {
-      task: z.string().optional().describe("Task or goal to get routing for. Defaults to the room's destination milestones."),
+      task: z.string().optional().describe("Task or goal to get routing for. Defaults to the fold's destination milestones."),
     },
     {
       readOnlyHint: true,
       destructiveHint: false,
     },
     async ({ task }) => {
-      // If no task provided, use the room's destination milestones
+      // If no task provided, use the fold's destination milestones
       let routeQuery = task ?? "";
       if (!routeQuery) {
         const destRows = await db.select<MemoryRow>("memories", {
           select: "metadata",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           "metadata->>event": "eq.destination",
           order: "ts.desc",

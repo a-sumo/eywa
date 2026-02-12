@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { supabase, type GlobalInsight } from "../lib/supabase";
 
 function timeAgo(ts: string): string {
@@ -32,7 +32,7 @@ function domainColor(tag: string): string {
 
 export function GlobalKnowledgeHub() {
   const { slug } = useParams<{ slug: string }>();
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const navigate = useNavigate();
   const [insights, setInsights] = useState<GlobalInsight[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +91,7 @@ export function GlobalKnowledgeHub() {
 
   // Publish insight from the dashboard
   async function handlePublish() {
-    if (!publishText.trim() || !room) return;
+    if (!publishText.trim() || !fold) return;
     setPublishing(true);
 
     const tags = publishTags
@@ -101,7 +101,7 @@ export function GlobalKnowledgeHub() {
 
     // Hash source for anonymization
     const encoder = new TextEncoder();
-    const data = encoder.encode(`${room.id}:dashboard`);
+    const data = encoder.encode(`${fold.id}:dashboard`);
     const hashBuf = await crypto.subtle.digest("SHA-256", data);
     const hashArr = new Uint8Array(hashBuf);
     const sourceHash = Array.from(hashArr)
@@ -112,7 +112,7 @@ export function GlobalKnowledgeHub() {
       insight: publishText.trim(),
       domain_tags: tags,
       source_hash: sourceHash,
-      room_id: room.id,
+      fold_id: fold.id,
       agent: "dashboard",
     });
 
@@ -124,7 +124,7 @@ export function GlobalKnowledgeHub() {
   return (
     <div className="knowledge-hub">
       <div className="knowledge-hub-header">
-        <button className="back-btn" onClick={() => navigate(`/r/${slug}`)}>
+        <button className="back-btn" onClick={() => navigate(`/f/${slug}`)}>
           &larr; Back
         </button>
         <h2>Global Knowledge Hub</h2>

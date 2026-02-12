@@ -86,19 +86,19 @@ function memoryToNotification(m: Memory): Notification | null {
   return null;
 }
 
-export function useNotifications(roomId: string | null) {
+export function useNotifications(foldId: string | null) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const seenIds = useRef(new Set<string>());
 
   // Load initial notification-worthy events
   useEffect(() => {
-    if (!roomId) return;
+    if (!foldId) return;
 
     (async () => {
       const { data } = await supabase
         .from("memories")
         .select("*")
-        .eq("room_id", roomId)
+        .eq("fold_id", foldId)
         .in("metadata->>event", [
           "session_done",
           "session_end",
@@ -121,21 +121,21 @@ export function useNotifications(roomId: string | null) {
         setNotifications(initial);
       }
     })();
-  }, [roomId]);
+  }, [foldId]);
 
   // Subscribe to realtime inserts for new notifications
   useEffect(() => {
-    if (!roomId) return;
+    if (!foldId) return;
 
     const channel = supabase
-      .channel(`notifications-${roomId}`)
+      .channel(`notifications-${foldId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "memories",
-          filter: `room_id=eq.${roomId}`,
+          filter: `fold_id=eq.${foldId}`,
         },
         (payload) => {
           const m = payload.new as Memory;
@@ -151,7 +151,7 @@ export function useNotifications(roomId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId]);
+  }, [foldId]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

@@ -1,7 +1,7 @@
 import { useMemo, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import type { Memory } from "../lib/supabase";
 import { getAvatar } from "./avatars";
 import { EywaLogoWarm } from "./EywaLogo";
@@ -169,8 +169,8 @@ function recentCallCount(memories: Memory[], windowMs: number): number {
 /* ── Main Component ── */
 
 export function MiniEywaEink() {
-  const { room } = useRoomContext();
-  const { memories } = useRealtimeMemories(room?.id ?? null, 200);
+  const { fold } = useFoldContext();
+  const { memories } = useRealtimeMemories(fold?.id ?? null, 200);
 
   // Auto-reload every 60s for e-ink refresh
   useEffect(() => {
@@ -236,7 +236,7 @@ export function MiniEywaEink() {
         <EywaLogoWarm size={20} className="ei-logo" />
         <span className="ei-header-brand">EYWA</span>
         <span className="ei-header-room">
-          {room?.name ?? room?.slug ?? ""}
+          {fold?.name ?? fold?.slug ?? ""}
         </span>
         <span className="ei-header-sep" />
         <span className="ei-header-stat">
@@ -306,12 +306,12 @@ export function MiniEywaEink() {
           <EywaMascot mood={mascotMood} scale={0.32} />
           <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <span className="ei-footer-brand">EYWA</span>
-            <span className="ei-footer-room">{room?.slug ?? ""}</span>
+            <span className="ei-footer-room">{fold?.slug ?? ""}</span>
           </div>
         </div>
         <div className="ei-marker">
           <QRCodeSVG
-            value={`eywa:${room?.slug ?? "demo"}`}
+            value={`eywa:${fold?.slug ?? "demo"}`}
             size={72}
             bgColor="#F5F0E8"
             fgColor="#2C2418"

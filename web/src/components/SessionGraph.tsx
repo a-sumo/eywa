@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import * as d3 from "d3";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import type { Memory, Link } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
 import { getAvatarDataUri } from "./avatars";
@@ -941,8 +941,8 @@ interface SessionGraphProps {
 }
 
 export function SessionGraph({ links = [] }: SessionGraphProps) {
-  const { room } = useRoomContext();
-  const { memories, loading } = useRealtimeMemories(room?.id ?? null, 1000);
+  const { fold } = useFoldContext();
+  const { memories, loading } = useRealtimeMemories(fold?.id ?? null, 1000);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [hoveredTrack, setHoveredTrack] = useState<number | null>(null);
 

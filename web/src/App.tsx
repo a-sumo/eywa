@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { RoomProvider } from "./context/RoomContext";
+import { FoldProvider } from "./context/FoldContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppHeader } from "./components/AppHeader";
 import { Landing } from "./components/Landing";
@@ -9,7 +9,7 @@ import { NotFound } from "./components/NotFound";
 import "./App.css";
 
 // Lazy-loaded route components (split into separate chunks)
-const RoomLayout = lazy(() => import("./components/RoomLayout").then(m => ({ default: m.RoomLayout })));
+const FoldLayout = lazy(() => import("./components/FoldLayout").then(m => ({ default: m.FoldLayout })));
 const ThreadTree = lazy(() => import("./components/ThreadTree").then(m => ({ default: m.ThreadTree })));
 const ThreadView = lazy(() => import("./components/ThreadView").then(m => ({ default: m.ThreadView })));
 const WorkspaceView = lazy(() => import("./components/WorkspaceView").then(m => ({ default: m.WorkspaceView })));
@@ -26,7 +26,7 @@ const NavigatorMap = lazy(() => import("./components/NavigatorMap").then(m => ({
 const OperationsView = lazy(() => import("./components/OperationsView").then(m => ({ default: m.OperationsView })));
 const SeedMonitor = lazy(() => import("./components/SeedMonitor").then(m => ({ default: m.SeedMonitor })));
 const SwarmFlow = lazy(() => import("./components/SwarmFlow").then(m => ({ default: m.SwarmFlow })));
-const RoomsIndex = lazy(() => import("./components/RoomsIndex").then(m => ({ default: m.RoomsIndex })));
+const FoldsIndex = lazy(() => import("./components/FoldsIndex").then(m => ({ default: m.FoldsIndex })));
 const VoicesView = lazy(() => import("./components/VoicesView").then(m => ({ default: m.VoicesView })));
 const DocsLayout = lazy(() => import("./components/DocsLayout").then(m => ({ default: m.DocsLayout })));
 const DocsOverview = lazy(() => import("./components/DocsLayout").then(m => ({ default: m.DocsOverview })));
@@ -54,7 +54,7 @@ function App() {
         <Suspense fallback={<RouteLoader />}>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/rooms" element={<RoomsIndex />} />
+            <Route path="/folds" element={<FoldsIndex />} />
             <Route path="/cli-auth" element={<CLIAuth />} />
             <Route path="/docs" element={<DocsLayout />}>
               <Route index element={<DocsOverview />} />
@@ -68,12 +68,12 @@ function App() {
               <Route path="self-hosting" element={<SelfHostingDocs />} />
               <Route path="integrations/:provider" element={<IntegrationGuide />} />
             </Route>
-            <Route path="/r/:slug/eink" element={<RoomProvider><MiniEywaEink /></RoomProvider>} />
-            <Route path="/r/:slug/phone" element={<RoomProvider><MiniEywa /></RoomProvider>} />
-            <Route path="/r/:slug/spectacles" element={<RoomProvider><SpectaclesView /></RoomProvider>} />
-            <Route path="/r/:slug/spectacles/rx" element={<RoomProvider><SpectaclesReceiver /></RoomProvider>} />
-            <Route path="/r/:slug/voices" element={<RoomProvider><VoicesView /></RoomProvider>} />
-            <Route path="/r/:slug/*" element={<RoomRoutes />} />
+            <Route path="/f/:slug/eink" element={<FoldProvider><MiniEywaEink /></FoldProvider>} />
+            <Route path="/f/:slug/phone" element={<FoldProvider><MiniEywa /></FoldProvider>} />
+            <Route path="/f/:slug/spectacles" element={<FoldProvider><SpectaclesView /></FoldProvider>} />
+            <Route path="/f/:slug/spectacles/rx" element={<FoldProvider><SpectaclesReceiver /></FoldProvider>} />
+            <Route path="/f/:slug/voices" element={<FoldProvider><VoicesView /></FoldProvider>} />
+            <Route path="/f/:slug/*" element={<FoldRoutes />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -97,11 +97,11 @@ function ScrollToTop() {
   return null;
 }
 
-function RoomRoutes() {
+function FoldRoutes() {
   return (
-    <RoomProvider>
+    <FoldProvider>
       <Suspense fallback={<RouteLoader />}>
-        <RoomLayout>
+        <FoldLayout>
           <Suspense fallback={<RouteLoader />}>
             <Routes>
               <Route index element={<ThreadTree />} />
@@ -117,9 +117,9 @@ function RoomRoutes() {
               <Route path="flow" element={<SwarmFlow />} />
             </Routes>
           </Suspense>
-        </RoomLayout>
+        </FoldLayout>
       </Suspense>
-    </RoomProvider>
+    </FoldProvider>
   );
 }
 

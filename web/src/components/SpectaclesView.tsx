@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { supabase } from "../lib/supabase";
 import { NavigatorMap as NavigatorMapRenderer } from "../lib/navigator-map.js";
@@ -26,8 +26,8 @@ import {
 // --- Main Component ---
 
 export function SpectaclesView() {
-  const { room } = useRoomContext();
-  const { memories } = useRealtimeMemories(room?.id ?? null, 200);
+  const { fold } = useFoldContext();
+  const { memories } = useRealtimeMemories(fold?.id ?? null, 200);
 
   const [roomId, setRoomId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
@@ -36,7 +36,7 @@ export function SpectaclesView() {
   const [channelReady, setChannelReady] = useState(false);
   const [broadcasting, setBroadcasting] = useState(false);
 
-  const roomSlug = room?.slug || "demo";
+  const roomSlug = fold?.slug || "demo";
   const deviceId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("device") || "editor";
@@ -97,7 +97,7 @@ export function SpectaclesView() {
     requestAnimationFrame(() => map.draw(hoveredRef.current));
   }
 
-  // Find best Navigator room on load
+  // Find best Navigator fold on load
   useEffect(() => {
     listRooms()
       .then((rooms) => {
@@ -113,7 +113,7 @@ export function SpectaclesView() {
 
   // Sync Eywa data to Navigator
   const syncData = useCallback(async () => {
-    if (syncing || !room || memories.length === 0) return;
+    if (syncing || !fold || memories.length === 0) return;
     setSyncing(true);
     try {
       const agentMap = new Map<
@@ -145,7 +145,7 @@ export function SpectaclesView() {
     } finally {
       setSyncing(false);
     }
-  }, [memories, room, roomId, roomSlug, syncing]);
+  }, [memories, fold, roomId, roomSlug, syncing]);
 
   // Auto-sync once
   useEffect(() => {
@@ -190,8 +190,8 @@ export function SpectaclesView() {
 
   // Supabase broadcast channel
   useEffect(() => {
-    if (!room?.slug) return;
-    const channelKey = `spectacles:${room.slug}:${deviceId}`;
+    if (!fold?.slug) return;
+    const channelKey = `spectacles:${fold.slug}:${deviceId}`;
     const channel = supabase.channel(channelKey, {
       config: { broadcast: { ack: false, self: false } },
     });
@@ -210,7 +210,7 @@ export function SpectaclesView() {
       channelRef.current = null;
       setChannelReady(false);
     };
-  }, [room?.slug, deviceId]);
+  }, [fold?.slug, deviceId]);
 
   // Broadcast loop: render map to hidden canvas using NavigatorMap, send frames
   useEffect(() => {
@@ -489,7 +489,7 @@ export function SpectaclesView() {
             alignItems: "center", justifyContent: "center",
             color: isDark ? "#484f58" : "#999", fontSize: 13, pointerEvents: "none",
           }}>
-            {syncing ? "Syncing room data..." : "Connecting..."}
+            {syncing ? "Syncing fold data..." : "Connecting..."}
           </div>
         )}
       </div>

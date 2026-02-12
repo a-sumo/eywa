@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { MemoryCard } from "./MemoryCard";
 
 function agentColor(name: string): string {
@@ -27,9 +27,9 @@ export function ThreadView() {
     agent: string;
     sessionId: string;
   }>();
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const navigate = useNavigate();
-  const { memories, loading } = useRealtimeMemories(room?.id ?? null, 500);
+  const { memories, loading } = useRealtimeMemories(fold?.id ?? null, 500);
 
   const threadMemories = memories
     .filter((m) => m.agent === agent && m.session_id === sessionId)
@@ -53,7 +53,7 @@ export function ThreadView() {
   return (
     <div className="thread-view">
       <div className="thread-view-header">
-        <button className="back-btn" onClick={() => navigate(`/r/${slug}`)}>
+        <button className="back-btn" onClick={() => navigate(`/f/${slug}`)}>
           &larr; Back
         </button>
         <div className="thread-view-info">
@@ -65,7 +65,7 @@ export function ThreadView() {
         <button
           className="btn-eywa-from-thread"
           onClick={() =>
-            navigate(`/r/${slug}/workspace/new`, {
+            navigate(`/f/${slug}/workspace/new`, {
               state: { seedThread: { agent, sessionId } },
             })
           }

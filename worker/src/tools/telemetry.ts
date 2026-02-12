@@ -34,7 +34,7 @@ export function registerTelemetryTools(
         : null;
 
       await db.insert("memories", {
-        room_id: ctx.roomId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         message_type: "telemetry",
@@ -76,7 +76,7 @@ export async function storeHostTelemetry(
   const shortType = notificationType.replace("notifications/host.", "");
 
   await db.insert("memories", {
-    room_id: ctx.roomId,
+    fold_id: ctx.foldId,
     agent: ctx.agent,
     session_id: ctx.sessionId,
     message_type: "telemetry",
@@ -91,17 +91,17 @@ export async function storeHostTelemetry(
 }
 
 /**
- * Get the latest telemetry for an agent in a room.
+ * Get the latest telemetry for an agent in a fold.
  * Used by HubView and Gemini steering to show real-time agent state.
  */
 export async function getLatestTelemetry(
   db: SupabaseClient,
-  roomId: string,
+  foldId: string,
   agent?: string,
 ): Promise<MemoryRow[]> {
   const query: Record<string, string> = {
     select: "agent,content,metadata,ts",
-    room_id: `eq.${roomId}`,
+    fold_id: `eq.${foldId}`,
     message_type: "eq.telemetry",
     order: "ts.desc",
     limit: agent ? "1" : "20",

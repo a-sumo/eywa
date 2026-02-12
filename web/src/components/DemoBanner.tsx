@@ -1,27 +1,27 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { supabase } from "../lib/supabase";
 
 export function DemoBanner() {
-  const { room, isDemo } = useRoomContext();
+  const { fold, isDemo } = useFoldContext();
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(() => {
-    if (!room) return false;
-    return localStorage.getItem(`demo-banner-dismissed-${room.id}`) === "1";
+    if (!fold) return false;
+    return localStorage.getItem(`demo-banner-dismissed-${fold.id}`) === "1";
   });
   const [creating, setCreating] = useState(false);
 
-  if (!isDemo || dismissed || !room) return null;
+  if (!isDemo || dismissed || !fold) return null;
 
   function handleDismiss() {
-    if (room) {
-      localStorage.setItem(`demo-banner-dismissed-${room.id}`, "1");
+    if (fold) {
+      localStorage.setItem(`demo-banner-dismissed-${fold.id}`, "1");
     }
     setDismissed(true);
   }
 
-  async function handleCreateRoom() {
+  async function handleCreateFold() {
     setCreating(true);
     const adjectives = ["cosmic", "lunar", "solar", "stellar", "quantum", "neural", "cyber", "astral"];
     const nouns = ["fox", "owl", "wolf", "hawk", "bear", "lynx", "raven", "phoenix"];
@@ -32,7 +32,7 @@ export function DemoBanner() {
     const name = `${adj.charAt(0).toUpperCase() + adj.slice(1)} ${noun.charAt(0).toUpperCase() + noun.slice(1)}`;
 
     const { data, error } = await supabase
-      .from("rooms")
+      .from("folds")
       .insert({ slug, name, is_demo: false })
       .select()
       .single();
@@ -40,7 +40,7 @@ export function DemoBanner() {
     setCreating(false);
 
     if (data && !error) {
-      navigate(`/r/${slug}`);
+      navigate(`/f/${slug}`);
     }
   }
 
@@ -54,16 +54,16 @@ export function DemoBanner() {
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <span style={styles.text}>
-            You're exploring a demo room with sample data. Create your own room to connect your agents.
+            You're exploring a demo fold with sample data. Create your own fold to connect your agents.
           </span>
         </div>
         <div style={styles.actions}>
           <button
             style={creating ? { ...styles.createBtn, opacity: 0.6 } : styles.createBtn}
-            onClick={handleCreateRoom}
+            onClick={handleCreateFold}
             disabled={creating}
           >
-            {creating ? "Creating..." : "Create Your Room"}
+            {creating ? "Creating..." : "Create Your Fold"}
           </button>
           <button style={styles.dismissBtn} onClick={handleDismiss} aria-label="Dismiss">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

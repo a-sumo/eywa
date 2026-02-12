@@ -21,7 +21,7 @@ export function registerContextTools(
     async ({ limit }) => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "agent,message_type,content,metadata,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         order: "ts.desc",
         limit: String(limit),
       });
@@ -50,7 +50,7 @@ export function registerContextTools(
 
   server.tool(
     "eywa_agents",
-    "List all agents that have logged to Eywa in this room.",
+    "List all agents that have logged to Eywa in this fold.",
     {},
     {
       readOnlyHint: true,
@@ -59,7 +59,7 @@ export function registerContextTools(
     async () => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "agent,ts",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         order: "ts.desc",
       });
 
@@ -101,7 +101,7 @@ export function registerContextTools(
     async ({ agent, limit }) => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "message_type,content,metadata,ts,session_id",
-        room_id: `eq.${ctx.roomId}`,
+        fold_id: `eq.${ctx.foldId}`,
         agent: `eq.${agent}`,
         order: "ts.desc",
         limit: String(limit),

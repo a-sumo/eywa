@@ -1,6 +1,6 @@
 import { useRealtimeAgents } from "../hooks/useRealtimeMemories";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 
 function timeAgo(ts: string): string {
   const diff = Date.now() - new Date(ts).getTime();
@@ -15,13 +15,13 @@ function timeAgo(ts: string): string {
 import { agentColor } from "../lib/agentColor";
 
 export function AgentList() {
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const { slug } = useParams<{ slug: string }>();
-  const agents = useRealtimeAgents(room?.id ?? null, 24 * 60 * 60 * 1000);
+  const agents = useRealtimeAgents(fold?.id ?? null, 24 * 60 * 60 * 1000);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const basePath = `/r/${slug}`;
+  const basePath = `/f/${slug}`;
   const isActive = (path: string) => location.pathname === path;
 
   return (

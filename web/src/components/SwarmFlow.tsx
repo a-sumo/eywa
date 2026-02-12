@@ -10,7 +10,7 @@
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { agentColor } from "../lib/agentColor";
 import {
   SwarmFlowRenderer,
@@ -163,8 +163,8 @@ function hashToJitter(str: string): { x: number; y: number } {
 // --- Component ---
 
 export function SwarmFlow() {
-  const { room } = useRoomContext();
-  const { memories } = useRealtimeMemories(room?.id ?? null, 500);
+  const { fold } = useFoldContext();
+  const { memories } = useRealtimeMemories(fold?.id ?? null, 500);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SwarmFlowRenderer | null>(null);

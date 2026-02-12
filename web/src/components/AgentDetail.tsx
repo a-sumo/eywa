@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import type { Memory } from "../lib/supabase";
@@ -315,9 +315,9 @@ function CategoryFilter({
 
 export function AgentDetail() {
   const { name, slug } = useParams<{ name: string; slug: string }>();
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const navigate = useNavigate();
-  const { memories, loading } = useRealtimeMemories(room?.id ?? null, 500);
+  const { memories, loading } = useRealtimeMemories(fold?.id ?? null, 500);
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [activeFilters, setActiveFilters] = useState<Set<TimelineEntry["category"]>>(new Set(ALL_CATEGORIES));
@@ -376,7 +376,7 @@ export function AgentDetail() {
     <div className="atl-view">
       {/* Header */}
       <div className="atl-header">
-        <button className="atl-back" onClick={() => navigate(`/r/${slug}`)}>
+        <button className="atl-back" onClick={() => navigate(`/f/${slug}`)}>
           &larr; Hub
         </button>
         <div className="atl-agent-info">

@@ -5,7 +5,7 @@
  */
 import { useState, useMemo } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { agentColor } from "../lib/agentColor";
 import type { Memory } from "../lib/supabase";
 
@@ -345,8 +345,8 @@ function SeedCard({ state, expanded, onToggle }: {
 // --- Main ---
 
 export function SeedMonitor() {
-  const { room } = useRoomContext();
-  const { memories, loading } = useRealtimeMemories(room?.id ?? null, 500);
+  const { fold } = useFoldContext();
+  const { memories, loading } = useRealtimeMemories(fold?.id ?? null, 500);
   const [expandedSeeds, setExpandedSeeds] = useState<Set<string>>(new Set());
 
   const tasks = useMemo(() => extractTasks(memories), [memories]);

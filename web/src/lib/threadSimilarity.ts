@@ -78,7 +78,7 @@ export function divergenceLevel(divergence: number): DivergenceLevel {
 }
 
 /**
- * Given all memories in a room, group by thread and compute pairwise
+ * Given all memories in a fold, group by thread and compute pairwise
  * divergence between all threads of different agents.
  * Returns pairs that exceed the threshold, sorted by divergence descending.
  */

@@ -25,13 +25,13 @@ export type VoiceEvent =
   | { type: "error"; text: string };
 
 export interface UseGeminiLiveOptions {
-  roomId: string | null;
-  roomSlug: string;
+  foldId: string | null;
+  foldSlug: string;
   voice?: string;
   onEvent?: (event: VoiceEvent) => void;
 }
 
-export function useGeminiLive({ roomId, roomSlug, voice = "Kore", onEvent }: UseGeminiLiveOptions) {
+export function useGeminiLive({ foldId, foldSlug, voice = "Kore", onEvent }: UseGeminiLiveOptions) {
   const [connected, setConnected] = useState(false);
   const [listening, setListening] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
@@ -50,13 +50,13 @@ export function useGeminiLive({ roomId, roomSlug, voice = "Kore", onEvent }: Use
   }, []);
 
   const connect = useCallback(async () => {
-    if (!GEMINI_API_KEY || !roomId) {
-      emit({ type: "error", text: "Missing API key or room" });
+    if (!GEMINI_API_KEY || !foldId) {
+      emit({ type: "error", text: "Missing API key or fold" });
       return;
     }
 
     setVoiceState("connecting");
-    emit({ type: "status", text: "Fetching room context..." });
+    emit({ type: "status", text: "Fetching fold context..." });
 
     // Lightweight prefetch: just destination + agent count for system prompt seeding.
     // Gemini will use tools for everything else.
@@ -68,7 +68,7 @@ export function useGeminiLive({ roomId, roomSlug, voice = "Kore", onEvent }: Use
         supabase
           .from("memories")
           .select("content, metadata")
-          .eq("room_id", roomId)
+          .eq("fold_id", foldId)
           .eq("message_type", "knowledge")
           .eq("metadata->>event", "destination")
           .order("ts", { ascending: false })
@@ -76,7 +76,7 @@ export function useGeminiLive({ roomId, roomSlug, voice = "Kore", onEvent }: Use
         supabase
           .from("memories")
           .select("agent")
-          .eq("room_id", roomId)
+          .eq("fold_id", foldId)
           .order("ts", { ascending: false })
           .limit(200),
       ]);
@@ -93,7 +93,7 @@ export function useGeminiLive({ roomId, roomSlug, voice = "Kore", onEvent }: Use
         agentCount = new Set(agentRes.data.map((r: any) => r.agent)).size;
       }
     } catch (err) {
-      console.warn("[GeminiLive] Failed to fetch room context:", err);
+      console.warn("[GeminiLive] Failed to fetch fold context:", err);
     }
 
     emit({ type: "status", text: "Connecting to Gemini Live..." });
@@ -212,7 +212,7 @@ export function useGeminiLive({ roomId, roomSlug, voice = "Kore", onEvent }: Use
       emit({ type: "status", text: `Disconnected${event.reason ? `: ${event.reason}` : ""}` });
       cleanupAudio();
     };
-  }, [roomId, roomSlug, voice, emit]);
+  }, [foldId, foldSlug, voice, emit]);
 
   // --- Mic input via ScriptProcessor ---
 
@@ -296,7 +296,7 @@ export function useGeminiLive({ roomId, roomSlug, voice = "Kore", onEvent }: Use
         let result = "";
 
         try {
-          const toolResult = await executeVoiceTool(roomId!, {
+          const toolResult = await executeVoiceTool(foldId!, {
             name: fc.name,
             args: fc.args || {},
           });
@@ -318,7 +318,7 @@ export function useGeminiLive({ roomId, roomSlug, voice = "Kore", onEvent }: Use
         })
       );
     },
-    [roomId, emit]
+    [foldId, emit]
   );
 
   // --- Disconnect ---

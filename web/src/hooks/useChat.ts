@@ -1,13 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase, type Message } from "../lib/supabase";
 
-export function useChat(roomId: string | null, channel = "general") {
+export function useChat(foldId: string | null, channel = "general") {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchInitial = useCallback(async () => {
-    if (!roomId) {
+    if (!foldId) {
       setMessages([]);
       setLoading(false);
       return;
@@ -16,7 +16,7 @@ export function useChat(roomId: string | null, channel = "general") {
     const { data, error: queryError } = await supabase
       .from("messages")
       .select("*")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .eq("channel", channel)
       .order("ts", { ascending: true })
       .limit(200);
@@ -27,22 +27,22 @@ export function useChat(roomId: string | null, channel = "general") {
       if (data) setMessages(data);
     }
     setLoading(false);
-  }, [roomId, channel]);
+  }, [foldId, channel]);
 
   useEffect(() => {
     fetchInitial();
 
-    if (!roomId) return;
+    if (!foldId) return;
 
     const sub = supabase
-      .channel(`chat-${roomId}-${channel}`)
+      .channel(`chat-${foldId}-${channel}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `room_id=eq.${roomId}`,
+          filter: `fold_id=eq.${foldId}`,
         },
         (payload) => {
           const msg = payload.new as Message;
@@ -56,13 +56,13 @@ export function useChat(roomId: string | null, channel = "general") {
     return () => {
       supabase.removeChannel(sub);
     };
-  }, [fetchInitial, roomId, channel]);
+  }, [fetchInitial, foldId, channel]);
 
   const send = useCallback(
     async (sender: string, content: string) => {
-      if (!roomId) return;
+      if (!foldId) return;
       const { error: insertError } = await supabase.from("messages").insert({
-        room_id: roomId,
+        fold_id: foldId,
         sender,
         channel,
         content,
@@ -71,7 +71,7 @@ export function useChat(roomId: string | null, channel = "general") {
         setError(insertError.message);
       }
     },
-    [roomId, channel]
+    [foldId, channel]
   );
 
   return { messages, loading, error, send };

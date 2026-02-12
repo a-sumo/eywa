@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { useNotifications, type Notification } from "../hooks/useNotifications";
 
 function timeAgo(ts: string): string {
@@ -33,9 +33,9 @@ function notificationClass(type: Notification["type"]): string {
 }
 
 export function NotificationBell() {
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const { notifications, unreadCount, dismiss, markAllRead, clearAll } =
-    useNotifications(room?.id ?? null);
+    useNotifications(fold?.id ?? null);
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 

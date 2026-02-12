@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { NavigatorMap as NavigatorMapRenderer } from "../lib/navigator-map.js";
 import type { NavigatorMapNode, NavigatorMapData } from "../lib/navigator-map.js";
@@ -22,8 +22,8 @@ import {
 } from "../lib/navigatorClient";
 
 export function NavigatorMap() {
-  const { room } = useRoomContext();
-  const { memories } = useRealtimeMemories(room?.id ?? null, 200);
+  const { fold } = useFoldContext();
+  const { memories } = useRealtimeMemories(fold?.id ?? null, 200);
   const [syncing, setSyncing] = useState(false);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [availableRooms, setAvailableRooms] = useState<Array<{ id: string; items: number }>>([]);
@@ -31,7 +31,7 @@ export function NavigatorMap() {
   const lastSyncRef = useRef(0);
   const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const roomSlug = room?.slug || "demo";
+  const roomSlug = fold?.slug || "demo";
 
   // Canvas + renderer refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -96,7 +96,7 @@ export function NavigatorMap() {
   }
 
   // --- Data loading ---
-  // Fetch room list on load
+  // Fetch fold list on load
   useEffect(() => {
     listRooms()
       .then((rooms) => setAvailableRooms(rooms.map((r) => ({ id: r.id, items: r.items }))))
@@ -128,11 +128,11 @@ export function NavigatorMap() {
   }, [roomId]);
 
   // --- Sync data ---
-  // Use a stable room ID so the map persists across syncs
+  // Use a stable fold ID so the map persists across syncs
   const stableRoomId = `eywa-${roomSlug}`;
 
   const syncData = useCallback(async () => {
-    if (syncing || !room) return;
+    if (syncing || !fold) return;
     setSyncing(true);
     try {
       const agentMap = new Map<
@@ -154,7 +154,7 @@ export function NavigatorMap() {
 
       const agents = Array.from(agentMap.values()).slice(0, 15);
       const destination =
-        ((room as unknown as Record<string, unknown>).destination as string) || "Launch-ready product";
+        ((fold as unknown as Record<string, unknown>).destination as string) || "Launch-ready product";
       await syncEywaRoom(stableRoomId, { destination, agents });
 
       const rooms = await listRooms();
@@ -166,11 +166,11 @@ export function NavigatorMap() {
     } finally {
       setSyncing(false);
     }
-  }, [memories, room, stableRoomId, syncing, roomId]);
+  }, [memories, fold, stableRoomId, syncing, roomId]);
 
   // Auto-sync on mount and periodically when seeds are active
   useEffect(() => {
-    if (!autoSync || !room) return;
+    if (!autoSync || !fold) return;
 
     // Sync immediately on first render
     if (lastSyncRef.current === 0 && memories.length > 0) {
@@ -192,7 +192,7 @@ export function NavigatorMap() {
     return () => {
       if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
     };
-  }, [autoSync, room, memories, syncData]);
+  }, [autoSync, fold, memories, syncData]);
 
   // --- View animation (smooth zoom/pan) ---
   const VIEW_LERP = 0.18;
@@ -397,7 +397,7 @@ export function NavigatorMap() {
               fontSize: 11,
             }}
           >
-            <option value="">Select room...</option>
+            <option value="">Select fold...</option>
             {availableRooms.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.id} ({r.items})

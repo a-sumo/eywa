@@ -41,17 +41,17 @@ export interface ActiveClaim {
 // Claims from agents with no activity in this many minutes are considered stale
 const STALE_CLAIM_MINUTES = 30;
 
-/** Fetch active claims in a room (< 2h old, no session end after claim, agent not idle). */
+/** Fetch active claims in a fold (< 2h old, no session end after claim, agent not idle). */
 export async function getActiveClaims(
   db: SupabaseClient,
-  roomId: string,
+  foldId: string,
   excludeAgent?: string,
 ): Promise<ActiveClaim[]> {
   const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
   const claimRows = await db.select<MemoryRow>("memories", {
     select: "agent,metadata,ts,session_id",
-    room_id: `eq.${roomId}`,
+    fold_id: `eq.${foldId}`,
     "metadata->>event": "eq.claim",
     ts: `gte.${twoHoursAgo}`,
     order: "ts.desc",
@@ -65,7 +65,7 @@ export async function getActiveClaims(
   const endRows = sessionIds.length > 0
     ? await db.select<MemoryRow>("memories", {
         select: "session_id,metadata",
-        room_id: `eq.${roomId}`,
+        fold_id: `eq.${foldId}`,
         session_id: `in.(${sessionIds.join(",")})`,
         "metadata->>event": `in.(session_end,session_done,unclaim)`,
         order: "ts.desc",
@@ -114,7 +114,7 @@ export async function getActiveClaims(
   // We get the latest memory per agent and check if it's older than the stale threshold
   const recentRows = await db.select<MemoryRow>("memories", {
     select: "agent,ts",
-    room_id: `eq.${roomId}`,
+    fold_id: `eq.${foldId}`,
     agent: `in.(${candidateAgents.join(",")})`,
     ts: `gte.${staleThreshold}`,
     order: "ts.desc",
@@ -178,7 +178,7 @@ export function registerClaimTools(
       const fileList = files ?? [];
 
       // Check for conflicts with active claims
-      const activeClaims = await getActiveClaims(db, ctx.roomId, ctx.agent);
+      const activeClaims = await getActiveClaims(db, ctx.foldId, ctx.agent);
       const conflicts = detectConflicts(scope, fileList, activeClaims);
 
       // Scope lock: reject if any requested file already has 2+ active claimants
@@ -210,7 +210,7 @@ export function registerClaimTools(
 
       // Store the claim
       await db.insert("memories", {
-        room_id: ctx.roomId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         message_type: "resource",
@@ -261,7 +261,7 @@ export function registerClaimTools(
     },
     async () => {
       await db.insert("memories", {
-        room_id: ctx.roomId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         message_type: "resource",

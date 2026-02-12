@@ -43,7 +43,7 @@ const VOICE_WRITE_DECLARATIONS = [
   {
     name: "send_message",
     description:
-      "Send a chat message to the room's message board. Use for human-facing communication.",
+      "Send a chat message to the fold's message board. Use for human-facing communication.",
     parameters: {
       type: "object" as const,
       properties: {
@@ -76,14 +76,14 @@ export function getVoiceToolsPayload() {
 const VOICE_WRITE_NAMES = new Set(["set_destination", "send_message"]);
 
 async function handleSetDestination(
-  roomId: string,
+  foldId: string,
   args: Record<string, unknown>
 ): Promise<string> {
   // Fetch current destination to merge
   const { data: existing } = await supabase
     .from("memories")
     .select("metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("message_type", "knowledge")
     .eq("metadata->>event", "destination")
     .order("ts", { ascending: false })
@@ -100,7 +100,7 @@ async function handleSetDestination(
   }
 
   const { error } = await supabase.from("memories").insert({
-    room_id: roomId,
+    fold_id: foldId,
     session_id: `voices-${Date.now()}`,
     agent: "voices/live",
     message_type: "knowledge",
@@ -119,12 +119,12 @@ async function handleSetDestination(
 }
 
 async function handleSendMessage(
-  roomId: string,
+  foldId: string,
   message: string,
   channel: string
 ): Promise<string> {
   const { error } = await supabase.from("messages").insert({
-    room_id: roomId,
+    fold_id: foldId,
     sender: "voices/live",
     channel,
     content: message,
@@ -143,7 +143,7 @@ async function handleSendMessage(
  * delegates everything else (reads + gemini writes) to geminiTools.executeTool.
  */
 export async function executeVoiceTool(
-  roomId: string,
+  foldId: string,
   call: GeminiFunctionCall
 ): Promise<GeminiFunctionResponse> {
   // Voice-specific write tools handled here
@@ -152,11 +152,11 @@ export async function executeVoiceTool(
     try {
       switch (call.name) {
         case "set_destination":
-          result = await handleSetDestination(roomId, call.args);
+          result = await handleSetDestination(foldId, call.args);
           break;
         case "send_message":
           result = await handleSendMessage(
-            roomId,
+            foldId,
             call.args.message as string,
             (call.args.channel as string) || "general"
           );
@@ -171,5 +171,5 @@ export async function executeVoiceTool(
   }
 
   // Everything else (reads + gemini writes like inject_to_agent, approvals)
-  return executeTool(roomId, call);
+  return executeTool(foldId, call);
 }

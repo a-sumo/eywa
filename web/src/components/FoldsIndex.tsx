@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { supabase, type Room } from "../lib/supabase";
+import { supabase, type Fold } from "../lib/supabase";
 
-interface RoomStats {
-  room: Room;
+interface FoldStats {
+  fold: Fold;
   agentCount: number;
   activeAgentCount: number;
   memoryCount: number;
@@ -24,29 +24,29 @@ function timeAgo(ts: string): string {
   return `${days}d ago`;
 }
 
-export function RoomsIndex() {
-  const [rooms, setRooms] = useState<RoomStats[]>([]);
+export function FoldsIndex() {
+  const [folds, setFolds] = useState<FoldStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchRooms = useCallback(async () => {
+  const fetchFolds = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    const { data: roomList, error: roomErr } = await supabase
-      .from("rooms")
+    const { data: foldList, error: foldErr } = await supabase
+      .from("folds")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (roomErr || !roomList) {
-      setError("Failed to load rooms");
+    if (foldErr || !foldList) {
+      setError("Failed to load folds");
       setLoading(false);
       return;
     }
 
-    // For each room, fetch stats in parallel. Use try-catch per room so one
+    // For each fold, fetch stats in parallel. Use try-catch per fold so one
     // failing query doesn't crash the entire page.
-    const statsPromises = roomList.map(async (room: Room): Promise<RoomStats> => {
+    const statsPromises = foldList.map(async (fold: Fold): Promise<FoldStats> => {
       try {
         const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
@@ -54,29 +54,29 @@ export function RoomsIndex() {
           supabase
             .from("memories")
             .select("agent")
-            .eq("room_id", room.id)
+            .eq("fold_id", fold.id)
             .gte("ts", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
             .limit(500),
           supabase
             .from("memories")
             .select("agent")
-            .eq("room_id", room.id)
+            .eq("fold_id", fold.id)
             .gte("ts", fiveMinAgo)
             .limit(200),
           supabase
             .from("memories")
             .select("id", { count: "exact", head: true })
-            .eq("room_id", room.id),
+            .eq("fold_id", fold.id),
           supabase
             .from("memories")
             .select("ts")
-            .eq("room_id", room.id)
+            .eq("fold_id", fold.id)
             .order("ts", { ascending: false })
             .limit(1),
           supabase
             .from("memories")
             .select("metadata")
-            .eq("room_id", room.id)
+            .eq("fold_id", fold.id)
             .eq("message_type", "knowledge")
             .order("ts", { ascending: false })
             .limit(50),
@@ -101,7 +101,7 @@ export function RoomsIndex() {
         }
 
         return {
-          room,
+          fold,
           agentCount: uniqueAgents.size,
           activeAgentCount: activeAgents.size,
           memoryCount: countRes.count || 0,
@@ -111,9 +111,9 @@ export function RoomsIndex() {
           milestonesTotal,
         };
       } catch {
-        // Return safe defaults so the room still shows up
+        // Return safe defaults so the fold still shows up
         return {
-          room,
+          fold,
           agentCount: 0,
           activeAgentCount: 0,
           memoryCount: 0,
@@ -126,7 +126,7 @@ export function RoomsIndex() {
     });
 
     const stats = await Promise.all(statsPromises);
-    // Sort: rooms with active agents first, then by last activity
+    // Sort: folds with active agents first, then by last activity
     stats.sort((a, b) => {
       if (a.activeAgentCount !== b.activeAgentCount) return b.activeAgentCount - a.activeAgentCount;
       const aTime = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
@@ -134,24 +134,24 @@ export function RoomsIndex() {
       return bTime - aTime;
     });
 
-    setRooms(stats);
+    setFolds(stats);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchRooms();
+    fetchFolds();
     // Refresh every 30s
-    const interval = setInterval(fetchRooms, 30000);
+    const interval = setInterval(fetchFolds, 30000);
     return () => clearInterval(interval);
-  }, [fetchRooms]);
+  }, [fetchFolds]);
 
   if (loading) {
     return (
       <div className="rooms-index">
         <div className="rooms-index-header">
-          <h1>Rooms</h1>
+          <h1>Folds</h1>
         </div>
-        <div className="rooms-index-loading">Loading rooms...</div>
+        <div className="rooms-index-loading">Loading folds...</div>
       </div>
     );
   }
@@ -160,7 +160,7 @@ export function RoomsIndex() {
     return (
       <div className="rooms-index">
         <div className="rooms-index-header">
-          <h1>Rooms</h1>
+          <h1>Folds</h1>
         </div>
         <div className="rooms-index-error">{error}</div>
       </div>
@@ -170,49 +170,49 @@ export function RoomsIndex() {
   return (
     <div className="rooms-index">
       <div className="rooms-index-header">
-        <h1>Rooms</h1>
-        <span className="rooms-index-count">{rooms.length} room{rooms.length !== 1 ? "s" : ""}</span>
+        <h1>Folds</h1>
+        <span className="rooms-index-count">{folds.length} fold{folds.length !== 1 ? "s" : ""}</span>
       </div>
 
-      {rooms.length === 0 ? (
+      {folds.length === 0 ? (
         <div className="rooms-index-empty">
-          <p>No rooms yet. Create one from the landing page or via the CLI.</p>
+          <p>No folds yet. Create one from the landing page or via the CLI.</p>
           <Link to="/" className="rooms-index-cta">Go to Landing</Link>
         </div>
       ) : (
         <div className="rooms-index-grid">
-          {rooms.map((rs) => (
+          {folds.map((fs) => (
             <Link
-              key={rs.room.id}
-              to={`/r/${rs.room.slug}`}
-              className={`rooms-index-card ${rs.activeAgentCount > 0 ? "rooms-index-card-active" : ""}`}
+              key={fs.fold.id}
+              to={`/f/${fs.fold.slug}`}
+              className={`rooms-index-card ${fs.activeAgentCount > 0 ? "rooms-index-card-active" : ""}`}
             >
               <div className="rooms-index-card-top">
                 <div className="rooms-index-card-name">
-                  {rs.room.name}
-                  {rs.activeAgentCount > 0 && (
+                  {fs.fold.name}
+                  {fs.activeAgentCount > 0 && (
                     <span className="rooms-index-live-dot" />
                   )}
                 </div>
-                <span className="rooms-index-card-slug">/{rs.room.slug}</span>
+                <span className="rooms-index-card-slug">/{fs.fold.slug}</span>
               </div>
 
-              {rs.destination && (
+              {fs.destination && (
                 <div className="rooms-index-card-destination">
                   <span className="rooms-index-card-dest-label">Destination</span>
                   <span className="rooms-index-card-dest-text">
-                    {rs.destination.length > 80
-                      ? rs.destination.slice(0, 80) + "..."
-                      : rs.destination}
+                    {fs.destination.length > 80
+                      ? fs.destination.slice(0, 80) + "..."
+                      : fs.destination}
                   </span>
-                  {rs.milestonesTotal > 0 && (
+                  {fs.milestonesTotal > 0 && (
                     <div className="rooms-index-card-progress">
                       <div
                         className="rooms-index-card-progress-bar"
-                        style={{ width: `${(rs.milestonesDone / rs.milestonesTotal) * 100}%` }}
+                        style={{ width: `${(fs.milestonesDone / fs.milestonesTotal) * 100}%` }}
                       />
                       <span className="rooms-index-card-progress-label">
-                        {rs.milestonesDone}/{rs.milestonesTotal} milestones
+                        {fs.milestonesDone}/{fs.milestonesTotal} milestones
                       </span>
                     </div>
                   )}
@@ -222,23 +222,23 @@ export function RoomsIndex() {
               <div className="rooms-index-card-stats">
                 <div className="rooms-index-stat">
                   <span className="rooms-index-stat-value">
-                    {rs.activeAgentCount > 0 ? (
-                      <>{rs.activeAgentCount} <span className="rooms-index-stat-active">active</span></>
+                    {fs.activeAgentCount > 0 ? (
+                      <>{fs.activeAgentCount} <span className="rooms-index-stat-active">active</span></>
                     ) : (
-                      rs.agentCount
+                      fs.agentCount
                     )}
                   </span>
                   <span className="rooms-index-stat-label">
-                    {rs.activeAgentCount > 0 ? `of ${rs.agentCount} agents` : "agents (24h)"}
+                    {fs.activeAgentCount > 0 ? `of ${fs.agentCount} agents` : "agents (24h)"}
                   </span>
                 </div>
                 <div className="rooms-index-stat">
-                  <span className="rooms-index-stat-value">{rs.memoryCount.toLocaleString()}</span>
+                  <span className="rooms-index-stat-value">{fs.memoryCount.toLocaleString()}</span>
                   <span className="rooms-index-stat-label">memories</span>
                 </div>
                 <div className="rooms-index-stat">
                   <span className="rooms-index-stat-value">
-                    {rs.lastActivity ? timeAgo(rs.lastActivity) : "no activity"}
+                    {fs.lastActivity ? timeAgo(fs.lastActivity) : "no activity"}
                   </span>
                   <span className="rooms-index-stat-label">last seen</span>
                 </div>

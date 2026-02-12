@@ -5,7 +5,7 @@
  */
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import type { Memory } from "../lib/supabase";
@@ -451,8 +451,8 @@ function AgentCard({ state, expanded, onToggle }: {
 // --- Main ---
 
 export function OperationsView() {
-  const { room } = useRoomContext();
-  const { memories, loading, error } = useRealtimeMemories(room?.id ?? null, 500);
+  const { fold } = useFoldContext();
+  const { memories, loading, error } = useRealtimeMemories(fold?.id ?? null, 500);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [showIdle, setShowIdle] = useState(false);
   const prevCountRef = useRef(0);

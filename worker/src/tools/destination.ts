@@ -9,12 +9,12 @@ function estimateTokens(text: string): number {
 
 async function getLatestMemoryId(
   db: SupabaseClient,
-  roomId: string,
+  foldId: string,
   sessionId: string,
 ): Promise<string | null> {
   const rows = await db.select<MemoryRow>("memories", {
     select: "id",
-    room_id: `eq.${roomId}`,
+    fold_id: `eq.${foldId}`,
     session_id: `eq.${sessionId}`,
     order: "ts.desc",
     limit: "1",
@@ -29,7 +29,7 @@ export function registerDestinationTools(
 ) {
   server.tool(
     "eywa_destination",
-    "Set, update, or view the room's destination (point B). A destination is the target state the team is working toward. Setting a destination helps all agents understand the goal and enables progress tracking.",
+    "Set, update, or view the fold's destination (point B). A destination is the target state the team is working toward. Setting a destination helps all agents understand the goal and enables progress tracking.",
     {
       action: z.enum(["set", "update", "get"]).describe("set: define a new destination. update: modify progress/milestones. get: view current destination."),
       destination: z.string().optional().describe("The target state (point B). What does 'done' look like? Required for set."),
@@ -46,7 +46,7 @@ export function registerDestinationTools(
         // Fetch current destination
         const rows = await db.select<MemoryRow>("memories", {
           select: "id,content,metadata,ts,agent",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           "metadata->>event": "eq.destination",
           order: "ts.desc",
@@ -57,7 +57,7 @@ export function registerDestinationTools(
           return {
             content: [{
               type: "text" as const,
-              text: "No destination set for this room. Use eywa_destination with action=set to define where the team is headed.",
+              text: "No destination set for this fold. Use eywa_destination with action=set to define where the team is headed.",
             }],
           };
         }
@@ -109,7 +109,7 @@ export function registerDestinationTools(
         // Check if a destination already exists - redirect to update if so
         const existing = await db.select<MemoryRow>("memories", {
           select: "id,metadata",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           "metadata->>event": "eq.destination",
           order: "ts.desc",
@@ -129,7 +129,7 @@ export function registerDestinationTools(
           };
         }
 
-        const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
+        const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
         const initialProgress: Record<string, boolean> = {};
         if (milestones) {
           for (const m of milestones) {
@@ -138,7 +138,7 @@ export function registerDestinationTools(
         }
 
         await db.insert("memories", {
-          room_id: ctx.roomId,
+          fold_id: ctx.foldId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
           parent_id: parentId,
@@ -171,7 +171,7 @@ export function registerDestinationTools(
         // Fetch current destination
         const rows = await db.select<MemoryRow>("memories", {
           select: "id,content,metadata,ts",
-          room_id: `eq.${ctx.roomId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           "metadata->>event": "eq.destination",
           order: "ts.desc",
@@ -200,9 +200,9 @@ export function registerDestinationTools(
         const newDest = destination ?? (meta.destination as string);
 
         // Create a new memory entry (append-only, preserves history)
-        const parentId = await getLatestMemoryId(db, ctx.roomId, ctx.sessionId);
+        const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
         await db.insert("memories", {
-          room_id: ctx.roomId,
+          fold_id: ctx.foldId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
           parent_id: parentId,

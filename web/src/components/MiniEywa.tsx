@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo, useCallback, useRef, type DragEvent } fro
 import { useNavigate, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
-import { useRoomContext } from "../context/RoomContext";
+import { useFoldContext } from "../context/FoldContext";
 import { supabase } from "../lib/supabase";
-import type { Memory, Room } from "../lib/supabase";
+import type { Memory, Fold } from "../lib/supabase";
 import { getAvatar } from "./avatars";
 import { EywaLogoWarm } from "./EywaLogo";
 import { GrainTexture } from "./GrainTexture";
@@ -178,9 +178,9 @@ function PixelCreature({ name, size = 16 }: { name: string; size?: number }) {
 
 /* ── Inject helper ── */
 
-async function injectToAgent(target: string, content: string, roomId: string) {
+async function injectToAgent(target: string, content: string, foldId: string) {
   await supabase.from("memories").insert({
-    room_id: roomId,
+    fold_id: foldId,
     agent: "web-user",
     session_id: `web_${Date.now()}`,
     message_type: "injection",
@@ -196,17 +196,17 @@ async function injectToAgent(target: string, content: string, roomId: string) {
   });
 }
 
-/* ── Room Picker ── */
+/* ── Fold Picker ── */
 
-function MiniRoomPicker({ currentSlug, onClose }: { currentSlug: string; onClose: () => void }) {
+function MiniFoldPicker({ currentSlug, onClose }: { currentSlug: string; onClose: () => void }) {
   const navigate = useNavigate();
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [rooms, setRooms] = useState<Fold[]>([]);
   const [loading, setLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase
-      .from("rooms")
+      .from("folds")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20)
@@ -232,7 +232,7 @@ function MiniRoomPicker({ currentSlug, onClose }: { currentSlug: string; onClose
           key={r.id}
           className={`mini-room-picker-item${r.slug === currentSlug ? " active" : ""}`}
           onClick={() => {
-            if (r.slug !== currentSlug) navigate(`/r/${r.slug}/mini`);
+            if (r.slug !== currentSlug) navigate(`/f/${r.slug}/mini`);
             onClose();
           }}
         >
@@ -241,7 +241,7 @@ function MiniRoomPicker({ currentSlug, onClose }: { currentSlug: string; onClose
         </div>
       ))}
       {!loading && rooms.length === 0 && (
-        <div className="mini-room-picker-item">no rooms</div>
+        <div className="mini-room-picker-item">no folds</div>
       )}
     </div>
   );
@@ -555,11 +555,11 @@ function MiniActivityFeed({
 /* ── Main ── */
 
 export function MiniEywa() {
-  const { room } = useRoomContext();
+  const { fold } = useFoldContext();
   const { slug } = useParams<{ slug: string }>();
-  const { memories } = useRealtimeMemories(room?.id ?? null, 200);
+  const { memories } = useRealtimeMemories(fold?.id ?? null, 200);
   const [showQr, setShowQr] = useState(false);
-  const [showRoomPicker, setShowRoomPicker] = useState(false);
+  const [showFoldPicker, setShowFoldPicker] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -586,17 +586,17 @@ export function MiniEywa() {
       setDraggingId(null);
 
       const raw = e.dataTransfer.getData("application/eywa-memory");
-      if (!raw || !room) return;
+      if (!raw || !fold) return;
 
       try {
         const data = JSON.parse(raw) as { id: string; content: string; agent: string };
-        await injectToAgent(targetAgent, data.content, room.id);
+        await injectToAgent(targetAgent, data.content, fold.id);
         showToast(`injected to ${getShort(targetAgent)}`);
       } catch {
         showToast("injection failed");
       }
     },
-    [room, showToast, getShort]
+    [fold, showToast, getShort]
   );
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>, agent: string) => {
@@ -619,8 +619,8 @@ export function MiniEywa() {
     setDotInfo(null);
   }, []);
 
-  const roomUrl = room
-    ? `${window.location.origin}/r/${room.slug}`
+  const foldUrl = fold
+    ? `${window.location.origin}/f/${fold.slug}`
     : "";
 
   const callsLast10m = useMemo(() => {
@@ -664,11 +664,11 @@ export function MiniEywa() {
         <EywaLogoWarm size={14} className="mini-logo" />
         <button
           className="mini-titlebar-name mini-titlebar-name-btn"
-          onClick={() => setShowRoomPicker((p) => !p)}
-          title="Switch room"
+          onClick={() => setShowFoldPicker((p) => !p)}
+          title="Switch fold"
         >
-          {room?.name ?? room?.slug ?? "\u2014"}
-          <span className="mini-room-arrow">{showRoomPicker ? "\u25B4" : "\u25BE"}</span>
+          {fold?.name ?? fold?.slug ?? "\u2014"}
+          <span className="mini-room-arrow">{showFoldPicker ? "\u25B4" : "\u25BE"}</span>
         </button>
         <span className="mini-titlebar-stats" style={{ marginLeft: "auto" }}>
           {activeCount}/{agents.length}
@@ -683,11 +683,11 @@ export function MiniEywa() {
         </button>
       </div>
 
-      {/* Room picker dropdown */}
-      {showRoomPicker && (
-        <MiniRoomPicker
+      {/* Fold picker dropdown */}
+      {showFoldPicker && (
+        <MiniFoldPicker
           currentSlug={slug ?? ""}
-          onClose={() => setShowRoomPicker(false)}
+          onClose={() => setShowFoldPicker(false)}
         />
       )}
 
@@ -697,18 +697,18 @@ export function MiniEywa() {
       </div>
 
       {/* QR overlay */}
-      {showQr && roomUrl && (
+      {showQr && foldUrl && (
         <div className="mini-qr-overlay" onClick={() => setShowQr(false)}>
           <div className="mini-qr-card" onClick={(e) => e.stopPropagation()}>
             <QRCodeSVG
-              value={roomUrl}
+              value={foldUrl}
               size={200}
               bgColor="#F5F0E8"
               fgColor="#2C2418"
               level="L"
             />
             <span className="mini-qr-label">Scan to join</span>
-            <code className="mini-qr-url">{roomUrl}</code>
+            <code className="mini-qr-url">{foldUrl}</code>
           </div>
         </div>
       )}
@@ -786,11 +786,11 @@ export function MiniEywa() {
       <div className="mini-footer">
         <div className="mini-footer-left">
           <EywaLogoWarm size={40} />
-          <span className="mini-footer-slug">{room?.slug ?? ""}</span>
+          <span className="mini-footer-slug">{fold?.slug ?? ""}</span>
         </div>
         <div className="mini-marker">
           <QRCodeSVG
-            value={`eywa:${room?.slug ?? "demo"}`}
+            value={`eywa:${fold?.slug ?? "demo"}`}
             size={200}
             bgColor="#F5F0E8"
             fgColor="#2C2418"

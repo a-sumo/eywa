@@ -1,70 +1,70 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase, type Room } from "../lib/supabase";
+import { supabase, type Fold } from "../lib/supabase";
 
-interface RoomContextValue {
-  room: Room | null;
+interface FoldContextValue {
+  fold: Fold | null;
   loading: boolean;
   error: string | null;
   isDemo: boolean;
 }
 
-const RoomContext = createContext<RoomContextValue | null>(null);
+const FoldContext = createContext<FoldContextValue | null>(null);
 
-export function RoomProvider({ children }: { children: ReactNode }) {
+export function FoldProvider({ children }: { children: ReactNode }) {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [room, setRoom] = useState<Room | null>(null);
+  const [fold, setFold] = useState<Fold | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) {
-      setRoom(null);
+      setFold(null);
       setLoading(false);
       return;
     }
 
-    async function fetchRoom() {
+    async function fetchFold() {
       setLoading(true);
       setError(null);
 
       const { data, error: fetchError } = await supabase
-        .from("rooms")
+        .from("folds")
         .select("*")
         .eq("slug", slug)
         .single();
 
       if (fetchError || !data) {
-        setError("Room not found");
-        setRoom(null);
+        setError("Fold not found");
+        setFold(null);
       } else {
-        setRoom(data);
+        setFold(data);
       }
       setLoading(false);
     }
 
-    fetchRoom();
+    fetchFold();
   }, [slug, navigate]);
 
   return (
-    <RoomContext.Provider
+    <FoldContext.Provider
       value={{
-        room,
+        fold,
         loading,
         error,
-        isDemo: room?.is_demo ?? false,
+        isDemo: fold?.is_demo ?? false,
       }}
     >
       {children}
-    </RoomContext.Provider>
+    </FoldContext.Provider>
   );
 }
 
-export function useRoomContext() {
-  const ctx = useContext(RoomContext);
+export function useFoldContext() {
+  const ctx = useContext(FoldContext);
   if (!ctx) {
-    throw new Error("useRoomContext must be used within a RoomProvider");
+    throw new Error("useFoldContext must be used within a FoldProvider");
   }
   return ctx;
 }
