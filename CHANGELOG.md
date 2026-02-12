@@ -41,6 +41,10 @@ All notable features and changes. One line per feature. Agents append here after
 - Landing page memory persistence: narrative section about stored context, permanence, structured knowledge, and data ownership with animated crystal icon
 - Landing page trust and security: three-card section (metadata only, open source, self-hostable) with data flow visualization showing what Eywa sees vs what stays local
 - Onboarding overlay: three-step wizard for empty rooms (connect agent, set destination, wait for first session) with progress indicators and Nightly Aurora styling
+- UX fix: onboarding overlay dismissal now persists to localStorage so users don't see it again on page refresh
+- UX fix: added Ops tab to mobile navigation so Operations view is discoverable on small screens
+- Gemini chat: exposed `available` flag from useGeminiChat hook for graceful degradation when API key is missing
+- Worker reliability: replaced 10 silent catch blocks with console.error logging across session.ts, index.ts. Added UUID validation to link and approval tools. Added insert verification for approval and link creation
 
 ## 2026-02-10
 

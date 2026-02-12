@@ -548,7 +548,8 @@ async function handleMcp(
   let instructions: string;
   try {
     instructions = await buildInstructions(db, ctx, baton);
-  } catch {
+  } catch (err) {
+    console.error("buildInstructions failed:", err instanceof Error ? err.message : String(err));
     instructions = `You are ${ctx.agent} in room /${ctx.roomSlug} (${ctx.roomName}).\nUser: ${ctx.user} | Session: ${ctx.sessionId}\n\nCall eywa_start to get room context.`;
   }
 
@@ -589,8 +590,8 @@ async function handleMcp(
                 content: [{ type: "text" as const, text: `Demo room memory limit reached (${current}/${DEMO_MEMORY_CAP}). Create your own room at eywa-ai.dev to continue.` }],
               };
             }
-          } catch {
-            // Don't block on cap check failure
+          } catch (err) {
+            console.error("Memory cap check failed:", err instanceof Error ? err.message : String(err));
           }
         }
 
@@ -602,8 +603,8 @@ async function handleMcp(
           if (warning && result.content && Array.isArray(result.content)) {
             result.content.push({ type: "text" as const, text: warning });
           }
-        } catch {
-          // Never break tool responses due to pressure check failure
+        } catch (err) {
+          console.error("Pressure check failed:", err instanceof Error ? err.message : String(err));
         }
 
         // Injection piggyback
@@ -613,8 +614,8 @@ async function handleMcp(
             if (pending && result.content && Array.isArray(result.content)) {
               result.content.push({ type: "text" as const, text: pending });
             }
-          } catch {
-            // Never break tool responses due to inbox check failure
+          } catch (err) {
+            console.error("Inbox check failed:", err instanceof Error ? err.message : String(err));
           }
         }
 
@@ -860,8 +861,8 @@ async function buildInstructions(
           }
         }
       }
-    } catch {
-      // Don't break instructions if relevance matching fails
+    } catch (err) {
+      console.error("Relevance matching failed in buildInstructions:", err instanceof Error ? err.message : String(err));
     }
 
     // Network route recommendations for remaining milestones
@@ -890,8 +891,8 @@ async function buildInstructions(
           }
         }
       }
-    } catch {
-      // Don't break instructions if route computation fails
+    } catch (err) {
+      console.error("Route computation failed in buildInstructions:", err instanceof Error ? err.message : String(err));
     }
   }
 

@@ -57,6 +57,11 @@ export function registerApprovalTools(
       });
 
       const approvalId = rows[0]?.id;
+      if (!approvalId) {
+        return {
+          content: [{ type: "text" as const, text: "Failed to create approval request: no ID returned from insert." }],
+        };
+      }
 
       return {
         content: [{
@@ -72,7 +77,7 @@ export function registerApprovalTools(
     "eywa_check_approval",
     "Check the status of a pending approval request. Returns whether it was approved, denied, or is still pending.",
     {
-      approval_id: z.string().describe("The approval ID returned by eywa_request_approval"),
+      approval_id: z.string().uuid("approval_id must be a valid UUID").describe("The approval ID returned by eywa_request_approval"),
     },
     {
       readOnlyHint: true,

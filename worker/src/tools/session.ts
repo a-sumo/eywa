@@ -239,8 +239,9 @@ export function registerSessionTools(
           }
           lines.push("Use eywa_pick_task to claim, eywa_update_task to update status.");
         }
-      } catch {
-        // Don't break session start if task query fails
+      } catch (err) {
+        // Log but don't break session start
+        console.error("eywa_start: task query failed:", err instanceof Error ? err.message : String(err));
       }
 
       lines.push("\nUse eywa_log with system/action/outcome fields to tag your operations.");
@@ -257,8 +258,9 @@ export function registerSessionTools(
             lines.push(`  ${entry.text}\n  -- ${entry.source}`);
           }
         }
-      } catch {
-        // Don't break session start if relevance matching fails
+      } catch (err) {
+        // Log but don't break session start
+        console.error("eywa_start: relevance matching failed:", err instanceof Error ? err.message : String(err));
       }
 
       // Auto-recovery: check for unresolved distress signals or recent checkpoints from same user
@@ -310,8 +312,9 @@ export function registerSessionTools(
             ].join("\n");
           }
         }
-      } catch {
-        // Don't break session start if recovery check fails
+      } catch (err) {
+        // Log but don't break session start
+        console.error("eywa_start: recovery check failed:", err instanceof Error ? err.message : String(err));
       }
 
       if (recoveryBlock) {
@@ -360,8 +363,9 @@ export function registerSessionTools(
             }
           }
         }
-      } catch {
-        // Don't break session start if claim check fails
+      } catch (err) {
+        // Log but don't break session start
+        console.error("eywa_start: claim check failed:", err instanceof Error ? err.message : String(err));
       }
 
       return {

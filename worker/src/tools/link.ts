@@ -12,9 +12,9 @@ export function registerLinkTools(
     "eywa_link",
     "Create a link connecting a specific memory to another session. Use this to reference, fork, or inject a memory into a different agent's session.",
     {
-      source_memory_id: z.string().describe("UUID of the memory to link from"),
+      source_memory_id: z.string().uuid("source_memory_id must be a valid UUID").describe("UUID of the memory to link from"),
       target_agent: z.string().describe("Target agent name (e.g. 'armand/quiet-oak')"),
-      target_session_id: z.string().describe("Target session ID to link to"),
+      target_session_id: z.string().min(1).describe("Target session ID to link to"),
       target_position: z.string().optional().default("head").describe("Where in the target session: 'head' (latest), 'start', or 'after:<memory_id>'"),
       link_type: z.enum(["reference", "inject", "fork"]).optional().default("reference").describe("Type of link: reference (read-only pointer), inject (push context), fork (branch off)"),
       label: z.string().optional().describe("Short label for the link"),
@@ -55,6 +55,11 @@ export function registerLinkTools(
       });
 
       const link = rows[0];
+      if (!link?.id) {
+        return {
+          content: [{ type: "text" as const, text: "Failed to create link: no ID returned from insert." }],
+        };
+      }
       const preview = source.content?.slice(0, 80) ?? "(no content)";
 
       return {
@@ -119,7 +124,7 @@ export function registerLinkTools(
     "eywa_unlink",
     "Delete a link by its ID.",
     {
-      link_id: z.string().describe("UUID of the link to delete"),
+      link_id: z.string().uuid("link_id must be a valid UUID").describe("UUID of the link to delete"),
     },
     {
       readOnlyHint: false,
@@ -142,7 +147,7 @@ export function registerLinkTools(
     "eywa_fetch",
     "Fetch a specific memory by ID. Use this to pull context from another session into your current context.",
     {
-      memory_id: z.string().describe("UUID of the memory to fetch"),
+      memory_id: z.string().uuid("memory_id must be a valid UUID").describe("UUID of the memory to fetch"),
     },
     {
       readOnlyHint: true,
