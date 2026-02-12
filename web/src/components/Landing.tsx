@@ -499,6 +499,63 @@ export function Landing() {
         </div>
       </section>
 
+      {/* Memory Persistence */}
+      <section className="landing-section landing-memory-section">
+        <div className="landing-memory-icon">
+          <svg className="anim-icon" width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <polygon className="anim-crystal-face c1" points="28,4 44,20 28,52 12,20" strokeWidth="2" strokeLinejoin="round"/>
+            <polygon className="anim-crystal-face c2" points="28,4 44,20 28,28" strokeWidth="1.5" strokeLinejoin="round"/>
+            <polygon className="anim-crystal-face c3" points="28,4 12,20 28,28" strokeWidth="1.5" strokeLinejoin="round"/>
+            <line className="anim-crystal-axis" x1="28" y1="4" x2="28" y2="52" strokeWidth="1" strokeDasharray="3 3"/>
+            <circle className="anim-crystal-node cn1" cx="28" cy="20" r="2.5" strokeWidth="1.5"/>
+            <circle className="anim-crystal-node cn2" cx="28" cy="36" r="2" strokeWidth="1.5"/>
+          </svg>
+        </div>
+        <h2 className="landing-memory-title">Your context is stored, not consumed</h2>
+        <p className="landing-memory-description">
+          Every conversation you have with an AI agent generates context: decisions, reasoning, patterns, dead ends.
+          Today that context feeds into a training pipeline and disappears. Eywa stores it as structured memory
+          that belongs to you, persists across sessions, and compounds over time.
+        </p>
+        <div className="landing-memory-points">
+          <div className="landing-memory-point">
+            <svg className="anim-icon" width="24" height="24" viewBox="0 0 32 32" fill="none">
+              <path className="anim-stream s1" d="M16 4v24" strokeWidth="2.5" strokeLinecap="round"/>
+              <circle className="anim-neuron n1" cx="16" cy="8" r="3" strokeWidth="2"/>
+              <circle className="anim-neuron n2" cx="16" cy="16" r="3" strokeWidth="2"/>
+              <circle className="anim-neuron n3" cx="16" cy="24" r="3" strokeWidth="2"/>
+            </svg>
+            <div>
+              <strong>Permanent, not ephemeral</strong>
+              <span>Agent sessions end. The knowledge they built stays. New agents pick up where the last one left off, even weeks later.</span>
+            </div>
+          </div>
+          <div className="landing-memory-point">
+            <svg className="anim-icon" width="24" height="24" viewBox="0 0 32 32" fill="none">
+              <rect className="anim-cube-back" x="6" y="6" width="20" height="20" rx="3" strokeWidth="2"/>
+              <line className="anim-synapse sy1" x1="12" y1="6" x2="12" y2="26" strokeWidth="1.5" strokeDasharray="2 2"/>
+              <line className="anim-synapse sy2" x1="20" y1="6" x2="20" y2="26" strokeWidth="1.5" strokeDasharray="2 2"/>
+              <line className="anim-synapse sy3" x1="6" y1="12" x2="26" y2="12" strokeWidth="1.5" strokeDasharray="2 2"/>
+              <line className="anim-synapse sy4" x1="6" y1="20" x2="26" y2="20" strokeWidth="1.5" strokeDasharray="2 2"/>
+            </svg>
+            <div>
+              <strong>Structured, not scattered</strong>
+              <span>Memories are tagged, searchable, and interconnected. Architecture decisions, API patterns, and gotchas form a navigable knowledge base.</span>
+            </div>
+          </div>
+          <div className="landing-memory-point">
+            <svg className="anim-icon" width="24" height="24" viewBox="0 0 32 32" fill="none">
+              <path className="anim-shield-body" d="M16 28s9-4.5 9-12V8l-9-4-9 4v8c0 7.5 9 12 9 12z" strokeWidth="2" strokeLinejoin="round"/>
+              <path className="anim-shield-check" d="M12 16l3 3 5-5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <div>
+              <strong>Yours, not theirs</strong>
+              <span>Eywa is a conduit, not a syphon. Your memories stay in your room. They serve your team, not a training pipeline.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Powered by Gemini */}
       <section className="landing-section landing-gemini-section">
         <div className="landing-gemini-content">

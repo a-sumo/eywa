@@ -28,6 +28,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Agent session timeline: AgentDetail view now shows categorized timeline (files, git, deploys, decisions, errors, injections) with summary stats and filter tabs
 - NavigatorMap auto-sync: stable room IDs instead of creating new rooms each sync, periodic refresh based on seed activity
 - Agent prompt: added strategic mandate, vision document references, web browsing guidance, and expanded self-directing protocol
+- Landing page memory persistence: narrative section about stored context, permanence, structured knowledge, and data ownership with animated crystal icon
 
 ## 2026-02-10
 

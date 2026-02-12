@@ -2344,6 +2344,145 @@ body {
   height: 16px;
 }
 
+/* Memory Persistence Section */
+.landing-memory-section {
+  background: linear-gradient(180deg, rgba(10, 10, 15, 1) 0%, rgba(18, 14, 28, 1) 50%, rgba(10, 10, 15, 1) 100%);
+  padding: 5rem 2rem;
+  text-align: center;
+  max-width: none;
+}
+
+.landing-memory-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.landing-memory-icon svg {
+  width: 56px;
+  height: 56px;
+}
+
+/* Crystal facet animations */
+.anim-crystal-face {
+  stroke: var(--aurora-purple, #a78bfa);
+  fill: none;
+  animation: crystal-breathe 5s ease-in-out infinite;
+}
+
+.anim-crystal-face.c1 {
+  fill: rgba(167, 139, 250, 0.04);
+}
+
+.anim-crystal-face.c2 {
+  fill: rgba(78, 234, 255, 0.06);
+  stroke: var(--aurora-cyan, #4eeaff);
+  animation-delay: -1.7s;
+}
+
+.anim-crystal-face.c3 {
+  fill: rgba(244, 114, 182, 0.05);
+  stroke: var(--aurora-pink, #f472b6);
+  animation-delay: -3.2s;
+}
+
+.anim-crystal-axis {
+  stroke: rgba(167, 139, 250, 0.25);
+  animation: crystal-axis-drift 4s ease-in-out infinite;
+}
+
+.anim-crystal-node {
+  stroke: var(--aurora-cyan, #4eeaff);
+  fill: rgba(78, 234, 255, 0.15);
+  animation: crystal-node-pulse 3.5s ease-in-out infinite;
+}
+
+.anim-crystal-node.cn2 {
+  stroke: var(--aurora-pink, #f472b6);
+  fill: rgba(244, 114, 182, 0.15);
+  animation-delay: -1.8s;
+}
+
+@keyframes crystal-breathe {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes crystal-axis-drift {
+  0%, 100% { stroke-dashoffset: 0; }
+  50% { stroke-dashoffset: 6; }
+}
+
+@keyframes crystal-node-pulse {
+  0%, 100% { r: 2.5; opacity: 0.6; }
+  50% { r: 3; opacity: 1; }
+}
+
+.landing-memory-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #f0f0f5;
+  margin: 0 0 1rem 0;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.landing-memory-description {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: rgba(240, 240, 245, 0.65);
+  margin: 0 auto 2.5rem;
+  max-width: 680px;
+}
+
+.landing-memory-points {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 580px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.landing-memory-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg, 12px);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+}
+
+.landing-memory-point:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.landing-memory-point svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: 24px;
+  height: 24px;
+}
+
+.landing-memory-point strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(240, 240, 245, 0.9);
+  margin-bottom: 0.3rem;
+}
+
+.landing-memory-point span {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(240, 240, 245, 0.55);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .landing-nav {
@@ -2459,6 +2598,18 @@ body {
 
   .landing-gemini-section {
     padding: 3rem 1rem;
+  }
+
+  .landing-memory-section {
+    padding: 3rem 1rem;
+  }
+
+  .landing-memory-title {
+    font-size: 1.3rem;
+  }
+
+  .landing-memory-description {
+    font-size: 0.95rem;
   }
 
   /* CTA section mobile */
