@@ -27,6 +27,9 @@ export function NavigatorMap() {
   const [syncing, setSyncing] = useState(false);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [availableRooms, setAvailableRooms] = useState<Array<{ id: string; items: number }>>([]);
+  const [autoSync, setAutoSync] = useState(true);
+  const lastSyncRef = useRef(0);
+  const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const roomSlug = room?.slug || "demo";
 
@@ -125,6 +128,9 @@ export function NavigatorMap() {
   }, [roomId]);
 
   // --- Sync data ---
+  // Use a stable room ID so the map persists across syncs
+  const stableRoomId = `eywa-${roomSlug}`;
+
   const syncData = useCallback(async () => {
     if (syncing || !room) return;
     setSyncing(true);
@@ -147,20 +153,46 @@ export function NavigatorMap() {
       }
 
       const agents = Array.from(agentMap.values()).slice(0, 15);
-      const targetRoom = `eywa-${roomSlug}-${Date.now().toString(36)}`;
       const destination =
         ((room as unknown as Record<string, unknown>).destination as string) || "Launch-ready product";
-      await syncEywaRoom(targetRoom, { destination, agents });
+      await syncEywaRoom(stableRoomId, { destination, agents });
 
       const rooms = await listRooms();
       setAvailableRooms(rooms.map((r) => ({ id: r.id, items: r.items })));
-      setRoomId(targetRoom);
+      if (!roomId) setRoomId(stableRoomId);
+      lastSyncRef.current = Date.now();
     } catch (e) {
       console.warn("[NavigatorMap] sync error:", e);
     } finally {
       setSyncing(false);
     }
-  }, [memories, room, roomSlug, syncing]);
+  }, [memories, room, stableRoomId, syncing, roomId]);
+
+  // Auto-sync on mount and periodically when seeds are active
+  useEffect(() => {
+    if (!autoSync || !room) return;
+
+    // Sync immediately on first render
+    if (lastSyncRef.current === 0 && memories.length > 0) {
+      syncData();
+    }
+
+    // Check if any seed agents are active (synced in last 5 min)
+    const hasActiveSeeds = memories.some((m) => {
+      if (!m.agent.startsWith("autonomous/")) return false;
+      return Date.now() - new Date(m.ts).getTime() < 5 * 60 * 1000;
+    });
+
+    // Re-sync every 30s if seeds are active, every 2min otherwise
+    const interval = hasActiveSeeds ? 30_000 : 120_000;
+    syncIntervalRef.current = setInterval(() => {
+      syncData();
+    }, interval);
+
+    return () => {
+      if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
+    };
+  }, [autoSync, room, memories, syncData]);
 
   // --- View animation (smooth zoom/pan) ---
   const VIEW_LERP = 0.18;
@@ -336,6 +368,22 @@ export function NavigatorMap() {
           Navigator
         </span>
 
+        {(() => {
+          const seedCount = memories.filter(
+            (m) => m.agent.startsWith("autonomous/") && Date.now() - new Date(m.ts).getTime() < 5 * 60 * 1000
+          ).length;
+          const activeSeeds = new Set(
+            memories
+              .filter((m) => m.agent.startsWith("autonomous/") && Date.now() - new Date(m.ts).getTime() < 5 * 60 * 1000)
+              .map((m) => m.agent)
+          ).size;
+          return activeSeeds > 0 ? (
+            <span style={{ fontSize: 11, color: "#34d399", opacity: 0.8 }}>
+              {activeSeeds} seed{activeSeeds > 1 ? "s" : ""} active ({seedCount} ops)
+            </span>
+          ) : null;
+        })()}
+
         {availableRooms.length > 0 && (
           <select
             value={roomId || ""}
@@ -359,6 +407,16 @@ export function NavigatorMap() {
         )}
 
         <div style={{ flex: 1 }} />
+
+        <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: isDark ? "#6b7280" : "#999", cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={autoSync}
+            onChange={(e) => setAutoSync(e.target.checked)}
+            style={{ accentColor: "#15D1FF" }}
+          />
+          Auto-sync
+        </label>
 
         <button
           onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
@@ -388,7 +446,7 @@ export function NavigatorMap() {
             cursor: syncing ? "default" : "pointer",
           }}
         >
-          {syncing ? "Syncing..." : "Sync Room Data"}
+          {syncing ? "Syncing..." : "Sync"}
         </button>
 
         {roomId && (
