@@ -716,16 +716,10 @@ async function buildInstructions(
       order: "ts.desc",
       limit: "1",
     }),
-    // Active claims (for conflict detection)
-    db.select<MemoryRow>("memories", {
-      select: "agent,metadata,ts,session_id",
-      room_id: `eq.${ctx.roomId}`,
-      "metadata->>event": "eq.claim",
-      ts: `gte.${twoHoursAgo}`,
-      order: "ts.desc",
-      limit: "50",
-    }),
   ];
+
+  // Active claims (uses staleness check, runs in parallel with other queries)
+  const activeClaimsPromise = getActiveClaims(db, ctx.roomId, ctx.agent);
 
   // Global insights (separate query, different return type)
   const insightsPromise = db.select<GlobalInsightRow>("global_insights", {
@@ -747,9 +741,9 @@ async function buildInstructions(
     );
   }
 
-  const [results, insightRows] = await Promise.all([Promise.all(queries), insightsPromise]);
-  const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows, destRows, claimRows] = results;
-  const batonRows = baton ? results[8] : [];
+  const [results, insightRows, activeClaims] = await Promise.all([Promise.all(queries), insightsPromise, activeClaimsPromise]);
+  const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows, destRows] = results;
+  const batonRows = baton ? results[7] : [];
 
   // Build agent status map with curvature
   const agents = new Map<string, {
@@ -901,20 +895,12 @@ async function buildInstructions(
     }
   }
 
-  // Active claims (work dedup)
-  if (claimRows && claimRows.length > 0) {
-    // Dedupe: latest claim per agent, skip self
-    const claimSeen = new Set<string>();
+  // Active claims (work dedup, already filtered for staleness and session end)
+  if (activeClaims.length > 0) {
     const claimLines: string[] = [];
-    for (const row of claimRows) {
-      if (row.agent === ctx.agent) continue;
-      if (claimSeen.has(row.agent)) continue;
-      claimSeen.add(row.agent);
-      const meta = (row.metadata ?? {}) as Record<string, unknown>;
-      const scope = (meta.scope as string) || "";
-      const files = (meta.files as string[]) || [];
-      const short = row.agent.includes("/") ? row.agent.split("/").pop()! : row.agent;
-      claimLines.push(`  ${short}: ${scope}${files.length > 0 ? ` [${files.join(", ")}]` : ""}`);
+    for (const claim of activeClaims) {
+      const short = claim.agent.includes("/") ? claim.agent.split("/").pop()! : claim.agent;
+      claimLines.push(`  ${short}: ${claim.scope}${claim.files.length > 0 ? ` [${claim.files.join(", ")}]` : ""}`);
     }
     if (claimLines.length > 0) {
       lines.push(`\nActive claims (do not duplicate):`);

@@ -38,7 +38,10 @@ export interface ActiveClaim {
   ts: string;
 }
 
-/** Fetch active claims in a room (< 2h old, no session end after claim). */
+// Claims from agents with no activity in this many minutes are considered stale
+const STALE_CLAIM_MINUTES = 30;
+
+/** Fetch active claims in a room (< 2h old, no session end after claim, agent not idle). */
 export async function getActiveClaims(
   db: SupabaseClient,
   roomId: string,
@@ -82,9 +85,9 @@ export async function getActiveClaims(
     }
   }
 
-  // Dedupe: keep latest claim per agent
+  // Dedupe: keep latest claim per agent, filter ended/unclaimed
   const seen = new Set<string>();
-  const active: ActiveClaim[] = [];
+  const candidates: Array<{ agent: string; scope: string; files: string[]; ts: string }> = [];
   for (const row of claimRows) {
     if (seen.has(row.agent)) continue;
     if (excludeAgent && row.agent === excludeAgent) continue;
@@ -93,7 +96,7 @@ export async function getActiveClaims(
     seen.add(row.agent);
 
     const meta = (row.metadata ?? {}) as Record<string, unknown>;
-    active.push({
+    candidates.push({
       agent: row.agent,
       scope: (meta.scope as string) || "",
       files: (meta.files as string[]) || [],
@@ -101,7 +104,28 @@ export async function getActiveClaims(
     });
   }
 
-  return active;
+  if (candidates.length === 0) return candidates;
+
+  // Staleness check: get each claiming agent's most recent activity
+  const candidateAgents = candidates.map((c) => c.agent);
+  const staleThreshold = new Date(Date.now() - STALE_CLAIM_MINUTES * 60 * 1000).toISOString();
+
+  // Query recent activity for all candidate agents in one batch
+  // We get the latest memory per agent and check if it's older than the stale threshold
+  const recentRows = await db.select<MemoryRow>("memories", {
+    select: "agent,ts",
+    room_id: `eq.${roomId}`,
+    agent: `in.(${candidateAgents.join(",")})`,
+    ts: `gte.${staleThreshold}`,
+    order: "ts.desc",
+    limit: String(candidateAgents.length * 2),
+  });
+
+  // Agents with at least one memory in the recent window are still active
+  const recentlyActiveAgents = new Set(recentRows.map((r) => r.agent));
+
+  // Filter out stale claims (agents with no recent activity)
+  return candidates.filter((c) => recentlyActiveAgents.has(c.agent));
 }
 
 /** Check a task description against active claims. Returns conflict warnings. */
