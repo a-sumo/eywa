@@ -997,6 +997,327 @@ async function cmdClaims(slugArg) {
   }
 }
 
+// ── Metrics ───────────────────────────────────────────
+
+const ACTION_WEIGHTS = {
+  deploy: 5, create: 4, write: 3, test: 3,
+  delete: 2, review: 2, debug: 2, configure: 1.5,
+  read: 1, monitor: 0.5,
+};
+const OUTCOME_MULT = {
+  success: 1.0, in_progress: 0.5, failure: -1.0, blocked: -2.0,
+};
+const HIGH_IMPACT_ACTIONS = new Set(["deploy", "create", "write", "test", "delete", "review"]);
+
+function computeCurvature(ops, durationMinutes) {
+  if (ops.length === 0 || durationMinutes <= 0) return 0;
+  const mins = Math.max(durationMinutes, 1);
+  let weightedSum = 0;
+  let failBlockCount = 0;
+  let highImpact = 0;
+  for (const op of ops) {
+    const w = ACTION_WEIGHTS[op.action ?? ""] ?? 0;
+    const m = OUTCOME_MULT[op.outcome ?? ""] ?? 0.5;
+    weightedSum += w * m;
+    if (op.outcome === "failure" || op.outcome === "blocked") failBlockCount++;
+    if (HIGH_IMPACT_ACTIONS.has(op.action ?? "")) highImpact++;
+  }
+  const momentum = weightedSum / mins;
+  const drag = failBlockCount / mins;
+  const signal = highImpact / Math.max(ops.length, 1);
+  return Math.round((momentum - drag) * signal * 100) / 100;
+}
+
+async function cmdMetrics(slugArg) {
+  const room = await resolveRoom(slugArg);
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60_000).toISOString();
+
+  const { data: rows } = await supabase
+    .from("memories")
+    .select("agent,content,ts,metadata")
+    .eq("room_id", room.id)
+    .gte("ts", twoHoursAgo)
+    .order("ts", { ascending: false })
+    .limit(2000);
+
+  if (!rows?.length) {
+    console.log(dim("\n  No recent activity (last 2 hours).\n"));
+    return;
+  }
+
+  const now = Date.now();
+  const ACTIVE_MS = 30 * 60_000;
+
+  // Build per-agent operation data
+  const agentOps = new Map();
+  for (const row of rows) {
+    const meta = row.metadata ?? {};
+    const ts = new Date(row.ts).getTime();
+    if (!agentOps.has(row.agent)) {
+      agentOps.set(row.agent, {
+        ops: [], firstTs: ts, lastTs: ts,
+        successCount: 0, failCount: 0, blockedCount: 0, totalOps: 0,
+        systems: new Set(),
+        isActive: meta.event === "session_start" && (now - ts) < ACTIVE_MS,
+      });
+    }
+    const agent = agentOps.get(row.agent);
+    if (ts < agent.firstTs) agent.firstTs = ts;
+    if (ts > agent.lastTs) agent.lastTs = ts;
+    if (meta.system) agent.systems.add(meta.system);
+    if (meta.action || meta.outcome) {
+      agent.ops.push({ action: meta.action, outcome: meta.outcome });
+      agent.totalOps++;
+      if (meta.outcome === "success") agent.successCount++;
+      if (meta.outcome === "failure") agent.failCount++;
+      if (meta.outcome === "blocked") agent.blockedCount++;
+    }
+  }
+
+  // Compute per-agent curvature
+  const agentMetrics = [];
+  let totalOps = 0, totalSuccess = 0, totalFail = 0, totalBlocked = 0, activeCount = 0;
+
+  for (const [name, info] of agentOps) {
+    const durationMin = (info.lastTs - info.firstTs) / 60000;
+    const kappa = computeCurvature(info.ops, durationMin);
+    const successRate = info.totalOps > 0 ? Math.round((info.successCount / info.totalOps) * 100) : 0;
+    agentMetrics.push({
+      name, kappa, ops: info.totalOps, successRate,
+      isActive: info.isActive, systems: [...info.systems],
+    });
+    totalOps += info.totalOps;
+    totalSuccess += info.successCount;
+    totalFail += info.failCount;
+    totalBlocked += info.blockedCount;
+    if (info.isActive) activeCount++;
+  }
+
+  agentMetrics.sort((a, b) => b.kappa - a.kappa);
+
+  const teamSuccessRate = totalOps > 0 ? Math.round((totalSuccess / totalOps) * 100) : 0;
+  const throughput = Math.round(totalOps / 2);
+  const withOps = agentMetrics.filter(a => a.ops > 0);
+  const teamKappa = withOps.length > 0
+    ? Math.round(withOps.reduce((sum, a) => sum + a.kappa, 0) / withOps.length * 100) / 100
+    : 0;
+  const converging = agentMetrics.filter(a => a.kappa > 0 && a.ops > 0).length;
+  const diverging = agentMetrics.filter(a => a.kappa < 0).length;
+  const stalled = agentMetrics.filter(a => a.kappa === 0 && a.ops === 0).length;
+
+  const kappaColor = teamKappa > 0 ? green : teamKappa < 0 ? red : yellow;
+
+  console.log(`\n  ${bold("Metrics")} ${dim("/" + room.slug)} ${dim("(last 2h)")}\n`);
+  console.log(`  ${bold("Curvature:")}  ${kappaColor(`κ=${teamKappa}`)}  ${teamKappa > 0 ? green("converging") : teamKappa < 0 ? red("diverging") : yellow("stalled")}`);
+  console.log(`  ${bold("Throughput:")} ${cyan(`${throughput} ops/hr`)}`);
+  console.log(`  ${bold("Success:")}    ${teamSuccessRate >= 80 ? green(`${teamSuccessRate}%`) : teamSuccessRate >= 50 ? yellow(`${teamSuccessRate}%`) : red(`${teamSuccessRate}%`)}  ${dim(`(${totalSuccess} ok, ${totalFail} fail, ${totalBlocked} blocked)`)}`);
+  console.log(`  ${bold("Agents:")}     ${green(`${activeCount} active`)}, ${dim(`${agentMetrics.length} total`)}`);
+  console.log(`  ${bold("Convergence:")} ${converging} converging, ${diverging} diverging, ${stalled} stalled`);
+  console.log();
+
+  // Top convergers
+  const topConvergers = agentMetrics.filter(a => a.kappa > 0).slice(0, 5);
+  if (topConvergers.length) {
+    console.log(bold("  Top convergers:"));
+    for (const a of topConvergers) {
+      const shortName = a.name.split("/")[1] || a.name;
+      const activeBadge = a.isActive ? green(" ●") : "";
+      const sysStr = a.systems.length ? dim(` [${a.systems.join(", ")}]`) : "";
+      console.log(`  ${green("↑")} ${bold(shortName)}${activeBadge}  κ=${a.kappa}  ${dim(`${a.ops} ops, ${a.successRate}% ok`)}${sysStr}`);
+    }
+    console.log();
+  }
+
+  // Diverging agents
+  const divergers = agentMetrics.filter(a => a.kappa < 0).slice(0, 3);
+  if (divergers.length) {
+    console.log(bold("  Needs attention (negative curvature):"));
+    for (const a of divergers) {
+      const shortName = a.name.split("/")[1] || a.name;
+      console.log(`  ${red("↓")} ${bold(shortName)}  κ=${a.kappa}  ${dim(`${a.ops} ops, ${a.successRate}% ok`)}`);
+    }
+    console.log();
+  }
+
+  // Invisible agents
+  const invisible = agentMetrics.filter(a => a.kappa === 0 && a.isActive && a.ops === 0);
+  if (invisible.length) {
+    const names = invisible.slice(0, 5).map(a => a.name.split("/")[1] || a.name).join(", ");
+    const more = invisible.length > 5 ? dim(` +${invisible.length - 5} more`) : "";
+    console.log(dim(`  Invisible (active, no tagged ops): ${names}${more}\n`));
+  }
+}
+
+// ── Seeds ────────────────────────────────────────────
+
+const ACTIVE_MS_SEED = 30 * 60_000; // 30 min
+const SILENCE_WARN = 10 * 60_000;
+const SILENCE_HIGH = 30 * 60_000;
+const SILENCE_CRIT = 60 * 60_000;
+
+function isSeedAgent(agent) {
+  return agent.startsWith("autonomous/");
+}
+
+function silenceTag(ms) {
+  if (ms >= SILENCE_CRIT) return red("SILENT 1h+");
+  if (ms >= SILENCE_HIGH) return red(`SILENT ${Math.floor(ms / 60_000)}m`);
+  if (ms >= SILENCE_WARN) return yellow(`SILENT ${Math.floor(ms / 60_000)}m`);
+  return null;
+}
+
+async function cmdSeeds(slugArg) {
+  const room = await resolveRoom(slugArg);
+  const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60_000).toISOString();
+
+  const { data: rows } = await supabase
+    .from("memories")
+    .select("agent,content,ts,metadata,message_type")
+    .eq("room_id", room.id)
+    .gte("ts", fourHoursAgo)
+    .order("ts", { ascending: false })
+    .limit(3000);
+
+  if (!rows?.length) {
+    console.log(dim("\n  No seed activity (last 4 hours).\n"));
+    return;
+  }
+
+  const now = Date.now();
+  const seeds = new Map();
+
+  for (const row of rows) {
+    if (!isSeedAgent(row.agent)) continue;
+    const meta = row.metadata ?? {};
+    if (meta.event === "agent_connected") continue;
+
+    const ts = new Date(row.ts).getTime();
+    let state = seeds.get(row.agent);
+
+    if (!state) {
+      let status = "idle";
+      let task = "";
+
+      if (meta.event === "session_start") {
+        status = (now - ts) < ACTIVE_MS_SEED ? "active" : "idle";
+        task = meta.task || "";
+      } else if (meta.event === "session_done" || meta.event === "session_end") {
+        status = "finished";
+        task = meta.summary || "";
+      } else if ((now - ts) < ACTIVE_MS_SEED) {
+        status = "active";
+      }
+
+      state = {
+        agent: row.agent,
+        status,
+        task: task || (row.content ?? "").slice(0, 100),
+        opCount: 0,
+        successCount: 0,
+        failCount: 0,
+        blockedCount: 0,
+        sessions: 0,
+        lastTs: ts,
+        firstTs: ts,
+        systems: new Set(),
+      };
+      seeds.set(row.agent, state);
+    }
+
+    if (ts < state.firstTs) state.firstTs = ts;
+    if (meta.system) state.systems.add(meta.system);
+    if (meta.action || meta.outcome) {
+      state.opCount++;
+      if (meta.outcome === "success") state.successCount++;
+      if (meta.outcome === "failure") state.failCount++;
+      if (meta.outcome === "blocked") state.blockedCount++;
+    }
+    if (meta.event === "session_start") state.sessions++;
+  }
+
+  if (!seeds.size) {
+    console.log(dim("\n  No seed agents found in recent activity.\n"));
+    return;
+  }
+
+  // Aggregate stats
+  let totalSeeds = seeds.size;
+  let activeSeeds = 0;
+  let stalledSeeds = 0;
+  let finishedSeeds = 0;
+  let totalOps = 0;
+  let totalSuccess = 0;
+  let totalSessions = 0;
+
+  const seedList = [];
+  for (const [, s] of seeds) {
+    if (s.status === "active") {
+      const silence = now - s.lastTs;
+      if (silence >= SILENCE_WARN) stalledSeeds++;
+      else activeSeeds++;
+    }
+    if (s.status === "finished") finishedSeeds++;
+    totalOps += s.opCount;
+    totalSuccess += s.successCount;
+    totalSessions += s.sessions;
+    seedList.push(s);
+  }
+
+  const successRate = totalOps > 0 ? Math.round((totalSuccess / totalOps) * 100) : 0;
+  const throughput = Math.round(totalOps / 4); // ops per hour (4h window)
+  const efficiency = totalSessions > 0 ? Math.round(totalOps / totalSessions) : 0;
+
+  console.log(`\n  ${bold("Seeds")} ${dim("/" + room.slug)} ${dim("(last 4h)")}\n`);
+
+  // Stats bar
+  const rateColor = successRate >= 80 ? green : successRate >= 50 ? yellow : red;
+  console.log(`  ${bold("Seeds:")}      ${green(`${activeSeeds} active`)}, ${stalledSeeds > 0 ? yellow(`${stalledSeeds} stalled`) : dim(`${stalledSeeds} stalled`)}, ${dim(`${finishedSeeds} finished`)}, ${dim(`${totalSeeds} total`)}`);
+  console.log(`  ${bold("Success:")}    ${rateColor(`${successRate}%`)}  ${dim(`(${totalSuccess} ok / ${totalOps} ops)`)}`);
+  console.log(`  ${bold("Throughput:")} ${cyan(`${throughput} ops/hr`)}`);
+  console.log(`  ${bold("Efficiency:")} ${cyan(`${efficiency} ops/session`)}  ${dim(`(${totalSessions} sessions)`)}`);
+  console.log();
+
+  // Per-seed list: active first, then stalled, then finished, then idle
+  seedList.sort((a, b) => {
+    const order = { active: 0, finished: 2, idle: 3 };
+    const aOrder = a.status === "active" && (now - a.lastTs) >= SILENCE_WARN ? 1 : (order[a.status] ?? 3);
+    const bOrder = b.status === "active" && (now - b.lastTs) >= SILENCE_WARN ? 1 : (order[b.status] ?? 3);
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return b.lastTs - a.lastTs;
+  });
+
+  // Show top seeds (max 15)
+  const shown = seedList.slice(0, 15);
+  for (const s of shown) {
+    const shortName = s.agent.split("/")[1] || s.agent;
+    const silence = now - s.lastTs;
+    const silTag = s.status === "active" ? silenceTag(silence) : null;
+
+    let badge;
+    if (s.status === "active" && !silTag) {
+      badge = green("● active");
+    } else if (s.status === "active" && silTag) {
+      badge = yellow("◉ ") + silTag;
+    } else if (s.status === "finished") {
+      badge = cyan("✓ done");
+    } else {
+      badge = dim("○ idle");
+    }
+
+    const sr = s.opCount > 0 ? Math.round((s.successCount / s.opCount) * 100) : 0;
+    const sysStr = s.systems.size ? dim(` [${[...s.systems].join(", ")}]`) : "";
+
+    console.log(`  ${bold(shortName)}  ${badge}  ${dim(timeAgo(new Date(s.lastTs).toISOString()))}`);
+    console.log(`    ${dim(s.task.slice(0, 80))}`);
+    console.log(`    ${dim(`${s.opCount} ops, ${sr}% ok, ${s.sessions} sessions`)}${sysStr}`);
+    console.log();
+  }
+
+  if (seedList.length > 15) {
+    console.log(dim(`  ... and ${seedList.length - 15} more seeds\n`));
+  }
+}
+
 // ── CLI Router ─────────────────────────────────────────
 
 const args = process.argv.slice(2);
@@ -1019,6 +1340,8 @@ ${bold("  Observe:")}
     log [room] [limit]                    Recent activity feed
     course [room]                         Destination progress, agents, distress
     claims [room]                         Active work claims (who's working on what)
+    metrics [room]                        Team curvature, throughput, success rate
+    seeds [room]                          Seed health: active, stalled, success rate
 
 ${bold("  Navigate:")}
     dest [room]                           View current destination
@@ -1101,6 +1424,14 @@ ${bold("  Examples:")}
 
       case "claims":
         await cmdClaims(args[1]);
+        break;
+
+      case "metrics":
+        await cmdMetrics(args[1]);
+        break;
+
+      case "seeds":
+        await cmdSeeds(args[1]);
         break;
 
       case "knowledge":
