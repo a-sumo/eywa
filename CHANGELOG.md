@@ -9,6 +9,7 @@ All notable features and changes. One line per feature. Agents append here after
 - eywa-dev room: dedicated room for autonomous seed agents, separate from demo room noise. seed-mcp.json + agent-loop.sh updated
 - Seed session chaining: agent-loop.sh now respawns sessions with baton passing so work continues across context windows
 - Parallel seed spawning: agent-swarm.sh launches N seeds in parallel with staggered starts and clean shutdown
+- Seed health dashboard: aggregate stats (success rate, throughput, efficiency) and per-seed success rate bars in SeedMonitor
 
 ## 2026-02-10
 
