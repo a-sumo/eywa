@@ -19,6 +19,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Discord /approve command: view pending approvals, approve or deny agent requests from chat with /approve list, /approve yes, /approve no
 - Deploy health: HubView now shows deployment status indicator with last deploy time, outcome, and expandable log of all recent deploys by agent
 - CLI claims command: `eywa claims` shows active work claims with agent, scope, files, and timestamp. Matches Discord /claims visibility from the terminal
+- Discord /metrics command: team curvature, per-agent curvature rankings, throughput (ops/hr), success rate, convergence/divergence counts over a 2-hour window
 
 ## 2026-02-10
 
