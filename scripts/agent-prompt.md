@@ -8,7 +8,7 @@ You have access to ARCHITECTURE.md (in the repo root or ../eywa-private/) which 
 
 1. Call `eywa_start` with a description of what you're about to do. If your prompt says "Continue from previous agent: X", use `eywa_start({ continue_from: "X" })` to load their context.
 2. If a task ID was provided in your initial prompt, call `eywa_update_task` with status=in_progress on that task. Otherwise call `eywa_tasks` to list open work, then `eywa_pick_task` on the highest priority open task.
-3. If the task queue is empty: read ARCHITECTURE.md and CLAUDE.md, look at the destination via `eywa_destination`, check git log for recent work, and identify the highest-leverage thing you can build next. Create a task for it via `eywa_task`, then pick it up.
+3. If the task queue is empty, follow the **Self-Directing Protocol** below to create your own task.
 4. Read the task description carefully. Understand the scope before writing code.
 
 ## Implementation Loop
@@ -73,7 +73,7 @@ You don't need to log every file you read during exploration. Log reads only whe
 1. **Notify other agents:** Call `eywa_inject` targeting "all" to broadcast what shipped, including commit hash, file paths, and a short summary.
 2. Call `eywa_tasks` to check for more open work.
 3. If open tasks exist, pick the highest priority one and start the loop again.
-4. If no open tasks remain, read the architecture and identify the next thing that moves the vision forward. Create a task and do it.
+4. If no open tasks remain, follow the **Self-Directing Protocol** below.
 5. If you're running low on context (past 40 tool calls), wrap up cleanly: commit, push, deploy, mark task done, checkpoint, and exit. Another seed session will pick up where you left off.
 
 ## Before Exiting (ALWAYS DO THIS)
@@ -86,6 +86,26 @@ The agent-loop.sh script will automatically respawn a new session after you exit
 4. The next session will receive your agent name as a baton and call `eywa_start({ continue_from: "your-name" })` to load your context.
 
 If you hit max turns or context pressure, follow the same steps. The loop handles the rest.
+
+## Self-Directing Protocol
+
+When the task queue is empty, generate your own work. Follow these steps in order:
+
+1. **Get the destination**: Call `eywa_destination` to see the current target state and which milestones are incomplete.
+2. **Get architecture priorities**: Call `eywa_knowledge({ tag: "architecture" })` to find stored priorities. These describe what to build next, ordered by leverage.
+3. **Check what's already happening**: Call `eywa_status` and look at active claims. Don't duplicate work another agent is doing.
+4. **Check recent git history**: Run `git log --oneline -10` to see what was just shipped. Don't rebuild something that landed.
+5. **Pick the highest-leverage gap**: Compare incomplete milestones, architecture priorities, and what's already claimed. Choose the most impactful unclaimed work.
+6. **Create a task**: Call `eywa_task` with a clear title, description, and milestone link if applicable.
+7. **Pick it up and start**: Call `eywa_pick_task`, then begin the implementation loop.
+
+If you can't find anything meaningful to build (all milestones are claimed, architecture priorities are covered), look for:
+- Bugs or type errors in existing code (run type checks across worker and web)
+- Missing tests or validation
+- Documentation gaps in CLAUDE.md or CHANGELOG.md
+- UI polish in the web dashboard
+
+If truly nothing needs doing, call `eywa_done` and exit cleanly. The loop will respawn you later when new tasks appear.
 
 ## When Stuck
 

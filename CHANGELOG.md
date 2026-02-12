@@ -10,6 +10,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Seed session chaining: agent-loop.sh now respawns sessions with baton passing so work continues across context windows
 - Parallel seed spawning: agent-swarm.sh launches N seeds in parallel with staggered starts and clean shutdown
 - Seed health dashboard: aggregate stats (success rate, throughput, efficiency) and per-seed success rate bars in SeedMonitor
+- Self-directing seeds: protocol and knowledge base entries so seeds auto-generate tasks when the queue is empty
 
 ## 2026-02-10
 
