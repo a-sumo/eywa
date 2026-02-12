@@ -45,6 +45,9 @@ All notable features and changes. One line per feature. Agents append here after
 - UX fix: added Ops tab to mobile navigation so Operations view is discoverable on small screens
 - Gemini chat: exposed `available` flag from useGeminiChat hook for graceful degradation when API key is missing
 - Worker reliability: replaced 10 silent catch blocks with console.error logging across session.ts, index.ts. Added UUID validation to link and approval tools. Added insert verification for approval and link creation
+- Catch-all 404 route: unknown URLs now show a styled NotFound page with navigation links instead of a blank screen
+- RoomsIndex graceful degradation: per-room try-catch so one failing Supabase query shows safe defaults instead of crashing the whole page
+- useRealtimeMemories error state: hook now exposes query errors so consuming components can display them
 - Integration guide fixes: Codex now shows correct TOML config format instead of JSON, Cline points to cline_mcp_settings.json via extension UI, Cursor shows both global and project config paths, Windsurf and Cline docs URLs updated
 
 ## 2026-02-10

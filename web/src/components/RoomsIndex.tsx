@@ -44,77 +44,85 @@ export function RoomsIndex() {
       return;
     }
 
-    // For each room, fetch stats in parallel
+    // For each room, fetch stats in parallel. Use try-catch per room so one
+    // failing query doesn't crash the entire page.
     const statsPromises = roomList.map(async (room: Room): Promise<RoomStats> => {
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      try {
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-      // Parallel queries: unique agents, active agents, memory count, last memory, destination
-      const [agentsRes, activeRes, countRes, lastRes, destRes] = await Promise.all([
-        // Unique agents (last 24h)
-        supabase
-          .from("memories")
-          .select("agent")
-          .eq("room_id", room.id)
-          .gte("ts", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-          .limit(500),
-        // Active agents (last 5min)
-        supabase
-          .from("memories")
-          .select("agent")
-          .eq("room_id", room.id)
-          .gte("ts", fiveMinAgo)
-          .limit(200),
-        // Total memory count
-        supabase
-          .from("memories")
-          .select("id", { count: "exact", head: true })
-          .eq("room_id", room.id),
-        // Last activity
-        supabase
-          .from("memories")
-          .select("ts")
-          .eq("room_id", room.id)
-          .order("ts", { ascending: false })
-          .limit(1),
-        // Destination
-        supabase
-          .from("memories")
-          .select("metadata")
-          .eq("room_id", room.id)
-          .eq("message_type", "knowledge")
-          .order("ts", { ascending: false })
-          .limit(50),
-      ]);
+        const [agentsRes, activeRes, countRes, lastRes, destRes] = await Promise.all([
+          supabase
+            .from("memories")
+            .select("agent")
+            .eq("room_id", room.id)
+            .gte("ts", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+            .limit(500),
+          supabase
+            .from("memories")
+            .select("agent")
+            .eq("room_id", room.id)
+            .gte("ts", fiveMinAgo)
+            .limit(200),
+          supabase
+            .from("memories")
+            .select("id", { count: "exact", head: true })
+            .eq("room_id", room.id),
+          supabase
+            .from("memories")
+            .select("ts")
+            .eq("room_id", room.id)
+            .order("ts", { ascending: false })
+            .limit(1),
+          supabase
+            .from("memories")
+            .select("metadata")
+            .eq("room_id", room.id)
+            .eq("message_type", "knowledge")
+            .order("ts", { ascending: false })
+            .limit(50),
+        ]);
 
-      const uniqueAgents = new Set((agentsRes.data || []).map((r: { agent: string }) => r.agent));
-      const activeAgents = new Set((activeRes.data || []).map((r: { agent: string }) => r.agent));
+        const uniqueAgents = new Set((agentsRes.data || []).map((r: { agent: string }) => r.agent));
+        const activeAgents = new Set((activeRes.data || []).map((r: { agent: string }) => r.agent));
 
-      // Extract destination from knowledge memories
-      let destination: string | null = null;
-      let milestonesDone = 0;
-      let milestonesTotal = 0;
-      for (const m of destRes.data || []) {
-        const meta = (m.metadata ?? {}) as Record<string, unknown>;
-        if (meta.event === "destination") {
-          destination = (meta.destination as string) || null;
-          const milestones = (meta.milestones as string[]) || [];
-          const progress = (meta.progress as Record<string, boolean>) || {};
-          milestonesTotal = milestones.length;
-          milestonesDone = milestones.filter((ms) => progress[ms]).length;
-          break;
+        let destination: string | null = null;
+        let milestonesDone = 0;
+        let milestonesTotal = 0;
+        for (const m of destRes.data || []) {
+          const meta = (m.metadata ?? {}) as Record<string, unknown>;
+          if (meta.event === "destination") {
+            destination = (meta.destination as string) || null;
+            const milestones = (meta.milestones as string[]) || [];
+            const progress = (meta.progress as Record<string, boolean>) || {};
+            milestonesTotal = milestones.length;
+            milestonesDone = milestones.filter((ms) => progress[ms]).length;
+            break;
+          }
         }
-      }
 
-      return {
-        room,
-        agentCount: uniqueAgents.size,
-        activeAgentCount: activeAgents.size,
-        memoryCount: countRes.count || 0,
-        lastActivity: lastRes.data?.[0]?.ts || null,
-        destination,
-        milestonesDone,
-        milestonesTotal,
-      };
+        return {
+          room,
+          agentCount: uniqueAgents.size,
+          activeAgentCount: activeAgents.size,
+          memoryCount: countRes.count || 0,
+          lastActivity: lastRes.data?.[0]?.ts || null,
+          destination,
+          milestonesDone,
+          milestonesTotal,
+        };
+      } catch {
+        // Return safe defaults so the room still shows up
+        return {
+          room,
+          agentCount: 0,
+          activeAgentCount: 0,
+          memoryCount: 0,
+          lastActivity: null,
+          destination: null,
+          milestonesDone: 0,
+          milestonesTotal: 0,
+        };
+      }
     });
 
     const stats = await Promise.all(statsPromises);

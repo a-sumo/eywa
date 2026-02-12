@@ -4,6 +4,7 @@ import { supabase, type Memory } from "../lib/supabase";
 export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?: number) {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchInitial = useCallback(async () => {
     if (!roomId) {
@@ -23,8 +24,13 @@ export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?:
       query = query.gte("ts", new Date(Date.now() - sinceMs).toISOString());
     }
 
-    const { data } = await query;
-    if (data) setMemories(data);
+    const { data, error: queryError } = await query;
+    if (queryError) {
+      setError(queryError.message);
+    } else {
+      setError(null);
+      if (data) setMemories(data);
+    }
     setLoading(false);
   }, [roomId, limit, sinceMs]);
 
@@ -57,7 +63,7 @@ export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?:
     };
   }, [fetchInitial, roomId, limit]);
 
-  return { memories, loading, refresh: fetchInitial };
+  return { memories, loading, error, refresh: fetchInitial };
 }
 
 export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {

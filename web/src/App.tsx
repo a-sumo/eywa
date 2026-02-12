@@ -34,6 +34,7 @@ import { PiDisplayDocs } from "./components/docs/PiDisplayDocs";
 import { ArchitectureDocs } from "./components/docs/ArchitectureDocs";
 import { SelfHostingDocs } from "./components/docs/SelfHostingDocs";
 import { VersionSwitcher } from "./components/VersionSwitcher";
+import { NotFound } from "./components/NotFound";
 import "./App.css";
 
 function App() {
@@ -65,6 +66,7 @@ function App() {
           <Route path="/r/:slug/spectacles/rx" element={<RoomProvider><SpectaclesReceiver /></RoomProvider>} />
           <Route path="/r/:slug/voices" element={<RoomProvider><VoicesView /></RoomProvider>} />
           <Route path="/r/:slug/*" element={<RoomRoutes />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>
