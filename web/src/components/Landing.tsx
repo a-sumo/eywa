@@ -949,7 +949,7 @@ export function Landing() {
         </div>
         <div className="landing-footer-bottom">
           <p>© 2026 <a href="https://curvilinear.space" target="_blank" rel="noopener noreferrer">Curvilinear</a></p>
-          <LanguageSelector />
+          <LanguageSelector dropUp />
           <a
             href="https://gemini.google/us/about"
             target="_blank"

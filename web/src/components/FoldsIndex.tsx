@@ -36,7 +36,7 @@ export function FoldsIndex() {
     setError(null);
 
     const { data: foldList, error: foldErr } = await supabase
-      .from("rooms")
+      .from("folds")
       .select("*")
       .order("created_at", { ascending: false });
 

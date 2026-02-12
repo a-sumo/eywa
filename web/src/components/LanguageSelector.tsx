@@ -13,7 +13,7 @@ const flagMap: Record<string, string> = {
   ar: `${FLAG_BASE}/sa.png`,
 };
 
-export function LanguageSelector() {
+export function LanguageSelector({ dropUp = false }: { dropUp?: boolean }) {
   const { i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -45,7 +45,7 @@ export function LanguageSelector() {
         <span>{current.native}</span>
       </button>
       {open && (
-        <div className="language-selector-dropdown">
+        <div className={`language-selector-dropdown${dropUp ? " drop-up" : ""}`}>
           {supportedLanguages.map((lang) => (
             <button
               key={lang.code}

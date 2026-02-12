@@ -1,13 +1,13 @@
 {
   "boundary.title": "Une erreur est survenue",
-  "boundary.description": "Une erreur inattendue s'est produite. Veuillez rafraichir la page.",
-  "boundary.details": "Details de l'erreur",
-  "boundary.refresh": "Rafraichir la page",
+  "boundary.description": "Une erreur inattendue s'est produite. Veuillez rafraîchir la page.",
+  "boundary.details": "Détails de l'erreur",
+  "boundary.refresh": "Rafraîchir la page",
   "notFound.title": "404",
-  "notFound.description": "Rien ici a l'adresse",
-  "notFound.hint": "La page a peut-etre ete deplacee, ou l'URL est incorrecte.",
-  "network": "Erreur reseau. Veuillez verifier votre connexion.",
-  "generic": "Une erreur est survenue. Veuillez reessayer.",
+  "notFound.description": "Rien ici à l'adresse",
+  "notFound.hint": "La page a peut-être été déplacée, ou l'URL est incorrecte.",
+  "network": "Erreur réseau. Veuillez vérifier votre connexion.",
+  "generic": "Une erreur est survenue. Veuillez réessayer.",
   "foldNotFound": "Fold introuvable",
-  "loadFailed": "Echec du chargement des donnees"
+  "loadFailed": "Échec du chargement des données"
 }
