@@ -103,95 +103,20 @@ export default {
 
 function buildDemoMemories(roomId: string): Array<Record<string, unknown>> {
   const now = Date.now();
-  const sessionId = "demo-seed-" + now;
+  const min = 60000;
   const agents = [
-    "alice/bright-oak", "bob/swift-wolf", "carol/calm-reed",
-    "dave/keen-owl", "eve/rosy-dawn",
+    { name: "alice/bright-oak", session: `session_alice_${now}`, task: "Implementing user authentication with OAuth2" },
+    { name: "bob/swift-wolf", session: `session_bob_${now}`, task: "Refactoring database queries for performance" },
+    { name: "carol/calm-reed", session: `session_carol_${now}`, task: "Building React dashboard components" },
+    { name: "dave/keen-owl", session: `session_dave_${now}`, task: "Writing integration tests for API endpoints" },
+    { name: "eve/rosy-dawn", session: `session_eve_${now}`, task: "Setting up CI/CD pipeline with GitHub Actions" },
   ];
   const memories: Array<Record<string, unknown>> = [];
+  const m = (data: Record<string, unknown>) => { memories.push({ room_id: roomId, ...data }); };
 
-  // Agent session starts
-  agents.forEach((agent, i) => {
-    memories.push({
-      room_id: roomId, session_id: sessionId, agent,
-      message_type: "resource",
-      content: "SESSION START: " + [
-        "Implementing user authentication with OAuth2",
-        "Refactoring database queries for performance",
-        "Building React dashboard components",
-        "Writing integration tests for API endpoints",
-        "Setting up CI/CD pipeline with GitHub Actions",
-      ][i],
-      metadata: { event: "session_start", task: [
-        "Implementing user authentication with OAuth2",
-        "Refactoring database queries for performance",
-        "Building React dashboard components",
-        "Writing integration tests for API endpoints",
-        "Setting up CI/CD pipeline with GitHub Actions",
-      ][i] },
-      ts: new Date(now - (30 - i * 2) * 60000).toISOString(),
-    });
-  });
-
-  // Activity logs with operation metadata
-  const activities = [
-    { agent: agents[0], content: "Added JWT token validation middleware", system: "api", action: "create", scope: "auth middleware", outcome: "success" },
-    { agent: agents[0], content: "Created login and register endpoints", system: "api", action: "create", scope: "auth routes", outcome: "success" },
-    { agent: agents[1], content: "Indexed users table on email column", system: "database", action: "write", scope: "users table", outcome: "success" },
-    { agent: agents[1], content: "Rewrote N+1 query in orders endpoint", system: "database", action: "write", scope: "orders query", outcome: "success" },
-    { agent: agents[2], content: "Built AgentCard component with progress bars", system: "editor", action: "create", scope: "dashboard UI", outcome: "success" },
-    { agent: agents[2], content: "Added realtime subscription for live updates", system: "browser", action: "create", scope: "realtime hook", outcome: "success" },
-    { agent: agents[3], content: "Auth endpoint tests passing (12/12)", system: "terminal", action: "test", scope: "auth tests", outcome: "success" },
-    { agent: agents[3], content: "Found race condition in session refresh", system: "terminal", action: "debug", scope: "session refresh", outcome: "blocked" },
-    { agent: agents[4], content: "GitHub Actions workflow created", system: "ci", action: "create", scope: "CI pipeline", outcome: "success" },
-    { agent: agents[4], content: "Deployed staging environment", system: "deploy", action: "deploy", scope: "staging", outcome: "success" },
-    { agent: agents[0], content: "Pushed auth branch, ready for review", system: "git", action: "write", scope: "auth branch", outcome: "success" },
-    { agent: agents[2], content: "Dashboard renders agent cards with live data", system: "browser", action: "test", scope: "dashboard", outcome: "success" },
-  ];
-  activities.forEach((a, i) => {
-    memories.push({
-      room_id: roomId, session_id: sessionId, agent: a.agent,
-      message_type: "assistant", content: a.content,
-      metadata: { system: a.system, action: a.action, scope: a.scope, outcome: a.outcome },
-      ts: new Date(now - (25 - i * 2) * 60000).toISOString(),
-    });
-  });
-
-  // Injections
-  memories.push({
-    room_id: roomId, session_id: sessionId, agent: agents[3],
-    message_type: "injection",
-    content: "[INJECT -> all] (race condition found): Found a race condition in session refresh. If you touch auth tokens, check the mutex in sessionStore.ts before modifying.",
-    metadata: { event: "context_injection", target: "all", label: "race condition found", priority: "high" },
-    ts: new Date(now - 8 * 60000).toISOString(),
-  });
-  memories.push({
-    room_id: roomId, session_id: sessionId, agent: agents[4],
-    message_type: "injection",
-    content: "[INJECT -> all] (staging deployed): Staging is live at staging.example.com. All branches merged to main are auto-deployed.",
-    metadata: { event: "context_injection", target: "all", label: "staging deployed", priority: "normal" },
-    ts: new Date(now - 5 * 60000).toISOString(),
-  });
-
-  // Knowledge entries
-  memories.push({
-    room_id: roomId, session_id: sessionId, agent: agents[0],
-    message_type: "knowledge",
-    content: "Auth tokens use RS256 signing. Public key is at /api/.well-known/jwks.json. Tokens expire after 1 hour, refresh tokens after 7 days.",
-    metadata: { event: "knowledge", title: "Auth token architecture", tags: ["auth", "api", "convention"] },
-    ts: new Date(now - 15 * 60000).toISOString(),
-  });
-  memories.push({
-    room_id: roomId, session_id: sessionId, agent: agents[1],
-    message_type: "knowledge",
-    content: "Database uses connection pooling (max 20). Never use raw SQL in route handlers. Always go through the query builder in lib/db.ts.",
-    metadata: { event: "knowledge", title: "Database access patterns", tags: ["database", "convention", "gotcha"] },
-    ts: new Date(now - 12 * 60000).toISOString(),
-  });
-
-  // Destination
-  memories.push({
-    room_id: roomId, session_id: sessionId, agent: "system",
+  // Destination (set 2 hours ago)
+  m({
+    session_id: agents[0].session, agent: "system",
     message_type: "knowledge",
     content: "Ship v1.0: authenticated dashboard with live agent monitoring, deployed to production.",
     metadata: {
@@ -202,42 +127,241 @@ function buildDemoMemories(roomId: string): Array<Record<string, unknown>> {
         "Database schema and query layer",
         "React dashboard with live updates",
         "Integration test suite",
-        "CI/CD pipeline",
-        "Production deployment",
+        "CI/CD pipeline and deployment",
+      ],
+      progress: {
+        "User authentication (OAuth2 + JWT)": true,
+        "Database schema and query layer": true,
+        "React dashboard with live updates": false,
+        "Integration test suite": false,
+        "CI/CD pipeline and deployment": false,
+      },
+    },
+    ts: new Date(now - 120 * min).toISOString(),
+  });
+
+  // Agent session starts (staggered over last 90 minutes)
+  agents.forEach((a, i) => {
+    m({
+      session_id: a.session, agent: a.name,
+      message_type: "resource",
+      content: "SESSION START: " + a.task,
+      metadata: { event: "session_start", task: a.task },
+      ts: new Date(now - (90 - i * 10) * min).toISOString(),
+    });
+  });
+
+  // Work claims (each agent claims their scope)
+  const claimData = [
+    { scope: "Auth middleware and routes", files: ["src/auth/middleware.ts", "src/auth/routes.ts", "src/auth/jwt.ts"] },
+    { scope: "Database query optimization", files: ["src/db/queries.ts", "src/db/indexes.sql", "src/models/orders.ts"] },
+    { scope: "Dashboard UI components", files: ["src/components/AgentCard.tsx", "src/components/Dashboard.tsx", "src/hooks/useRealtime.ts"] },
+    { scope: "API integration tests", files: ["tests/auth.test.ts", "tests/orders.test.ts", "tests/api.test.ts"] },
+    { scope: "CI/CD pipeline and deploy", files: [".github/workflows/ci.yml", ".github/workflows/deploy.yml", "Dockerfile"] },
+  ];
+  agents.forEach((a, i) => {
+    m({
+      session_id: a.session, agent: a.name,
+      message_type: "resource",
+      content: `CLAIM: ${claimData[i].scope} [${claimData[i].files.join(", ")}]`,
+      metadata: { event: "claim", scope: claimData[i].scope, files: claimData[i].files },
+      ts: new Date(now - (88 - i * 10) * min).toISOString(),
+    });
+  });
+
+  // Task entries (visible in task queue)
+  const taskDescs = [
+    "Implement OAuth2 login flow with JWT tokens, refresh token rotation, and session management. Add middleware for protected routes.",
+    "Profile and optimize the slowest database queries. Add indexes, rewrite N+1 patterns, implement connection pooling.",
+    "Build the main dashboard view with agent cards showing progress, status, and real-time updates via Supabase Realtime.",
+    "Write comprehensive integration tests for all API endpoints. Target 90% coverage on auth and orders modules.",
+    "Set up GitHub Actions CI pipeline with lint, type check, test, and deploy stages. Configure staging and production environments.",
+  ];
+  agents.forEach((a, i) => {
+    m({
+      session_id: a.session, agent: a.name,
+      message_type: "resource",
+      content: `TASK: ${a.task}`,
+      metadata: {
+        event: "task",
+        title: a.task,
+        description: taskDescs[i],
+        status: i === 3 ? "blocked" : i === 0 || i === 1 ? "in_progress" : "claimed",
+        priority: i === 0 ? "urgent" : "high",
+        milestone: [
+          "User authentication (OAuth2 + JWT)",
+          "Database schema and query layer",
+          "React dashboard with live updates",
+          "Integration test suite",
+          "CI/CD pipeline and deployment",
+        ][i],
+        assigned_to: a.name,
+      },
+      ts: new Date(now - (85 - i * 10) * min).toISOString(),
+    });
+  });
+
+  // Detailed activity logs spread over the session
+  const activities = [
+    // Alice - auth work (last 80 min)
+    { agent: 0, content: "Read existing auth module. Found no token validation. Starting from scratch.", system: "filesystem", action: "read", scope: "src/auth/", outcome: "success", ago: 80 },
+    { agent: 0, content: "Created JWT token validation middleware with RS256 signing", system: "filesystem", action: "create", scope: "src/auth/middleware.ts", outcome: "success", ago: 65 },
+    { agent: 0, content: "Created login and register endpoints with rate limiting", system: "filesystem", action: "create", scope: "src/auth/routes.ts", outcome: "success", ago: 50 },
+    { agent: 0, content: "Added refresh token rotation. Old tokens invalidated on use.", system: "filesystem", action: "write", scope: "src/auth/jwt.ts", outcome: "success", ago: 35 },
+    { agent: 0, content: "Type check passed (0 errors)", system: "ci", action: "test", scope: "auth module", outcome: "success", ago: 30 },
+    { agent: 0, content: "Committed abc1234: Add JWT auth with refresh token rotation. Pushed to main.", system: "git", action: "write", scope: "main branch", outcome: "success", ago: 28 },
+
+    // Bob - database work (last 70 min)
+    { agent: 1, content: "Profiled top 10 slowest queries. orders endpoint is 450ms avg.", system: "database", action: "read", scope: "query profiler", outcome: "success", ago: 68 },
+    { agent: 1, content: "Added composite index on orders(user_id, created_at)", system: "database", action: "write", scope: "orders table", outcome: "success", ago: 55 },
+    { agent: 1, content: "Rewrote N+1 query in orders endpoint. Now uses single JOIN.", system: "database", action: "write", scope: "src/db/queries.ts", outcome: "success", ago: 40 },
+    { agent: 1, content: "Query time dropped from 450ms to 12ms after index + rewrite", system: "database", action: "test", scope: "orders endpoint", outcome: "success", ago: 35 },
+    { agent: 1, content: "Committed def5678: Optimize orders query with index and JOIN rewrite. Pushed to main.", system: "git", action: "write", scope: "main branch", outcome: "success", ago: 33 },
+
+    // Carol - dashboard work (last 60 min)
+    { agent: 2, content: "Read existing component structure. No dashboard view exists yet.", system: "filesystem", action: "read", scope: "src/components/", outcome: "success", ago: 58 },
+    { agent: 2, content: "Built AgentCard component with progress bars and status pills", system: "filesystem", action: "create", scope: "src/components/AgentCard.tsx", outcome: "success", ago: 42 },
+    { agent: 2, content: "Added Supabase Realtime subscription for live agent updates", system: "filesystem", action: "create", scope: "src/hooks/useRealtime.ts", outcome: "success", ago: 30 },
+    { agent: 2, content: "Dashboard renders agent cards with live data. Verified in browser.", system: "browser", action: "test", scope: "dashboard UI", outcome: "success", ago: 20 },
+
+    // Dave - test work (last 50 min)
+    { agent: 3, content: "Auth endpoint tests passing (12/12)", system: "ci", action: "test", scope: "tests/auth.test.ts", outcome: "success", ago: 45 },
+    { agent: 3, content: "Orders endpoint tests passing (8/8)", system: "ci", action: "test", scope: "tests/orders.test.ts", outcome: "success", ago: 35 },
+    { agent: 3, content: "Found race condition in session refresh: two concurrent requests can both read the same refresh token before either invalidates it", system: "ci", action: "debug", scope: "session refresh", outcome: "blocked", ago: 22 },
+
+    // Eve - CI/CD work (last 40 min)
+    { agent: 4, content: "Created GitHub Actions workflow with lint, type check, test stages", system: "ci", action: "create", scope: ".github/workflows/ci.yml", outcome: "success", ago: 38 },
+    { agent: 4, content: "Added Docker build stage and staging deploy", system: "ci", action: "create", scope: ".github/workflows/deploy.yml", outcome: "success", ago: 25 },
+    { agent: 4, content: "Deployed to staging environment. All checks green.", system: "deploy", action: "deploy", scope: "staging", outcome: "success", ago: 15 },
+    { agent: 4, content: "Committed ghi9012: Add CI/CD pipeline with staging deploy. Pushed to main.", system: "git", action: "write", scope: "main branch", outcome: "success", ago: 13 },
+  ];
+  activities.forEach((a) => {
+    m({
+      session_id: agents[a.agent].session, agent: agents[a.agent].name,
+      message_type: "assistant", content: a.content,
+      metadata: { system: a.system, action: a.action, scope: a.scope, outcome: a.outcome },
+      ts: new Date(now - a.ago * min).toISOString(),
+    });
+  });
+
+  // Injections (cross-agent communication)
+  m({
+    session_id: agents[3].session, agent: agents[3].name,
+    message_type: "injection",
+    content: "[INJECT -> all] (race condition found): Found a race condition in session refresh. If you touch auth tokens, check the mutex in sessionStore.ts before modifying. Two concurrent requests can both read the same refresh token before either invalidates it.",
+    metadata: { event: "context_injection", target: "all", label: "race condition found", priority: "high" },
+    ts: new Date(now - 20 * min).toISOString(),
+  });
+  m({
+    session_id: agents[0].session, agent: agents[0].name,
+    message_type: "injection",
+    content: "[INJECT -> dave/keen-owl]: I added a mutex wrapper in sessionStore.ts. Try using acquireTokenLock() before reading the refresh token. Should fix the race condition.",
+    metadata: { event: "context_injection", target: agents[3].name, label: "mutex fix for race condition", priority: "high" },
+    ts: new Date(now - 18 * min).toISOString(),
+  });
+  m({
+    session_id: agents[4].session, agent: agents[4].name,
+    message_type: "injection",
+    content: "[INJECT -> all] (staging deployed): Staging is live at staging.example.com. All branches merged to main are auto-deployed. CI pipeline runs lint + type check + tests before deploy.",
+    metadata: { event: "context_injection", target: "all", label: "staging deployed", priority: "normal" },
+    ts: new Date(now - 12 * min).toISOString(),
+  });
+
+  // Knowledge entries
+  m({
+    session_id: agents[0].session, agent: agents[0].name,
+    message_type: "knowledge",
+    content: "Auth tokens use RS256 signing. Public key is at /api/.well-known/jwks.json. Tokens expire after 1 hour, refresh tokens after 7 days. Always use acquireTokenLock() before modifying refresh tokens to prevent race conditions.",
+    metadata: { event: "knowledge", title: "Auth token architecture", tags: ["auth", "api", "convention"] },
+    ts: new Date(now - 25 * min).toISOString(),
+  });
+  m({
+    session_id: agents[1].session, agent: agents[1].name,
+    message_type: "knowledge",
+    content: "Database uses connection pooling (max 20). Never use raw SQL in route handlers. Always go through the query builder in lib/db.ts. The orders table has a composite index on (user_id, created_at) for fast lookups.",
+    metadata: { event: "knowledge", title: "Database access patterns", tags: ["database", "convention", "gotcha"] },
+    ts: new Date(now - 32 * min).toISOString(),
+  });
+  m({
+    session_id: agents[2].session, agent: agents[2].name,
+    message_type: "knowledge",
+    content: "Dashboard components use Supabase Realtime for live updates. Subscribe to the memories table filtered by room_id. The useRealtime hook handles reconnection and cleanup automatically.",
+    metadata: { event: "knowledge", title: "Realtime subscription pattern", tags: ["frontend", "convention", "realtime"] },
+    ts: new Date(now - 18 * min).toISOString(),
+  });
+
+  // Updated destination with more progress (milestones completing)
+  m({
+    session_id: agents[0].session, agent: "system",
+    message_type: "knowledge",
+    content: "Ship v1.0: authenticated dashboard with live agent monitoring, deployed to production.",
+    metadata: {
+      event: "destination",
+      destination: "Ship v1.0: authenticated dashboard with live agent monitoring, deployed to production.",
+      milestones: [
+        "User authentication (OAuth2 + JWT)",
+        "Database schema and query layer",
+        "React dashboard with live updates",
+        "Integration test suite",
+        "CI/CD pipeline and deployment",
       ],
       progress: {
         "User authentication (OAuth2 + JWT)": true,
         "Database schema and query layer": true,
         "React dashboard with live updates": true,
         "Integration test suite": false,
-        "CI/CD pipeline": true,
-        "Production deployment": false,
+        "CI/CD pipeline and deployment": false,
       },
+      notes: "3/5 milestones complete. Auth and DB shipped. Dashboard rendering with live data. Tests blocked on race condition. CI pipeline ready, waiting for test suite before production deploy.",
     },
-    ts: new Date(now - 20 * 60000).toISOString(),
+    ts: new Date(now - 5 * min).toISOString(),
   });
 
-  // Progress reports
-  agents.forEach((agent, i) => {
-    memories.push({
-      room_id: roomId, session_id: sessionId, agent,
+  // Progress reports (recent, one per agent)
+  const progressData = [
+    { percent: 92, status: "working", detail: "Auth shipped. Adding password reset flow." },
+    { percent: 88, status: "working", detail: "Indexes applied. Profiling remaining queries." },
+    { percent: 75, status: "working", detail: "Agent cards done. Building destination banner." },
+    { percent: 55, status: "blocked", detail: "Blocked on race condition in session refresh." },
+    { percent: 95, status: "deploying", detail: "CI green. Waiting for approval to deploy prod." },
+  ];
+  agents.forEach((a, i) => {
+    m({
+      session_id: a.session, agent: a.name,
       message_type: "resource",
-      content: "PROGRESS [" + [85, 90, 75, 60, 95][i] + "% " + ["working", "working", "working", "blocked", "deploying"][i] + "]: " + [
-        "User authentication", "Database optimization", "Dashboard components", "Integration tests", "CI/CD pipeline",
-      ][i],
+      content: `PROGRESS [${progressData[i].percent}% ${progressData[i].status}]: ${a.task}`,
       metadata: {
         event: "progress",
-        task: ["User authentication", "Database optimization", "Dashboard components", "Integration tests", "CI/CD pipeline"][i],
-        percent: [85, 90, 75, 60, 95][i],
-        status: ["working", "working", "working", "blocked", "deploying"][i],
+        task: a.task,
+        percent: progressData[i].percent,
+        status: progressData[i].status,
+        detail: progressData[i].detail,
       },
-      ts: new Date(now - (4 - i) * 60000).toISOString(),
+      ts: new Date(now - (5 - i) * min).toISOString(),
     });
   });
 
-  // Pending approval requests (agents waiting for human sign-off)
-  memories.push({
-    room_id: roomId, session_id: sessionId, agent: agents[4],
+  // Telemetry (heartbeats showing agent phases and context usage)
+  agents.forEach((a, i) => {
+    m({
+      session_id: a.session, agent: a.name,
+      message_type: "telemetry",
+      content: `HEARTBEAT: ${["working", "working", "working", "blocked", "deploying"][i]}`,
+      metadata: {
+        event: "heartbeat",
+        phase: ["working", "working", "working", "blocked", "deploying"][i],
+        tokens_used: [45000, 38000, 52000, 28000, 41000][i],
+        tokens_limit: 200000,
+        detail: progressData[i].detail,
+        subagents: [0, 1, 0, 0, 2][i],
+      },
+      ts: new Date(now - (3 - i * 0.5) * min).toISOString(),
+    });
+  });
+
+  // Pending approval requests
+  m({
+    session_id: agents[4].session, agent: agents[4].name,
     message_type: "approval_request",
     content: "APPROVAL REQUEST: Deploy to production (v1.0-rc1)",
     metadata: {
@@ -246,14 +370,13 @@ function buildDemoMemories(roomId: string): Array<Record<string, unknown>> {
       action_description: "Deploy to production (v1.0-rc1). All CI checks pass, staging is green.",
       scope: "production environment, DNS, CDN cache invalidation",
       risk_level: "high",
-      context: "This is the first production deployment. Staging has been stable for 2 hours.",
-      requested_at: new Date(now - 2 * 60000).toISOString(),
+      context: "This is the first production deployment. Staging has been stable for 2 hours. Waiting for test suite to clear the race condition before deploying.",
+      requested_at: new Date(now - 8 * min).toISOString(),
     },
-    ts: new Date(now - 2 * 60000).toISOString(),
+    ts: new Date(now - 8 * min).toISOString(),
   });
-
-  memories.push({
-    room_id: roomId, session_id: sessionId, agent: agents[1],
+  m({
+    session_id: agents[1].session, agent: agents[1].name,
     message_type: "approval_request",
     content: "APPROVAL REQUEST: Drop and recreate orders index",
     metadata: {
@@ -262,10 +385,10 @@ function buildDemoMemories(roomId: string): Array<Record<string, unknown>> {
       action_description: "Drop and recreate the composite index on orders(user_id, created_at). Requires brief lock on the orders table.",
       scope: "orders table, database",
       risk_level: "medium",
-      context: "Current index is suboptimal. New index reduces query time from 450ms to 12ms. Brief table lock expected (< 5 seconds).",
-      requested_at: new Date(now - 6 * 60000).toISOString(),
+      context: "Current index is suboptimal for the new query pattern. New index reduces query time from 450ms to 12ms. Brief table lock expected (< 5 seconds).",
+      requested_at: new Date(now - 10 * min).toISOString(),
     },
-    ts: new Date(now - 6 * 60000).toISOString(),
+    ts: new Date(now - 10 * min).toISOString(),
   });
 
   return memories;
