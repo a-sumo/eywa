@@ -64,6 +64,34 @@ export interface SessionInfo {
   lastSeen: string;
 }
 
+export interface TaskInfo {
+  id: string;
+  title: string;
+  description: string | null;
+  status: "open" | "claimed" | "in_progress" | "done" | "blocked";
+  priority: "urgent" | "high" | "normal" | "low";
+  assignedTo: string | null;
+  milestone: string | null;
+  blockedReason: string | null;
+  createdBy: string;
+  ts: string;
+}
+
+const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+
+export interface ApprovalRequest {
+  id: string;
+  agent: string;
+  action: string;
+  scope: string | null;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  context: string | null;
+  status: "pending" | "approved" | "denied";
+  resolvedBy: string | null;
+  responseMessage: string | null;
+  ts: string;
+}
+
 export type AttentionReason = "distress" | "blocked" | "stopped" | "checkpoint" | "idle";
 
 export interface AttentionItem {
@@ -400,6 +428,50 @@ export class EywaClient {
     return results;
   }
 
+  async getTasks(includeDone = false): Promise<TaskInfo[]> {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return [];
+
+    const { data: rows } = await this.supabase
+      .from("memories")
+      .select("id,agent,content,metadata,ts")
+      .eq("room_id", roomId)
+      .eq("message_type", "task")
+      .order("ts", { ascending: false })
+      .limit(100);
+
+    if (!rows?.length) return [];
+
+    const tasks: TaskInfo[] = [];
+    for (const row of rows) {
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const status = (meta.status as string) || "open";
+      if (!includeDone && status === "done") continue;
+
+      tasks.push({
+        id: row.id,
+        title: (meta.title as string) || "",
+        description: (meta.description as string) || null,
+        status: status as TaskInfo["status"],
+        priority: ((meta.priority as string) || "normal") as TaskInfo["priority"],
+        assignedTo: (meta.assigned_to as string) || null,
+        milestone: (meta.milestone as string) || null,
+        blockedReason: (meta.blocked_reason as string) || null,
+        createdBy: (meta.created_by as string) || row.agent,
+        ts: row.ts,
+      });
+    }
+
+    // Sort by priority then timestamp
+    tasks.sort((a, b) => {
+      const pd = (PRIORITY_ORDER[a.priority] ?? 2) - (PRIORITY_ORDER[b.priority] ?? 2);
+      if (pd !== 0) return pd;
+      return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+    });
+
+    return tasks;
+  }
+
   /**
    * Get agents that need human attention: distress signals, blocked progress,
    * stopped sessions, recent checkpoints, and idle-after-active sessions.
@@ -511,6 +583,72 @@ export class EywaClient {
     });
 
     return items;
+  }
+
+  async getApprovalRequests(): Promise<ApprovalRequest[]> {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return [];
+
+    const { data: rows } = await this.supabase
+      .from("memories")
+      .select("id,agent,content,metadata,ts")
+      .eq("room_id", roomId)
+      .eq("message_type", "approval_request")
+      .order("ts", { ascending: false })
+      .limit(50);
+
+    if (!rows?.length) return [];
+
+    return rows.map((row) => {
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      return {
+        id: row.id,
+        agent: row.agent,
+        action: (meta.action_description as string) || "",
+        scope: (meta.scope as string) || null,
+        riskLevel: ((meta.risk_level as string) || "medium") as ApprovalRequest["riskLevel"],
+        context: (meta.context as string) || null,
+        status: ((meta.status as string) || "pending") as ApprovalRequest["status"],
+        resolvedBy: (meta.resolved_by as string) || null,
+        responseMessage: (meta.response_message as string) || null,
+        ts: row.ts,
+      };
+    });
+  }
+
+  async resolveApproval(
+    approvalId: string,
+    decision: "approved" | "denied",
+    resolvedBy: string,
+    message?: string,
+  ): Promise<void> {
+    const roomId = await this.resolveRoom();
+    if (!roomId) return;
+
+    // Read the current approval to get its metadata
+    const { data: rows } = await this.supabase
+      .from("memories")
+      .select("metadata")
+      .eq("id", approvalId)
+      .eq("room_id", roomId)
+      .limit(1)
+      .single();
+
+    if (!rows) return;
+
+    const meta = (rows.metadata ?? {}) as Record<string, unknown>;
+    await this.supabase
+      .from("memories")
+      .update({
+        metadata: {
+          ...meta,
+          status: decision,
+          resolved_by: resolvedBy,
+          response_message: message || null,
+          resolved_at: new Date().toISOString(),
+        },
+      })
+      .eq("id", approvalId);
   }
 
   async inject(

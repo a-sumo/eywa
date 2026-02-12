@@ -3,7 +3,7 @@
  * Uses Kurzgesagt-style SVG avatars matching the mini/eink displays.
  */
 import * as vscode from "vscode";
-import type { EywaClient, DestinationInfo, AgentProgress, AttentionItem } from "./client";
+import type { EywaClient, DestinationInfo, AgentProgress, AttentionItem, TaskInfo } from "./client";
 import type { MemoryPayload } from "./realtime";
 import { getAvatarDataUri } from "./avatars";
 
@@ -61,6 +61,7 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   private destination: DestinationInfo | null = null;
   private agentProgress: AgentProgress[] = [];
   private attentionItems: AttentionItem[] = [];
+  private tasks: TaskInfo[] = [];
   private getClient: () => EywaClient | undefined;
   private room: string;
   private onAttentionChange?: (items: AttentionItem[]) => void;
@@ -94,6 +95,7 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     this.destination = null;
     this.agentProgress = [];
     this.attentionItems = [];
+    this.tasks = [];
     this.postMessage({ type: "loading", room });
     this.loadInitial();
   }
@@ -164,15 +166,17 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
 
     try {
       // Load destination, progress, and attention items in parallel with sessions
-      const [sessionMap, dest, prog, attention] = await Promise.all([
+      const [sessionMap, dest, prog, attention, tasks] = await Promise.all([
         client.getSessions(),
         client.getDestination(),
         client.getAgentProgress(),
         client.getAttentionItems(),
+        client.getTasks(),
       ]);
       this.destination = dest;
       this.agentProgress = prog;
       this.attentionItems = attention;
+      this.tasks = tasks;
       this.onAttentionChange?.(this.attentionItems);
       this.agents.clear();
       for (const [, sessions] of sessionMap) {
@@ -301,6 +305,43 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
       }
     }
 
+    // Update tasks in real-time
+    if (event === "task" || mem.message_type === "task") {
+      const taskMeta = meta as Record<string, unknown>;
+      const taskId = mem.id;
+      const status = (taskMeta.status as string) || "open";
+      const existing = this.tasks.findIndex((t) => t.id === taskId);
+      const taskItem = {
+        id: taskId,
+        title: (taskMeta.title as string) || "",
+        description: (taskMeta.description as string) || null,
+        status: status as TaskInfo["status"],
+        priority: ((taskMeta.priority as string) || "normal") as TaskInfo["priority"],
+        assignedTo: (taskMeta.assigned_to as string) || null,
+        milestone: (taskMeta.milestone as string) || null,
+        blockedReason: (taskMeta.blocked_reason as string) || null,
+        createdBy: (taskMeta.created_by as string) || mem.agent,
+        ts: mem.ts,
+      };
+
+      if (status === "done") {
+        // Remove done tasks from the list
+        if (existing >= 0) this.tasks.splice(existing, 1);
+      } else if (existing >= 0) {
+        this.tasks[existing] = taskItem;
+      } else {
+        this.tasks.push(taskItem);
+      }
+
+      // Re-sort by priority
+      const pOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+      this.tasks.sort((a, b) => {
+        const pd = (pOrder[a.priority] ?? 2) - (pOrder[b.priority] ?? 2);
+        if (pd !== 0) return pd;
+        return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+      });
+    }
+
     // Update agent state
     if (event === "session_start") {
       this.agents.set(mem.agent, {
@@ -367,6 +408,7 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
       destination: this.destination,
       agentProgress: this.agentProgress,
       attention: this.attentionItems,
+      tasks: this.tasks,
     });
   }
 
@@ -577,6 +619,42 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     cursor: pointer; font-weight: 600; font-family: inherit; white-space: nowrap;
   }
   .attn-send:hover { background: var(--vscode-button-hoverBackground); }
+
+  /* Task queue */
+  .tasks-section { border-bottom: 1px solid var(--vscode-panel-border); }
+  .tasks-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 12px 4px; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.4;
+  }
+  .tasks-count {
+    background: rgba(128,128,128,0.15); font-size: 9px; font-weight: 600;
+    padding: 1px 5px; border-radius: 8px; min-width: 16px; text-align: center;
+  }
+  .task-item {
+    padding: 5px 12px; display: flex; align-items: flex-start; gap: 6px;
+    transition: background 0.15s ease-in-out;
+  }
+  .task-item:hover { background: var(--vscode-list-hoverBackground); }
+  .task-priority {
+    font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 2px;
+    text-transform: uppercase; letter-spacing: 0.3px; flex-shrink: 0; margin-top: 1px;
+  }
+  .task-priority.urgent { background: rgba(248,81,73,0.2); color: #f85149; }
+  .task-priority.high { background: rgba(210,153,34,0.2); color: #d29922; }
+  .task-priority.normal { background: rgba(139,148,158,0.12); color: #8b949e; }
+  .task-priority.low { background: rgba(139,148,158,0.08); color: #64748b; }
+  .task-body { flex: 1; min-width: 0; }
+  .task-title { font-size: 11px; line-height: 1.3; }
+  .task-meta { font-size: 9px; opacity: 0.4; margin-top: 2px; }
+  .task-status {
+    font-size: 8px; font-weight: 600; padding: 1px 4px; border-radius: 2px;
+    text-transform: uppercase; flex-shrink: 0; margin-top: 1px;
+  }
+  .task-status.open { background: rgba(88,166,255,0.15); color: #58a6ff; }
+  .task-status.claimed { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .task-status.in_progress { background: rgba(63,185,80,0.15); color: #3fb950; }
+  .task-status.blocked { background: rgba(210,153,34,0.15); color: #d29922; }
 </style>
 </head>
 <body>
@@ -828,7 +906,7 @@ function render(data) {
   }
 
   lastData = data;
-  const { agents, activity, room, avatars, destination, agentProgress, attention } = data;
+  const { agents, activity, room, avatars, destination, agentProgress, attention, tasks } = data;
   const active = agents.filter(a => a.status === 'active').length;
   const progressMap = {};
   if (agentProgress) {
@@ -904,6 +982,28 @@ function render(data) {
 
     if (destination.notes) {
       html += '<div style="font-size:10px;opacity:0.4;margin-top:4px">' + esc(destination.notes).slice(0, 150) + '</div>';
+    }
+    html += '</div>';
+  }
+
+  // Task queue section
+  const taskItems = tasks || [];
+  if (taskItems.length > 0) {
+    html += '<div class="tasks-section">';
+    html += '<div class="tasks-header"><span>Tasks</span><span class="tasks-count">' + taskItems.length + '</span></div>';
+    for (const t of taskItems.slice(0, 8)) {
+      const assignee = t.assignedTo ? shortName(t.assignedTo) : '';
+      html += '<div class="task-item">';
+      html += '<span class="task-priority ' + t.priority + '">' + esc(t.priority) + '</span>';
+      html += '<div class="task-body">';
+      html += '<div class="task-title">' + esc(t.title) + '</div>';
+      html += '<div class="task-meta">' + (assignee ? assignee + ' · ' : '') + timeAgo(t.ts) + '</div>';
+      html += '</div>';
+      html += '<span class="task-status ' + t.status.replace(' ', '_') + '">' + esc(t.status.replace('_', ' ')) + '</span>';
+      html += '</div>';
+    }
+    if (taskItems.length > 8) {
+      html += '<div style="padding:3px 12px 6px;font-size:9px;opacity:0.3;text-align:center">+' + (taskItems.length - 8) + ' more</div>';
     }
     html += '</div>';
   }
