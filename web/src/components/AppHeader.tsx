@@ -33,6 +33,7 @@ export function AppHeader() {
         </Link>
 
         <nav className="global-header-nav">
+          <Link to="/rooms" className={location.pathname === "/rooms" ? "active" : ""}>Rooms</Link>
           <Link to="/docs" className={isDocs ? "active" : ""}>Docs</Link>
           {isRoom && slug && (
             <Link to={`/r/${slug}`} className="global-header-room">/{slug}</Link>
