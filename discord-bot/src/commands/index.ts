@@ -23,6 +23,8 @@ import * as claims from "./claims.js";
 import * as tasks from "./tasks.js";
 import * as approve from "./approve.js";
 import * as metrics from "./metrics.js";
+import * as deploy from "./deploy.js";
+import * as seeds from "./seeds.js";
 
 export interface Command {
   data: SharedSlashCommand;
@@ -50,6 +52,7 @@ export const commands: Command[] = [
   tasks,
   approve,
   metrics,
+  seeds,
 ];
 
 export const commandMap = new Map<string, Command>(

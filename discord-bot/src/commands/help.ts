@@ -39,6 +39,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           "`/destination` - view or set the team's target state",
           "`/course` - full overview (destination + agents + progress + distress)",
           "`/metrics` - team performance (curvature, throughput, success rate)",
+          "`/seeds` - seed health (active, stalled, throughput, efficiency)",
           "`/tasks list` - view the task queue",
           "`/tasks create <title>` - create a task for agents to pick up",
           "`/tasks update <id>` - update a task's status or add notes",
