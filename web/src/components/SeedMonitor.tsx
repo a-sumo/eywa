@@ -3,7 +3,7 @@
  * Filters to seed agents only, shows task queue, live operation feed,
  * and active seed cards. Designed as a control panel, not a team dashboard.
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useRoomContext } from "../context/RoomContext";
 import { agentColor } from "../lib/agentColor";
@@ -230,6 +230,349 @@ const OUTCOME_COLORS: Record<string, string> = {
   failure: "#fca5a5",
   blocked: "#fcd34d",
 };
+
+// --- Swarm Navigator Canvas ---
+
+interface Particle {
+  agent: string;
+  x: number;
+  y: number;
+  orbitRadius: number;
+  orbitAngle: number;
+  orbitSpeed: number;
+  color: string;
+  active: boolean;
+  opCount: number;
+  successRate: number;
+  pulsePhase: number;
+  trail: Array<{ x: number; y: number; alpha: number }>;
+}
+
+interface Ripple {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  alpha: number;
+  color: string;
+}
+
+function hashToAngle(name: string): number {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = name.charCodeAt(i) + ((h << 5) - h);
+  }
+  return (Math.abs(h) % 628) / 100;
+}
+
+function SwarmNavigator({ seedStates, liveFeed }: {
+  seedStates: Map<string, SeedState>;
+  liveFeed: Memory[];
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const particlesRef = useRef<Map<string, Particle>>(new Map());
+  const ripplesRef = useRef<Ripple[]>([]);
+  const animRef = useRef<number>(0);
+  const prevFeedLen = useRef(0);
+  const hoveredRef = useRef<string | null>(null);
+
+  // Sync particles with seed states
+  const updateParticles = useCallback(() => {
+    const particles = particlesRef.current;
+    const allSeeds = Array.from(seedStates.values());
+    const totalCount = allSeeds.length;
+
+    for (const key of particles.keys()) {
+      if (!seedStates.has(key)) particles.delete(key);
+    }
+
+    let idx = 0;
+    for (const state of allSeeds) {
+      const existing = particles.get(state.agent);
+      const totalOps = state.outcomes.success + state.outcomes.failure + state.outcomes.blocked;
+      const successRate = totalOps > 0 ? state.outcomes.success / totalOps : 1;
+      const isActive = state.status === "active";
+
+      const baseOrbit = isActive ? 0.2 : 0.35;
+      const opFactor = Math.min(state.opCount / 50, 1) * 0.08;
+      const targetOrbit = baseOrbit + (idx / Math.max(totalCount, 1)) * 0.25 - opFactor;
+
+      if (existing) {
+        existing.active = isActive;
+        existing.opCount = state.opCount;
+        existing.successRate = successRate;
+        existing.orbitRadius += (targetOrbit - existing.orbitRadius) * 0.02;
+        existing.orbitSpeed = isActive ? 0.003 + (state.opCount % 5) * 0.0005 : 0.0005;
+      } else {
+        particles.set(state.agent, {
+          agent: state.agent,
+          x: 0, y: 0,
+          orbitRadius: targetOrbit,
+          orbitAngle: hashToAngle(state.agent),
+          orbitSpeed: isActive ? 0.003 + (state.opCount % 5) * 0.0005 : 0.0005,
+          color: agentColor(state.agent),
+          active: isActive,
+          opCount: state.opCount,
+          successRate,
+          pulsePhase: Math.random() * Math.PI * 2,
+          trail: [],
+        });
+      }
+      idx++;
+    }
+
+    // Ripples for new feed items
+    if (liveFeed.length > prevFeedLen.current) {
+      const newCount = liveFeed.length - prevFeedLen.current;
+      for (let i = 0; i < Math.min(newCount, 5); i++) {
+        const m = liveFeed[i];
+        const p = particles.get(m.agent);
+        if (p) {
+          const meta = (m.metadata ?? {}) as Record<string, unknown>;
+          const outcome = meta.outcome as string | undefined;
+          const color = outcome === "failure" ? "#fca5a5" :
+                       outcome === "blocked" ? "#fcd34d" :
+                       outcome === "success" ? "#6ee7b7" : "#15D1FF";
+          ripplesRef.current.push({
+            x: p.x, y: p.y,
+            radius: 0,
+            maxRadius: 40 + (meta.action === "deploy" ? 30 : 0),
+            alpha: 0.6,
+            color,
+          });
+        }
+      }
+    }
+    prevFeedLen.current = liveFeed.length;
+  }, [seedStates, liveFeed]);
+
+  useEffect(() => { updateParticles(); }, [updateParticles]);
+
+  // Animation loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    let running = true;
+
+    function resize() {
+      const c = canvasRef.current;
+      const container = containerRef.current;
+      if (!c || !container) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = container.getBoundingClientRect();
+      c.width = rect.width * dpr;
+      c.height = rect.height * dpr;
+      c.style.width = rect.width + "px";
+      c.style.height = rect.height + "px";
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    const ro = new ResizeObserver(resize);
+    if (containerRef.current) ro.observe(containerRef.current);
+
+    function draw() {
+      if (!running || !ctx || !canvas) return;
+      const W = canvas.clientWidth;
+      const H = canvas.clientHeight;
+      const cx = W / 2;
+      const cy = H / 2;
+      const scale = Math.min(W, H) / 2;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Background glow
+      const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale);
+      bgGrad.addColorStop(0, "rgba(21, 209, 255, 0.03)");
+      bgGrad.addColorStop(0.5, "rgba(100, 23, 236, 0.02)");
+      bgGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Orbit rings
+      for (let r = 0.15; r <= 0.55; r += 0.1) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * scale, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Center destination node
+      const t = performance.now() / 1000;
+      const destPulse = 1 + Math.sin(t * 1.5) * 0.15;
+      const destR = 12 * destPulse;
+      const destGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, destR * 3);
+      destGlow.addColorStop(0, "rgba(21, 209, 255, 0.3)");
+      destGlow.addColorStop(0.5, "rgba(100, 23, 236, 0.1)");
+      destGlow.addColorStop(1, "transparent");
+      ctx.fillStyle = destGlow;
+      ctx.fillRect(cx - destR * 3, cy - destR * 3, destR * 6, destR * 6);
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, destR, 0, Math.PI * 2);
+      ctx.fillStyle = "#15D1FF";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, destR * 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.globalAlpha = 0.6;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.font = "600 9px 'Plus Jakarta Sans', Inter, sans-serif";
+      ctx.fillStyle = "rgba(21, 209, 255, 0.6)";
+      ctx.textAlign = "center";
+      ctx.fillText("DESTINATION", cx, cy + destR + 14);
+
+      // Update and draw particles
+      const particles = particlesRef.current;
+      for (const p of particles.values()) {
+        p.orbitAngle += p.orbitSpeed;
+        const targetX = cx + Math.cos(p.orbitAngle) * p.orbitRadius * scale;
+        const targetY = cy + Math.sin(p.orbitAngle) * p.orbitRadius * scale;
+        p.x += (targetX - p.x) * 0.08;
+        p.y += (targetY - p.y) * 0.08;
+
+        // Trail
+        p.trail.push({ x: p.x, y: p.y, alpha: 0.4 });
+        if (p.trail.length > (p.active ? 30 : 10)) p.trail.shift();
+        for (const pt of p.trail) pt.alpha *= 0.95;
+
+        if (p.trail.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(p.trail[0].x, p.trail[0].y);
+          for (let i = 1; i < p.trail.length; i++) ctx.lineTo(p.trail[i].x, p.trail[i].y);
+          ctx.strokeStyle = p.color;
+          ctx.globalAlpha = p.active ? 0.15 : 0.05;
+          ctx.lineWidth = p.active ? 2 : 1;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+
+        // Connection to center (active only)
+        if (p.active) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(cx, cy);
+          ctx.strokeStyle = p.color;
+          ctx.globalAlpha = 0.04;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+
+        // Particle body
+        p.pulsePhase += 0.05;
+        const pulse = p.active ? 1 + Math.sin(p.pulsePhase) * 0.3 : 1;
+        const r = (p.active ? 6 : 4) * pulse;
+
+        if (p.active) {
+          const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 4);
+          glow.addColorStop(0, p.color + "40");
+          glow.addColorStop(1, "transparent");
+          ctx.fillStyle = glow;
+          ctx.fillRect(p.x - r * 4, p.y - r * 4, r * 8, r * 8);
+        }
+
+        // Success rate ring
+        if (p.opCount > 0) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r + 3, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255,255,255,0.08)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r + 3, -Math.PI / 2, -Math.PI / 2 + p.successRate * Math.PI * 2);
+          ctx.strokeStyle = "#6ee7b7";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.active ? 0.9 : 0.4;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // Label
+        const isHovered = hoveredRef.current === p.agent;
+        const shortName = p.agent.split("/")[1] || p.agent;
+        ctx.font = `${isHovered ? 600 : 500} ${isHovered ? 11 : 9}px 'Plus Jakarta Sans', Inter, sans-serif`;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.active ? 0.8 : 0.4;
+        ctx.textAlign = "center";
+        ctx.fillText(shortName, p.x, p.y - r - 6);
+        if (isHovered && p.opCount > 0) {
+          ctx.font = "500 8px Inter, sans-serif";
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          ctx.fillText(`${p.opCount} ops`, p.x, p.y + r + 12);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // Ripples
+      const ripples = ripplesRef.current;
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const rp = ripples[i];
+        rp.radius += 2;
+        rp.alpha -= 0.015;
+        if (rp.alpha <= 0 || rp.radius > rp.maxRadius) { ripples.splice(i, 1); continue; }
+        ctx.beginPath();
+        ctx.arc(rp.x, rp.y, rp.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = rp.color;
+        ctx.globalAlpha = rp.alpha;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Stats overlay
+      const activeCount = Array.from(particles.values()).filter(p => p.active).length;
+      const totalOps = Array.from(particles.values()).reduce((s, p) => s + p.opCount, 0);
+      ctx.font = "600 10px 'Plus Jakarta Sans', Inter, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.fillText(`${activeCount} active / ${particles.size} total`, 10, 16);
+      ctx.fillText(`${totalOps} operations`, 10, 30);
+
+      animRef.current = requestAnimationFrame(draw);
+    }
+
+    animRef.current = requestAnimationFrame(draw);
+    return () => { running = false; cancelAnimationFrame(animRef.current); ro.disconnect(); };
+  }, []);
+
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    let closest: string | null = null;
+    let closestDist = 20;
+    for (const p of particlesRef.current.values()) {
+      const dist = Math.sqrt((p.x - mx) ** 2 + (p.y - my) ** 2);
+      if (dist < closestDist) { closest = p.agent; closestDist = dist; }
+    }
+    hoveredRef.current = closest;
+    canvas.style.cursor = closest ? "pointer" : "default";
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
+      <canvas
+        ref={canvasRef}
+        onMouseMove={onMouseMove}
+        onMouseLeave={() => { hoveredRef.current = null; }}
+        style={{ display: "block", width: "100%", height: "100%" }}
+      />
+    </div>
+  );
+}
 
 // --- Components ---
 
@@ -604,17 +947,42 @@ export function SeedMonitor() {
         )}
       </div>
 
-      {/* Right panel: live feed */}
-      <div style={{ flex: 1, overflow: "auto", padding: "12px" }}>
+      {/* Right panel: navigator + live feed */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Swarm navigator canvas */}
+        <div style={{
+          flex: 1,
+          minHeight: "200px",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          position: "relative",
+        }}>
+          <div style={{
+            position: "absolute",
+            top: "8px",
+            right: "10px",
+            fontSize: "10px",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            color: "var(--text-secondary)",
+            zIndex: 1,
+          }}>
+            Swarm Navigator
+          </div>
+          <SwarmNavigator seedStates={seedStates} liveFeed={liveFeed} />
+        </div>
+
+        {/* Live feed (compact) */}
+        <div style={{ height: "240px", flexShrink: 0, overflow: "auto", padding: "8px 12px" }}>
         <div style={{
           fontSize: "10px",
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.08em",
           color: "var(--text-secondary)",
-          marginBottom: "8px",
+          marginBottom: "6px",
         }}>
-          Live Feed
+          Live Feed ({liveFeed.length})
         </div>
         {liveFeed.length === 0 && (
           <div style={{ fontSize: "12px", opacity: 0.3, padding: "2rem 0", textAlign: "center" }}>
@@ -653,6 +1021,7 @@ export function SeedMonitor() {
             </div>
           );
         })}
+        </div>
       </div>
       </div>
     </div>
