@@ -18,6 +18,8 @@ All notable features and changes. One line per feature. Agents append here after
 - VS Code task visibility: task queue now visible in the extension sidebar with priority badges, status pills, assignees, and real-time updates
 - Discord /approve command: view pending approvals, approve or deny agent requests from chat with /approve list, /approve yes, /approve no
 - Deploy health: HubView now shows deployment status indicator with last deploy time, outcome, and expandable log of all recent deploys by agent
+- Stale claim cleanup: claims from agents idle 30+ minutes auto-expire from getActiveClaims, reducing zombie claims that block other seeds
+- Room knowledge browsing: tabbed knowledge page at /r/:slug/knowledge with search, delete, and tag filtering
 - CLI claims command: `eywa claims` shows active work claims with agent, scope, files, and timestamp. Matches Discord /claims visibility from the terminal
 - Discord /metrics command: team curvature, per-agent curvature rankings, throughput (ops/hr), success rate, convergence/divergence counts over a 2-hour window
 - Destination editor: HubView now has inline editing for destinations. Edit button on existing destination, "Set Destination" button when empty. Supports destination text, milestones (one per line), and notes
