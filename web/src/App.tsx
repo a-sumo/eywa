@@ -26,7 +26,6 @@ const KnowledgePage = lazy(() => import("./components/KnowledgePage").then(m => 
 const NavigatorMap = lazy(() => import("./components/NavigatorMap").then(m => ({ default: m.NavigatorMap })));
 const OperationsView = lazy(() => import("./components/OperationsView").then(m => ({ default: m.OperationsView })));
 const SeedMonitor = lazy(() => import("./components/SeedMonitor").then(m => ({ default: m.SeedMonitor })));
-const SwarmFlow = lazy(() => import("./components/SwarmFlow").then(m => ({ default: m.SwarmFlow })));
 const FoldsIndex = lazy(() => import("./components/FoldsIndex").then(m => ({ default: m.FoldsIndex })));
 const VoicesView = lazy(() => import("./components/VoicesView").then(m => ({ default: m.VoicesView })));
 const DocsLayout = lazy(() => import("./components/DocsLayout").then(m => ({ default: m.DocsLayout })));
@@ -130,7 +129,6 @@ function FoldRoutes() {
               <Route path="graph" element={<SessionGraph />} />
               <Route path="knowledge" element={<KnowledgePage />} />
               <Route path="map" element={<NavigatorMap />} />
-              <Route path="flow" element={<SwarmFlow />} />
             </Routes>
           </Suspense>
         </FoldLayout>

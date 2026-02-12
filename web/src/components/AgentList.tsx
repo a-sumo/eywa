@@ -58,12 +58,6 @@ export function AgentList() {
         Map <span className="chip-badge">LIVE</span>
       </button>
       <button
-        className={`agent-chip experimental ${isActive(`${basePath}/flow`) ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/flow`)}
-      >
-        Flow <span className="chip-badge">LIVE</span>
-      </button>
-      <button
         className={`agent-chip ${isActive(`${basePath}/spectacles`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/spectacles`)}
       >
