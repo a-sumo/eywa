@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useFoldContext } from "../context/FoldContext";
@@ -314,6 +315,7 @@ function CategoryFilter({
 // --- Main ---
 
 export function AgentDetail() {
+  const { t } = useTranslation("fold");
   const { name, slug } = useParams<{ name: string; slug: string }>();
   const { fold } = useFoldContext();
   const navigate = useNavigate();
@@ -416,10 +418,10 @@ export function AgentDetail() {
         </div>
       )}
 
-      {loading && <div className="atl-loading">Loading session history...</div>}
+      {loading && <div className="atl-loading">{t("agent.loading")}</div>}
 
       {!loading && agentMemories.length === 0 && (
-        <div className="atl-empty">No activity from {name} yet.</div>
+        <div className="atl-empty">{t("agent.notFound")}</div>
       )}
 
       {!loading && agentMemories.length > 0 && (

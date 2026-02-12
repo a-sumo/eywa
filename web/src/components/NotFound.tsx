@@ -1,6 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export function NotFound() {
+  const { t } = useTranslation("errors");
+  const { t: tc } = useTranslation("common");
   const { pathname } = useLocation();
 
   return (
@@ -16,21 +19,21 @@ export function NotFound() {
         color: "var(--text-primary)",
         marginBottom: 8,
       }}>
-        404
+        {t("notFound.title")}
       </h1>
       <p style={{
         color: "var(--text-secondary)",
         fontSize: "1.1rem",
         marginBottom: 8,
       }}>
-        Nothing here at <code style={{ color: "var(--text-tertiary)" }}>{pathname}</code>
+        {t("notFound.description")} <code style={{ color: "var(--text-tertiary)" }}>{pathname}</code>
       </p>
       <p style={{
         color: "var(--text-tertiary)",
         fontSize: "0.9rem",
         marginBottom: 32,
       }}>
-        The page might have moved, or the URL could be wrong.
+        {t("notFound.hint")}
       </p>
       <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
         <Link
@@ -44,7 +47,7 @@ export function NotFound() {
             fontSize: "0.9rem",
           }}
         >
-          Home
+          {tc("home")}
         </Link>
         <Link
           to="/folds"
@@ -57,7 +60,7 @@ export function NotFound() {
             fontSize: "0.9rem",
           }}
         >
-          Folds
+          {tc("nav.folds")}
         </Link>
         <Link
           to="/docs"
@@ -70,7 +73,7 @@ export function NotFound() {
             fontSize: "0.9rem",
           }}
         >
-          Docs
+          {tc("nav.docs")}
         </Link>
       </div>
     </div>

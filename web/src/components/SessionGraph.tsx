@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import * as d3 from "d3";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useFoldContext } from "../context/FoldContext";
@@ -941,6 +942,7 @@ interface SessionGraphProps {
 }
 
 export function SessionGraph({ links = [] }: SessionGraphProps) {
+  const { t } = useTranslation("fold");
   const { fold } = useFoldContext();
   const { memories, loading } = useRealtimeMemories(fold?.id ?? null, 1000);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
@@ -1061,9 +1063,9 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
     return (
       <div className="session-graph">
         <div className="session-graph-header">
-          <h2 className="section-title">Session Graph</h2>
+          <h2 className="section-title">{t("graph.title")}</h2>
         </div>
-        <p style={{ color: "var(--color-text-muted)", padding: "1rem" }}>Loading...</p>
+        <p style={{ color: "var(--color-text-muted)", padding: "1rem" }}>{t("graph.loading")}</p>
       </div>
     );
   }
@@ -1072,10 +1074,10 @@ export function SessionGraph({ links = [] }: SessionGraphProps) {
     return (
       <div className="session-graph">
         <div className="session-graph-header">
-          <h2 className="section-title">Session Graph</h2>
+          <h2 className="section-title">{t("graph.title")}</h2>
         </div>
         <p style={{ color: "var(--color-text-muted)", padding: "1rem" }}>
-          No session events yet. Start and stop agent sessions to see the graph.
+          {t("graph.empty")}
         </p>
       </div>
     );

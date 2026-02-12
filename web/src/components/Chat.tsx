@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useChat } from "../hooks/useChat";
 import { useFoldContext } from "../context/FoldContext";
 import { VoiceButton } from "./VoiceButton";
@@ -8,6 +9,7 @@ function timeStr(ts: string): string {
 }
 
 export function Chat() {
+  const { t } = useTranslation("fold");
   const { fold } = useFoldContext();
   const { messages, loading, error, send } = useChat(fold?.id ?? null, "general");
   const [input, setInput] = useState("");
@@ -86,13 +88,13 @@ export function Chat() {
       </div>
       <div className="chat-input">
         <input
-          placeholder="Type a message..."
+          placeholder={t("chat.placeholder")}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <VoiceButton onTranscript={(text) => setInput((prev) => prev + text)} />
-        <button onClick={handleSend}>Send</button>
+        <button onClick={handleSend}>{t("chat.send")}</button>
       </div>
     </div>
   );

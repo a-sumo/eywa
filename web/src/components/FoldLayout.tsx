@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useFoldContext } from "../context/FoldContext";
 import { AgentList } from "./AgentList";
 import { DemoBanner } from "./DemoBanner";
@@ -9,6 +10,8 @@ interface FoldLayoutProps {
 }
 
 export function FoldLayout({ children }: FoldLayoutProps) {
+  const { t } = useTranslation("fold");
+  const { t: tc } = useTranslation("common");
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
   const { fold, loading, error } = useFoldContext();
@@ -22,7 +25,7 @@ export function FoldLayout({ children }: FoldLayoutProps) {
   if (loading) {
     return (
       <div className="app">
-        <div className="loading-screen">Loading fold...</div>
+        <div className="loading-screen">{t("fold.loading")}</div>
       </div>
     );
   }
@@ -31,9 +34,9 @@ export function FoldLayout({ children }: FoldLayoutProps) {
     return (
       <div className="app">
         <div className="error-screen">
-          <h2>Fold not found</h2>
-          <p>The fold "{slug}" doesn't exist.</p>
-          <Link to="/" className="btn-primary">Go Home</Link>
+          <h2>{t("fold.notFound")}</h2>
+          <p>{t("fold.notFoundDesc", { slug })}</p>
+          <Link to="/" className="btn-primary">{t("fold.goHome")}</Link>
         </div>
       </div>
     );
@@ -51,13 +54,13 @@ export function FoldLayout({ children }: FoldLayoutProps) {
         </main>
       </div>
       <nav className="mobile-tabs">
-        <Link to={basePath} className={isTabActive(basePath) ? "active" : ""}>Hub</Link>
-        <Link to={`${basePath}/ops`} className={isTabActive(`${basePath}/ops`) ? "active" : ""}>Ops</Link>
-        <Link to={`${basePath}/seeds`} className={isTabActive(`${basePath}/seeds`) ? "active" : ""}>Seeds</Link>
-        <Link to={`${basePath}/knowledge`} className={isTabActive(`${basePath}/knowledge`) ? "active" : ""}>Knowledge</Link>
-        <Link to={`${basePath}/graph`} className={isTabActive(`${basePath}/graph`) ? "active" : ""}>Graph</Link>
-        <Link to={`${basePath}/map`} className={isTabActive(`${basePath}/map`) ? "active" : ""}>Map</Link>
-        <Link to={`${basePath}/voices`} className={isTabActive(`${basePath}/voices`) ? "active" : ""}>Voices</Link>
+        <Link to={basePath} className={isTabActive(basePath) ? "active" : ""}>{tc("nav.hub")}</Link>
+        <Link to={`${basePath}/ops`} className={isTabActive(`${basePath}/ops`) ? "active" : ""}>{tc("nav.ops")}</Link>
+        <Link to={`${basePath}/seeds`} className={isTabActive(`${basePath}/seeds`) ? "active" : ""}>{tc("nav.seeds")}</Link>
+        <Link to={`${basePath}/knowledge`} className={isTabActive(`${basePath}/knowledge`) ? "active" : ""}>{tc("nav.knowledge")}</Link>
+        <Link to={`${basePath}/graph`} className={isTabActive(`${basePath}/graph`) ? "active" : ""}>{tc("nav.graph")}</Link>
+        <Link to={`${basePath}/map`} className={isTabActive(`${basePath}/map`) ? "active" : ""}>{tc("nav.map")}</Link>
+        <Link to={`${basePath}/voices`} className={isTabActive(`${basePath}/voices`) ? "active" : ""}>{tc("nav.voices")}</Link>
       </nav>
     </div>
   );

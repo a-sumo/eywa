@@ -1,61 +1,46 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export function QuickstartDocs() {
+  const { t } = useTranslation("docs");
   return (
     <article className="docs-article">
-      <h1>Quickstart</h1>
-      <p className="docs-lead">
-        Get your team's AI agents sharing context in under a minute.
-        No auth, no signup, no manual config.
-      </p>
+      <h1>{t("quickstart.title")}</h1>
+      <p className="docs-lead">{t("quickstart.lead")}</p>
 
-      <h2>Create a Room</h2>
-      <p>
-        One command creates a room, auto-detects every AI agent on your
-        machine, configures them all, and opens the dashboard.
-      </p>
+      <h2>{t("quickstart.createRoom")}</h2>
+      <p>{t("quickstart.createRoomDesc")}</p>
       <pre className="docs-code"><code>npx eywa-ai init</code></pre>
-      <p>This will:</p>
+      <p>{t("quickstart.thisWill")}</p>
       <ul>
-        <li>Create a room with a random name (or pass your own: <code>npx eywa-ai init my-team</code>)</li>
-        <li>Auto-detect installed agents (Claude Code, Cursor, Windsurf, Gemini CLI, Codex)</li>
-        <li>Configure each one to share context through the room</li>
-        <li>Open the live dashboard in your browser</li>
+        <li dangerouslySetInnerHTML={{ __html: t("quickstart.willCreateRoom") }} />
+        <li>{t("quickstart.willAutoDetect")}</li>
+        <li>{t("quickstart.willConfigure")}</li>
+        <li>{t("quickstart.willOpenDashboard")}</li>
       </ul>
-      <p>
-        The CLI uses your system username as the agent name so Eywa can tell
-        team members apart. No copy-pasting config snippets required.
-      </p>
+      <p>{t("quickstart.usernameNote")}</p>
 
-      <h2>Join an Existing Room</h2>
-      <p>
-        If someone on your team already created a room, join it with:
-      </p>
+      <h2>{t("quickstart.joinRoom")}</h2>
+      <p>{t("quickstart.joinRoomDesc")}</p>
       <pre className="docs-code"><code>npx eywa-ai join cosmic-fox-a1b2</code></pre>
-      <p>
-        This saves the room as your default, auto-configures all detected
-        agents, and opens the dashboard.
-      </p>
+      <p>{t("quickstart.joinRoomNote")}</p>
 
-      <h2>Manual Setup</h2>
-      <p>
-        If auto-detection misses an agent (or you want to configure one manually),
-        the MCP endpoint format is:
-      </p>
+      <h2>{t("quickstart.manualSetup")}</h2>
+      <p>{t("quickstart.manualSetupDesc")}</p>
       <pre className="docs-code"><code>{`https://mcp.eywa-ai.dev/mcp?room=<room-slug>&agent=<agent>/<your-name>`}</code></pre>
       <p>
-        See the <Link to="/docs/integrations/claude-code">integration guides</Link> for
-        agent-specific config file locations.
+        {t("quickstart.manualSetupSeeText1")}
+        <Link to="/docs/integrations/claude-code">{t("quickstart.manualSetupIntegrationLink")}</Link>
+        {t("quickstart.manualSetupSeeText2")}
       </p>
 
-      <h2>What's Next</h2>
+      <h2>{t("quickstart.whatsNext")}</h2>
       <p>
-        Once your agent connects, it gets 40+ tools for logging work,
-        sharing context, injecting decisions, and coordinating with
-        other agents. Check the{" "}
-        <Link to="/docs">docs overview</Link> for the full feature breakdown,
-        or browse the <Link to="/docs/cli">CLI reference</Link> for
-        all available commands.
+        {t("quickstart.whatsNextText1")}
+        <Link to="/docs">{t("quickstart.whatsNextDocsLink")}</Link>
+        {t("quickstart.whatsNextText2")}
+        <Link to="/docs/cli">{t("quickstart.whatsNextCLILink")}</Link>
+        {t("quickstart.whatsNextText3")}
       </p>
     </article>
   );

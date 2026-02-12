@@ -1,0 +1,13 @@
+{
+  "boundary.title": "Algo salió mal",
+  "boundary.description": "Ocurrió un error inesperado. Por favor, recarga la página.",
+  "boundary.details": "Detalles del error",
+  "boundary.refresh": "Recargar Página",
+  "notFound.title": "404",
+  "notFound.description": "No hay nada en",
+  "notFound.hint": "Es posible que la página se haya movido o que la URL sea incorrecta.",
+  "network": "Error de red. Por favor, comprueba tu conexión.",
+  "generic": "Ocurrió un error. Por favor, inténtalo de nuevo.",
+  "foldNotFound": "Fold no encontrado",
+  "loadFailed": "Error al cargar los datos"
+}

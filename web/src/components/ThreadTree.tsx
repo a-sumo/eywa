@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useFoldContext } from "../context/FoldContext";
 import { useParams, useNavigate } from "react-router-dom";
@@ -51,6 +52,7 @@ function DestinationEditor({
   foldId: string;
   onClose: () => void;
 }) {
+  const { t } = useTranslation("fold");
   const [dest, setDest] = useState(current?.destination || "");
   const [milestoneText, setMilestoneText] = useState(
     current?.milestones.join("\n") || ""
@@ -71,7 +73,7 @@ function DestinationEditor({
       progress[m] = current?.progress[m] || false;
     }
     await supabase.from("memories").insert({
-      room_id: foldId,
+      fold_id: foldId,
       agent: "web-user",
       session_id: `web_${Date.now()}`,
       message_type: "knowledge",
@@ -95,39 +97,39 @@ function DestinationEditor({
     <div className="hub-dest-editor">
       <div className="hub-dest-editor-header">
         <span className="hub-destination-label">
-          {current ? "Edit Destination" : "Set Destination"}
+          {current ? t("hub.editDestination") : t("hub.setDestination")}
         </span>
         <button className="hub-dest-editor-close" onClick={onClose}>
-          Cancel
+          {t("hub.cancel")}
         </button>
       </div>
       <div className="hub-dest-editor-field">
-        <label className="hub-dest-editor-label">Where are we going?</label>
+        <label className="hub-dest-editor-label">{t("hub.whereGoing")}</label>
         <textarea
           className="hub-dest-editor-input"
           value={dest}
           onChange={(e) => setDest(e.target.value)}
-          placeholder="Describe the target state. What does done look like?"
+          placeholder={t("hub.whereGoingPlaceholder")}
           rows={2}
         />
       </div>
       <div className="hub-dest-editor-field">
-        <label className="hub-dest-editor-label">Milestones (one per line)</label>
+        <label className="hub-dest-editor-label">{t("hub.milestonesLabel")}</label>
         <textarea
           className="hub-dest-editor-input"
           value={milestoneText}
           onChange={(e) => setMilestoneText(e.target.value)}
-          placeholder="Key checkpoints on the route to destination"
+          placeholder={t("hub.milestonesPlaceholder")}
           rows={4}
         />
       </div>
       <div className="hub-dest-editor-field">
-        <label className="hub-dest-editor-label">Notes</label>
+        <label className="hub-dest-editor-label">{t("hub.notesLabel")}</label>
         <textarea
           className="hub-dest-editor-input hub-dest-editor-notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Blockers, course corrections, context..."
+          placeholder={t("hub.notesPlaceholder")}
           rows={2}
         />
       </div>
@@ -136,7 +138,7 @@ function DestinationEditor({
         onClick={handleSave}
         disabled={!dest.trim() || saving}
       >
-        {saving ? "Saving..." : current ? "Update Destination" : "Set Destination"}
+        {saving ? t("hub.saving") : current ? t("hub.updateDestination") : t("hub.setDestination")}
       </button>
     </div>
   );
@@ -213,6 +215,7 @@ const TASK_STATUS_COLORS: Record<string, string> = {
 };
 
 function TaskCard({ task }: { task: TaskItem }) {
+  const { t } = useTranslation("fold");
   const priorityColor = TASK_PRIORITY_COLORS[task.priority] || "#8b5cf6";
   const statusColor = TASK_STATUS_COLORS[task.status] || "#64748b";
 
@@ -238,7 +241,7 @@ function TaskCard({ task }: { task: TaskItem }) {
         <div className="hub-task-description">{task.description.slice(0, 200)}</div>
       )}
       {task.blockedReason && (
-        <div className="hub-task-blocked">Blocked: {task.blockedReason}</div>
+        <div className="hub-task-blocked">{t("hub.blocked")}{task.blockedReason}</div>
       )}
       {task.notes && (
         <div className="hub-task-notes">{task.notes.slice(0, 150)}</div>
@@ -248,14 +251,15 @@ function TaskCard({ task }: { task: TaskItem }) {
 }
 
 function TaskQueue({ tasks }: { tasks: TaskItem[] }) {
-  const activeTasks = tasks.filter((t) => t.status !== "done");
+  const { t } = useTranslation("fold");
+  const activeTasks = tasks.filter((tk) => tk.status !== "done");
   if (activeTasks.length === 0) return null;
 
   return (
     <div className="hub-task-queue">
-      <div className="hub-section-label">Tasks ({activeTasks.length})</div>
-      {activeTasks.map((t) => (
-        <TaskCard key={t.id} task={t} />
+      <div className="hub-section-label">{t("hub.tasks", { count: activeTasks.length })}</div>
+      {activeTasks.map((tk) => (
+        <TaskCard key={tk.id} task={tk} />
       ))}
     </div>
   );
@@ -573,6 +577,7 @@ function AgentTopologyMap({
   agents: AgentState[];
   destination: Destination | null;
 }) {
+  const { t } = useTranslation("fold");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
 
@@ -762,10 +767,10 @@ function AgentTopologyMap({
         style={{ width: "100%", height: 180 }}
       />
       <div className="hub-topology-legend">
-        <span className="hub-topology-dot" style={{ background: "#8b5cf6" }} /> active
-        <span className="hub-topology-dot" style={{ background: "#6ee7b7" }} /> done
-        <span className="hub-topology-dot" style={{ background: "#64748b" }} /> idle
-        <span style={{ color: "rgba(255,255,255,0.3)", marginLeft: 8, fontSize: 10 }}>{"-->"} destination</span>
+        <span className="hub-topology-dot" style={{ background: "#8b5cf6" }} /> {t("hub.topologyActive")}
+        <span className="hub-topology-dot" style={{ background: "#6ee7b7" }} /> {t("hub.topologyDone")}
+        <span className="hub-topology-dot" style={{ background: "#64748b" }} /> {t("hub.topologyIdle")}
+        <span style={{ color: "rgba(255,255,255,0.3)", marginLeft: 8, fontSize: 10 }}>{t("hub.topologyDestination")}</span>
       </div>
     </div>
   );
@@ -817,6 +822,7 @@ function AgentCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation("fold");
   const systemsList = Array.from(state.systems);
   const statusDot =
     state.status === "active"
@@ -845,23 +851,28 @@ function AgentCard({
             background: `${pressureColor}18`,
             color: pressureColor,
           }}>
-            {pressure === "critical" ? "CTX CRITICAL" : pressure === "high" ? "CTX HIGH" : "CTX WARN"}
+            {pressure === "critical" ? t("hub.ctxCritical") : pressure === "high" ? t("hub.ctxHigh") : t("hub.ctxWarn")}
           </span>
         )}
         {(() => {
           const silenceLevel = getSilenceLevel(state.silenceMin, state.status);
           const silenceColor = SILENCE_COLORS[silenceLevel];
-          const silenceText = formatSilence(state.silenceMin);
-          return silenceLevel !== "ok" && silenceText ? (
+          if (silenceLevel === "ok" || state.silenceMin < 1) return null;
+          const silenceText = state.silenceMin < 60
+            ? t("hub.silentMin", { count: state.silenceMin })
+            : state.silenceMin % 60 > 0
+              ? t("hub.silentHour", { h: Math.floor(state.silenceMin / 60), m: state.silenceMin % 60 })
+              : t("hub.silentHourExact", { h: Math.floor(state.silenceMin / 60) });
+          return (
             <span className="hub-pill" style={{
               background: `${silenceColor}18`,
               color: silenceColor,
             }}>
               {silenceText}
             </span>
-          ) : null;
+          );
         })()}
-        <span className="hub-agent-meta">{state.opCount} mem</span>
+        <span className="hub-agent-meta">{t("hub.mem", { count: state.opCount })}</span>
         <span className="hub-agent-meta">{timeAgo(state.lastSeen)}</span>
         <span className="hub-chevron">{expanded ? "\u25B2" : "\u25BC"}</span>
       </div>
@@ -940,8 +951,9 @@ function AgentCard({
             <span className="hub-success-rate" style={{
               color: successRate > 80 ? "#6ee7b7" : successRate > 50 ? "#fcd34d" : "#fca5a5",
             }}>
-              {successRate}% success
-              {state.outcomes.failure > 0 && ` (${state.outcomes.failure} fail)`}
+              {state.outcomes.failure > 0
+                ? t("hub.successFail", { rate: successRate, count: state.outcomes.failure })
+                : t("hub.success", { rate: successRate })}
             </span>
           )}
         </div>
@@ -952,7 +964,7 @@ function AgentCard({
             <ActivityRow key={op.id} op={op} showAgent={false} />
           ))}
           {state.recentOps.length === 0 && (
-            <div className="hub-empty">No operations logged yet</div>
+            <div className="hub-empty">{t("hub.noOps")}</div>
           )}
         </div>
       )}
@@ -1005,10 +1017,11 @@ function ActivityRow({ op, showAgent = true }: { op: AgentOp; showAgent?: boolea
 }
 
 function DistressAlert({ signal }: { signal: DistressSignal }) {
+  const { t } = useTranslation("fold");
   return (
     <div className="hub-distress-alert">
       <div className="hub-distress-header">
-        <span className="hub-distress-label">DISTRESS</span>
+        <span className="hub-distress-label">{t("hub.distress")}</span>
         <span className="hub-distress-agent" style={{ color: agentColor(signal.agent) }}>
           {signal.agent}
         </span>
@@ -1016,16 +1029,16 @@ function DistressAlert({ signal }: { signal: DistressSignal }) {
       </div>
       <div className="hub-distress-task">{signal.task}</div>
       <div className="hub-distress-detail">
-        <span style={{ color: "#6ee7b7" }}>Done: </span>
+        <span style={{ color: "#6ee7b7" }}>{t("hub.distressDone")}</span>
         {signal.done.slice(0, 150)}
       </div>
       <div className="hub-distress-detail hub-distress-remaining">
-        <span style={{ color: "#fca5a5" }}>Remaining: </span>
+        <span style={{ color: "#fca5a5" }}>{t("hub.distressRemaining")}</span>
         {signal.remaining.slice(0, 200)}
       </div>
       {signal.filesChanged.length > 0 && (
         <div className="hub-distress-files">
-          Files: {signal.filesChanged.join(", ")}
+          {t("hub.distressFiles")}{signal.filesChanged.join(", ")}
         </div>
       )}
     </div>
@@ -1052,6 +1065,7 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 function ApprovalCard({ approval, foldId }: { approval: PendingApproval; foldId: string }) {
+  const { t } = useTranslation("fold");
   const [resolving, setResolving] = useState(false);
   const [resolved, setResolved] = useState<"approved" | "denied" | null>(null);
 
@@ -1070,7 +1084,7 @@ function ApprovalCard({ approval, foldId }: { approval: PendingApproval; foldId:
             risk_level: approval.risk,
             resolved_by: "web-user",
             resolved_at: new Date().toISOString(),
-            response_message: decision === "approved" ? "Approved from dashboard" : "Denied from dashboard",
+            response_message: decision === "approved" ? t("hub.approvedFromDashboard") : t("hub.deniedFromDashboard"),
           },
         })
         .eq("id", approval.id);
@@ -1081,7 +1095,7 @@ function ApprovalCard({ approval, foldId }: { approval: PendingApproval; foldId:
         : `DENIED: Your request "${approval.action.slice(0, 100)}" was denied.`;
 
       await supabase.from("memories").insert({
-        room_id: foldId,
+        fold_id: foldId,
         agent: "web-user",
         session_id: `web_${Date.now()}`,
         message_type: "injection",
@@ -1110,7 +1124,7 @@ function ApprovalCard({ approval, foldId }: { approval: PendingApproval; foldId:
         opacity: 0.6,
       }}>
         <span style={{ color: resolved === "approved" ? "#22c55e" : "#ef4444" }}>
-          {resolved === "approved" ? "Approved" : "Denied"}
+          {resolved === "approved" ? t("hub.approved") : t("hub.denied")}
         </span>
         <span className="hub-activity-time">{approval.agent}</span>
       </div>
@@ -1144,14 +1158,14 @@ function ApprovalCard({ approval, foldId }: { approval: PendingApproval; foldId:
           onClick={() => handleResolve("approved")}
           disabled={resolving}
         >
-          Approve
+          {t("hub.approve")}
         </button>
         <button
           className="hub-deny-btn"
           onClick={() => handleResolve("denied")}
           disabled={resolving}
         >
-          Deny
+          {t("hub.deny")}
         </button>
       </div>
     </div>
@@ -1188,6 +1202,7 @@ function extractDeploys(memories: Memory[]): DeployEntry[] {
 }
 
 function DeployHealth({ deploys }: { deploys: DeployEntry[] }) {
+  const { t } = useTranslation("fold");
   const [expanded, setExpanded] = useState(false);
 
   if (deploys.length === 0) return null;
@@ -1208,17 +1223,17 @@ function DeployHealth({ deploys }: { deploys: DeployEntry[] }) {
           className="hub-deploy-dot"
           style={{ background: isSuccess ? "#22c55e" : "#ef4444" }}
         />
-        <span className="hub-deploy-label">Deploys</span>
+        <span className="hub-deploy-label">{t("hub.deploys")}</span>
         <span className="hub-deploy-latest">
-          {latest.scope} {isSuccess ? "live" : "failed"}
+          {latest.scope} {isSuccess ? t("hub.live") : t("hub.failed")}
         </span>
         <span className="hub-activity-time">{timeAgo(latest.ts)}</span>
         {failCount > 0 && (
           <span className="hub-pill" style={{ background: "#ef444418", color: "#ef4444" }}>
-            {failCount} failed
+            {t("hub.failedCount", { count: failCount })}
           </span>
         )}
-        <span className="hub-deploy-count">{recentCount} total</span>
+        <span className="hub-deploy-count">{t("hub.total", { count: recentCount })}</span>
         <span className="hub-chevron">{expanded ? "\u25B2" : "\u25BC"}</span>
       </div>
       {expanded && (
@@ -1252,6 +1267,7 @@ function DeployHealth({ deploys }: { deploys: DeployEntry[] }) {
 // --- Main ---
 
 export function ThreadTree() {
+  const { t } = useTranslation("fold");
   const { fold } = useFoldContext();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -1298,7 +1314,7 @@ export function ThreadTree() {
 
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Ctor) {
-      alert("Speech recognition is not supported in this browser. Try Chrome.");
+      alert(t("hub.speechNotSupported"));
       return;
     }
 
@@ -1356,7 +1372,7 @@ export function ThreadTree() {
     setInjectSending(true);
     try {
       await supabase.from("memories").insert({
-        room_id: fold.id,
+        fold_id: fold.id,
         agent: "web-user",
         session_id: `web_${Date.now()}`,
         message_type: "injection",
@@ -1539,9 +1555,9 @@ export function ThreadTree() {
     return (
       <div className="hub-view">
         <div className="hub-header">
-          <h2 className="hub-title">Hub</h2>
+          <h2 className="hub-title">{t("hub.title")}</h2>
         </div>
-        <div className="hub-empty">Loading...</div>
+        <div className="hub-empty">{t("hub.loading")}</div>
       </div>
     );
   }
@@ -1550,10 +1566,10 @@ export function ThreadTree() {
     return (
       <div className="hub-view">
         <div className="hub-header">
-          <h2 className="hub-title">Hub</h2>
+          <h2 className="hub-title">{t("hub.title")}</h2>
         </div>
         <div className="hub-empty" style={{ color: "var(--error)" }}>
-          Failed to load activity: {error}
+          {t("hub.loadError", { error })}
         </div>
       </div>
     );
@@ -1577,11 +1593,11 @@ export function ThreadTree() {
           ))}
         </div>
         <div className="hub-stats">
-          <span className="hub-stat"><b>{activeAgents.length}</b> active</span>
+          <span className="hub-stat"><b>{activeAgents.length}</b> {t("hub.active")}</span>
           <span className="hub-stat-sep">&middot;</span>
-          <span className="hub-stat"><b>{finishedAgents.length}</b> done</span>
+          <span className="hub-stat"><b>{finishedAgents.length}</b> {t("hub.done")}</span>
           <span className="hub-stat-sep">&middot;</span>
-          <span className="hub-stat"><b>{idleCount}</b> idle</span>
+          <span className="hub-stat"><b>{idleCount}</b> {t("hub.idle")}</span>
         </div>
       </div>
 
@@ -1593,7 +1609,7 @@ export function ThreadTree() {
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span>Could not load fold data: {error}</span>
+          <span>{t("hub.foldDataError", { error })}</span>
         </div>
       )}
 
@@ -1607,13 +1623,13 @@ export function ThreadTree() {
       ) : destination ? (
         <div className="hub-destination">
           <div className="hub-destination-header">
-            <span className="hub-destination-label">Destination</span>
+            <span className="hub-destination-label">{t("hub.destination")}</span>
             <button
               className="hub-dest-edit-btn"
               onClick={() => setEditingDest(true)}
-              title="Edit destination"
+              title={t("hub.editDestination")}
             >
-              Edit
+              {t("hub.edit")}
             </button>
             <span className="hub-activity-time">{timeAgo(destination.ts)}</span>
           </div>
@@ -1649,7 +1665,7 @@ export function ThreadTree() {
                         if (!fold) return;
                         const newProgress = { ...destination.progress, [m]: !destination.progress[m] };
                         await supabase.from("memories").insert({
-                          room_id: fold.id,
+                          fold_id: fold.id,
                           agent: "web-user",
                           session_id: `web_${Date.now()}`,
                           message_type: "knowledge",
@@ -1683,7 +1699,7 @@ export function ThreadTree() {
           className="hub-dest-set-btn"
           onClick={() => setEditingDest(true)}
         >
-          + Set Destination
+          {t("hub.setDest")}
         </button>
       )}
 
@@ -1694,8 +1710,8 @@ export function ThreadTree() {
       {networkRoutes.length > 0 && (
         <div className="hub-network-routes">
           <div className="hub-network-routes-header">
-            <span className="hub-network-routes-label">Network Routes</span>
-            <span className="hub-network-routes-count">{networkRoutes.reduce((a, r) => a + r.insights.length, 0)} signals</span>
+            <span className="hub-network-routes-label">{t("hub.networkRoutes")}</span>
+            <span className="hub-network-routes-count">{t("hub.signals", { count: networkRoutes.reduce((a, r) => a + r.insights.length, 0) })}</span>
           </div>
           <div className="hub-network-routes-grid">
             {networkRoutes.map((route) => (
@@ -1724,7 +1740,7 @@ export function ThreadTree() {
       {/* Pending approvals */}
       {pendingApprovals.length > 0 && (
         <div className="hub-approvals">
-          <div className="hub-section-label">Pending Approvals ({pendingApprovals.length})</div>
+          <div className="hub-section-label">{t("hub.pendingApprovals", { count: pendingApprovals.length })}</div>
           {pendingApprovals.map((a) => (
             <ApprovalCard key={a.id} approval={a} foldId={fold?.id || ""} />
           ))}
@@ -1742,7 +1758,7 @@ export function ThreadTree() {
       {/* Active agents */}
       {activeAgents.length > 0 && (
         <div className="hub-section">
-          <div className="hub-section-label">Active agents</div>
+          <div className="hub-section-label">{t("hub.activeAgents")}</div>
           <div className="hub-agent-grid">
             {activeAgents.map((a) => (
               <AgentCard
@@ -1763,7 +1779,7 @@ export function ThreadTree() {
             className="hub-collapse-btn"
             onClick={() => setShowFinished(!showFinished)}
           >
-            {showFinished ? "\u25BE" : "\u25B8"} {finishedAgents.length} finished
+            {showFinished ? "\u25BE" : "\u25B8"} {t("hub.finished", { count: finishedAgents.length })}
           </button>
           {showFinished && (
             <div className="hub-agent-grid">
@@ -1782,7 +1798,7 @@ export function ThreadTree() {
 
       {/* Idle count */}
       {idleCount > 0 && (
-        <div className="hub-idle-count">{idleCount} idle agents</div>
+        <div className="hub-idle-count">{t("hub.idleAgents", { count: idleCount })}</div>
       )}
 
       </div>{/* end hub-dashboard */}
@@ -1790,20 +1806,20 @@ export function ThreadTree() {
       {/* RIGHT: Gemini chat + activity panel */}
       <div className="hub-chat-panel">
         <div className="hub-chat-header">
-          <span className="hub-chat-title">Gemini</span>
+          <span className="hub-chat-title">{t("hub.gemini")}</span>
           {chatMessages.length > 0 && (
-            <button onClick={clearChat} className="hub-chat-clear" title="Clear">Clear</button>
+            <button onClick={clearChat} className="hub-chat-clear" title={t("hub.clear")}>{t("hub.clear")}</button>
           )}
         </div>
         <div className="hub-chat-messages">
           {autoContextError && (
             <div className="hub-steering-empty" style={{ color: "var(--color-text-secondary)", fontSize: "0.75rem", opacity: 0.7 }}>
-              Fold context unavailable. Steering works but without live agent data.
+              {t("hub.geminiContextError")}
             </div>
           )}
           {chatMessages.length === 0 && !chatLoading && !autoContextError && (
             <div className="hub-steering-empty">
-              Ask about agent status, patterns, progress, or course corrections.
+              {t("hub.geminiEmpty")}
             </div>
           )}
           {chatMessages.map((msg: ChatMessage, i: number) => (
@@ -1812,7 +1828,7 @@ export function ThreadTree() {
               className={`hub-steering-msg hub-steering-${msg.role}`}
             >
               <div className="hub-steering-msg-role">
-                {msg.role === "user" ? "You" : "Gemini"}
+                {msg.role === "user" ? t("hub.you") : t("hub.gemini")}
               </div>
               {msg.toolCalls && msg.toolCalls.length > 0 && (
                 <div className="hub-steering-tools">
@@ -1826,9 +1842,9 @@ export function ThreadTree() {
           ))}
           {chatLoading && !chatMessages[chatMessages.length - 1]?.streaming && (
             <div className="hub-steering-msg hub-steering-model">
-              <div className="hub-steering-msg-role">Gemini</div>
+              <div className="hub-steering-msg-role">{t("hub.gemini")}</div>
               <div className="hub-steering-msg-content hub-steering-typing">
-                {chatStatus || "Thinking..."}
+                {chatStatus || t("hub.thinking")}
               </div>
             </div>
           )}
@@ -1842,11 +1858,11 @@ export function ThreadTree() {
             <button
               className={`hub-mode-btn ${inputMode === "gemini" ? "hub-mode-active" : ""}`}
               onClick={() => setInputMode("gemini")}
-            >Gemini</button>
+            >{t("hub.gemini")}</button>
             <button
               className={`hub-mode-btn ${inputMode === "inject" ? "hub-mode-active" : ""}`}
               onClick={() => setInputMode("inject")}
-            >Inject</button>
+            >{t("hub.inject")}</button>
             {inputMode === "inject" && (
               <>
                 <select
@@ -1854,7 +1870,7 @@ export function ThreadTree() {
                   value={injectTarget}
                   onChange={(e) => setInjectTarget(e.target.value)}
                 >
-                  <option value="all">All agents</option>
+                  <option value="all">{t("hub.allAgents")}</option>
                   {allAgentNames.map((a) => (
                     <option key={a} value={a}>{a}</option>
                   ))}
@@ -1877,10 +1893,10 @@ export function ThreadTree() {
             <input
               className={`hub-command-input ${isRecording ? "hub-input-recording" : ""}`}
               placeholder={isRecording
-                ? "Listening..."
+                ? t("hub.listening")
                 : inputMode === "gemini"
-                  ? "Ask Gemini about agents, patterns, progress..."
-                  : "Send instructions to agents..."
+                  ? t("hub.askGemini")
+                  : t("hub.sendInstructions")
               }
               value={inputMode === "gemini" ? chatInput : injectContent}
               onChange={(e) => inputMode === "gemini" ? setChatInput(e.target.value) : setInjectContent(e.target.value)}
@@ -1900,7 +1916,7 @@ export function ThreadTree() {
               <button
                 className={`hub-mic-btn ${isRecording ? "hub-mic-recording" : ""}`}
                 onClick={toggleRecording}
-                title={isRecording ? "Stop recording" : "Voice input"}
+                title={isRecording ? t("hub.stopRecording") : t("hub.voiceInput")}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -1931,7 +1947,7 @@ export function ThreadTree() {
         </div>
         {/* Activity stream */}
         <div className="hub-chat-activity">
-          <div className="hub-section-label" style={{ padding: "8px 14px 4px" }}>Activity</div>
+          <div className="hub-section-label" style={{ padding: "8px 14px 4px" }}>{t("hub.activity")}</div>
           <div className="hub-activity-stream">
             {activityStream.map((item) => {
               const borderColor =
@@ -1965,7 +1981,7 @@ export function ThreadTree() {
               );
             })}
             {activityStream.length === 0 && (
-              <div className="hub-empty">No activity yet</div>
+              <div className="hub-empty">{t("hub.noActivity")}</div>
             )}
           </div>
         </div>

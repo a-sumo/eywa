@@ -4,6 +4,7 @@
  * state updates, no full refetch, handles thousands of agents.
  */
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useFoldContext } from "../context/FoldContext";
 import { agentColor } from "../lib/agentColor";
@@ -322,6 +323,7 @@ function AgentCard({ state, expanded, onToggle }: {
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation("fold");
   const systemsList = Array.from(state.systems);
   const totalOutcomes = state.outcomes.success + state.outcomes.failure + state.outcomes.blocked;
   const successRate = totalOutcomes > 0 ? Math.round((state.outcomes.success / totalOutcomes) * 100) : null;
@@ -364,7 +366,7 @@ function AgentCard({ state, expanded, onToggle }: {
           {state.task}
         </span>
         <span style={{ opacity: 0.3, fontSize: "10px", flexShrink: 0 }}>
-          {state.opCount} ops
+          {t("ops.ops", { count: state.opCount })}
         </span>
         <span style={{ opacity: 0.3, fontSize: "10px", flexShrink: 0 }}>
           {timeAgo(state.lastSeen)}
@@ -424,9 +426,9 @@ function AgentCard({ state, expanded, onToggle }: {
             marginLeft: "auto",
             color: successRate > 80 ? "#6ee7b7" : successRate > 50 ? "#fcd34d" : "#fca5a5",
           }}>
-            {successRate}% success
-            {state.outcomes.failure > 0 && ` (${state.outcomes.failure} fail)`}
-            {state.outcomes.blocked > 0 && ` (${state.outcomes.blocked} blocked)`}
+            {t("ops.success", { rate: successRate })}
+            {state.outcomes.failure > 0 && ` ${t("ops.successFail", { count: state.outcomes.failure })}`}
+            {state.outcomes.blocked > 0 && ` ${t("ops.successBlocked", { count: state.outcomes.blocked })}`}
           </span>
         )}
       </div>
@@ -439,7 +441,7 @@ function AgentCard({ state, expanded, onToggle }: {
           ))}
           {state.recentOps.length === 0 && (
             <div style={{ padding: "12px", opacity: 0.3, fontSize: "11px", textAlign: "center" }}>
-              No operations logged yet
+              {t("ops.noOps")}
             </div>
           )}
         </div>
@@ -451,6 +453,7 @@ function AgentCard({ state, expanded, onToggle }: {
 // --- Main ---
 
 export function OperationsView() {
+  const { t } = useTranslation("fold");
   const { fold } = useFoldContext();
   const { memories, loading, error } = useRealtimeMemories(fold?.id ?? null, 500);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
@@ -512,11 +515,11 @@ export function OperationsView() {
   const finishedAgents = sortedAgents.filter((a) => a.status === "finished");
 
   if (loading) {
-    return <div className="ops-view" style={{ padding: "2rem", opacity: 0.4 }}>Loading operations...</div>;
+    return <div className="ops-view" style={{ padding: "2rem", opacity: 0.4 }}>{t("ops.loading")}</div>;
   }
 
   if (error) {
-    return <div className="ops-view" style={{ padding: "2rem", color: "var(--error)" }}>Failed to load operations: {error}</div>;
+    return <div className="ops-view" style={{ padding: "2rem", color: "var(--error)" }}>{t("ops.loadError", { error })}</div>;
   }
 
   return (
@@ -560,21 +563,21 @@ export function OperationsView() {
       {/* Course status */}
       <div className="ops-header" style={{ flexDirection: "column", alignItems: "stretch", gap: "8px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-          <h2 style={{ margin: 0, fontSize: "16px" }}>Course</h2>
-          <span className="ops-stat"><b style={{ color: "#34d399" }}>{activeAgents.length}</b> active</span>
-          <span className="ops-stat"><b>{finishedAgents.length}</b> done</span>
-          <span className="ops-stat">{totalOps} ops</span>
+          <h2 style={{ margin: 0, fontSize: "16px" }}>{t("ops.title")}</h2>
+          <span className="ops-stat"><b style={{ color: "#34d399" }}>{activeAgents.length}</b> {t("ops.active")}</span>
+          <span className="ops-stat"><b>{finishedAgents.length}</b> {t("ops.done")}</span>
+          <span className="ops-stat">{t("ops.ops", { count: totalOps })}</span>
           {unresolvedDistress.length > 0 && (
-            <span className="ops-stat" style={{ color: "#ef4444" }}><b>{unresolvedDistress.length}</b> distress</span>
+            <span className="ops-stat" style={{ color: "#ef4444" }}>{t("ops.distress", { count: unresolvedDistress.length })}</span>
           )}
           {globalOutcomes.failure > 0 && (
-            <span className="ops-stat" style={{ color: "#fca5a5" }}><b>{globalOutcomes.failure}</b> failures</span>
+            <span className="ops-stat" style={{ color: "#fca5a5" }}>{t("ops.failures", { count: globalOutcomes.failure })}</span>
           )}
           {globalOutcomes.blocked > 0 && (
-            <span className="ops-stat" style={{ color: "#fcd34d" }}><b>{globalOutcomes.blocked}</b> blocked</span>
+            <span className="ops-stat" style={{ color: "#fcd34d" }}>{t("ops.blocked", { count: globalOutcomes.blocked })}</span>
           )}
           {checkpointCount > 0 && (
-            <span className="ops-stat"><b>{checkpointCount}</b> checkpoints</span>
+            <span className="ops-stat">{t("ops.checkpoints", { count: checkpointCount })}</span>
           )}
         </div>
         {allSystems.size > 0 && (
@@ -605,7 +608,7 @@ export function OperationsView() {
               textTransform: "uppercase",
               letterSpacing: "0.5px",
             }}>
-              Destination
+              {t("ops.destination")}
             </span>
             <span style={{ opacity: 0.3, fontSize: "10px", marginLeft: "auto" }}>
               {timeAgo(destination.ts)}
@@ -691,21 +694,21 @@ export function OperationsView() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
             <span style={{ color: "#ef4444", fontWeight: 700, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Distress
+              {t("ops.distressLabel")}
             </span>
             <span style={{ color: agentColor(d.agent), fontWeight: 600, fontSize: "12px" }}>{d.agent}</span>
             <span style={{ opacity: 0.4, fontSize: "10px", marginLeft: "auto" }}>{timeAgo(d.ts)}</span>
           </div>
           <div style={{ fontSize: "12px", marginBottom: "4px" }}>{d.task}</div>
           <div style={{ fontSize: "11px", opacity: 0.6 }}>
-            <span style={{ color: "#6ee7b7" }}>Done: </span>{d.done.slice(0, 150)}
+            <span style={{ color: "#6ee7b7" }}>{t("ops.distressDone")}</span>{d.done.slice(0, 150)}
           </div>
           <div style={{ fontSize: "11px", opacity: 0.8 }}>
-            <span style={{ color: "#fca5a5" }}>Remaining: </span>{d.remaining.slice(0, 200)}
+            <span style={{ color: "#fca5a5" }}>{t("ops.distressRemaining")}</span>{d.remaining.slice(0, 200)}
           </div>
           {d.filesChanged.length > 0 && (
             <div style={{ fontSize: "10px", opacity: 0.4, marginTop: "4px" }}>
-              Files: {d.filesChanged.join(", ")}
+              {t("ops.distressFiles")}{d.filesChanged.join(", ")}
             </div>
           )}
         </div>
@@ -714,7 +717,7 @@ export function OperationsView() {
       {/* Active agents */}
       {activeAgents.length > 0 && (
         <>
-          <div className="ops-section-label">Active ({activeAgents.length})</div>
+          <div className="ops-section-label">{t("ops.activeSection", { count: activeAgents.length })}</div>
           {activeAgents.map((a) => (
             <AgentCard
               key={a.agent}
@@ -736,7 +739,7 @@ export function OperationsView() {
       {/* Recent agents */}
       {recentAgents.length > 0 && (
         <>
-          <div className="ops-section-label">Recent ({recentAgents.length})</div>
+          <div className="ops-section-label">{t("ops.recentSection", { count: recentAgents.length })}</div>
           {recentAgents.map((a) => (
             <AgentCard
               key={a.agent}
@@ -770,13 +773,13 @@ export function OperationsView() {
             marginTop: "8px",
           }}
         >
-          +{idleCount} idle agents
+          {t("ops.idleAgents", { count: idleCount })}
         </button>
       )}
 
       {/* Global live feed */}
       <div className="ops-global-feed">
-        <div className="ops-section-label">Live Feed</div>
+        <div className="ops-section-label">{t("ops.liveFeed")}</div>
         {memories.filter((m) => !isNoise(m)).slice(0, 50).map((m) => {
           const op = extractOp(m);
           return (

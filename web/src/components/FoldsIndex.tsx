@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase, type Fold } from "../lib/supabase";
 
 interface FoldStats {
@@ -25,6 +26,7 @@ function timeAgo(ts: string): string {
 }
 
 export function FoldsIndex() {
+  const { t } = useTranslation("fold");
   const [folds, setFolds] = useState<FoldStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export function FoldsIndex() {
       .order("created_at", { ascending: false });
 
     if (foldErr || !foldList) {
-      setError("Failed to load folds");
+      setError(t("folds.error"));
       setLoading(false);
       return;
     }
@@ -54,29 +56,29 @@ export function FoldsIndex() {
           supabase
             .from("memories")
             .select("agent")
-            .eq("room_id", fold.id)
+            .eq("fold_id", fold.id)
             .gte("ts", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
             .limit(500),
           supabase
             .from("memories")
             .select("agent")
-            .eq("room_id", fold.id)
+            .eq("fold_id", fold.id)
             .gte("ts", fiveMinAgo)
             .limit(200),
           supabase
             .from("memories")
             .select("id", { count: "exact", head: true })
-            .eq("room_id", fold.id),
+            .eq("fold_id", fold.id),
           supabase
             .from("memories")
             .select("ts")
-            .eq("room_id", fold.id)
+            .eq("fold_id", fold.id)
             .order("ts", { ascending: false })
             .limit(1),
           supabase
             .from("memories")
             .select("metadata")
-            .eq("room_id", fold.id)
+            .eq("fold_id", fold.id)
             .eq("message_type", "knowledge")
             .order("ts", { ascending: false })
             .limit(50),
@@ -149,9 +151,9 @@ export function FoldsIndex() {
     return (
       <div className="rooms-index">
         <div className="rooms-index-header">
-          <h1>Folds</h1>
+          <h1>{t("folds.title")}</h1>
         </div>
-        <div className="rooms-index-loading">Loading folds...</div>
+        <div className="rooms-index-loading">{t("folds.loading")}</div>
       </div>
     );
   }
@@ -160,7 +162,7 @@ export function FoldsIndex() {
     return (
       <div className="rooms-index">
         <div className="rooms-index-header">
-          <h1>Folds</h1>
+          <h1>{t("folds.title")}</h1>
         </div>
         <div className="rooms-index-error">{error}</div>
       </div>
@@ -170,14 +172,14 @@ export function FoldsIndex() {
   return (
     <div className="rooms-index">
       <div className="rooms-index-header">
-        <h1>Folds</h1>
-        <span className="rooms-index-count">{folds.length} fold{folds.length !== 1 ? "s" : ""}</span>
+        <h1>{t("folds.title")}</h1>
+        <span className="rooms-index-count">{t("folds.count", { count: folds.length })}</span>
       </div>
 
       {folds.length === 0 ? (
         <div className="rooms-index-empty">
-          <p>No folds yet. Create one from the landing page or via the CLI.</p>
-          <Link to="/" className="rooms-index-cta">Go to Landing</Link>
+          <p>{t("folds.empty")}</p>
+          <Link to="/" className="rooms-index-cta">{t("folds.goToLanding")}</Link>
         </div>
       ) : (
         <div className="rooms-index-grid">
@@ -199,7 +201,7 @@ export function FoldsIndex() {
 
               {fs.destination && (
                 <div className="rooms-index-card-destination">
-                  <span className="rooms-index-card-dest-label">Destination</span>
+                  <span className="rooms-index-card-dest-label">{t("folds.destination")}</span>
                   <span className="rooms-index-card-dest-text">
                     {fs.destination.length > 80
                       ? fs.destination.slice(0, 80) + "..."
@@ -212,7 +214,7 @@ export function FoldsIndex() {
                         style={{ width: `${(fs.milestonesDone / fs.milestonesTotal) * 100}%` }}
                       />
                       <span className="rooms-index-card-progress-label">
-                        {fs.milestonesDone}/{fs.milestonesTotal} milestones
+                        {t("folds.milestones", { done: fs.milestonesDone, total: fs.milestonesTotal })}
                       </span>
                     </div>
                   )}
@@ -223,24 +225,24 @@ export function FoldsIndex() {
                 <div className="rooms-index-stat">
                   <span className="rooms-index-stat-value">
                     {fs.activeAgentCount > 0 ? (
-                      <>{fs.activeAgentCount} <span className="rooms-index-stat-active">active</span></>
+                      <>{fs.activeAgentCount} <span className="rooms-index-stat-active">{t("folds.active")}</span></>
                     ) : (
                       fs.agentCount
                     )}
                   </span>
                   <span className="rooms-index-stat-label">
-                    {fs.activeAgentCount > 0 ? `of ${fs.agentCount} agents` : "agents (24h)"}
+                    {fs.activeAgentCount > 0 ? t("folds.ofAgents", { count: fs.agentCount }) : t("folds.agents24h")}
                   </span>
                 </div>
                 <div className="rooms-index-stat">
                   <span className="rooms-index-stat-value">{fs.memoryCount.toLocaleString()}</span>
-                  <span className="rooms-index-stat-label">memories</span>
+                  <span className="rooms-index-stat-label">{t("folds.memories")}</span>
                 </div>
                 <div className="rooms-index-stat">
                   <span className="rooms-index-stat-value">
-                    {fs.lastActivity ? timeAgo(fs.lastActivity) : "no activity"}
+                    {fs.lastActivity ? timeAgo(fs.lastActivity) : t("folds.noActivity")}
                   </span>
-                  <span className="rooms-index-stat-label">last seen</span>
+                  <span className="rooms-index-stat-label">{t("folds.lastSeen")}</span>
                 </div>
               </div>
             </Link>

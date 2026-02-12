@@ -1,0 +1,13 @@
+{
+  "boundary.title": "حدث خطأ ما",
+  "boundary.description": "حدث خطأ غير متوقع. يرجى تحديث الصفحة.",
+  "boundary.details": "تفاصيل الخطأ",
+  "boundary.refresh": "تحديث الصفحة",
+  "notFound.title": "404",
+  "notFound.description": "لا يوجد شيء هنا في",
+  "notFound.hint": "ربما تم نقل الصفحة، أو أن الرابط غير صحيح.",
+  "network": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
+  "generic": "حدث خطأ. يرجى المحاولة مرة أخرى.",
+  "foldNotFound": "الطيّة غير موجودة",
+  "loadFailed": "فشل تحميل البيانات"
+}

@@ -1,0 +1,13 @@
+{
+  "boundary.title": "問題が発生しました",
+  "boundary.description": "予期しないエラーが発生しました。ページを更新してください。",
+  "boundary.details": "エラーの詳細",
+  "boundary.refresh": "ページを更新",
+  "notFound.title": "404",
+  "notFound.description": "ここには何もありません:",
+  "notFound.hint": "ページが移動されたか、URLが間違っている可能性があります。",
+  "network": "ネットワークエラーです。接続を確認してください。",
+  "generic": "エラーが発生しました。もう一度お試しください。",
+  "foldNotFound": "Foldが見つかりません",
+  "loadFailed": "データの読み込みに失敗しました"
+}

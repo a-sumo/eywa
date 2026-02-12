@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ConnectAgent } from "./ConnectAgent";
 import { supabase } from "../lib/supabase";
 
@@ -21,6 +22,7 @@ function onboardingKey(foldId: string) {
  * Persists dismissal to localStorage so users don't see it again on refresh.
  */
 export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlayProps) {
+  const { t } = useTranslation("fold");
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Auto-dismiss if already dismissed for this fold
@@ -55,7 +57,7 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
       progress[m] = false;
     }
     await supabase.from("memories").insert({
-      room_id: foldId,
+      fold_id: foldId,
       agent: "web-user",
       session_id: `web_${Date.now()}`,
       message_type: "knowledge",
@@ -83,9 +85,9 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
     <div className="onboarding-overlay">
       {/* Header */}
       <div className="onboarding-header">
-        <h2 className="onboarding-title">Set up your fold</h2>
+        <h2 className="onboarding-title">{t("onboarding.title")}</h2>
         <button className="onboarding-dismiss" onClick={handleDismiss}>
-          Skip setup
+          {t("onboarding.dismiss")}
         </button>
       </div>
 
@@ -119,10 +121,9 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
         {step === 1 && (
           <div className="onboarding-step-content">
             <div className="onboarding-step-intro">
-              <h3>Connect your first AI agent</h3>
+              <h3>{t("onboarding.step1.title")}</h3>
               <p>
-                Eywa watches your AI agents work so your whole team can see what's happening.
-                Pick your coding tool and follow the steps to connect.
+                {t("onboarding.step1.description")}
               </p>
             </div>
             <ConnectAgent slug={slug} />
@@ -146,10 +147,9 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
         {step === 2 && (
           <div className="onboarding-step-content">
             <div className="onboarding-step-intro">
-              <h3>Where are you headed?</h3>
+              <h3>{t("onboarding.step2.title")}</h3>
               <p>
-                A destination gives your team a shared target. Agents work toward it,
-                and Eywa tracks progress across all sessions.
+                {t("onboarding.step2.description")}
               </p>
             </div>
             <div className="onboarding-dest-form">

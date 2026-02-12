@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { supabase, type Fold } from "../lib/supabase";
 
 export function CLIAuth() {
+  const { t } = useTranslation("fold");
   const [searchParams] = useSearchParams();
   const callbackPort = searchParams.get("port");
   const [rooms, setRooms] = useState<Fold[]>([]);
@@ -76,8 +78,8 @@ export function CLIAuth() {
     return (
       <div className="cli-auth">
         <div className="cli-auth-card">
-          <h1>CLI Auth</h1>
-          <p>This page is opened by <code>eywa login</code> or the VS Code extension. Run one of those first.</p>
+          <h1>{t("cliAuth.title")}</h1>
+          <p>{t("cliAuth.description")}</p>
         </div>
       </div>
     );
@@ -110,11 +112,11 @@ export function CLIAuth() {
   return (
     <div className="cli-auth">
       <div className="cli-auth-card">
-        <h1>Authorize Eywa</h1>
-        <p>Select a fold to connect to:</p>
+        <h1>{t("cliAuth.title")}</h1>
+        <p>{t("cliAuth.description")}</p>
 
         <div className="cli-auth-rooms">
-          {loading && <p className="cli-auth-loading">Loading folds...</p>}
+          {loading && <p className="cli-auth-loading">{t("folds.loading")}</p>}
           {rooms.map((r) => (
             <button
               key={r.id}

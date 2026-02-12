@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useFoldContext } from "../context/FoldContext";
 import { supabase } from "../lib/supabase";
 
 export function DemoBanner() {
+  const { t } = useTranslation("fold");
+  const { t: tc } = useTranslation("common");
   const { fold, isDemo } = useFoldContext();
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(() => {
@@ -54,7 +57,7 @@ export function DemoBanner() {
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <span style={styles.text}>
-            You're exploring a demo fold with sample data. Create your own fold to connect your agents.
+            {t("demo.banner")}
           </span>
         </div>
         <div style={styles.actions}>
@@ -63,7 +66,7 @@ export function DemoBanner() {
             onClick={handleCreateFold}
             disabled={creating}
           >
-            {creating ? "Creating..." : "Create Your Fold"}
+            {creating ? tc("creating") : t("demo.createOwn")}
           </button>
           <button style={styles.dismissBtn} onClick={handleDismiss} aria-label="Dismiss">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

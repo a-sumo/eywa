@@ -1,0 +1,13 @@
+{
+  "boundary.title": "कुछ गलत हो गया",
+  "boundary.description": "एक अनपेक्षित त्रुटि हुई है। कृपया पेज रिफ़्रेश करें।",
+  "boundary.details": "त्रुटि विवरण",
+  "boundary.refresh": "पेज रिफ़्रेश करें",
+  "notFound.title": "404",
+  "notFound.description": "यहां कुछ नहीं है",
+  "notFound.hint": "यह पेज स्थानांतरित हो गया होगा, या URL गलत हो सकता है।",
+  "network": "नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें।",
+  "generic": "एक त्रुटि हुई है। कृपया फिर से प्रयास करें।",
+  "foldNotFound": "Fold नहीं मिला",
+  "loadFailed": "डेटा लोड करने में विफल"
+}

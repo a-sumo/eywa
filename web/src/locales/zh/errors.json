@@ -1,0 +1,13 @@
+{
+  "boundary.title": "出现了问题",
+  "boundary.description": "发生了意外错误，请刷新页面。",
+  "boundary.details": "错误详情",
+  "boundary.refresh": "刷新页面",
+  "notFound.title": "404",
+  "notFound.description": "此处没有内容：",
+  "notFound.hint": "该页面可能已移动，或者网址有误。",
+  "network": "网络错误，请检查您的网络连接。",
+  "generic": "发生错误，请重试。",
+  "foldNotFound": "未找到该折叠空间",
+  "loadFailed": "数据加载失败"
+}

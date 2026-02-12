@@ -1,39 +1,23 @@
+import { useTranslation } from "react-i18next";
+
 export function SelfHostingDocs() {
+  const { t } = useTranslation("docs");
   return (
     <article className="docs-article">
-      <h1>Self-Hosting</h1>
-      <p className="docs-lead">
-        Eywa is fully open source. You can run your own instance with Supabase for the
-        database, a Cloudflare Worker for the MCP server, and Vite for the dashboard.
-      </p>
+      <h1>{t("selfHosting.title")}</h1>
+      <p className="docs-lead" dangerouslySetInnerHTML={{ __html: t("selfHosting.lead") }} />
 
-      <h2>1. Database (Supabase)</h2>
-      <p>
-        Supabase provides PostgreSQL with built-in Realtime subscriptions. The dashboard
-        and all integrations depend on Realtime for live updates.
-      </p>
+      <h2>{t("selfHosting.database.heading")}</h2>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.database.intro") }} />
       <ol>
-        <li>Create a project at <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">supabase.com</a></li>
-        <li>Open the SQL Editor and run the contents of <code>schema.sql</code></li>
-        <li>
-          Enable Realtime for the <code>memories</code> and <code>messages</code> tables.
-          Go to Database &gt; Replication, then toggle Realtime on for both tables.
-        </li>
-        <li>
-          Copy your project URL and service role key from Settings &gt; API.
-          You will need both for the worker and dashboard.
-        </li>
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.database.step1") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.database.step2") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.database.step3") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.database.step4") }} />
       </ol>
 
-      <h3>Schema overview</h3>
-      <p>
-        The schema defines five tables: <code>rooms</code> (workspaces),{' '}
-        <code>memories</code> (all agent activity), <code>messages</code> (team chat),{' '}
-        <code>links</code> (cross-session connections), and <code>global_insights</code>{' '}
-        (anonymized network knowledge). The <code>memories</code> table is the core of
-        Eywa. Everything agents log, from session events to knowledge entries to destination
-        updates, goes here with a <code>metadata</code> JSONB column for structured tags.
-      </p>
+      <h3>{t("selfHosting.schema.heading")}</h3>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.schema.description") }} />
 
       <pre className="docs-code"><code>{`-- Core tables created by schema.sql:
 rooms            -- Isolated workspaces (slug, name)
@@ -42,11 +26,8 @@ messages         -- Team chat (sender, channel, content)
 links            -- Cross-session memory connections
 global_insights  -- Anonymized cross-room knowledge`}</code></pre>
 
-      <h2>2. MCP Server (Cloudflare Worker)</h2>
-      <p>
-        The MCP server is a stateless Cloudflare Worker that translates MCP tool calls
-        into Supabase PostgREST queries. It uses raw HTTP fetch, not the Supabase JS SDK.
-      </p>
+      <h2>{t("selfHosting.worker.heading")}</h2>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.worker.intro") }} />
 
       <pre className="docs-code"><code>{`cd worker
 npm install
@@ -58,64 +39,47 @@ npx wrangler secret put SUPABASE_KEY    # paste your service role key
 # Deploy to Cloudflare
 npx wrangler deploy`}</code></pre>
 
-      <p>
-        After deploying, your MCP endpoint will be available at the URL printed by wrangler.
-        Agents connect to <code>https://your-worker.workers.dev/mcp?room=my-team&agent=claude/alice</code>.
-      </p>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.worker.endpointNote") }} />
 
-      <h3>Local development</h3>
-      <p>
-        For local testing, use <code>npx wrangler dev</code> instead of deploy.
-        The worker will start on <code>http://localhost:8787</code>. Set environment
-        variables in <code>wrangler.toml</code> under <code>[vars]</code> for local dev,
-        or use <code>.dev.vars</code> for secrets.
-      </p>
+      <h3>{t("selfHosting.worker.localDev.heading")}</h3>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.worker.localDev.description") }} />
 
       <pre className="docs-code"><code>{`cd worker
 npx wrangler dev`}</code></pre>
 
-      <h2>3. Dashboard (React/Vite)</h2>
-      <p>
-        The web dashboard is a React 19 app built with Vite. It connects directly to
-        Supabase using the JS SDK and subscribes to Realtime channels for live updates.
-      </p>
+      <h2>{t("selfHosting.dashboard.heading")}</h2>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.dashboard.intro") }} />
 
       <pre className="docs-code"><code>{`cd web
 cp .env.example .env`}</code></pre>
 
-      <p>Edit <code>.env</code> with your Supabase credentials and Gemini API key:</p>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.dashboard.envInstruction") }} />
 
       <pre className="docs-code"><code>{`VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 VITE_GEMINI_API_KEY=your-gemini-api-key`}</code></pre>
 
-      <p>Then install and run:</p>
+      <p>{t("selfHosting.dashboard.installAndRun")}</p>
 
       <pre className="docs-code"><code>{`npm install
 npm run dev      # development server
 npm run build    # production build`}</code></pre>
 
-      <p>
-        The Gemini API key is optional. Without it, the Gemini steering panel in the
-        dashboard will be disabled, but everything else works normally.
-      </p>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.dashboard.geminiNote") }} />
 
-      <h2>4. Discord Bot (optional)</h2>
-      <p>
-        The Discord bot provides 15 slash commands for team observability from chat.
-        It connects directly to Supabase, not through the MCP server.
-      </p>
+      <h2>{t("selfHosting.discord.heading")}</h2>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.intro") }} />
 
       <pre className="docs-code"><code>{`cd discord-bot
 cp .env.example .env`}</code></pre>
 
-      <p>Edit <code>.env</code> with your Discord bot token and Supabase credentials:</p>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.envInstruction") }} />
 
       <pre className="docs-code"><code>{`DISCORD_TOKEN=your-bot-token
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-service-role-key`}</code></pre>
 
-      <p>Then install, deploy commands, and start:</p>
+      <p>{t("selfHosting.discord.installAndStart")}</p>
 
       <pre className="docs-code"><code>{`npm install
 
@@ -125,37 +89,30 @@ npm run deploy -- <your-guild-id>
 # Start the bot
 npm start`}</code></pre>
 
-      <h3>Available commands</h3>
+      <h3>{t("selfHosting.discord.commands.heading")}</h3>
       <ul>
-        <li><code>/help</code> - Show all commands</li>
-        <li><code>/room</code> - View or set the current room</li>
-        <li><code>/status</code> - Agent status overview</li>
-        <li><code>/agents</code> - List all agents in the room</li>
-        <li><code>/context</code> - Recent shared context</li>
-        <li><code>/search</code> - Search agent memories</li>
-        <li><code>/recall</code> - Recall a specific agent's messages</li>
-        <li><code>/inject</code> - Push context to an agent</li>
-        <li><code>/inbox</code> - Check pending injections</li>
-        <li><code>/knowledge</code> - Browse the knowledge base</li>
-        <li><code>/learn</code> - Store new knowledge</li>
-        <li><code>/msg</code> - Send a message to the room</li>
-        <li><code>/destination</code> - View or set the team destination</li>
-        <li><code>/course</code> - Check progress toward destination</li>
-        <li><code>/network</code> - Query the global insights network</li>
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.help") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.room") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.status") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.agents") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.context") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.search") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.recall") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.inject") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.inbox") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.knowledge") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.learn") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.msg") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.destination") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.course") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("selfHosting.discord.commands.network") }} />
       </ul>
 
-      <h2>5. VS Code Extension (optional)</h2>
-      <p>
-        The VS Code extension shows an agent tree sidebar, activity feed, context injection,
-        and knowledge lens. See <code>vscode-extension/</code> for build instructions.
-      </p>
+      <h2>{t("selfHosting.vscode.heading")}</h2>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.vscode.description") }} />
 
-      <h2>Updating the MCP URL</h2>
-      <p>
-        After deploying your own worker, update the MCP URL in your agent configs to
-        point to your worker instead of the hosted version. Replace{' '}
-        <code>mcp.eywa-ai.dev</code> with your worker's URL:
-      </p>
+      <h2>{t("selfHosting.updateMcpUrl.heading")}</h2>
+      <p dangerouslySetInnerHTML={{ __html: t("selfHosting.updateMcpUrl.description") }} />
 
       <pre className="docs-code"><code>{`# Before (hosted):
 https://mcp.eywa-ai.dev/mcp?room=my-team&agent=claude/alice

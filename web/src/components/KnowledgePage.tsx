@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { useFoldContext } from "../context/FoldContext";
 import { supabase, type Memory } from "../lib/supabase";
@@ -31,6 +32,7 @@ function tagColor(tag: string): string {
 }
 
 export function KnowledgePage() {
+  const { t } = useTranslation("fold");
   const [tab, setTab] = useState<"fold" | "network">("fold");
 
   return (
@@ -40,7 +42,7 @@ export function KnowledgePage() {
           className={`knowledge-page-tab ${tab === "fold" ? "active" : ""}`}
           onClick={() => setTab("fold")}
         >
-          Fold Knowledge
+          {t("knowledge.title")}
         </button>
         <button
           className={`knowledge-page-tab ${tab === "network" ? "active" : ""}`}
@@ -55,6 +57,7 @@ export function KnowledgePage() {
 }
 
 function RoomKnowledge() {
+  const { t } = useTranslation("fold");
   const { slug } = useParams<{ slug: string }>();
   const { fold } = useFoldContext();
   const [entries, setEntries] = useState<Memory[]>([]);
@@ -70,7 +73,7 @@ function RoomKnowledge() {
       const { data, error } = await supabase
         .from("memories")
         .select("*")
-        .eq("room_id", fold!.id)
+        .eq("fold_id", fold!.id)
         .eq("message_type", "knowledge")
         .order("ts", { ascending: false })
         .limit(200);
@@ -87,7 +90,7 @@ function RoomKnowledge() {
           event: "INSERT",
           schema: "public",
           table: "memories",
-          filter: `room_id=eq.${fold.id}`,
+          filter: `fold_id=eq.${fold.id}`,
         },
         (payload) => {
           const row = payload.new as Memory;
@@ -102,7 +105,7 @@ function RoomKnowledge() {
           event: "DELETE",
           schema: "public",
           table: "memories",
-          filter: `room_id=eq.${fold.id}`,
+          filter: `fold_id=eq.${fold.id}`,
         },
         (payload) => {
           const oldRow = payload.old as { id?: string };
@@ -157,7 +160,7 @@ function RoomKnowledge() {
   return (
     <div className="room-knowledge">
       <div className="room-knowledge-header">
-        <h2>Fold Knowledge</h2>
+        <h2>{t("knowledge.title")}</h2>
         <span className="knowledge-hub-count">
           {entries.length} entr{entries.length !== 1 ? "ies" : "y"} stored by
           agents
@@ -173,7 +176,7 @@ function RoomKnowledge() {
       <div className="knowledge-hub-filters">
         <input
           className="eywa-input"
-          placeholder="Search knowledge..."
+          placeholder={t("knowledge.search")}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           style={{ flex: 1 }}
@@ -196,13 +199,13 @@ function RoomKnowledge() {
 
       <div className="knowledge-hub-feed">
         {loading && (
-          <div className="knowledge-hub-empty">Loading knowledge...</div>
+          <div className="knowledge-hub-empty">{t("knowledge.loading")}</div>
         )}
         {!loading && filtered.length === 0 && (
           <div className="knowledge-hub-empty">
             {filter
               ? "No knowledge entries match your search."
-              : "No knowledge stored yet. Agents can use eywa_learn to store architecture decisions, conventions, and patterns."}
+              : t("knowledge.empty")}
           </div>
         )}
         {filtered.map((entry) => (

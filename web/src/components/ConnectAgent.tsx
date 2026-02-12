@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const WORKER_URL = "https://mcp.eywa-ai.dev/mcp";
 
@@ -165,6 +166,7 @@ interface ConnectAgentProps {
 }
 
 export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
+  const { t } = useTranslation("fold");
   const [agent, setAgent] = useState("alpha");
   const [client, setClient] = useState<Client>("claude");
   const [copied, setCopied] = useState(false);
@@ -245,9 +247,9 @@ echo "Eywa configured for Codex"`;
     <div className={`connect-agent ${inline ? "connect-agent-inline" : ""}`}>
       {!inline && (
         <div className="connect-agent-header">
-          <h3>Connect an AI Agent</h3>
+          <h3>{t("connect.title")}</h3>
           <p>
-            Two steps to start logging your AI session to this fold.
+            {t("connect.description")}
           </p>
         </div>
       )}
@@ -313,7 +315,7 @@ echo "Eywa configured for Codex"`;
             <pre className="connect-agent-code">{config}</pre>
             <div className="connect-config-actions">
               <button className="connect-agent-copy" onClick={handleCopy}>
-                {copied ? "Copied!" : "Copy"}
+                {copied ? t("connect.copied") : t("connect.copy")}
               </button>
               {showDownload && (
                 <button className="connect-agent-download" onClick={handleDownloadConfig}>

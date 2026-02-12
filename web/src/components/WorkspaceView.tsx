@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useFoldContext } from "../context/FoldContext";
@@ -60,6 +61,7 @@ interface WorkspaceVersion {
 }
 
 export function WorkspaceView() {
+  const { t } = useTranslation("fold");
   const { slug } = useParams<{ slug: string }>();
   const { fold } = useFoldContext();
   const navigate = useNavigate();
@@ -344,7 +346,7 @@ export function WorkspaceView() {
         <button className="back-btn" onClick={() => navigate(`/f/${slug}`)}>
           &larr; Back
         </button>
-        <h2>Session Mixer</h2>
+        <h2>{t("workspace.title")}</h2>
         <span className="eywa-meta">
           {contextMemories.length} memories from{" "}
           {contextByAgent.size} agent{contextByAgent.size !== 1 ? "s" : ""}

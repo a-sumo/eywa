@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useFoldContext } from "../context/FoldContext";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { NavigatorMap as NavigatorMapRenderer } from "../lib/navigator-map.js";
@@ -22,6 +23,7 @@ import {
 } from "../lib/navigatorClient";
 
 export function NavigatorMap() {
+  const { t } = useTranslation("fold");
   const { fold } = useFoldContext();
   const { memories } = useRealtimeMemories(fold?.id ?? null, 200);
   const [syncing, setSyncing] = useState(false);
@@ -369,7 +371,7 @@ export function NavigatorMap() {
         }}
       >
         <span style={{ color: isDark ? "#15D1FF" : "#6417ec", fontWeight: 600, fontSize: 13 }}>
-          Navigator
+          {t("navigator.title")}
         </span>
 
         {(() => {
@@ -450,7 +452,7 @@ export function NavigatorMap() {
             cursor: syncing ? "default" : "pointer",
           }}
         >
-          {syncing ? "Syncing..." : "Sync"}
+          {syncing ? t("navigator.loading") : "Sync"}
         </button>
 
         {roomId && (

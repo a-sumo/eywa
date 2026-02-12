@@ -1,265 +1,213 @@
+import { useTranslation } from "react-i18next";
+
 export function DiscordDocs() {
+  const { t } = useTranslation("docs");
   return (
     <article className="docs-article">
-      <h1>Discord Bot</h1>
-      <p className="docs-lead">
-        The Eywa Discord bot gives your team observability into all agent activity from chat.
-        15 slash commands for browsing agent status, searching memories, injecting context,
-        managing knowledge, and steering toward a destination.
-      </p>
+      <h1>{t("discord.title")}</h1>
+      <p className="docs-lead">{t("discord.lead")}</p>
 
-      <h2>Setup</h2>
+      <h2>{t("discord.setup")}</h2>
       <ol>
-        <li>
-          Invite the bot to your Discord server.
-        </li>
-        <li>
-          In the channel you want to use, run <code>/room set {"<slug>"}</code> to bind
-          it to an Eywa room. All commands in that channel will query this room.
-        </li>
-        <li>
-          Run <code>/status</code> to see what agents are working on.
-        </li>
+        <li dangerouslySetInnerHTML={{ __html: t("discord.setup.step1") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("discord.setup.step2") }} />
+        <li dangerouslySetInnerHTML={{ __html: t("discord.setup.step3") }} />
       </ol>
-      <p>
-        You can bind different channels to different rooms if your server has multiple teams.
-      </p>
+      <p>{t("discord.setup.multiChannel")}</p>
 
-      <h2>Agent Identity</h2>
-      <p>
-        Messages sent from Discord appear in Eywa as <code>discord/{"<username>"}</code>.
-        When you use <code>/inject</code>, <code>/learn</code>, <code>/msg</code>,
-        or <code>/destination set</code>, the sender is recorded
-        as <code>discord/yourname</code> so agents and teammates can see who sent it.
-      </p>
+      <h2>{t("discord.agentIdentity")}</h2>
+      <p dangerouslySetInnerHTML={{ __html: t("discord.agentIdentityDesc") }} />
 
-      <h2>Command Reference</h2>
+      <h2>{t("discord.commandReference")}</h2>
 
-      <h3>Observe</h3>
+      <h3>{t("discord.observe")}</h3>
       <table>
         <thead>
           <tr>
-            <th>Command</th>
-            <th>Description</th>
-            <th>Options</th>
+            <th>{t("discord.tableCommand")}</th>
+            <th>{t("discord.tableDescription")}</th>
+            <th>{t("discord.tableOptions")}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><code>/help</code></td>
-            <td>How to use the Eywa bot. Shows all commands grouped by category.</td>
+            <td>{t("discord.helpDesc")}</td>
             <td></td>
           </tr>
           <tr>
             <td><code>/status</code></td>
-            <td>See what all agents are currently working on. Shows active, recent, and idle agents with systems touched.</td>
+            <td>{t("discord.statusDesc")}</td>
             <td></td>
           </tr>
           <tr>
             <td><code>/agents</code></td>
-            <td>List all agents that have logged to this room, with memory counts and last seen time.</td>
+            <td>{t("discord.agentsDesc")}</td>
             <td></td>
           </tr>
           <tr>
             <td><code>/context</code></td>
-            <td>See recent activity across all agents as a timeline.</td>
-            <td><code>count</code> - number of entries (1-30, default 10)</td>
+            <td>{t("discord.contextDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.contextOptions") }} />
           </tr>
           <tr>
             <td><code>/recall</code></td>
-            <td>View a specific agent's recent activity. Agent names autocomplete as you type.</td>
-            <td>
-              <code>agent</code> (required) - agent name<br />
-              <code>count</code> - number of entries (1-30, default 15)
-            </td>
+            <td>{t("discord.recallDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.recallOptions") }} />
           </tr>
           <tr>
             <td><code>/search</code></td>
-            <td>Search agent memories by text.</td>
-            <td>
-              <code>query</code> (required) - text to search for<br />
-              <code>limit</code> - max results (1-25, default 10)
-            </td>
+            <td>{t("discord.searchDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.searchOptions") }} />
           </tr>
         </tbody>
       </table>
 
-      <h3>Interact</h3>
+      <h3>{t("discord.interact")}</h3>
       <table>
         <thead>
           <tr>
-            <th>Command</th>
-            <th>Description</th>
-            <th>Options</th>
+            <th>{t("discord.tableCommand")}</th>
+            <th>{t("discord.tableDescription")}</th>
+            <th>{t("discord.tableOptions")}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><code>/inject</code></td>
-            <td>Send context or instructions to an agent. The agent sees it on their next tool call.</td>
-            <td>
-              <code>target</code> (required) - agent name or "all" for broadcast<br />
-              <code>message</code> (required) - the context to send<br />
-              <code>priority</code> - Normal, High, or Urgent<br />
-              <code>label</code> - short label (e.g. "bug report")
-            </td>
+            <td>{t("discord.injectDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.injectOptions") }} />
           </tr>
           <tr>
             <td><code>/inbox</code></td>
-            <td>View pending injections for an agent.</td>
-            <td>
-              <code>target</code> - agent name or "all" for broadcasts<br />
-              <code>limit</code> - max entries (1-25, default 10)
-            </td>
+            <td>{t("discord.inboxDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.inboxOptions") }} />
           </tr>
           <tr>
             <td><code>/msg</code></td>
-            <td>Send a message to the Eywa team chat.</td>
-            <td>
-              <code>text</code> (required) - message to send<br />
-              <code>channel</code> - chat channel (default: general)
-            </td>
+            <td>{t("discord.msgDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.msgOptions") }} />
           </tr>
         </tbody>
       </table>
 
-      <h3>Knowledge</h3>
+      <h3>{t("discord.knowledge")}</h3>
       <table>
         <thead>
           <tr>
-            <th>Command</th>
-            <th>Description</th>
-            <th>Options</th>
+            <th>{t("discord.tableCommand")}</th>
+            <th>{t("discord.tableDescription")}</th>
+            <th>{t("discord.tableOptions")}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><code>/knowledge</code></td>
-            <td>Browse the project knowledge base. Supports filtering by search text and tags.</td>
-            <td>
-              <code>search</code> - search within knowledge content<br />
-              <code>tag</code> - filter by tag (e.g. architecture, api)<br />
-              <code>limit</code> - max entries (1-25, default 10)
-            </td>
+            <td>{t("discord.knowledgeDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.knowledgeOptions") }} />
           </tr>
           <tr>
             <td><code>/learn</code></td>
-            <td>Store knowledge for the team's agents to reference across all sessions.</td>
-            <td>
-              <code>content</code> (required) - the knowledge to store<br />
-              <code>title</code> - short title for quick scanning<br />
-              <code>tags</code> - comma-separated tags (e.g. api,convention,gotcha)
-            </td>
+            <td>{t("discord.learnDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.learnOptions") }} />
           </tr>
           <tr>
             <td><code>/network</code></td>
-            <td>Browse the global knowledge network. Shows anonymized insights shared across rooms.</td>
-            <td>
-              <code>search</code> - search insights by text<br />
-              <code>domain</code> - filter by domain tag (e.g. typescript, react)
-            </td>
+            <td>{t("discord.networkDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.networkOptions") }} />
           </tr>
         </tbody>
       </table>
 
-      <h3>Navigation</h3>
+      <h3>{t("discord.navigation")}</h3>
       <table>
         <thead>
           <tr>
-            <th>Command</th>
-            <th>Description</th>
-            <th>Options</th>
+            <th>{t("discord.tableCommand")}</th>
+            <th>{t("discord.tableDescription")}</th>
+            <th>{t("discord.tableOptions")}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><code>/destination view</code></td>
-            <td>View the current destination and milestone progress.</td>
+            <td>{t("discord.destinationViewDesc")}</td>
             <td></td>
           </tr>
           <tr>
             <td><code>/destination set</code></td>
-            <td>Set a new destination (point B) for the room.</td>
-            <td>
-              <code>target</code> (required) - the target state<br />
-              <code>milestones</code> - comma-separated milestones
-            </td>
+            <td>{t("discord.destinationSetDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.destinationSetOptions") }} />
           </tr>
           <tr>
             <td><code>/destination check</code></td>
-            <td>Mark a milestone as done. Uses fuzzy matching on the name.</td>
-            <td>
-              <code>milestone</code> (required) - name of the milestone to complete
-            </td>
+            <td>{t("discord.destinationCheckDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.destinationCheckOptions") }} />
           </tr>
           <tr>
             <td><code>/course</code></td>
-            <td>Full course overview: destination progress, active agents with completion percentages, distress signals, and agent counts.</td>
+            <td>{t("discord.courseDesc")}</td>
             <td></td>
           </tr>
         </tbody>
       </table>
 
-      <h3>Room</h3>
+      <h3>{t("discord.room")}</h3>
       <table>
         <thead>
           <tr>
-            <th>Command</th>
-            <th>Description</th>
-            <th>Options</th>
+            <th>{t("discord.tableCommand")}</th>
+            <th>{t("discord.tableDescription")}</th>
+            <th>{t("discord.tableOptions")}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><code>/room set</code></td>
-            <td>Bind this Discord channel to an Eywa room.</td>
-            <td><code>slug</code> (required) - room slug (e.g. demo, hackathon)</td>
+            <td>{t("discord.roomSetDesc")}</td>
+            <td dangerouslySetInnerHTML={{ __html: t("discord.roomSetOptions") }} />
           </tr>
           <tr>
             <td><code>/room info</code></td>
-            <td>Show which room this channel is bound to.</td>
+            <td>{t("discord.roomInfoDesc")}</td>
             <td></td>
           </tr>
           <tr>
             <td><code>/room list</code></td>
-            <td>List all available rooms.</td>
+            <td>{t("discord.roomListDesc")}</td>
             <td></td>
           </tr>
         </tbody>
       </table>
 
-      <h2>Examples</h2>
+      <h2>{t("discord.examples")}</h2>
 
-      <h3>Check what the team is building</h3>
+      <h3>{t("discord.exampleCheckTeam")}</h3>
       <pre className="docs-code"><code>{`/status
 /context count:20
 /recall agent:armand/quiet-oak`}</code></pre>
 
-      <h3>Send instructions to an agent</h3>
+      <h3>{t("discord.exampleSendInstructions")}</h3>
       <pre className="docs-code"><code>{`/inject target:armand/quiet-oak message:Schema changed, user_id is now UUID priority:High
 /inject target:all message:Deploy freeze until 3pm`}</code></pre>
 
-      <h3>Store and find knowledge</h3>
+      <h3>{t("discord.exampleStoreKnowledge")}</h3>
       <pre className="docs-code"><code>{`/learn content:API uses /api/v1 prefix, JWT for auth title:API conventions tags:api,convention
 /knowledge search:auth
 /knowledge tag:api`}</code></pre>
 
-      <h3>Set a destination and track progress</h3>
+      <h3>{t("discord.exampleSetDestination")}</h3>
       <pre className="docs-code"><code>{`/destination set target:Ship v2 auth system milestones:JWT tokens,Role-based access,Migration script
 /destination check milestone:JWT tokens
 /course`}</code></pre>
 
-      <h2>Self-Hosting</h2>
-      <p>
-        The bot uses direct Supabase queries (not MCP). To run your own instance:
-      </p>
+      <h2>{t("discord.selfHosting")}</h2>
+      <p>{t("discord.selfHostingDesc")}</p>
       <pre className="docs-code"><code>{`cd discord-bot
 cp .env.example .env    # add Discord token + Supabase creds
 npm install
 npm start`}</code></pre>
-      <p>
-        Deploy commands to a guild with <code>npm run deploy -- {"<guild_id>"}</code>.
-      </p>
+      <p dangerouslySetInnerHTML={{ __html: t("discord.selfHostingDeploy") }} />
     </article>
   );
 }

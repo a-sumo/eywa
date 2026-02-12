@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import EywaLogo from "./EywaLogo";
 import { useFold } from "../hooks/useFold";
+import { LanguageSelector } from "./LanguageSelector";
 
 const GitHubIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -9,6 +11,7 @@ const GitHubIcon = () => (
 );
 
 export function AppHeader() {
+  const { t } = useTranslation();
   const location = useLocation();
   const { createDemoFold, creating, error } = useFold();
 
@@ -33,8 +36,8 @@ export function AppHeader() {
         </Link>
 
         <nav className="global-header-nav">
-          <Link to="/folds" className={location.pathname === "/folds" ? "active" : ""}>Folds</Link>
-          <Link to="/docs" className={isDocs ? "active" : ""}>Docs</Link>
+          <Link to="/folds" className={location.pathname === "/folds" ? "active" : ""}>{t("nav.folds")}</Link>
+          <Link to="/docs" className={isDocs ? "active" : ""}>{t("nav.docs")}</Link>
           {isRoom && slug && (
             <Link to={`/f/${slug}`} className="global-header-room">/{slug}</Link>
           )}
@@ -48,14 +51,15 @@ export function AppHeader() {
                 onClick={() => createDemoFold()}
                 disabled={creating}
               >
-                {creating ? "Creating..." : "Try Demo"}
+                {creating ? t("creating") : t("nav.tryDemo")}
               </button>
               {error && <span style={{ color: "var(--error)", fontSize: "0.75rem" }}>{error}</span>}
               <Link to="/docs" className="global-header-cta">
-                Get Started
+                {t("nav.getStarted")}
               </Link>
             </>
           )}
+          <LanguageSelector />
           <a
             href="https://github.com/a-sumo/eywa"
             target="_blank"

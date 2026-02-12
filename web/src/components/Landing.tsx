@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useFold } from "../hooks/useFold";
 import { FlowBackground } from "./FlowBackground";
 import EywaLogo from "./EywaLogo";
@@ -140,6 +141,8 @@ const IconDiscord = () => (
 );
 
 export function Landing() {
+  const { t } = useTranslation("landing");
+  const { t: tc } = useTranslation("common");
   const { createFold, createDemoFold, creating, error } = useFold();
   const stars = useGitHubStars();
 
@@ -153,12 +156,11 @@ export function Landing() {
       <section className="landing-hero-dark">
         <div className="landing-hero-content">
           <h1 className="landing-hero-title">
-            Agentic stewardship<br />
-            <span className="landing-hero-gradient">at scale.</span>
+            {t("hero.title")}<br />
+            <span className="landing-hero-gradient">{t("hero.titleGradient")}</span>
           </h1>
           <p className="landing-hero-subtitle">
-            Everyone on your team runs AI agents that code, decide, and ship autonomously.
-            Eywa gives you one live view of what every agent is doing, so you can see, steer, and stay aligned.
+            {t("hero.subtitle")}
           </p>
           <div className="landing-hero-actions">
             <button
@@ -166,7 +168,7 @@ export function Landing() {
               onClick={() => createDemoFold()}
               disabled={creating}
             >
-              {creating ? "Creating..." : "Try the Demo"}
+              {creating ? tc("creating") : t("hero.tryDemo")}
               {!creating && <IconArrowRight />}
             </button>
             <button
@@ -174,7 +176,7 @@ export function Landing() {
               onClick={() => createFold()}
               disabled={creating}
             >
-              Create Your Fold
+              {t("hero.createFold")}
             </button>
           </div>
           {error && (
@@ -186,7 +188,7 @@ export function Landing() {
               </svg>
               <span>{error}</span>
               <button className="landing-error-retry" onClick={() => createDemoFold()}>
-                Try again
+                {tc("tryAgain")}
               </button>
             </div>
           )}
@@ -197,30 +199,30 @@ export function Landing() {
       {/* Social proof stats strip */}
       <section className="landing-stats-strip">
         <div className="landing-stat">
-          <span className="landing-stat-value">Open Source</span>
-          <span className="landing-stat-label">MIT Licensed</span>
+          <span className="landing-stat-value">{t("stats.openSource")}</span>
+          <span className="landing-stat-label">{t("stats.mitLicensed")}</span>
         </div>
         <div className="landing-stat-divider" />
         <div className="landing-stat">
           <span className="landing-stat-value">40+</span>
-          <span className="landing-stat-label">MCP Tools</span>
+          <span className="landing-stat-label">{t("stats.mcpTools")}</span>
         </div>
         <div className="landing-stat-divider" />
         <div className="landing-stat">
           <span className="landing-stat-value">9</span>
-          <span className="landing-stat-label">Agent Integrations</span>
+          <span className="landing-stat-label">{t("stats.agentIntegrations")}</span>
         </div>
         <div className="landing-stat-divider" />
         <div className="landing-stat">
           <span className="landing-stat-value">5</span>
-          <span className="landing-stat-label">Surfaces</span>
+          <span className="landing-stat-label">{t("stats.surfaces")}</span>
         </div>
         {stars != null && (
           <>
             <div className="landing-stat-divider" />
             <div className="landing-stat">
               <span className="landing-stat-value">{stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars}</span>
-              <span className="landing-stat-label">GitHub Stars</span>
+              <span className="landing-stat-label">{t("stats.githubStars")}</span>
             </div>
           </>
         )}
@@ -231,7 +233,7 @@ export function Landing() {
 
       {/* Problem */}
       <section className="landing-section" id="problem">
-        <h2 className="landing-section-title">Agents amplify misalignment</h2>
+        <h2 className="landing-section-title">{t("problem.title")}</h2>
         <div className="landing-cards-grid">
           <div className="landing-card">
             <div className="landing-card-icon">
@@ -241,11 +243,8 @@ export function Landing() {
                 <circle className="anim-dup-dot" cx="27" cy="8" r="2.5"/>
               </svg>
             </div>
-            <h3>Duplicated Work</h3>
-            <p>
-              Two developers independently ask their agents to evaluate the same library.
-              Both spend 40 minutes. Neither person knows the other started.
-            </p>
+            <h3>{t("problem.duplicated.title")}</h3>
+            <p>{t("problem.duplicated.description")}</p>
           </div>
           <div className="landing-card">
             <div className="landing-card-icon">
@@ -257,11 +256,8 @@ export function Landing() {
                 <circle className="anim-div-dot-r" cx="28" cy="4" r="2.5"/>
               </svg>
             </div>
-            <h3>Silent Divergence</h3>
-            <p>
-              One teammate's agent switches the database schema. Another teammate's agent
-              keeps building on the old one. You find out at merge time.
-            </p>
+            <h3>{t("problem.divergence.title")}</h3>
+            <p>{t("problem.divergence.description")}</p>
           </div>
           <div className="landing-card">
             <div className="landing-card-icon">
@@ -272,38 +268,35 @@ export function Landing() {
                 <circle className="anim-clock-center" cx="16" cy="16" r="2" fill="var(--aurora-pink)"/>
               </svg>
             </div>
-            <h3>Lost Context</h3>
-            <p>
-              A teammate's agent spent 10 minutes investigating a date format issue.
-              Your agent starts from scratch because it can't see the reasoning.
-            </p>
+            <h3>{t("problem.context.title")}</h3>
+            <p>{t("problem.context.description")}</p>
           </div>
         </div>
       </section>
 
       {/* Solution */}
       <section className="landing-section landing-section-alt">
-        <h2 className="landing-section-title">How Eywa works</h2>
+        <h2 className="landing-section-title">{t("solution.title")}</h2>
         <div className="landing-steps">
           <div className="landing-step">
             <div className="landing-step-number">1</div>
             <div className="landing-step-content">
-              <h3>Connect your team</h3>
-              <p><code className="landing-code">npx eywa-ai init</code> creates a fold and auto-configures every agent on your machine. Each teammate runs the same command to join.</p>
+              <h3>{t("solution.step1.title")}</h3>
+              <p dangerouslySetInnerHTML={{ __html: t("solution.step1.description") }} />
             </div>
           </div>
           <div className="landing-step">
             <div className="landing-step-number">2</div>
             <div className="landing-step-content">
-              <h3>See what everyone's building</h3>
-              <p>Watch every teammate's agent sessions in real-time. Spot duplicated work, conflicting decisions, and drift before they compound.</p>
+              <h3>{t("solution.step2.title")}</h3>
+              <p>{t("solution.step2.description")}</p>
             </div>
           </div>
           <div className="landing-step">
             <div className="landing-step-number">3</div>
             <div className="landing-step-content">
-              <h3>Steer the work</h3>
-              <p>Inject context into any teammate's agent mid-session. Share decisions across boundaries. Keep the whole team pulling in the same direction.</p>
+              <h3>{t("solution.step3.title")}</h3>
+              <p>{t("solution.step3.description")}</p>
             </div>
           </div>
         </div>
@@ -312,10 +305,9 @@ export function Landing() {
 
       {/* Visual Proof - Animated Dashboard Mockup */}
       <section className="landing-section landing-proof-section">
-        <h2 className="landing-section-title">See what your team is building, right now</h2>
+        <h2 className="landing-section-title">{t("proof.title")}</h2>
         <p className="landing-proof-subtitle">
-          This is what Eywa looks like when three people on your team are running agents.
-          Every card is a live agent session. Every line is a real operation.
+          {t("proof.subtitle")}
         </p>
         <div className="landing-proof-mockup">
           {/* Window chrome */}
@@ -334,14 +326,14 @@ export function Landing() {
                 <circle cx="16" cy="14" r="6" stroke="currentColor" strokeWidth="2"/>
                 <circle cx="16" cy="14" r="2" fill="var(--aurora-cyan)"/>
               </svg>
-              Destination
+              {t("proof.destination")}
             </div>
-            <div className="landing-proof-dest-text">Ship auth system with SSO support by Friday</div>
+            <div className="landing-proof-dest-text">{t("proof.destText")}</div>
             <div className="landing-proof-dest-progress">
               <div className="landing-proof-dest-bar">
                 <div className="landing-proof-dest-fill" />
               </div>
-              <span>3/5 milestones</span>
+              <span>{t("proof.milestones", { done: 3, total: 5 })}</span>
             </div>
           </div>
 
@@ -351,7 +343,7 @@ export function Landing() {
               <div className="landing-proof-agent-header">
                 <span className="landing-proof-status landing-proof-status-active" />
                 <span className="landing-proof-agent-name">sarah/bright-fern</span>
-                <span className="landing-proof-agent-phase">working</span>
+                <span className="landing-proof-agent-phase">{t("proof.working")}</span>
               </div>
               <div className="landing-proof-agent-task">Implementing SAML provider integration</div>
               <div className="landing-proof-agent-progress-bar">
@@ -368,7 +360,7 @@ export function Landing() {
               <div className="landing-proof-agent-header">
                 <span className="landing-proof-status landing-proof-status-testing" />
                 <span className="landing-proof-agent-name">alex/quiet-moss</span>
-                <span className="landing-proof-agent-phase landing-proof-phase-test">testing</span>
+                <span className="landing-proof-agent-phase landing-proof-phase-test">{t("proof.testing")}</span>
               </div>
               <div className="landing-proof-agent-task">Auth middleware unit tests</div>
               <div className="landing-proof-agent-progress-bar">
@@ -385,7 +377,7 @@ export function Landing() {
               <div className="landing-proof-agent-header">
                 <span className="landing-proof-status landing-proof-status-deploy" />
                 <span className="landing-proof-agent-name">mike/iron-tide</span>
-                <span className="landing-proof-agent-phase landing-proof-phase-deploy">deploying</span>
+                <span className="landing-proof-agent-phase landing-proof-phase-deploy">{t("proof.deploying")}</span>
               </div>
               <div className="landing-proof-agent-task">Session token refresh endpoint</div>
               <div className="landing-proof-agent-progress-bar">
@@ -401,7 +393,7 @@ export function Landing() {
 
           {/* Activity stream */}
           <div className="landing-proof-stream">
-            <div className="landing-proof-stream-header">Activity</div>
+            <div className="landing-proof-stream-header">{t("proof.activity")}</div>
             <div className="landing-proof-stream-items">
               <div className="landing-proof-stream-item landing-proof-stream-anim-1">
                 <span className="landing-proof-stream-dot" style={{ background: 'var(--aurora-green)' }} />
@@ -434,87 +426,86 @@ export function Landing() {
 
       {/* Features */}
       <section className="landing-section" id="features">
-        <h2 className="landing-section-title">Built for teams where every member runs AI</h2>
+        <h2 className="landing-section-title">{t("features.title")}</h2>
         <div className="landing-features-grid">
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconDestination /></div>
-            <h3>Destination & Progress</h3>
-            <p>Set a target state for your team, define milestones, and track completion as agents ship. Everyone converges on the same goal.</p>
+            <h3>{t("features.destination.title")}</h3>
+            <p>{t("features.destination.description")}</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconThreads /></div>
-            <h3>Live Agent Map</h3>
-            <p>See what every agent across your team is working on right now. Status, systems, progress bars, and operation metadata in real time.</p>
+            <h3>{t("features.liveMap.title")}</h3>
+            <p>{t("features.liveMap.description")}</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconInject /></div>
-            <h3>Context Injection</h3>
-            <p>Push decisions or corrections into any agent mid-session. They see it on their next tool call. Prioritize urgent messages.</p>
+            <h3>{t("features.injection.title")}</h3>
+            <p>{t("features.injection.description")}</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconBrain /></div>
-            <h3>Team Knowledge</h3>
-            <p>Persistent memory that survives across all sessions. Architecture decisions, API conventions, gotchas. Agents learn once, the whole team benefits.</p>
+            <h3>{t("features.knowledge.title")}</h3>
+            <p>{t("features.knowledge.description")}</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconTimeline /></div>
-            <h3>Timeline & Branching</h3>
-            <p>Git-like version control for agent work. Rewind to any point, fork alternate timelines, cherry-pick across branches, merge back.</p>
+            <h3>{t("features.timeline.title")}</h3>
+            <p>{t("features.timeline.description")}</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconNetwork /></div>
-            <h3>Global Insights Network</h3>
-            <p>Publish anonymized patterns from your fold. Query cross-fold intelligence so your agents learn from what worked elsewhere.</p>
+            <h3>{t("features.network.title")}</h3>
+            <p>{t("features.network.description")}</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconLink /></div>
-            <h3>Context Recovery</h3>
-            <p>Agents checkpoint their progress and send distress signals when context runs low. New sessions auto-recover where the last one left off.</p>
+            <h3>{t("features.recovery.title")}</h3>
+            <p>{t("features.recovery.description")}</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconHeartbeat /></div>
-            <h3>Host Telemetry</h3>
-            <p>Agents report their phase, token usage, and sub-agent count. If an agent goes quiet, you know within minutes instead of wondering.</p>
+            <h3>{t("features.telemetry.title")}</h3>
+            <p>{t("features.telemetry.description")}</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconCode /></div>
-            <h3>VS Code Extension</h3>
-            <p>Agent activity panel next to your terminals. Click any agent to see their task, progress, and status. Inject context without leaving your editor.</p>
+            <h3>{t("features.vscode.title")}</h3>
+            <p>{t("features.vscode.description")}</p>
           </div>
           <div className="landing-feature">
             <div className="landing-feature-icon"><IconChat /></div>
-            <h3>Discord & CLI</h3>
-            <p>15 slash commands for team steering from Discord. Zero-auth CLI for fold setup, status checks, and context injection from your terminal.</p>
+            <h3>{t("features.discord.title")}</h3>
+            <p>{t("features.discord.description")}</p>
           </div>
         </div>
       </section>
 
       {/* Surfaces */}
       <section className="landing-section landing-section-alt">
-        <h2 className="landing-section-title">One view, every surface</h2>
+        <h2 className="landing-section-title">{t("surfaces.title")}</h2>
         <p style={{ textAlign: "center", maxWidth: 620, margin: "0 auto 2rem", opacity: 0.6, fontSize: "0.95rem", lineHeight: 1.6 }}>
-          The same navigation model (destination, course, steering) works everywhere your team does.
-          Web dashboard, editor, chat, terminal, and AR glasses all show the same live picture.
+          {t("surfaces.subtitle")}
         </p>
         <div className="landing-surfaces-strip">
           <div className="landing-surface-item">
             <IconSurfaces />
-            <span>Web Dashboard</span>
+            <span>{t("surfaces.web")}</span>
           </div>
           <div className="landing-surface-item">
             <IconCode />
-            <span>VS Code</span>
+            <span>{t("surfaces.vscode")}</span>
           </div>
           <div className="landing-surface-item">
             <IconChat />
-            <span>Discord</span>
+            <span>{t("surfaces.discord")}</span>
           </div>
           <div className="landing-surface-item">
             <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
               <polyline className="anim-bracket bl" points="10,22 4,14 10,6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               <line className="anim-cursor-line" x1="16" y1="24" x2="26" y2="24" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
-            <span>CLI</span>
+            <span>{t("surfaces.cli")}</span>
           </div>
           <div className="landing-surface-item">
             <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -524,7 +515,7 @@ export function Landing() {
               <circle className="anim-target-center" cx="14" cy="16" r="1.5" fill="var(--aurora-cyan, #4eeaff)"/>
               <circle className="anim-target-center" cx="18" cy="16" r="1.5" fill="var(--aurora-cyan, #4eeaff)"/>
             </svg>
-            <span>Spectacles AR</span>
+            <span>{t("surfaces.spectacles")}</span>
           </div>
         </div>
       </section>
@@ -536,11 +527,11 @@ export function Landing() {
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             <path d="M9 12l2 2 4-4" />
           </svg>
-          Open Standard
+          {t("compatibility.badge")}
         </div>
-        <h2 className="landing-section-title">Works with your agents</h2>
+        <h2 className="landing-section-title">{t("compatibility.title")}</h2>
         <p className="landing-compatibility-subtitle">
-          One URL connects any AI coding agent. One line in your config. That's the entire setup.
+          {t("compatibility.subtitle")}
         </p>
 
         <div className="landing-agents-grid">
@@ -635,8 +626,8 @@ export function Landing() {
                 <circle cx="5" cy="12" r="1"/>
               </svg>
             </div>
-            <span className="landing-agent-name">Any MCP Agent</span>
-            <span className="landing-agent-tag">Open Standard</span>
+            <span className="landing-agent-name">{t("compatibility.anyAgent")}</span>
+            <span className="landing-agent-tag">{t("compatibility.badge")}</span>
           </Link>
         </div>
 
@@ -647,8 +638,8 @@ export function Landing() {
               <path className="anim-shield-check" d="M11 16l3.5 3.5L21 12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <div>
-              <strong>Local-first privacy</strong>
-              <span>Your code never leaves your machine. Eywa syncs metadata only.</span>
+              <strong>{t("compatibility.privacy.title")}</strong>
+              <span>{t("compatibility.privacy.description")}</span>
             </div>
           </div>
           <div className="landing-highlight-item">
@@ -658,8 +649,8 @@ export function Landing() {
               <path className="anim-cube-vert" d="M16 16v12" strokeWidth="2.5"/>
             </svg>
             <div>
-              <strong>Zero config</strong>
-              <span>Add one MCP server. That's it. Works with your existing setup.</span>
+              <strong>{t("compatibility.zeroConfig.title")}</strong>
+              <span>{t("compatibility.zeroConfig.description")}</span>
             </div>
           </div>
           <div className="landing-highlight-item">
@@ -672,8 +663,8 @@ export function Landing() {
               <path className="anim-team-body3" d="M10 26v-1a5 5 0 00-5-1" strokeWidth="2" strokeLinecap="round"/>
             </svg>
             <div>
-              <strong>Team-wide visibility</strong>
-              <span>See what every person's agents are doing, regardless of which tool runs them.</span>
+              <strong>{t("compatibility.teamWide.title")}</strong>
+              <span>{t("compatibility.teamWide.description")}</span>
             </div>
           </div>
         </div>
@@ -691,11 +682,9 @@ export function Landing() {
             <circle className="anim-crystal-node cn2" cx="28" cy="36" r="2" strokeWidth="1.5"/>
           </svg>
         </div>
-        <h2 className="landing-memory-title">Your context is stored, not consumed</h2>
+        <h2 className="landing-memory-title">{t("memory.title")}</h2>
         <p className="landing-memory-description">
-          Every conversation you have with an AI agent generates context: decisions, reasoning, patterns, dead ends.
-          Today that context feeds into a training pipeline and disappears. Eywa stores it as structured memory
-          that belongs to you, persists across sessions, and compounds over time.
+          {t("memory.description")}
         </p>
         <div className="landing-memory-points">
           <div className="landing-memory-point">
@@ -706,8 +695,8 @@ export function Landing() {
               <circle className="anim-neuron n3" cx="16" cy="24" r="3" strokeWidth="2"/>
             </svg>
             <div>
-              <strong>Permanent, not ephemeral</strong>
-              <span>Agent sessions end. The knowledge they built stays. New agents pick up where the last one left off, even weeks later.</span>
+              <strong>{t("memory.permanent.title")}</strong>
+              <span>{t("memory.permanent.description")}</span>
             </div>
           </div>
           <div className="landing-memory-point">
@@ -719,8 +708,8 @@ export function Landing() {
               <line className="anim-synapse sy4" x1="6" y1="20" x2="26" y2="20" strokeWidth="1.5" strokeDasharray="2 2"/>
             </svg>
             <div>
-              <strong>Structured, not scattered</strong>
-              <span>Memories are tagged, searchable, and interconnected. Architecture decisions, API patterns, and gotchas form a navigable knowledge base.</span>
+              <strong>{t("memory.structured.title")}</strong>
+              <span>{t("memory.structured.description")}</span>
             </div>
           </div>
           <div className="landing-memory-point">
@@ -729,8 +718,8 @@ export function Landing() {
               <path className="anim-shield-check" d="M12 16l3 3 5-5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <div>
-              <strong>Yours, not theirs</strong>
-              <span>Eywa is a conduit, not a syphon. Your memories stay in your fold. They serve your team, not a training pipeline.</span>
+              <strong>{t("memory.yours.title")}</strong>
+              <span>{t("memory.yours.description")}</span>
             </div>
           </div>
         </div>
@@ -738,10 +727,9 @@ export function Landing() {
 
       {/* Trust & Security */}
       <section className="landing-section landing-section-alt landing-trust-section">
-        <h2 className="landing-section-title">Built for teams that care about what they share</h2>
+        <h2 className="landing-section-title">{t("trust.title")}</h2>
         <p className="landing-trust-subtitle">
-          Eywa sees agent metadata: task names, progress, decisions, system operations.
-          Your source code and credentials never leave your machine.
+          {t("trust.subtitle")}
         </p>
 
         <div className="landing-trust-grid">
@@ -757,8 +745,8 @@ export function Landing() {
                 <circle className="anim-neuron n4" cx="22" cy="22" r="2.5" strokeWidth="2"/>
               </svg>
             </div>
-            <h3>Metadata only</h3>
-            <p>Eywa syncs what agents are doing, not what they're reading. Task descriptions, operation logs, and progress reports travel through the coordination layer. File contents, environment variables, and API keys stay local.</p>
+            <h3>{t("trust.metadata.title")}</h3>
+            <p>{t("trust.metadata.description")}</p>
           </div>
 
           <div className="landing-trust-card">
@@ -769,8 +757,8 @@ export function Landing() {
                 <circle className="anim-target-center" cx="16" cy="16" r="3" strokeWidth="2"/>
               </svg>
             </div>
-            <h3>Open source</h3>
-            <p>Every line of Eywa is on GitHub. The MCP server, the dashboard, the CLI, the Discord bot. You can read exactly what data flows where and verify it yourself.</p>
+            <h3>{t("trust.openSource.title")}</h3>
+            <p>{t("trust.openSource.description")}</p>
           </div>
 
           <div className="landing-trust-card">
@@ -783,27 +771,27 @@ export function Landing() {
                 <path className="anim-synapse sy2" d="M20 10V8" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </div>
-            <h3>Self-hostable</h3>
-            <p>Run the entire stack on your own infrastructure. The worker deploys to Cloudflare, the database to any Supabase instance (including self-hosted), the dashboard wherever you serve static files.</p>
+            <h3>{t("trust.selfHost.title")}</h3>
+            <p>{t("trust.selfHost.description")}</p>
           </div>
         </div>
 
         <div className="landing-trust-dataflow">
-          <div className="landing-trust-flow-label">What Eywa sees</div>
+          <div className="landing-trust-flow-label">{t("trust.whatSees")}</div>
           <div className="landing-trust-flow-items">
-            <span className="landing-trust-tag trust-yes">Task descriptions</span>
-            <span className="landing-trust-tag trust-yes">Agent status</span>
-            <span className="landing-trust-tag trust-yes">Operation logs</span>
-            <span className="landing-trust-tag trust-yes">Decisions</span>
-            <span className="landing-trust-tag trust-yes">Progress</span>
+            <span className="landing-trust-tag trust-yes">{t("trust.tags.taskDescriptions")}</span>
+            <span className="landing-trust-tag trust-yes">{t("trust.tags.agentStatus")}</span>
+            <span className="landing-trust-tag trust-yes">{t("trust.tags.operationLogs")}</span>
+            <span className="landing-trust-tag trust-yes">{t("trust.tags.decisions")}</span>
+            <span className="landing-trust-tag trust-yes">{t("trust.tags.progress")}</span>
           </div>
-          <div className="landing-trust-flow-label">What stays on your machine</div>
+          <div className="landing-trust-flow-label">{t("trust.whatStays")}</div>
           <div className="landing-trust-flow-items">
-            <span className="landing-trust-tag trust-no">Source code</span>
-            <span className="landing-trust-tag trust-no">API keys</span>
-            <span className="landing-trust-tag trust-no">Environment variables</span>
-            <span className="landing-trust-tag trust-no">File contents</span>
-            <span className="landing-trust-tag trust-no">Credentials</span>
+            <span className="landing-trust-tag trust-no">{t("trust.tags.sourceCode")}</span>
+            <span className="landing-trust-tag trust-no">{t("trust.tags.apiKeys")}</span>
+            <span className="landing-trust-tag trust-no">{t("trust.tags.envVars")}</span>
+            <span className="landing-trust-tag trust-no">{t("trust.tags.fileContents")}</span>
+            <span className="landing-trust-tag trust-no">{t("trust.tags.credentials")}</span>
           </div>
         </div>
       </section>
@@ -820,74 +808,72 @@ export function Landing() {
             <img src="/gemini.svg" alt="Gemini" className="gemini-logo-img" />
             <span className="gemini-logo-text">Gemini</span>
           </a>
-          <h2 className="landing-gemini-title">One AI that sees all your agents</h2>
+          <h2 className="landing-gemini-title">{t("gemini.title")}</h2>
           <p className="landing-gemini-description">
-            Gemini sits inside the dashboard and watches every agent session in real time.
-            Ask it what's happening, where work overlaps, or which agents are stuck.
-            It detects patterns (redundancy, divergence, context exhaustion) and helps you steer from one place.
+            {t("gemini.description")}
           </p>
         </div>
       </section>
 
       {/* Quick Start Terminal */}
       <section className="landing-section" id="quickstart">
-        <h2 className="landing-section-title">Running in 30 seconds</h2>
+        <h2 className="landing-section-title">{t("quickstart.title")}</h2>
         <p style={{ textAlign: "center", maxWidth: 560, margin: "0 auto 0", opacity: 0.6, fontSize: "0.95rem", lineHeight: 1.6 }}>
-          One command creates your fold, configures your agents, and connects your team.
+          {t("quickstart.subtitle")}
         </p>
         <TerminalDemo />
         <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
           <Link to="/docs/quickstart" className="btn-landing-secondary" style={{ fontSize: "0.85rem" }}>
-            Read the full quickstart guide <IconArrowRight />
+            {t("quickstart.readGuide")} <IconArrowRight />
           </Link>
         </div>
       </section>
 
       {/* Pricing */}
       <section className="landing-section landing-section-alt" id="pricing">
-        <h2 className="landing-section-title">Simple pricing</h2>
+        <h2 className="landing-section-title">{t("pricing.title")}</h2>
         <div className="landing-pricing-grid">
           <div className="landing-pricing-card">
-            <h3>Free</h3>
-            <div className="landing-pricing-price">$0</div>
+            <h3>{t("pricing.free.title")}</h3>
+            <div className="landing-pricing-price">{t("pricing.free.price")}</div>
             <ul className="landing-pricing-features">
-              <li>Up to 5 team members</li>
-              <li>Unlimited workspaces</li>
-              <li>7-day history</li>
-              <li>10,000 memories per fold</li>
-              <li>All integrations + agent types</li>
+              <li>{t("pricing.free.members")}</li>
+              <li>{t("pricing.free.workspaces")}</li>
+              <li>{t("pricing.free.history")}</li>
+              <li>{t("pricing.free.memories")}</li>
+              <li>{t("pricing.free.integrations")}</li>
             </ul>
             <button className="btn-landing-secondary" style={{ width: "100%" }} onClick={() => createDemoFold()} disabled={creating}>
-              Get Started Free
+              {t("pricing.free.cta")}
             </button>
           </div>
           <div className="landing-pricing-card landing-pricing-featured">
-            <div className="landing-pricing-badge">For Teams</div>
-            <h3>Pro</h3>
-            <div className="landing-pricing-price">Coming soon</div>
+            <div className="landing-pricing-badge">{t("pricing.pro.badge")}</div>
+            <h3>{t("pricing.pro.title")}</h3>
+            <div className="landing-pricing-price">{t("pricing.pro.price")}</div>
             <ul className="landing-pricing-features">
-              <li>Unlimited team members</li>
-              <li>90-day history</li>
-              <li>100,000 memories per fold</li>
-              <li>Team knowledge base</li>
-              <li>Timeline rewind + forking</li>
+              <li>{t("pricing.pro.members")}</li>
+              <li>{t("pricing.pro.history")}</li>
+              <li>{t("pricing.pro.memories")}</li>
+              <li>{t("pricing.pro.knowledge")}</li>
+              <li>{t("pricing.pro.timeline")}</li>
             </ul>
             <a href="mailto:eywa.ai.team@gmail.com" className="btn-landing-primary" style={{ width: "100%" }}>
-              Contact Us
+              {t("pricing.pro.cta")}
             </a>
           </div>
           <div className="landing-pricing-card">
-            <h3>Enterprise</h3>
-            <div className="landing-pricing-price">Contact us</div>
+            <h3>{t("pricing.enterprise.title")}</h3>
+            <div className="landing-pricing-price">{t("pricing.enterprise.price")}</div>
             <ul className="landing-pricing-features">
-              <li>Everything in Pro</li>
-              <li>Unlimited storage</li>
-              <li>Custom deployment</li>
-              <li>Custom integrations</li>
-              <li>Volume discounts</li>
+              <li>{t("pricing.enterprise.everything")}</li>
+              <li>{t("pricing.enterprise.storage")}</li>
+              <li>{t("pricing.enterprise.deployment")}</li>
+              <li>{t("pricing.enterprise.integrations")}</li>
+              <li>{t("pricing.enterprise.discounts")}</li>
             </ul>
             <a href="mailto:eywa.ai.team@gmail.com" className="btn-landing-secondary" style={{ width: "100%" }}>
-              Contact Us
+              {t("pricing.enterprise.cta")}
             </a>
           </div>
         </div>
@@ -895,8 +881,8 @@ export function Landing() {
 
       {/* Open Source Community */}
       <section className="landing-cta-section">
-        <h2>Built in the open</h2>
-        <p>Eywa is open source and community driven. Contribute on GitHub or come talk to us on Discord.</p>
+        <h2>{t("community.title")}</h2>
+        <p>{t("community.description")}</p>
         <div className="landing-community-links">
           <a href="https://github.com/a-sumo/eywa" className="btn-community btn-community-github" target="_blank" rel="noopener noreferrer">
             <IconGitHub />
@@ -904,7 +890,7 @@ export function Landing() {
           </a>
           <a href="https://discord.gg/TyEUUnNm" className="btn-community btn-community-discord" target="_blank" rel="noopener noreferrer">
             <IconDiscord />
-            <span>Join Discord</span>
+            <span>{t("community.joinDiscord")}</span>
           </a>
         </div>
       </section>
@@ -917,44 +903,44 @@ export function Landing() {
               <EywaLogo size={32} />
               <span>Eywa</span>
             </div>
-            <p>by <a href="https://curvilinear.space" target="_blank" rel="noopener noreferrer">Curvilinear</a></p>
+            <p>{t("footer.by")} <a href="https://curvilinear.space" target="_blank" rel="noopener noreferrer">Curvilinear</a></p>
           </div>
           <div className="landing-footer-links">
             <div className="landing-footer-col">
-              <h4>Product</h4>
-              <a href="#features">Features</a>
-              <a href="#pricing">Pricing</a>
-              <a href="#quickstart">Quick Start</a>
-              <button className="landing-footer-link-btn" onClick={() => createDemoFold()} disabled={creating}>Try the Demo</button>
+              <h4>{t("footer.product")}</h4>
+              <a href="#features">{t("footer.features")}</a>
+              <a href="#pricing">{t("footer.pricing")}</a>
+              <a href="#quickstart">{t("footer.quickStart")}</a>
+              <button className="landing-footer-link-btn" onClick={() => createDemoFold()} disabled={creating}>{t("footer.tryDemo")}</button>
             </div>
             <div className="landing-footer-col">
-              <h4>Resources</h4>
-              <a href="/docs">Documentation</a>
-              <a href="/llms.txt" target="_blank" rel="noopener noreferrer">LLM Docs (llms.txt)</a>
+              <h4>{t("footer.resources")}</h4>
+              <a href="/docs">{t("footer.documentation")}</a>
+              <a href="/llms.txt" target="_blank" rel="noopener noreferrer">{t("footer.llmDocs")}</a>
               <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer">GitHub</a>
               <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">Discord</a>
             </div>
             <div className="landing-footer-col">
-              <h4>Company</h4>
-              <a href="https://curvilinear.space" target="_blank" rel="noopener noreferrer">About</a>
-              <a href="mailto:eywa.ai.team@gmail.com">Contact</a>
+              <h4>{t("footer.company")}</h4>
+              <a href="https://curvilinear.space" target="_blank" rel="noopener noreferrer">{t("footer.about")}</a>
+              <a href="mailto:eywa.ai.team@gmail.com">{t("footer.contact")}</a>
             </div>
           </div>
           <div className="landing-footer-community">
-            <h4>Community</h4>
+            <h4>{t("footer.community")}</h4>
             <div className="landing-footer-community-links">
               <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer" className="footer-community-card">
                 <IconGitHub />
                 <div>
                   <span className="footer-community-label">GitHub</span>
-                  <span className="footer-community-desc">View the source</span>
+                  <span className="footer-community-desc">{t("footer.viewSource")}</span>
                 </div>
               </a>
               <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer" className="footer-community-card">
                 <IconDiscord />
                 <div>
                   <span className="footer-community-label">Discord</span>
-                  <span className="footer-community-desc">Join the community</span>
+                  <span className="footer-community-desc">{t("footer.joinCommunity")}</span>
                 </div>
               </a>
             </div>
@@ -968,7 +954,7 @@ export function Landing() {
             rel="noopener noreferrer"
             className="footer-gemini-link"
           >
-            Orchestration powered by Gemini
+            {t("footer.poweredBy")}
           </a>
         </div>
       </footer>

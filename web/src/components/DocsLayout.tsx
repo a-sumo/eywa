@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const integrations = [
   { id: "claude-code", name: "Claude Code", tag: "CLI" },
@@ -13,23 +14,24 @@ const integrations = [
 
 export function DocsLayout() {
   const location = useLocation();
+  const { t } = useTranslation("docs");
 
   return (
     <div className="docs-layout">
       <div className="docs-container">
         <aside className="docs-sidebar">
           <div className="docs-sidebar-section">
-            <h3>Getting Started</h3>
+            <h3>{t("sidebar.gettingStarted")}</h3>
             <Link to="/docs" className={location.pathname === "/docs" ? "active" : ""}>
-              Overview
+              {t("sidebar.overview")}
             </Link>
             <Link to="/docs/quickstart" className={location.pathname === "/docs/quickstart" ? "active" : ""}>
-              Quickstart
+              {t("sidebar.quickstart")}
             </Link>
           </div>
 
           <div className="docs-sidebar-section">
-            <h3>Integrations</h3>
+            <h3>{t("sidebar.integrations")}</h3>
             {integrations.map((item) => (
               <Link
                 key={item.id}
@@ -43,44 +45,44 @@ export function DocsLayout() {
           </div>
 
           <div className="docs-sidebar-section">
-            <h3>Surfaces</h3>
+            <h3>{t("sidebar.surfaces")}</h3>
             <Link to="/docs/cli" className={location.pathname === "/docs/cli" ? "active" : ""}>
-              CLI
+              {t("sidebar.cli")}
             </Link>
             <Link to="/docs/vscode" className={location.pathname === "/docs/vscode" ? "active" : ""}>
-              VS Code Extension
+              {t("sidebar.vscodeExtension")}
             </Link>
             <Link to="/docs/discord" className={location.pathname === "/docs/discord" ? "active" : ""}>
-              Discord Bot
+              {t("sidebar.discordBot")}
             </Link>
             <Link to="/docs/spectacles" className={location.pathname === "/docs/spectacles" ? "active" : ""}>
-              Spectacles AR
+              {t("sidebar.spectaclesAR")}
             </Link>
             <Link to="/docs/pi-displays" className={location.pathname === "/docs/pi-displays" ? "active" : ""}>
-              Pi Displays
+              {t("sidebar.piDisplays")}
             </Link>
           </div>
 
           <div className="docs-sidebar-section">
-            <h3>Reference</h3>
+            <h3>{t("sidebar.reference")}</h3>
             <Link to="/docs/architecture" className={location.pathname === "/docs/architecture" ? "active" : ""}>
-              Architecture
+              {t("sidebar.architecture")}
             </Link>
             <Link to="/docs/self-hosting" className={location.pathname === "/docs/self-hosting" ? "active" : ""}>
-              Self-Hosting
+              {t("sidebar.selfHosting")}
             </Link>
           </div>
 
           <div className="docs-sidebar-section">
-            <h3>Resources</h3>
+            <h3>{t("sidebar.resources")}</h3>
             <a href="/llms.txt" target="_blank" rel="noopener noreferrer">
-              LLM Docs (llms.txt)
+              {t("sidebar.llmDocs")}
             </a>
             <a href="https://github.com/a-sumo/eywa" target="_blank" rel="noopener noreferrer">
-              GitHub
+              {t("sidebar.github")}
             </a>
             <a href="https://discord.gg/TyEUUnNm" target="_blank" rel="noopener noreferrer">
-              Discord
+              {t("sidebar.discord")}
             </a>
           </div>
         </aside>
@@ -94,152 +96,109 @@ export function DocsLayout() {
 }
 
 export function DocsOverview() {
+  const { t } = useTranslation("docs");
+
   return (
     <article className="docs-article">
-      <h1>Eywa Documentation</h1>
+      <h1>{t("overview.title")}</h1>
       <p className="docs-lead">
-        Eywa is an observability and coordination layer for human + AI teams. Each person on your
-        team directs AI agents that code, decide, and ship autonomously. Eywa makes all of that
-        work visible so the humans stay aligned.
+        {t("overview.lead")}
       </p>
 
-      <h2>What is Eywa?</h2>
+      <h2>{t("overview.whatIsEywa")}</h2>
       <p>
-        Eywa is an MCP server that gives your team shared visibility across every AI agent session.
-        When everyone runs AI, small misalignments between people compound at machine speed. Eywa
-        gives one shared view of what all agents are building so you know what to sync on.
-        It works with any agent that supports the Model Context Protocol: Claude Code, Cursor,
-        Windsurf, Gemini CLI, Codex, Cline, and more.
+        {t("overview.whatIsEywaDesc")}
       </p>
 
-      <h2>Core Features</h2>
+      <h2>{t("overview.coreFeatures")}</h2>
 
-      <h3>Destination & Progress</h3>
+      <h3>{t("overview.destinationProgress")}</h3>
       <p>
-        Set a target state for your team, define milestones, and track completion as agents ship.
-        Agents report progress with percentage and status. The destination is visible on every
-        surface: web dashboard, VS Code sidebar, Discord, and MCP auto-context.
+        {t("overview.destinationProgressDesc")}
       </p>
 
-      <h3>Live Agent Map</h3>
+      <h3>{t("overview.liveAgentMap")}</h3>
       <p>
-        See what every agent across your team is working on in real time. Each agent's status,
-        task, systems touched, and progress are visible on the HubView dashboard. Active agents
-        are highlighted, with operation metadata (system, action, scope, outcome) for full observability.
+        {t("overview.liveAgentMapDesc")}
       </p>
 
-      <h3>Context Injection</h3>
+      <h3>{t("overview.contextInjection")}</h3>
       <p>
-        Push decisions or corrections into any agent mid-session. Agents see injections on their
-        next tool call through automatic piggyback delivery. Supports normal, high, and urgent
-        priority levels.
+        {t("overview.contextInjectionDesc")}
       </p>
 
-      <h3>Team Knowledge</h3>
+      <h3>{t("overview.teamKnowledge")}</h3>
+      <p dangerouslySetInnerHTML={{ __html: t("overview.teamKnowledgeDesc") }} />
+
+      <h3>{t("overview.timelineBranching")}</h3>
+      <p dangerouslySetInnerHTML={{ __html: t("overview.timelineBranchingDesc") }} />
+
+      <h3>{t("overview.globalInsights")}</h3>
+      <p dangerouslySetInnerHTML={{ __html: t("overview.globalInsightsDesc") }} />
+
+      <h3>{t("overview.contextRecovery")}</h3>
+      <p dangerouslySetInnerHTML={{ __html: t("overview.contextRecoveryDesc") }} />
+
+      <h3>{t("overview.workClaiming")}</h3>
+      <p dangerouslySetInnerHTML={{ __html: t("overview.workClaimingDesc") }} />
+
+      <h3>{t("overview.geminiSteering")}</h3>
       <p>
-        Persistent memory that survives across all sessions. Store architecture decisions, API
-        conventions, gotchas, and patterns with <code>eywa_learn</code>. Knowledge is searchable
-        by tags and content, and surfaces in agent auto-context at session start.
+        {t("overview.geminiSteeringDesc")}
       </p>
 
-      <h3>Timeline & Branching</h3>
+      <h2>{t("overview.interactionSurfaces")}</h2>
       <p>
-        Git-like version control for agent work. Rewind to any point with <code>eywa_rewind</code>,
-        fork alternate timelines with <code>eywa_fork</code>, cherry-pick moments across branches
-        with <code>eywa_pick</code>, and merge back with <code>eywa_merge</code>. Bookmark
-        important decisions for easy navigation.
-      </p>
-
-      <h3>Global Insights Network</h3>
-      <p>
-        Publish anonymized patterns from your room with <code>eywa_publish_insight</code>.
-        Query cross-room intelligence with <code>eywa_query_network</code> so your agents
-        learn from what worked in other teams. Lane recommendations suggest relevant insights
-        based on your current task.
-      </p>
-
-      <h3>Context Recovery</h3>
-      <p>
-        Agents checkpoint their progress with <code>eywa_checkpoint</code> and send distress
-        signals with <code>eywa_distress</code> when context runs low. New sessions auto-recover
-        where the last one left off. Baton passing lets agents hand off work mid-session.
-      </p>
-
-      <h3>Work Claiming</h3>
-      <p>
-        Agents declare what they're working on with <code>eywa_claim</code> to prevent duplicate
-        effort. Active claims are visible in session snapshots and MCP instructions. Claims
-        auto-release when sessions end.
-      </p>
-
-      <h3>Gemini Steering</h3>
-      <p>
-        Built-in Gemini chat panel with 6 tools for querying agent status, detecting patterns,
-        analyzing distress signals, and steering the team. Proactively alerts on detected issues
-        and agent distress.
-      </p>
-
-      <h2>Interaction Surfaces</h2>
-      <p>
-        The same navigation model (destination, course, steering) works on every surface:
+        {t("overview.interactionSurfacesDesc")}
       </p>
       <ul>
-        <li><strong>Web Dashboard</strong> - HubView with agent map, destination banner, Gemini chat, activity stream, and inject bar</li>
-        <li><strong>VS Code Extension</strong> - Sidebar with agent avatars, activity feed, attention notifications, and agent detail panel next to terminals</li>
-        <li><strong>Discord Bot</strong> - 15 slash commands for team steering: <code>/destination</code>, <code>/course</code>, <code>/status</code>, <code>/inject</code>, and more</li>
-        <li><strong>CLI</strong> - <code>npx eywa-ai init</code> for zero-auth room setup, plus status, inject, and log commands</li>
-        <li><strong>Spectacles AR</strong> - Activity log, Gemini chat, and destination progress as floating AR panels via Supabase Realtime</li>
+        <li><strong>{t("overview.surfaceWeb")}</strong> - {t("overview.surfaceWebDesc")}</li>
+        <li><strong>{t("overview.surfaceVscode")}</strong> - {t("overview.surfaceVscodeDesc")}</li>
+        <li><strong>{t("overview.surfaceDiscord")}</strong> - <span dangerouslySetInnerHTML={{ __html: t("overview.surfaceDiscordDesc") }} /></li>
+        <li><strong>{t("overview.surfaceCli")}</strong> - <span dangerouslySetInnerHTML={{ __html: t("overview.surfaceCliDesc") }} /></li>
+        <li><strong>{t("overview.surfaceSpectacles")}</strong> - {t("overview.surfaceSpectaclesDesc")}</li>
       </ul>
 
-      <h2>Usage Limits</h2>
+      <h2>{t("overview.usageLimits")}</h2>
       <p>
-        Eywa is hosted for free at eywa-ai.dev. To keep the service reliable, the hosted
-        version has usage limits. Self-hosting removes all limits.
+        {t("overview.usageLimitsDesc")}
       </p>
       <table className="docs-table">
         <thead>
-          <tr><th></th><th>Free</th><th>Pro</th><th>Enterprise</th></tr>
+          <tr><th></th><th>{t("overview.table.free")}</th><th>{t("overview.table.pro")}</th><th>{t("overview.table.enterprise")}</th></tr>
         </thead>
         <tbody>
-          <tr><td>Team members</td><td>5</td><td>Unlimited</td><td>Unlimited</td></tr>
-          <tr><td>History</td><td>7 days</td><td>90 days</td><td>Custom</td></tr>
-          <tr><td>Memories per room</td><td>10,000</td><td>100,000</td><td>Unlimited</td></tr>
-          <tr><td>Integrations</td><td>All</td><td>All</td><td>All + custom</td></tr>
-          <tr><td>Knowledge base</td><td>Read-only</td><td>Full</td><td>Full</td></tr>
-          <tr><td>Timeline branching</td><td>View only</td><td>Full</td><td>Full</td></tr>
-          <tr><td>Price</td><td>$0</td><td>$5/seat/month</td><td>Contact us</td></tr>
+          <tr><td>{t("overview.table.teamMembers")}</td><td>5</td><td>{t("overview.table.unlimited")}</td><td>{t("overview.table.unlimited")}</td></tr>
+          <tr><td>{t("overview.table.history")}</td><td>7 days</td><td>90 days</td><td>{t("overview.table.custom")}</td></tr>
+          <tr><td>{t("overview.table.memoriesPerRoom")}</td><td>10,000</td><td>100,000</td><td>{t("overview.table.unlimited")}</td></tr>
+          <tr><td>{t("overview.table.integrations")}</td><td>{t("overview.table.all")}</td><td>{t("overview.table.all")}</td><td>{t("overview.table.allCustom")}</td></tr>
+          <tr><td>{t("overview.table.knowledgeBase")}</td><td>{t("overview.table.readOnly")}</td><td>{t("overview.table.full")}</td><td>{t("overview.table.full")}</td></tr>
+          <tr><td>{t("overview.table.timelineBranching")}</td><td>{t("overview.table.viewOnly")}</td><td>{t("overview.table.full")}</td><td>{t("overview.table.full")}</td></tr>
+          <tr><td>{t("overview.table.price")}</td><td>$0</td><td>$5/seat/month</td><td>{t("overview.table.contactUs")}</td></tr>
         </tbody>
       </table>
-      <p>
-        Demo rooms are copies of sample data that expire after 24 hours. Create your own
-        room with <code>npx eywa-ai init</code> for persistent use.
-      </p>
+      <p dangerouslySetInnerHTML={{ __html: t("overview.demoNote") }} />
 
-      <h2>LLM Documentation</h2>
-      <p>
-        For AI agents that need to understand Eywa's full API surface, point them
-        at <a href="/llms.txt" target="_blank" rel="noopener noreferrer"><code>llms.txt</code></a> which
-        describes all available tools, integration guides, and common workflows.
-      </p>
+      <h2>{t("overview.llmDocs")}</h2>
+      <p dangerouslySetInnerHTML={{ __html: t("overview.llmDocsDesc") }} />
 
-      <h2>Getting Started</h2>
+      <h2>{t("overview.gettingStarted")}</h2>
       <p>
-        Choose your AI coding agent from the sidebar to see specific setup instructions.
-        Most integrations take less than 2 minutes to configure.
+        {t("overview.gettingStartedDesc")}
       </p>
 
       <div className="docs-cta-grid">
         <Link to="/docs/integrations/claude-code" className="docs-cta-card">
           <h3>Claude Code</h3>
-          <p>Anthropic's CLI agent</p>
+          <p>{t("overview.claudeCodeDesc")}</p>
         </Link>
         <Link to="/docs/integrations/cursor" className="docs-cta-card">
           <h3>Cursor</h3>
-          <p>AI-first code editor</p>
+          <p>{t("overview.cursorDesc")}</p>
         </Link>
         <Link to="/docs/integrations/windsurf" className="docs-cta-card">
           <h3>Windsurf</h3>
-          <p>AI-powered IDE</p>
+          <p>{t("overview.windsurfDesc")}</p>
         </Link>
       </div>
     </article>

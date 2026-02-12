@@ -4,6 +4,7 @@
  * and active seed cards. Designed as a control panel, not a team dashboard.
  */
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useFoldContext } from "../context/FoldContext";
 import { agentColor } from "../lib/agentColor";
@@ -213,6 +214,7 @@ function Badge({ label, color }: { label: string; color: string }) {
 }
 
 function TaskCard({ task }: { task: Task }) {
+  const { t } = useTranslation("fold");
   const [expanded, setExpanded] = useState(false);
   return (
     <div
@@ -241,7 +243,7 @@ function TaskCard({ task }: { task: Task }) {
       {expanded && (
         <div style={{ marginTop: "6px", fontSize: "11px", opacity: 0.6, lineHeight: 1.4 }}>
           {task.description && <div>{task.description}</div>}
-          {task.blockedReason && <div style={{ color: "#fcd34d", marginTop: "4px" }}>Blocked: {task.blockedReason}</div>}
+          {task.blockedReason && <div style={{ color: "#fcd34d", marginTop: "4px" }}>{t("seeds.blocked")}{task.blockedReason}</div>}
           {task.notes && <div style={{ marginTop: "4px", opacity: 0.5 }}>{task.notes}</div>}
           <div style={{ marginTop: "4px", opacity: 0.3, fontSize: "10px" }}>ID: {task.id}</div>
         </div>
@@ -255,6 +257,7 @@ function SeedCard({ state, expanded, onToggle }: {
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation("fold");
   const shortName = state.agent.split("/")[1] || state.agent;
   return (
     <div
@@ -291,7 +294,7 @@ function SeedCard({ state, expanded, onToggle }: {
           {state.task}
         </span>
         <span style={{ opacity: 0.3, fontSize: "10px", flexShrink: 0 }}>
-          {state.opCount} ops
+          {t("ops.ops", { count: state.opCount })}
         </span>
         {(() => {
           const total = state.outcomes.success + state.outcomes.failure + state.outcomes.blocked;
@@ -333,7 +336,7 @@ function SeedCard({ state, expanded, onToggle }: {
           ))}
           {state.recentOps.length === 0 && (
             <div style={{ padding: "12px", opacity: 0.3, fontSize: "11px", textAlign: "center" }}>
-              No operations logged yet
+              {t("seeds.noOps")}
             </div>
           )}
         </div>
@@ -345,6 +348,7 @@ function SeedCard({ state, expanded, onToggle }: {
 // --- Main ---
 
 export function SeedMonitor() {
+  const { t } = useTranslation("fold");
   const { fold } = useFoldContext();
   const { memories, loading } = useRealtimeMemories(fold?.id ?? null, 500);
   const [expandedSeeds, setExpandedSeeds] = useState<Set<string>>(new Set());
@@ -352,8 +356,8 @@ export function SeedMonitor() {
   const tasks = useMemo(() => extractTasks(memories), [memories]);
   const seedStates = useMemo(() => buildSeedStates(memories), [memories]);
 
-  const activeTasks = tasks.filter((t) => t.status !== "done");
-  const doneTasks = tasks.filter((t) => t.status === "done");
+  const activeTasks = tasks.filter((tk) => tk.status !== "done");
+  const doneTasks = tasks.filter((tk) => tk.status === "done");
 
   const activeSeeds = Array.from(seedStates.values()).filter((s) => s.status === "active");
   const finishedSeeds = Array.from(seedStates.values()).filter((s) => s.status === "finished");
@@ -372,7 +376,7 @@ export function SeedMonitor() {
 
   if (loading) {
     return (
-      <div style={{ padding: "2rem", opacity: 0.4 }}>Loading seed activity...</div>
+      <div style={{ padding: "2rem", opacity: 0.4 }}>{t("seeds.loading")}</div>
     );
   }
 
@@ -396,21 +400,21 @@ export function SeedMonitor() {
             color: "var(--text-secondary)",
             marginBottom: "8px",
           }}>
-            Task Queue ({activeTasks.length})
+            {t("seeds.taskQueue", { count: activeTasks.length })}
           </div>
           {activeTasks.length === 0 && (
             <div style={{ fontSize: "11px", opacity: 0.3, padding: "8px 0" }}>
-              No open tasks. Seeds will self-direct from ARCHITECTURE.md.
+              {t("seeds.noTasks")}
             </div>
           )}
-          {activeTasks.map((t) => <TaskCard key={t.id} task={t} />)}
+          {activeTasks.map((tk) => <TaskCard key={tk.id} task={tk} />)}
           {doneTasks.length > 0 && (
             <details style={{ marginTop: "8px" }}>
               <summary style={{ fontSize: "10px", opacity: 0.3, cursor: "pointer" }}>
-                {doneTasks.length} completed
+                {t("seeds.completed", { count: doneTasks.length })}
               </summary>
               <div style={{ marginTop: "4px" }}>
-                {doneTasks.map((t) => <TaskCard key={t.id} task={t} />)}
+                {doneTasks.map((tk) => <TaskCard key={tk.id} task={tk} />)}
               </div>
             </details>
           )}
@@ -426,11 +430,11 @@ export function SeedMonitor() {
             color: "var(--text-secondary)",
             marginBottom: "8px",
           }}>
-            Active Seeds ({activeSeeds.length})
+            {t("seeds.activeSeeds", { count: activeSeeds.length })}
           </div>
           {activeSeeds.length === 0 && (
             <div style={{ fontSize: "11px", opacity: 0.3, padding: "8px 0" }}>
-              No seeds running. Launch with <code style={{ fontSize: "10px", background: "rgba(255,255,255,0.06)", padding: "1px 4px", borderRadius: "2px" }}>./scripts/agent-loop.sh</code>
+              {t("seeds.noSeeds")} <code style={{ fontSize: "10px", background: "rgba(255,255,255,0.06)", padding: "1px 4px", borderRadius: "2px" }}>./scripts/agent-loop.sh</code>
             </div>
           )}
           {activeSeeds.map((s) => (
@@ -461,7 +465,7 @@ export function SeedMonitor() {
               color: "var(--text-secondary)",
               marginBottom: "8px",
             }}>
-              Finished ({finishedSeeds.length})
+              {t("seeds.finishedSeeds", { count: finishedSeeds.length })}
             </div>
             {finishedSeeds.map((s) => (
               <SeedCard
@@ -492,11 +496,11 @@ export function SeedMonitor() {
           color: "var(--text-secondary)",
           marginBottom: "6px",
         }}>
-          Live Feed ({liveFeed.length})
+          {t("seeds.liveFeed", { count: liveFeed.length })}
         </div>
         {liveFeed.length === 0 && (
           <div style={{ fontSize: "12px", opacity: 0.3, padding: "2rem 0", textAlign: "center" }}>
-            No seed activity yet. Operations will appear here in real time as seeds work.
+            {t("seeds.noFeed")}
           </div>
         )}
         {liveFeed.map((m) => {

@@ -10884,3 +10884,201 @@ body {
   color: var(--text-muted);
   font-size: 10px;
 }
+
+/* ============================================
+   Language Selector
+   ============================================ */
+
+.language-selector {
+  position: relative;
+}
+
+.language-selector-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.language-selector-trigger:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--text-primary, #fff);
+}
+
+.language-selector-trigger svg {
+  opacity: 0.6;
+}
+
+.language-selector-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  background: var(--surface-secondary, #1a1a2e);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.language-selector-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.language-selector-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.language-selector-option.active {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--text-primary, #fff);
+}
+
+.language-selector-native {
+  font-weight: 500;
+}
+
+.language-selector-name {
+  opacity: 0.5;
+  font-size: 0.75rem;
+}
+
+/* ============================================
+   RTL (Arabic) Overrides
+   ============================================ */
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .global-header-inner {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .global-header-nav {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .global-header-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .language-selector-dropdown {
+  right: auto;
+  left: 0;
+}
+
+[dir="rtl"] .docs-layout {
+  direction: rtl;
+}
+
+[dir="rtl"] .docs-sidebar {
+  border-right: none;
+  border-left: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+}
+
+[dir="rtl"] .docs-content {
+  text-align: right;
+}
+
+[dir="rtl"] .sidebar {
+  border-right: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[dir="rtl"] .mobile-tabs {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .landing-steps .landing-step-number {
+  margin-right: 0;
+  margin-left: 1rem;
+}
+
+[dir="rtl"] .landing-step {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .landing-hero-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .landing-features-grid,
+[dir="rtl"] .landing-cards-grid,
+[dir="rtl"] .landing-pricing-grid,
+[dir="rtl"] .landing-agents-grid,
+[dir="rtl"] .landing-trust-grid {
+  direction: rtl;
+}
+
+[dir="rtl"] .landing-footer-inner {
+  direction: rtl;
+}
+
+[dir="rtl"] .landing-footer-links {
+  direction: rtl;
+}
+
+[dir="rtl"] .hub-agent-card-header,
+[dir="rtl"] .hub-activity-main,
+[dir="rtl"] .hub-destination-header,
+[dir="rtl"] .hub-chat-header,
+[dir="rtl"] .hub-chat-mode-row,
+[dir="rtl"] .hub-chat-input-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .hub-activity-row {
+  border-left: none;
+  border-right: 3px solid;
+  border-right-color: inherit;
+}
+
+[dir="rtl"] .hub-task-card {
+  border-left: none;
+  border-right: 3px solid;
+}
+
+[dir="rtl"] .hub-distress-alert {
+  border-left: none;
+  border-right: 3px solid #ef4444;
+}
+
+[dir="rtl"] .rooms-index-card-destination {
+  text-align: right;
+}
+
+[dir="rtl"] .docs-steps li {
+  padding-left: 0;
+  padding-right: 3rem;
+}
+
+[dir="rtl"] .docs-steps li::before {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] code,
+[dir="rtl"] pre {
+  direction: ltr;
+  text-align: left;
+}
