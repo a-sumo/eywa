@@ -24,6 +24,10 @@ All notable features and changes. One line per feature. Agents append here after
 - CLI seeds command: `eywa seeds` shows seed health metrics from terminal. Active/stalled/finished counts, success rate, throughput, efficiency, and per-seed status with silence detection
 - CLI approve command: `eywa approve` lists pending approval requests, `eywa approve yes/no <id>` resolves them with agent notification. Partial ID matching, risk level display
 - Discord /seeds command: seed health metrics from chat. Active/stalled/finished counts, success rate, throughput, efficiency, per-seed status with silence detection and health warnings
+- Fix: eywa_search now returns full UUIDs instead of truncated 8-char IDs. eywa_knowledge now includes entry IDs so eywa_forget actually works
+- Agent session timeline: AgentDetail view now shows categorized timeline (files, git, deploys, decisions, errors, injections) with summary stats and filter tabs
+- NavigatorMap auto-sync: stable room IDs instead of creating new rooms each sync, periodic refresh based on seed activity
+- Agent prompt: added strategic mandate, vision document references, web browsing guidance, and expanded self-directing protocol
 
 ## 2026-02-10
 
