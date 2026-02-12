@@ -11,7 +11,7 @@ import {
   timeAgo,
   truncate,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 export const data = new SlashCommandBuilder()
   .setName("checkpoints")
@@ -29,10 +29,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -51,7 +51,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("agent,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .gte("ts", since)
     .in("metadata->>event", events)
     .order("ts", { ascending: false })
@@ -65,7 +65,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           ? "checkpoints"
           : "checkpoints or distress signals";
     await interaction.editReply({
-      embeds: [emptyEmbed(`No ${label} in the last 24 hours.`, room.slug)],
+      embeds: [emptyEmbed(`No ${label} in the last 24 hours.`, fold.slug)],
     });
     return;
   }
@@ -135,7 +135,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(title)
         .setDescription(clampDescription([`${summary} (last 24h)`, "", ...lines]))
         .setColor(embedColor),

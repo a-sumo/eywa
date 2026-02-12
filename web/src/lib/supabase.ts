@@ -13,7 +13,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export interface Memory {
   id: string;
-  room_id: string | null;
+  fold_id: string | null;
   agent: string;
   session_id: string;
   message_type: string;
@@ -25,7 +25,7 @@ export interface Memory {
 
 export interface Message {
   id: string;
-  room_id: string | null;
+  fold_id: string | null;
   sender: string;
   channel: string;
   content: string;
@@ -51,7 +51,7 @@ export interface GlobalInsight {
   insight: string;
   domain_tags: string[];
   source_hash: string;
-  room_id: string | null;
+  fold_id: string | null;
   agent: string | null;
   upvotes: number;
   ts: string;
@@ -59,7 +59,7 @@ export interface GlobalInsight {
 
 export interface Link {
   id: string;
-  room_id: string | null;
+  fold_id: string | null;
   source_memory_id: string;
   target_agent: string;
   target_session_id: string;

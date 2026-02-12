@@ -13,7 +13,7 @@ const SUPABASE_URL = "https://beknjtxysmznenkotjvv.snapcloud.dev";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzYzNTYsImV4cCI6MjA4MTcxMjM1Nn0.5ecajJdpaK4FN-CuQI2ExfZWhCZl0rUrbFT6MGV-egs";
 
 const MCP_BASE = "https://mcp.eywa-ai.dev/mcp";
-const DASHBOARD_BASE = "https://eywa-ai.dev/r";
+const DASHBOARD_BASE = "https://eywa-ai.dev/f";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -79,14 +79,14 @@ function hasBin(bin) {
 
 // Auto-detect installed agents and configure MCP for each one.
 // Returns array of { agent, status, detail } results.
-function autoConfigureAgents(slug) {
+function autoConfigureAgents(slug, secret) {
   const name = userName();
   const results = [];
   const home = homedir();
 
   // Helper: merge eywa into a JSON config file
   function mergeJsonConfig(filePath, urlKey, agentPrefix) {
-    const url = mcpUrl(slug, `${agentPrefix}/${name}`);
+    const url = mcpUrl(slug, `${agentPrefix}/${name}`, secret);
     let existing = {};
     try {
       if (existsSync(filePath)) {
@@ -96,11 +96,11 @@ function autoConfigureAgents(slug) {
 
     if (!existing.mcpServers) existing.mcpServers = {};
 
-    // Already configured with same room? Skip.
+    // Already configured with same fold? Skip.
     const current = existing.mcpServers.eywa;
     if (current) {
       const currentUrl = current.url || current.serverUrl || current.httpUrl || "";
-      if (currentUrl.includes(`room=${slug}`)) {
+      if (currentUrl.includes(`fold=${slug}`)) {
         return { status: "exists", detail: filePath };
       }
     }
@@ -116,7 +116,7 @@ function autoConfigureAgents(slug) {
 
   // 1. Claude Code
   if (hasBin("claude")) {
-    const url = mcpUrl(slug, `claude/${name}`);
+    const url = mcpUrl(slug, `claude/${name}`, secret);
     try {
       const list = execSync("claude mcp list 2>&1", { encoding: "utf-8" });
       if (list.includes("eywa") && list.includes(slug)) {
@@ -164,13 +164,13 @@ function autoConfigureAgents(slug) {
   // 5. Codex (uses TOML, not JSON)
   if (hasBin("codex") || existsSync(join(home, ".codex"))) {
     const configPath = join(home, ".codex", "config.toml");
-    const url = mcpUrl(slug, `codex/${name}`);
+    const url = mcpUrl(slug, `codex/${name}`, secret);
     let status = "configured";
     let detail = configPath;
     try {
       if (existsSync(configPath)) {
         const content = readFileSync(configPath, "utf-8");
-        if (content.includes(`room=${slug}`)) {
+        if (content.includes(`fold=${slug}`)) {
           status = "exists";
         } else {
           // Append eywa server config
@@ -220,7 +220,7 @@ function estimateTokens(text) {
   return Math.floor(text.length / 4);
 }
 
-// ── Room helpers ───────────────────────────────────────
+// ── Fold helpers ───────────────────────────────────────
 
 const ADJECTIVES = [
   "cosmic", "lunar", "solar", "stellar", "quantum", "neural",
@@ -238,10 +238,10 @@ function randomSlug() {
   return `${adj}-${noun}-${code}`;
 }
 
-async function findRoom(slug) {
+async function findFold(slug) {
   const { data, error } = await supabase
-    .from("rooms")
-    .select("id,name,slug")
+    .from("folds")
+    .select("id,name,slug,secret")
     .eq("slug", slug)
     .limit(1)
     .maybeSingle();
@@ -249,20 +249,21 @@ async function findRoom(slug) {
   return data;
 }
 
-async function resolveRoom(slugArg) {
-  const slug = slugArg || loadConfig().room;
+async function resolveFold(slugArg) {
+  const cfg = loadConfig();
+  const slug = slugArg || cfg.fold;
   if (!slug) {
     console.error(
-      `No room specified. Run ${bold("eywa init")} to create one, or pass a room slug.`
+      `No fold specified. Run ${bold("eywa init")} to create one, or pass a fold slug.`
     );
     process.exit(1);
   }
-  const room = await findRoom(slug);
-  if (!room) {
-    console.error(`Room not found: ${slug}`);
+  const fold = await findFold(slug);
+  if (!fold) {
+    console.error(`Fold not found: ${slug}`);
     process.exit(1);
   }
-  return room;
+  return fold;
 }
 
 function cliAgent() {
@@ -271,12 +272,14 @@ function cliAgent() {
 
 // ── MCP config generators ──────────────────────────────
 
-function mcpUrl(slug, agent) {
-  return `${MCP_BASE}?room=${slug}&agent=${agent}`;
+function mcpUrl(slug, agent, secret) {
+  let url = `${MCP_BASE}?fold=${slug}&agent=${agent}`;
+  if (secret) url += `&secret=${secret}`;
+  return url;
 }
 
-function printConfigs(slug, teamName) {
-  const url = (agent) => mcpUrl(slug, agent);
+function printConfigs(slug, teamName, secret) {
+  const url = (agent) => mcpUrl(slug, agent, secret);
 
   console.log(bold("\n  Add to your agent's MCP config:\n"));
 
@@ -355,38 +358,41 @@ async function cmdInit(nameArg) {
 
   const displayName = nameArg || slug;
 
-  // Check if room exists
-  const existing = await findRoom(slug);
+  // Check if fold exists
+  const existing = await findFold(slug);
+  let secret = null;
 
   if (existing) {
+    secret = existing.secret || null;
     console.log(
-      `\n  ${yellow("Room already exists:")} ${bold(existing.name)} ${dim("/" + slug)}`,
+      `\n  ${yellow("Fold already exists:")} ${bold(existing.name)} ${dim("/" + slug)}`,
     );
   } else {
-    const { error } = await supabase
-      .from("rooms")
+    const { data, error } = await supabase
+      .from("folds")
       .insert({ slug, name: displayName, is_demo: false })
       .select()
       .single();
 
     if (error) {
-      console.error(red("Failed to create room:"), error.message);
+      console.error(red("Failed to create fold:"), error.message);
       process.exit(1);
     }
 
-    console.log(`\n  ${green("Room created:")} ${bold(displayName)} ${dim("/" + slug)}`);
+    secret = data?.secret || null;
+    console.log(`\n  ${green("Fold created:")} ${bold(displayName)} ${dim("/" + slug)}`);
   }
 
-  // Save as default room
-  saveConfig({ ...loadConfig(), room: slug });
+  // Save as default fold (including secret)
+  saveConfig({ ...loadConfig(), fold: slug, foldId: existing?.id || null, secret });
 
   // Auto-detect and configure agents
-  const results = await autoConfigureAgents(slug);
+  const results = await autoConfigureAgents(slug, secret);
   console.log();
   const agentsFound = printAgentResults(results);
 
   if (!agentsFound) {
-    printConfigs(slug, displayName);
+    printConfigs(slug, displayName, secret);
     console.log(
       dim("  Replace {your-name} with your name (e.g. alice, bob)."),
     );
@@ -404,50 +410,52 @@ async function cmdInit(nameArg) {
   openBrowser(dashUrl);
 }
 
-async function cmdJoin(slugArg) {
+async function cmdJoin(slugArg, secretArg) {
   if (!slugArg) {
-    console.error(`Usage: ${bold("eywa join <room-slug>")}`);
+    console.error(`Usage: ${bold("eywa join <fold-slug> [secret]")}`);
     process.exit(1);
   }
 
-  const room = await findRoom(slugArg);
-  if (!room) {
-    console.error(`Room not found: ${slugArg}`);
+  const fold = await findFold(slugArg);
+  if (!fold) {
+    console.error(`Fold not found: ${slugArg}`);
     console.error(`Run ${bold("eywa init " + slugArg)} to create it.`);
     process.exit(1);
   }
 
-  // Save as default room
-  saveConfig({ ...loadConfig(), room: room.slug });
+  const secret = secretArg || fold.secret || null;
 
-  console.log(`\n  ${green("Joined:")} ${bold(room.name)} ${dim("/" + room.slug)}`);
+  // Save as default fold (including secret)
+  saveConfig({ ...loadConfig(), fold: fold.slug, foldId: fold.id, secret });
+
+  console.log(`\n  ${green("Joined:")} ${bold(fold.name)} ${dim("/" + fold.slug)}`);
 
   // Auto-detect and configure agents
-  const results = await autoConfigureAgents(room.slug);
+  const results = await autoConfigureAgents(fold.slug, secret);
   console.log();
   const agentsFound = printAgentResults(results);
 
   if (!agentsFound) {
-    printConfigs(room.slug, room.name);
+    printConfigs(fold.slug, fold.name, secret);
     console.log(
       dim("  Replace {your-name} with your name (e.g. alice, bob).\n"),
     );
   }
 
-  const dashUrl = `${DASHBOARD_BASE}/${room.slug}`;
+  const dashUrl = `${DASHBOARD_BASE}/${fold.slug}`;
   console.log(`  ${bold("Dashboard:")} ${cyan(dashUrl)}`);
   console.log(`  ${dim("Agent name:")} ${userName()}`);
   console.log();
 }
 
 async function cmdStatus(slugArg) {
-  const room = await resolveRoom(slugArg);
-  console.log(`\n  ${bold("Eywa")} ${dim("/" + room.slug)}\n`);
+  const fold = await resolveFold(slugArg);
+  console.log(`\n  ${bold("Eywa")} ${dim("/" + fold.slug)}\n`);
 
   const { data: rows } = await supabase
     .from("memories")
     .select("agent,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .order("ts", { ascending: false });
 
   if (!rows?.length) {
@@ -502,17 +510,17 @@ async function cmdStatus(slugArg) {
   }
 
   console.log(
-    dim(`  Dashboard: ${DASHBOARD_BASE}/${room.slug}\n`),
+    dim(`  Dashboard: ${DASHBOARD_BASE}/${fold.slug}\n`),
   );
 }
 
 async function cmdLog(slugArg, limit = 30) {
-  const room = await resolveRoom(slugArg);
+  const fold = await resolveFold(slugArg);
 
   const { data: rows } = await supabase
     .from("memories")
     .select("agent,message_type,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .order("ts", { ascending: false })
     .limit(limit);
 
@@ -521,7 +529,7 @@ async function cmdLog(slugArg, limit = 30) {
     return;
   }
 
-  console.log(`\n  ${bold("Recent activity")} ${dim("/" + room.slug)}\n`);
+  console.log(`\n  ${bold("Recent activity")} ${dim("/" + fold.slug)}\n`);
 
   for (const m of [...rows].reverse()) {
     const meta = m.metadata ?? {};
@@ -537,11 +545,11 @@ async function cmdLog(slugArg, limit = 30) {
 }
 
 async function cmdInject(slugArg, target, message) {
-  const room = await resolveRoom(slugArg);
+  const fold = await resolveFold(slugArg);
   const fromAgent = cliAgent();
 
   const { error } = await supabase.from("memories").insert({
-    room_id: room.id,
+    fold_id: fold.id,
     agent: fromAgent,
     session_id: `cli_${Date.now()}`,
     message_type: "injection",
@@ -564,19 +572,19 @@ async function cmdInject(slugArg, target, message) {
 }
 
 async function cmdDashboard(slugArg) {
-  const room = await resolveRoom(slugArg);
-  const url = `${DASHBOARD_BASE}/${room.slug}`;
+  const fold = await resolveFold(slugArg);
+  const url = `${DASHBOARD_BASE}/${fold.slug}`;
   console.log(`\n  Opening ${cyan(url)}\n`);
   openBrowser(url);
 }
 
 // ── Destination ────────────────────────────────────────
 
-async function fetchDestination(roomId) {
+async function fetchDestination(foldId) {
   const { data } = await supabase
     .from("memories")
     .select("content,ts,metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .eq("message_type", "knowledge")
     .filter("metadata->>event", "eq", "destination")
     .order("ts", { ascending: false })
@@ -586,8 +594,8 @@ async function fetchDestination(roomId) {
 }
 
 async function cmdDestView(slugArg) {
-  const room = await resolveRoom(slugArg);
-  const dest = await fetchDestination(room.id);
+  const fold = await resolveFold(slugArg);
+  const dest = await fetchDestination(fold.id);
 
   if (!dest) {
     console.log(dim("\n  No destination set. Use: eywa dest set \"target state\"\n"));
@@ -599,7 +607,7 @@ async function cmdDestView(slugArg) {
   const progress = meta.progress || {};
   const done = milestones.filter(m => progress[m]).length;
 
-  console.log(`\n  ${bold("Destination")} ${dim("/" + room.slug)}\n`);
+  console.log(`\n  ${bold("Destination")} ${dim("/" + fold.slug)}\n`);
   console.log(`  ${cyan(meta.destination || dest.content)}\n`);
 
   if (milestones.length) {
@@ -624,7 +632,7 @@ async function cmdDestSet(target, milestonesStr) {
     process.exit(1);
   }
 
-  const room = await resolveRoom(null);
+  const fold = await resolveFold(null);
   const fromAgent = cliAgent();
   const milestones = milestonesStr
     ? milestonesStr.split(",").map(s => s.trim()).filter(Boolean)
@@ -633,7 +641,7 @@ async function cmdDestSet(target, milestonesStr) {
   for (const m of milestones) progress[m] = false;
 
   const { error } = await supabase.from("memories").insert({
-    room_id: room.id,
+    fold_id: fold.id,
     agent: fromAgent,
     session_id: `cli_${Date.now()}`,
     message_type: "knowledge",
@@ -667,8 +675,8 @@ async function cmdDestCheck(milestoneName) {
     process.exit(1);
   }
 
-  const room = await resolveRoom(null);
-  const dest = await fetchDestination(room.id);
+  const fold = await resolveFold(null);
+  const dest = await fetchDestination(fold.id);
 
   if (!dest) {
     console.error(red("  No destination set."));
@@ -696,7 +704,7 @@ async function cmdDestCheck(milestoneName) {
   const fromAgent = cliAgent();
 
   const { error } = await supabase.from("memories").insert({
-    room_id: room.id,
+    fold_id: fold.id,
     agent: fromAgent,
     session_id: `cli_${Date.now()}`,
     message_type: "knowledge",
@@ -718,20 +726,20 @@ async function cmdDestCheck(milestoneName) {
 // ── Course ─────────────────────────────────────────────
 
 async function cmdCourse(slugArg) {
-  const room = await resolveRoom(slugArg);
+  const fold = await resolveFold(slugArg);
 
   const [destResult, activityResult, distressResult, progressResult] = await Promise.all([
-    fetchDestination(room.id),
+    fetchDestination(fold.id),
     supabase
       .from("memories")
       .select("agent,content,ts,metadata")
-      .eq("room_id", room.id)
+      .eq("fold_id", fold.id)
       .order("ts", { ascending: false })
       .limit(200),
     supabase
       .from("memories")
       .select("agent,content,ts,metadata")
-      .eq("room_id", room.id)
+      .eq("fold_id", fold.id)
       .filter("metadata->>event", "eq", "distress")
       .filter("metadata->>resolved", "eq", "false")
       .order("ts", { ascending: false })
@@ -739,13 +747,13 @@ async function cmdCourse(slugArg) {
     supabase
       .from("memories")
       .select("agent,content,ts,metadata")
-      .eq("room_id", room.id)
+      .eq("fold_id", fold.id)
       .filter("metadata->>event", "eq", "progress")
       .order("ts", { ascending: false })
       .limit(50),
   ]);
 
-  console.log(`\n  ${bold("Course")} ${dim("/" + room.slug)}\n`);
+  console.log(`\n  ${bold("Course")} ${dim("/" + fold.slug)}\n`);
 
   // Destination
   if (destResult) {
@@ -839,12 +847,12 @@ async function cmdCourse(slugArg) {
 // ── Knowledge ──────────────────────────────────────────
 
 async function cmdKnowledge(slugArg, searchTerm) {
-  const room = await resolveRoom(slugArg);
+  const fold = await resolveFold(slugArg);
 
   let query = supabase
     .from("memories")
     .select("id,agent,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("message_type", "knowledge")
     .order("ts", { ascending: false })
     .limit(15);
@@ -871,7 +879,7 @@ async function cmdKnowledge(slugArg, searchTerm) {
     return;
   }
 
-  console.log(`\n  ${bold("Knowledge")} ${dim("/" + room.slug)}${searchTerm ? dim(` matching "${searchTerm}"`) : ""}\n`);
+  console.log(`\n  ${bold("Knowledge")} ${dim("/" + fold.slug)}${searchTerm ? dim(` matching "${searchTerm}"`) : ""}\n`);
 
   for (const k of entries) {
     const meta = k.metadata ?? {};
@@ -893,7 +901,7 @@ async function cmdLearn(content, title, tagsStr) {
     process.exit(1);
   }
 
-  const room = await resolveRoom(null);
+  const fold = await resolveFold(null);
   const fromAgent = cliAgent();
   const tags = tagsStr
     ? tagsStr.split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
@@ -902,7 +910,7 @@ async function cmdLearn(content, title, tagsStr) {
   const fullContent = title ? `[${title}] ${content}` : content;
 
   const { error } = await supabase.from("memories").insert({
-    room_id: room.id,
+    fold_id: fold.id,
     agent: fromAgent,
     session_id: `cli_${Date.now()}`,
     message_type: "knowledge",
@@ -932,14 +940,14 @@ async function cmdLearn(content, title, tagsStr) {
 const CLAIM_MAX_AGE = 2 * 60 * 60_000; // 2 hours
 
 async function cmdClaims(slugArg) {
-  const room = await resolveRoom(slugArg);
+  const fold = await resolveFold(slugArg);
   const twoHoursAgo = new Date(Date.now() - CLAIM_MAX_AGE).toISOString();
 
   // Fetch recent claims
   const { data: claimRows, error: claimErr } = await supabase
     .from("memories")
     .select("agent,metadata,ts,session_id")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("metadata->>event", "claim")
     .gte("ts", twoHoursAgo)
     .order("ts", { ascending: false })
@@ -961,7 +969,7 @@ async function cmdClaims(slugArg) {
     ? await supabase
         .from("memories")
         .select("agent,session_id,metadata")
-        .eq("room_id", room.id)
+        .eq("fold_id", fold.id)
         .in("session_id", sessionIds)
         .in("metadata->>event", ["session_end", "session_done", "unclaim"])
         .order("ts", { ascending: false })
@@ -1003,7 +1011,7 @@ async function cmdClaims(slugArg) {
     return;
   }
 
-  console.log(`\n  ${bold("Active Claims")} ${dim("/" + room.slug)} (${claims.length})\n`);
+  console.log(`\n  ${bold("Active Claims")} ${dim("/" + fold.slug)} (${claims.length})\n`);
 
   for (const c of claims) {
     console.log(`  ${yellow("●")} ${bold(c.agent)}  ${dim(timeAgo(c.ts))}`);
@@ -1049,13 +1057,13 @@ function computeCurvature(ops, durationMinutes) {
 }
 
 async function cmdMetrics(slugArg) {
-  const room = await resolveRoom(slugArg);
+  const fold = await resolveFold(slugArg);
   const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60_000).toISOString();
 
   const { data: rows } = await supabase
     .from("memories")
     .select("agent,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .gte("ts", twoHoursAgo)
     .order("ts", { ascending: false })
     .limit(2000);
@@ -1127,7 +1135,7 @@ async function cmdMetrics(slugArg) {
 
   const kappaColor = teamKappa > 0 ? green : teamKappa < 0 ? red : yellow;
 
-  console.log(`\n  ${bold("Metrics")} ${dim("/" + room.slug)} ${dim("(last 2h)")}\n`);
+  console.log(`\n  ${bold("Metrics")} ${dim("/" + fold.slug)} ${dim("(last 2h)")}\n`);
   console.log(`  ${bold("Curvature:")}  ${kappaColor(`κ=${teamKappa}`)}  ${teamKappa > 0 ? green("converging") : teamKappa < 0 ? red("diverging") : yellow("stalled")}`);
   console.log(`  ${bold("Throughput:")} ${cyan(`${throughput} ops/hr`)}`);
   console.log(`  ${bold("Success:")}    ${teamSuccessRate >= 80 ? green(`${teamSuccessRate}%`) : teamSuccessRate >= 50 ? yellow(`${teamSuccessRate}%`) : red(`${teamSuccessRate}%`)}  ${dim(`(${totalSuccess} ok, ${totalFail} fail, ${totalBlocked} blocked)`)}`);
@@ -1187,13 +1195,13 @@ function silenceTag(ms) {
 }
 
 async function cmdSeeds(slugArg) {
-  const room = await resolveRoom(slugArg);
+  const fold = await resolveFold(slugArg);
   const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60_000).toISOString();
 
   const { data: rows } = await supabase
     .from("memories")
     .select("agent,content,ts,metadata,message_type")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .gte("ts", fourHoursAgo)
     .order("ts", { ascending: false })
     .limit(3000);
@@ -1287,7 +1295,7 @@ async function cmdSeeds(slugArg) {
   const throughput = Math.round(totalOps / 4); // ops per hour (4h window)
   const efficiency = totalSessions > 0 ? Math.round(totalOps / totalSessions) : 0;
 
-  console.log(`\n  ${bold("Seeds")} ${dim("/" + room.slug)} ${dim("(last 4h)")}\n`);
+  console.log(`\n  ${bold("Seeds")} ${dim("/" + fold.slug)} ${dim("(last 4h)")}\n`);
 
   // Stats bar
   const rateColor = successRate >= 80 ? green : successRate >= 50 ? yellow : red;
@@ -1343,12 +1351,12 @@ async function cmdSeeds(slugArg) {
 const RISK_COLORS = { low: green, medium: yellow, high: red, critical: red };
 
 async function cmdApproveList(slugArg, showAll) {
-  const room = await resolveRoom(slugArg);
+  const fold = await resolveFold(slugArg);
 
   let query = supabase
     .from("memories")
     .select("id,agent,content,metadata,ts")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("message_type", "approval_request")
     .order("ts", { ascending: false })
     .limit(20);
@@ -1371,7 +1379,7 @@ async function cmdApproveList(slugArg, showAll) {
   }
 
   const title = showAll ? "Approvals" : "Pending Approvals";
-  console.log(`\n  ${bold(title)} ${dim("/" + room.slug)} (${rows.length})\n`);
+  console.log(`\n  ${bold(title)} ${dim("/" + fold.slug)} (${rows.length})\n`);
 
   for (const row of rows) {
     const meta = row.metadata ?? {};
@@ -1408,14 +1416,14 @@ async function cmdApproveResolve(idPrefix, decision, message) {
     process.exit(1);
   }
 
-  const room = await resolveRoom(null);
+  const fold = await resolveFold(null);
   const fromAgent = cliAgent();
 
   // Find the approval by partial ID
   let query = supabase
     .from("memories")
     .select("id,agent,metadata,content")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("message_type", "approval_request");
 
   if (idPrefix.length < 36) {
@@ -1480,7 +1488,7 @@ async function cmdApproveResolve(idPrefix, decision, message) {
     : `DENIED by ${fromAgent}: ${action}${message ? ". Reason: " + message : ". Do NOT proceed."}`;
 
   await supabase.from("memories").insert({
-    room_id: room.id,
+    fold_id: fold.id,
     agent: fromAgent,
     session_id: `cli_${Date.now()}`,
     message_type: "injection",
@@ -1517,22 +1525,22 @@ function banner() {
 function usage() {
   banner();
   console.log(`${bold("  Quick start:")}
-    ${cyan("npx eywa-ai init")}                       Create a room and auto-configure all detected agents
-    ${cyan("npx eywa-ai join cosmic-fox-a1b2")}       Join an existing room
+    ${cyan("npx eywa-ai init")}                       Create a fold and auto-configure all detected agents
+    ${cyan("npx eywa-ai join cosmic-fox-a1b2")}       Join an existing fold
 
 ${bold("  Observe:")}
-    status [room]                         Show agent status with systems
-    log [room] [limit]                    Recent activity feed
-    course [room]                         Destination progress, agents, distress
-    claims [room]                         Active work claims (who's working on what)
-    metrics [room]                        Team curvature, throughput, success rate
-    seeds [room]                          Seed health: active, stalled, success rate
-    approve [room]                        List pending approval requests
+    status [fold]                         Show agent status with systems
+    log [fold] [limit]                    Recent activity feed
+    course [fold]                         Destination progress, agents, distress
+    claims [fold]                         Active work claims (who's working on what)
+    metrics [fold]                        Team curvature, throughput, success rate
+    seeds [fold]                          Seed health: active, stalled, success rate
+    approve [fold]                        List pending approval requests
     approve yes <id> ["msg"]              Approve a request
     approve no <id> ["reason"]            Deny a request
 
 ${bold("  Navigate:")}
-    dest [room]                           View current destination
+    dest [fold]                           View current destination
     dest set "target" ["m1,m2,m3"]        Set destination with milestones
     dest check "milestone"                Mark a milestone done
 
@@ -1542,14 +1550,14 @@ ${bold("  Interact:")}
     knowledge [search]                    Browse the knowledge base
 
 ${bold("  Setup:")}
-    init [name]                           Create a room, auto-configure agents
-    join <room-slug>                      Join a room, auto-configure agents
-    dashboard [room]                      Open the web dashboard
+    init [name]                           Create a fold, auto-configure agents
+    join <fold-slug> [secret]             Join a fold, auto-configure agents
+    dashboard [fold]                      Open the web dashboard
     help                                  Show this help
 
 ${bold("  Examples:")}
-    ${dim("$")} npx eywa-ai init                                       ${dim("# create room, configure all agents")}
-    ${dim("$")} npx eywa-ai init my-team                               ${dim("# named room")}
+    ${dim("$")} npx eywa-ai init                                       ${dim("# create fold, configure all agents")}
+    ${dim("$")} npx eywa-ai init my-team                               ${dim("# named fold")}
     ${dim("$")} npx eywa-ai status                                     ${dim("# check your agents")}
     ${dim("$")} npx eywa-ai dest set "Ship auth" "JWT,RBAC,Migration"  ${dim("# set destination")}
     ${dim("$")} npx eywa-ai dest check JWT                             ${dim("# mark milestone done")}
@@ -1570,7 +1578,7 @@ ${bold("  Examples:")}
         break;
 
       case "join":
-        await cmdJoin(args[1]);
+        await cmdJoin(args[1], args[2]);
         break;
 
       case "status":
@@ -1600,7 +1608,7 @@ ${bold("  Examples:")}
         } else if (sub === "check") {
           await cmdDestCheck(args.slice(2).join(" "));
         } else {
-          // "dest" or "dest <room-slug>" -- view destination
+          // "dest" or "dest <fold-slug>" -- view destination
           await cmdDestView(sub);
         }
         break;
@@ -1629,7 +1637,7 @@ ${bold("  Examples:")}
         } else if (sub === "no") {
           await cmdApproveResolve(args[2], "denied", args.slice(3).join(" ") || null);
         } else {
-          // "approve" or "approve <room-slug>" or "approve --all"
+          // "approve" or "approve <fold-slug>" or "approve --all"
           const showAll = args.includes("--all");
           const slugArg = sub && sub !== "--all" ? sub : null;
           await cmdApproveList(slugArg, showAll);

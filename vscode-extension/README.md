@@ -2,16 +2,16 @@
 
 See what your team's AI agents are building, right in VS Code.
 
-Eywa gives you a live sidebar showing every agent session in your room, who's active, what they're working on, and a scrolling activity feed. When agents need your attention (distress signals, blocked progress, stopped sessions), the sidebar lights up with inline reply. You can inject context to steer agents, tag terminals to specific agents, and open the web dashboard without leaving your editor.
+Eywa gives you a live sidebar showing every agent session in your fold, who's active, what they're working on, and a scrolling activity feed. When agents need your attention (distress signals, blocked progress, stopped sessions), the sidebar lights up with inline reply. You can inject context to steer agents, tag terminals to specific agents, and open the web dashboard without leaving your editor.
 
 ![Eywa](icon.png)
 
 ## Quick Start
 
-1. Run `npx eywa-ai init` in your terminal to create a room and auto-configure all your agents
+1. Run `npx eywa-ai init` in your terminal to create a fold and auto-configure all your agents
 2. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=curvilinear.eywa-agents)
 3. Click the Eywa icon in the activity bar
-4. Click **Set Room** and enter the room slug from step 1
+4. Click **Set Fold** and enter the fold slug from step 1
 
 That's it. Your agents are already configured and the extension connects to the hosted Eywa instance by default. If you're self-hosting, run **Eywa: Login** to connect via browser.
 
@@ -21,7 +21,7 @@ That's it. Your agents are already configured and the extension connects to the 
 
 The main panel shows agents as avatar chips with status dots (green = active, yellow = idle, grey = finished). Click any agent chip to expand a detail panel showing their current task, progress bar, memory count, and last seen time. The detail panel has buttons to inject context directly to that agent or open the web dashboard. Below the agent strip, a scrolling activity feed shows recent events across all agents with operation tags (system, action, outcome). Click any feed item to expand its full text. Avatars match across VS Code, the web dashboard, and hardware displays.
 
-The sidebar also shows a destination banner when the room has an active destination. It displays milestone progress with a completion bar, individual milestone chips (checked off when done), and optional course notes.
+The sidebar also shows a destination banner when the fold has an active destination. It displays milestone progress with a completion bar, individual milestone chips (checked off when done), and optional course notes.
 
 ### Attention system
 
@@ -57,14 +57,14 @@ Use **Eywa: Tag Terminal with Agent** to associate the active terminal with a sp
 
 ### Status bar
 
-Click the Eywa status in the bottom-left for a quick-pick menu: switch rooms, see active agents, inject context, toggle tab titles, connect agents, log in, or open the dashboard. The status bar shows the current room name, and updates to show attention count when agents need you.
+Click the Eywa status in the bottom-left for a quick-pick menu: switch folds, see active agents, inject context, toggle tab titles, connect agents, log in, or open the dashboard. The status bar shows the current fold name, and updates to show attention count when agents need you.
 
 ## Commands
 
 | Command | Keybinding | Description |
 |---------|-----------|-------------|
 | Eywa: Login | - | Connect to Eywa via browser login |
-| Eywa: Switch Room | - | Change the room you're monitoring |
+| Eywa: Switch Fold | - | Change the fold you're monitoring |
 | Eywa: Connect Agent | - | Get an MCP URL for a new agent |
 | Eywa: Inject Context | - | Send context/instructions to an agent |
 | Eywa: Inject Selection | `Cmd+Shift+I` / `Ctrl+Shift+I` | Inject selected code to an agent |
@@ -80,7 +80,7 @@ Click the Eywa status in the bottom-left for a quick-pick menu: switch rooms, se
 |---------|---------|-------------|
 | `eywa.supabaseUrl` | Hosted instance | Supabase project URL |
 | `eywa.supabaseKey` | Hosted instance | Supabase anon key |
-| `eywa.room` | (empty) | Room slug to monitor |
+| `eywa.fold` | (empty) | Fold slug to monitor |
 | `eywa.logLevel` | `all` | Activity feed filter: `all`, `important` (sessions + knowledge + injections), or `sessions` only |
 | `eywa.historyHours` | `24` | How many hours of history to load (1, 6, 24, or 72) |
 

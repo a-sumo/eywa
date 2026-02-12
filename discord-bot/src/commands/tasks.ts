@@ -13,7 +13,7 @@ import {
   clampDescription,
   priorityLabel,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 const PRIORITY_ORDER: Record<string, number> = {
   urgent: 0,
@@ -42,7 +42,7 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName("list")
-      .setDescription("List tasks in the room")
+      .setDescription("List tasks in the fold")
       .addStringOption((opt) =>
         opt
           .setName("status")
@@ -125,10 +125,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
 async function listTasks(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -139,14 +139,14 @@ async function listTasks(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("id,agent,content,metadata,ts")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("message_type", "task")
     .order("ts", { ascending: false })
     .limit(100);
 
   if (!rows?.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No tasks in this room.", room.slug)],
+      embeds: [emptyEmbed("No tasks in this fold.", fold.slug)],
     });
     return;
   }
@@ -186,7 +186,7 @@ async function listTasks(interaction: ChatInputCommandInteraction) {
 
   if (!tasks.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No tasks match the filters.", room.slug)],
+      embeds: [emptyEmbed("No tasks match the filters.", fold.slug)],
     });
     return;
   }
@@ -207,7 +207,7 @@ async function listTasks(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(`\u{1F4CB} Tasks (${tasks.length})`)
         .setDescription(clampDescription(lines))
         .setColor(Colors.BRAND),
@@ -217,10 +217,10 @@ async function listTasks(interaction: ChatInputCommandInteraction) {
 
 async function createTask(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -235,7 +235,7 @@ async function createTask(interaction: ChatInputCommandInteraction) {
   const { data: existing } = await db()
     .from("memories")
     .select("id,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("message_type", "task")
     .order("ts", { ascending: false })
     .limit(100);
@@ -248,7 +248,7 @@ async function createTask(interaction: ChatInputCommandInteraction) {
     ) {
       await interaction.editReply({
         embeds: [
-          makeEmbed(room.slug)
+          makeEmbed(fold.slug)
             .setDescription(`Duplicate: active task already exists with title "${title}" (ID: \`${(row.id as string).slice(0, 8)}\`)`)
             .setColor(Colors.WARNING),
         ],
@@ -260,7 +260,7 @@ async function createTask(interaction: ChatInputCommandInteraction) {
   const { data: inserted } = await db()
     .from("memories")
     .insert({
-      room_id: room.id,
+      fold_id: fold.id,
       agent: author,
       message_type: "task",
       content: `TASK: ${title}${description ? ` - ${description}` : ""}`,
@@ -288,7 +288,7 @@ async function createTask(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle("\u2705 Task Created")
         .setDescription(
           `**${title}**\n\n` +
@@ -305,10 +305,10 @@ async function createTask(interaction: ChatInputCommandInteraction) {
 
 async function updateTask(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -321,7 +321,7 @@ async function updateTask(interaction: ChatInputCommandInteraction) {
   let filter = db()
     .from("memories")
     .select("id,metadata,content")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("message_type", "task");
 
   if (taskId.length < 36) {
@@ -336,7 +336,7 @@ async function updateTask(interaction: ChatInputCommandInteraction) {
   if (!rows?.length) {
     await interaction.editReply({
       embeds: [
-        makeEmbed(room.slug)
+        makeEmbed(fold.slug)
           .setDescription(`Task not found: \`${taskId}\``)
           .setColor(Colors.WARNING),
       ],
@@ -351,7 +351,7 @@ async function updateTask(interaction: ChatInputCommandInteraction) {
     });
     await interaction.editReply({
       embeds: [
-        makeEmbed(room.slug)
+        makeEmbed(fold.slug)
           .setDescription(`Multiple matches for \`${taskId}\`:\n${matches.join("\n")}\n\nProvide a more specific ID.`)
           .setColor(Colors.WARNING),
       ],
@@ -382,7 +382,7 @@ async function updateTask(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(`${taskStatusEmoji(finalStatus)} Task Updated`)
         .setDescription(
           `**${title}**\n\n` +

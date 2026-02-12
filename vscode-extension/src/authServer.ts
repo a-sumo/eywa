@@ -9,7 +9,7 @@ import * as http from "http";
 export interface AuthResult {
   supabaseUrl: string;
   supabaseKey: string;
-  room: string;
+  fold: string;
 }
 
 /**
@@ -50,7 +50,7 @@ export function startLoginFlow(
 
           try {
             const data = JSON.parse(body) as AuthResult;
-            if (data.supabaseUrl && data.supabaseKey && data.room) {
+            if (data.supabaseUrl && data.supabaseKey && data.fold) {
               finish(data);
             } else {
               finish(null);

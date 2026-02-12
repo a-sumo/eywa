@@ -11,7 +11,7 @@ import {
   truncate,
   clampDescription,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 const OUTCOME_EMOJI: Record<string, string> = {
   success: "\u2705",
@@ -54,10 +54,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
 async function listDeploys(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -67,7 +67,7 @@ async function listDeploys(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("id,agent,content,metadata,ts")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("metadata->>system", "deploy")
     .eq("metadata->>action", "deploy")
     .order("ts", { ascending: false })
@@ -75,7 +75,7 @@ async function listDeploys(interaction: ChatInputCommandInteraction) {
 
   if (!rows?.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No deployments found.", room.slug)],
+      embeds: [emptyEmbed("No deployments found.", fold.slug)],
     });
     return;
   }
@@ -99,7 +99,7 @@ async function listDeploys(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(`\u{1F680} Recent Deploys (${rows.length})`)
         .setDescription(clampDescription(lines))
         .setColor(Colors.SUCCESS),
@@ -109,10 +109,10 @@ async function listDeploys(interaction: ChatInputCommandInteraction) {
 
 async function deployHealth(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -123,7 +123,7 @@ async function deployHealth(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("agent,metadata,ts")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("metadata->>system", "deploy")
     .eq("metadata->>action", "deploy")
     .gte("ts", since)
@@ -132,7 +132,7 @@ async function deployHealth(interaction: ChatInputCommandInteraction) {
 
   if (!rows?.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No deployments in the last 24 hours.", room.slug)],
+      embeds: [emptyEmbed("No deployments in the last 24 hours.", fold.slug)],
     });
     return;
   }
@@ -194,7 +194,7 @@ async function deployHealth(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle("\u{1F680} Deploy Health (24h)")
         .setDescription(description)
         .setColor(failCount === 0 ? Colors.SUCCESS : successRate >= 80 ? Colors.WARNING : Colors.ERROR),

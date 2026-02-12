@@ -4,18 +4,18 @@ import {
 } from "discord.js";
 import { db, type Memory } from "../lib/db.js";
 import { Colors, makeEmbed, emptyEmbed, timeAgo } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 export const data = new SlashCommandBuilder()
   .setName("agents")
-  .setDescription("List all agents that have logged to this room");
+  .setDescription("List all agents that have logged to this fold");
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -23,12 +23,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("agent,ts")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .order("ts", { ascending: false });
 
   if (!rows?.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No agents found.", room.slug)],
+      embeds: [emptyEmbed("No agents found.", fold.slug)],
     });
     return;
   }
@@ -54,7 +54,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(`\u{1F465} Agents (${agents.size})`)
         .setDescription(lines.join("\n\n"))
         .setColor(Colors.BRAND),

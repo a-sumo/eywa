@@ -2,7 +2,7 @@
   "mcpServers": {
     "eywa": {
       "type": "http",
-      "url": "https://eywa-mcp.armandsumo.workers.dev/mcp?room=eywa-dev&agent=autonomous"
+      "url": "https://eywa-mcp.armandsumo.workers.dev/mcp?fold=eywa-dev&agent=autonomous"
     }
   }
 }

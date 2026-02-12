@@ -14,7 +14,7 @@ export function db() {
 
 export interface Memory {
   id: string;
-  room_id: string | null;
+  fold_id: string | null;
   agent: string;
   session_id: string | null;
   message_type: string | null;
@@ -26,7 +26,7 @@ export interface Memory {
 
 export interface Message {
   id: string;
-  room_id: string | null;
+  fold_id: string | null;
   sender: string;
   channel: string;
   content: string;
@@ -34,7 +34,7 @@ export interface Message {
   ts: string;
 }
 
-export interface Room {
+export interface Fold {
   id: string;
   slug: string;
   name: string;
@@ -45,11 +45,11 @@ export interface Room {
 
 // ── Helpers ─────────────────────────────────────────────────────
 
-export async function getAgentNames(roomId: string): Promise<string[]> {
+export async function getAgentNames(foldId: string): Promise<string[]> {
   const { data } = await supabase
     .from("memories")
     .select("agent")
-    .eq("room_id", roomId)
+    .eq("fold_id", foldId)
     .order("ts", { ascending: false });
 
   if (!data) return [];

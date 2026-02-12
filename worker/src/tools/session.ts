@@ -17,7 +17,7 @@ async function getLatestMemoryId(
 ): Promise<string | null> {
   const rows = await db.select<MemoryRow>("memories", {
     select: "id",
-    room_id: `eq.${foldId}`,
+    fold_id: `eq.${foldId}`,
     session_id: `eq.${sessionId}`,
     order: "ts.desc",
     limit: "1",
@@ -62,7 +62,7 @@ export function registerSessionTools(
     async ({ task_description, continue_from }) => {
       const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
       await db.insert("memories", {
-        room_id: ctx.foldId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -77,7 +77,7 @@ export function registerSessionTools(
         // Active agents (skip connection noise)
         db.select<MemoryRow>("memories", {
           select: "agent,content,metadata,ts",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           "metadata->>event": "neq.agent_connected",
           order: "ts.desc",
           limit: "200",
@@ -85,7 +85,7 @@ export function registerSessionTools(
         // Recent activity (skip connection noise)
         db.select<MemoryRow>("memories", {
           select: "agent,message_type,content,metadata,ts",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           "metadata->>event": "neq.agent_connected",
           order: "ts.desc",
           limit: "8",
@@ -93,7 +93,7 @@ export function registerSessionTools(
         // Pending injections for this agent
         db.select<MemoryRow>("memories", {
           select: "id",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.injection",
           "metadata->>target_agent": `in.(${ctx.agent},${ctx.user},all)`,
           limit: "50",
@@ -101,7 +101,7 @@ export function registerSessionTools(
         // Knowledge entries with full content (for proactive surfacing)
         db.select<MemoryRow>("memories", {
           select: "id,agent,content,metadata,ts",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           order: "ts.desc",
           limit: "50",
@@ -109,7 +109,7 @@ export function registerSessionTools(
         // Current destination
         db.select<MemoryRow>("memories", {
           select: "content,metadata,ts",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           "metadata->>event": "eq.destination",
           order: "ts.desc",
@@ -212,7 +212,7 @@ export function registerSessionTools(
       try {
         const taskRows = await db.select<MemoryRow>("memories", {
           select: "id,metadata,ts",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.task",
           order: "ts.desc",
           limit: "50",
@@ -268,7 +268,7 @@ export function registerSessionTools(
       try {
         const distressRows = await db.select<MemoryRow>("memories", {
           select: "id,agent,content,metadata,ts",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           "metadata->>event": "eq.distress",
           "metadata->>resolved": "eq.false",
           "metadata->>user": `eq.${ctx.user}`,
@@ -294,7 +294,7 @@ export function registerSessionTools(
           const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
           const checkpointRows = await db.select<MemoryRow>("memories", {
             select: "id,agent,content,metadata,ts",
-            room_id: `eq.${ctx.foldId}`,
+            fold_id: `eq.${ctx.foldId}`,
             "metadata->>event": "eq.checkpoint",
             "metadata->>user": `eq.${ctx.user}`,
             ts: `gte.${twoHoursAgo}`,
@@ -325,7 +325,7 @@ export function registerSessionTools(
       if (continue_from) {
         const batonRows = await db.select<MemoryRow>("memories", {
           select: "message_type,content,metadata,ts",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           agent: `eq.${continue_from}`,
           order: "ts.desc",
           limit: "20",
@@ -387,7 +387,7 @@ export function registerSessionTools(
     async ({ summary }) => {
       const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
       await db.insert("memories", {
-        room_id: ctx.foldId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -419,7 +419,7 @@ export function registerSessionTools(
     async ({ summary, status, artifacts, tags, next_steps }) => {
       const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
       await db.insert("memories", {
-        room_id: ctx.foldId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,

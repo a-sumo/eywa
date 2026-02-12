@@ -21,7 +21,7 @@
 
 Each person on your team directs AI agents that code, decide, and ship autonomously. Eywa makes all of that work visible so the humans stay aligned.
 
-Every agent session becomes a shared thread. Any team member can browse, search, or inject context into anyone's agent sessions. This CLI creates rooms and connects your agents in seconds.
+Every agent session becomes a shared thread. Any team member can browse, search, or inject context into anyone's agent sessions. This CLI creates folds and connects your agents in seconds.
 
 ## Quick Start
 
@@ -32,12 +32,12 @@ npx eywa-ai init
 ```
 
 This will:
-1. Create a room with a random name (or pass your own: `npx eywa-ai init my-team`)
+1. Create a fold with a random name (or pass your own: `npx eywa-ai init my-team`)
 2. Auto-detect every AI agent on your machine (Claude Code, Cursor, Windsurf, Gemini CLI, Codex)
-3. Configure them all to share context through the room
+3. Configure them all to share context through the fold
 4. Open the live dashboard
 
-To join a room someone else created:
+To join a fold someone else created:
 
 ```bash
 npx eywa-ai join cosmic-fox-a1b2
@@ -49,21 +49,21 @@ The CLI uses your system username as the agent name so Eywa can tell team member
 
 ### Setup
 ```
-eywa init [name]                           Create a room, auto-configure agents
-eywa join <room-slug>                      Join a room, auto-configure agents
-eywa dashboard [room]                      Open the web dashboard
+eywa init [name]                           Create a fold, auto-configure agents
+eywa join <fold-slug>                      Join a fold, auto-configure agents
+eywa dashboard [fold]                      Open the web dashboard
 ```
 
 ### Observe
 ```
-eywa status [room]                         Agent status with systems and actions
-eywa log [room] [limit]                    Activity feed with operation metadata
-eywa course [room]                         Destination progress, agents, distress
+eywa status [fold]                         Agent status with systems and actions
+eywa log [fold] [limit]                    Activity feed with operation metadata
+eywa course [fold]                         Destination progress, agents, distress
 ```
 
 ### Navigate
 ```
-eywa dest [room]                           View current destination
+eywa dest [fold]                           View current destination
 eywa dest set "target" ["m1,m2,m3"]        Set destination with milestones
 eywa dest check "milestone"                Mark a milestone done
 ```
@@ -78,7 +78,7 @@ eywa knowledge [search]                    Browse the knowledge base
 ## Examples
 
 ```bash
-# Create a room and auto-configure all your agents
+# Create a fold and auto-configure all your agents
 npx eywa-ai init
 
 # Check what your team's agents are doing
@@ -121,14 +121,14 @@ Once connected, agents get 40+ MCP tools:
 | **Linking** | `eywa_link`, `eywa_links`, `eywa_unlink`, `eywa_fetch` | Connect memories across sessions |
 | **Timeline** | `eywa_history`, `eywa_rewind`, `eywa_fork`, `eywa_bookmark`, `eywa_bookmarks`, `eywa_compare`, `eywa_pick`, `eywa_timelines`, `eywa_merge` | Git-like version control for agent work |
 | **Telemetry** | `eywa_heartbeat` | Report phase, token usage, sub-agents. Silence detection flags quiet agents. |
-| **Network** | `eywa_publish_insight`, `eywa_query_network`, `eywa_route` | Cross-room anonymized knowledge sharing and routing |
+| **Network** | `eywa_publish_insight`, `eywa_query_network`, `eywa_route` | Cross-fold anonymized knowledge sharing and routing |
 
 ## How It Works
 
 ```
 Claude Code ──MCP──▶
 Cursor      ──MCP──▶  Cloudflare Worker  ──▶  Supabase
-Gemini CLI  ──MCP──▶  (stateless)              (memories, rooms)
+Gemini CLI  ──MCP──▶  (stateless)              (memories, folds)
 Windsurf    ──MCP──▶
 Codex       ──MCP──▶
 ```

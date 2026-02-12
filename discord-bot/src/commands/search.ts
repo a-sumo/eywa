@@ -12,7 +12,7 @@ import {
   truncate,
   clampDescription,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 export const data = new SlashCommandBuilder()
   .setName("search")
@@ -33,10 +33,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -47,7 +47,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("agent,message_type,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .ilike("content", `%${query}%`)
     .order("ts", { ascending: false })
     .limit(limit);
@@ -55,7 +55,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!rows?.length) {
     await interaction.editReply({
       embeds: [
-        emptyEmbed(`No results for **${query}**.`, room.slug),
+        emptyEmbed(`No results for **${query}**.`, fold.slug),
       ],
     });
     return;
@@ -69,7 +69,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(`\u{1F50D} Search: "${truncate(query, 40)}"`)
         .setDescription(
           `${rows.length} result${rows.length !== 1 ? "s" : ""}\n\n` +

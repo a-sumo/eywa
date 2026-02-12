@@ -1,6 +1,6 @@
 /**
  * Supabase client for the Eywa VS Code extension.
- * Provides typed access to rooms, agents, sessions, knowledge, and injections.
+ * Provides typed access to folds, agents, sessions, knowledge, and injections.
  */
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
@@ -114,44 +114,44 @@ const ATTENTION_URGENCY: Record<AttentionReason, number> = {
 
 export class EywaClient {
   private supabase: SupabaseClient;
-  private roomSlug: string;
-  private roomId: string | null = null;
+  private foldSlug: string;
+  private foldId: string | null = null;
 
-  constructor(url: string, key: string, room: string) {
+  constructor(url: string, key: string, fold: string) {
     this.supabase = createClient(url, key);
-    this.roomSlug = room;
+    this.foldSlug = fold;
   }
 
   getSupabase(): SupabaseClient {
     return this.supabase;
   }
 
-  async resolveRoomId(): Promise<string> {
-    return this.resolveRoom();
+  async resolveFoldId(): Promise<string> {
+    return this.resolveFold();
   }
 
-  private async resolveRoom(): Promise<string> {
-    if (this.roomId) return this.roomId;
+  private async resolveFold(): Promise<string> {
+    if (this.foldId) return this.foldId;
 
     const { data } = await this.supabase
-      .from("rooms")
+      .from("folds")
       .select("id")
-      .eq("slug", this.roomSlug)
+      .eq("slug", this.foldSlug)
       .limit(1)
       .single();
 
-    if (data) this.roomId = data.id;
-    return this.roomId ?? "";
+    if (data) this.foldId = data.id;
+    return this.foldId ?? "";
   }
 
   async getAgents(): Promise<AgentInfo[]> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return [];
+    const foldId = await this.resolveFold();
+    if (!foldId) return [];
 
     const { data: rows } = await this.supabase
       .from("memories")
       .select("agent,content,ts,session_id,metadata")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .order("ts", { ascending: false });
 
     if (!rows?.length) return [];
@@ -196,13 +196,13 @@ export class EywaClient {
   }
 
   async getKnowledge(limit = 20): Promise<KnowledgeEntry[]> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return [];
+    const foldId = await this.resolveFold();
+    if (!foldId) return [];
 
     const { data: rows } = await this.supabase
       .from("memories")
       .select("id,agent,content,metadata,ts")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .eq("message_type", "knowledge")
       .order("ts", { ascending: false })
       .limit(limit);
@@ -223,13 +223,13 @@ export class EywaClient {
   }
 
   async getRecentEvents(since: string, limit = 50): Promise<MemoryEvent[]> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return [];
+    const foldId = await this.resolveFold();
+    if (!foldId) return [];
 
     const { data: rows } = await this.supabase
       .from("memories")
       .select("id,agent,content,metadata,ts,message_type")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .gt("ts", since)
       .order("ts", { ascending: false })
       .limit(limit);
@@ -246,13 +246,13 @@ export class EywaClient {
 
   /** Recent operations that have scope/system metadata (for decoration seeding). */
   async getRecentOperations(since: string, limit = 200): Promise<MemoryEvent[]> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return [];
+    const foldId = await this.resolveFold();
+    if (!foldId) return [];
 
     const { data: rows } = await this.supabase
       .from("memories")
       .select("id,agent,content,metadata,ts,message_type")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .gt("ts", since)
       .not("metadata->>scope", "is", null)
       .order("ts", { ascending: false })
@@ -274,13 +274,13 @@ export class EywaClient {
    * sessions and caps at 20 per user.
    */
   async getSessions(): Promise<Map<string, SessionInfo[]>> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return new Map();
+    const foldId = await this.resolveFold();
+    if (!foldId) return new Map();
 
     const { data: rows } = await this.supabase
       .from("memories")
       .select("agent,content,ts,session_id,metadata")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .order("ts", { ascending: false });
 
     if (!rows?.length) return new Map();
@@ -370,13 +370,13 @@ export class EywaClient {
   }
 
   async getDestination(): Promise<DestinationInfo | null> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return null;
+    const foldId = await this.resolveFold();
+    if (!foldId) return null;
 
     const { data: rows } = await this.supabase
       .from("memories")
       .select("agent,content,metadata,ts")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .eq("message_type", "knowledge")
       .eq("metadata->>event", "destination")
       .order("ts", { ascending: false })
@@ -396,13 +396,13 @@ export class EywaClient {
   }
 
   async getAgentProgress(): Promise<AgentProgress[]> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return [];
+    const foldId = await this.resolveFold();
+    if (!foldId) return [];
 
     const { data: rows } = await this.supabase
       .from("memories")
       .select("agent,metadata,ts")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .eq("metadata->>event", "progress")
       .order("ts", { ascending: false })
       .limit(50);
@@ -429,13 +429,13 @@ export class EywaClient {
   }
 
   async getTasks(includeDone = false): Promise<TaskInfo[]> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return [];
+    const foldId = await this.resolveFold();
+    if (!foldId) return [];
 
     const { data: rows } = await this.supabase
       .from("memories")
       .select("id,agent,content,metadata,ts")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .eq("message_type", "task")
       .order("ts", { ascending: false })
       .limit(100);
@@ -477,8 +477,8 @@ export class EywaClient {
    * stopped sessions, recent checkpoints, and idle-after-active sessions.
    */
   async getAttentionItems(): Promise<AttentionItem[]> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return [];
+    const foldId = await this.resolveFold();
+    if (!foldId) return [];
 
     const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2 hours
 
@@ -488,7 +488,7 @@ export class EywaClient {
       this.supabase
         .from("memories")
         .select("agent,content,metadata,ts,session_id")
-        .eq("room_id", roomId)
+        .eq("fold_id", foldId)
         .gt("ts", cutoff)
         .in("metadata->>event", ["distress", "checkpoint"])
         .order("ts", { ascending: false })
@@ -497,7 +497,7 @@ export class EywaClient {
       this.supabase
         .from("memories")
         .select("agent,content,metadata,ts,session_id")
-        .eq("room_id", roomId)
+        .eq("fold_id", foldId)
         .eq("metadata->>event", "progress")
         .eq("metadata->>status", "blocked")
         .gt("ts", cutoff)
@@ -507,7 +507,7 @@ export class EywaClient {
       this.supabase
         .from("memories")
         .select("agent,content,metadata,ts,session_id")
-        .eq("room_id", roomId)
+        .eq("fold_id", foldId)
         .gt("ts", cutoff)
         .in("metadata->>event", ["session_done", "session_end"])
         .order("ts", { ascending: false })
@@ -586,13 +586,13 @@ export class EywaClient {
   }
 
   async getApprovalRequests(): Promise<ApprovalRequest[]> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return [];
+    const foldId = await this.resolveFold();
+    if (!foldId) return [];
 
     const { data: rows } = await this.supabase
       .from("memories")
       .select("id,agent,content,metadata,ts")
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .eq("message_type", "approval_request")
       .order("ts", { ascending: false })
       .limit(50);
@@ -622,15 +622,15 @@ export class EywaClient {
     resolvedBy: string,
     message?: string,
   ): Promise<void> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return;
+    const foldId = await this.resolveFold();
+    if (!foldId) return;
 
     // Read the current approval to get its metadata
     const { data: rows } = await this.supabase
       .from("memories")
       .select("metadata")
       .eq("id", approvalId)
-      .eq("room_id", roomId)
+      .eq("fold_id", foldId)
       .limit(1)
       .single();
 
@@ -657,11 +657,11 @@ export class EywaClient {
     content: string,
     priority: "normal" | "high" | "urgent" = "normal",
   ): Promise<void> {
-    const roomId = await this.resolveRoom();
-    if (!roomId) return;
+    const foldId = await this.resolveFold();
+    if (!foldId) return;
 
     await this.supabase.from("memories").insert({
-      room_id: roomId,
+      fold_id: foldId,
       agent: fromAgent,
       session_id: `vscode_${Date.now()}`,
       message_type: "injection",

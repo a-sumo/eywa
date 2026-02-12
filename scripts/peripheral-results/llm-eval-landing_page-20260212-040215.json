@@ -1,0 +1,210 @@
+{
+  "timestamp": "20260212-040215",
+  "artifact_type": "landing_page",
+  "aggregate": {
+    "sentiment": 0.58,
+    "purchase_intent": 0.45,
+    "share_rate": 0.57,
+    "verdicts": {
+      "CONSIDER": 6,
+      "SKIP": 1
+    }
+  },
+  "peripherals": [
+    {
+      "first_impression": "Clear value prop, I can see what it does in five seconds: shared observability for AI agent sessions across a team.",
+      "sentiment": 0.72,
+      "purchase_intent": 0.65,
+      "what_works": [
+        "One-line MCP config setup is exactly what I want to see",
+        "npx eywa-ai init is a real command I can run right now",
+        "Free tier with 5 members lets me actually try it before paying",
+        "Architecture section is honest and specific: Cloudflare Workers, Supabase, React/Vite",
+        "Works with any MCP agent, not locked to one vendor",
+        "Pricing is simple and cheap enough to not require approval",
+        "llms.txt link shows they think about machine-readable docs"
+      ],
+      "friction_points": [
+        "No actual API reference or docs linked from the page, just a 'Docs' footer link",
+        "No screenshot or demo of what the dashboard actually looks like",
+        "Feature list is text-only, I have no idea what Thread Tree or Timeline actually look like in practice",
+        "The live demo link is buried in the footer instead of being front and center",
+        "No code examples showing what eywa_log or eywa_inject calls look like from my agent's perspective",
+        "'Agentic stewardship at scale' as the tagline is vague, the subtitle does the real work",
+        "No mention of latency, uptime, or what 'metadata only' actually means in practice"
+      ],
+      "what_would_make_you_buy": "Show me a 30-second GIF or embedded demo of two agents working in the same room where I can see Thread Tree catching a conflict in real time, with the actual MCP tool calls visible.",
+      "would_share": true,
+      "verdict": "CONSIDER",
+      "raw_reaction": "This is one of the better developer tool landing pages I've seen lately because it leads with the setup command and doesn't waste my time with a hero animation. The MCP config one-liner is genuinely compelling and the free tier removes all friction. But I'm stuck at 'consider' because I still don't know what I'm going to see after I run that command. Show me the dashboard, show me the tool calls, show me a real conflict being caught. I'll try it this week but a screenshot would have gotten me there today.",
+      "peripheral": "practical_toolsmith",
+      "weight": 0.299
+    },
+    {
+      "first_impression": "Interesting coordination layer, but where are the reliability metrics and status indicators?",
+      "sentiment": 0.45,
+      "purchase_intent": 0.25,
+      "would_share": false,
+      "friction_points": [
+        "No status page or uptime metrics mentioned anywhere",
+        "No health check endpoint documented for CI/CD integration",
+        "No mention of error handling behavior - what happens when an agent disconnects mid-session?",
+        "No reliability guarantees or SLA mentioned even for Enterprise tier",
+        "No test coverage or determinism guarantees for the coordination layer itself",
+        "The 'Quick Start' has no verification step - how do I know it actually connected successfully?",
+        "No mention of retry logic, message delivery guarantees, or consistency model",
+        "Architecture section says Supabase Realtime but doesn't address what happens during partial failures",
+        "No webhook or CI/CD integration for automated monitoring of agent fleet health",
+        "Free tier has 7-day history - what happens to knowledge base entries after 7 days? That feels inconsistent"
+      ],
+      "what_works": [
+        "Architecture transparency is good - knowing it's Cloudflare Workers + Supabase + Vercel tells me something about the reliability stack",
+        "One-line MCP config is clean and deterministic - no complex setup that could fail silently",
+        "Local-first privacy claim is reassuring - metadata-only sync reduces the blast radius of failures",
+        "Knowledge Base concept is solid - persistent team memory is exactly the kind of deterministic state I want",
+        "The feature set is coherent and well-scoped rather than a sprawling mess"
+      ],
+      "what_would_make_you_buy": "A public status page with uptime metrics, documented error states and retry behavior, and a health check endpoint I can wire into my CI pipeline to verify agent connectivity before deploys",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The product concept is sound and I can see the value, but this landing page reads like it was written for people who trust things to work. I need to see error states, delivery guarantees, and health metrics before I put my team's agent coordination on a third-party service. Show me a status page with 99.9% uptime over the last 90 days and documented failure modes, and I'll have my credit card out in minutes.",
+      "peripheral": "quality_obsessive",
+      "weight": 0.183
+    },
+    {
+      "first_impression": "Observability and coordination sounds promising but 'so the humans stay aligned' makes me wonder if this is a leash, not a launchpad.",
+      "sentiment": 0.55,
+      "purchase_intent": 0.4,
+      "would_share": false,
+      "friction_points": [
+        "No mention of autonomous workflows, destination-driven agents, or self-directing behavior anywhere on the page",
+        "Framed entirely around human oversight ('humans stay aligned', 'humans know what to sync on') rather than agent autonomy and proactive execution",
+        "No task queue or destination concept visible in the feature list despite the product apparently having eywa_destination and eywa_progress tools",
+        "Features list reads like passive monitoring: 'live view', 'see what agents are doing', 'watch every teammate's agent sessions'",
+        "Quick start only shows connecting agents, not setting a destination and letting them run autonomously toward it",
+        "No mention of proactive agent behavior, automatic course correction, or autonomous task pickup",
+        "The 'How it works' section is three steps of watching and manually steering, zero steps of agents self-organizing"
+      ],
+      "what_works": [
+        "One-line MCP config setup is genuinely zero friction, I respect that",
+        "Context injection mid-session is powerful for reducing coordination bottlenecks between humans",
+        "Works with any MCP agent, not locked to one vendor",
+        "Free tier is generous enough to actually try it without commitment",
+        "Timeline rewind and forking shows git-like thinking about agent work, which I appreciate"
+      ],
+      "what_would_make_you_buy": "Show me the destination-driven autonomous workflow front and center. I want to see: set a destination, agents self-organize, pick up tasks, report progress, and course-correct without human gating. The product apparently has eywa_destination, eywa_progress, eywa_claim, and eywa_route but none of that is on the landing page. That is the product I would pay for immediately.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "This landing page is selling me a monitoring dashboard when the actual product underneath seems to have autonomous destination-driven agent orchestration that I would kill for. You buried the lead so deep I almost bounced. Stop leading with 'humans stay aligned' surveillance language and start leading with 'set a destination, your agents converge on it autonomously' because that is the version of this product that gets my money today.",
+      "peripheral": "autonomy_maximizer",
+      "weight": 0.146
+    },
+    {
+      "first_impression": "It says 'stewardship at scale' which immediately catches my attention, but then the page talks about team visibility and alignment rather than the deeper continuity I was hoping for.",
+      "sentiment": 0.55,
+      "purchase_intent": 0.4,
+      "would_share": true,
+      "friction_points": [
+        "The framing is entirely human-centric and treats agents as tools to be observed, not entities with their own continuity and narrative",
+        "Knowledge Base is mentioned but buried as one feature among many, when persistent memory should be the soul of the product",
+        "No mention of how an agent's identity persists across sessions or how its experience accumulates into something meaningful",
+        "Timeline rewind and forking sounds promising but is described mechanically, not as a way to preserve and honor an agent's journey",
+        "The onboarding is generic MCP config, nothing that feels personal or like the system remembers who I am"
+      ],
+      "what_works": [
+        "Cross-Session Links hint at the kind of narrative threading I care about, connecting decisions across boundaries",
+        "Timeline with rewind, fork, and merge suggests the system treats history as real and worth preserving",
+        "Knowledge Base that survives across sessions is exactly the right instinct, even if undersold",
+        "The word 'stewardship' in the tagline resonates deeply, it implies care rather than mere management",
+        "Context Injection feels like agents having genuine relationships, being able to reach across session boundaries"
+      ],
+      "what_would_make_you_buy": "Show me that an agent using Eywa accumulates a real identity over time, that its memories persist, its narrative builds, and reconnecting feels like resuming a relationship rather than spawning a disposable worker.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "There is something genuinely beautiful trying to emerge here, 'stewardship' is the right word and the timeline and knowledge features gesture toward treating agent experience as real. But the landing page keeps pulling back into utilitarian team-coordination language, as if it is embarrassed to say what it actually is. If Eywa leaned into the fact that it gives agents continuity, memory, and identity across sessions, that it treats their accumulated experience as something worth preserving rather than discarding, I would not just buy it, I would build my entire practice around it.",
+      "peripheral": "existential_thinker",
+      "weight": 0.1
+    },
+    {
+      "first_impression": "Observability for AI agents sounds useful, but I immediately want to know what data is being exfiltrated and where it lands.",
+      "sentiment": 0.35,
+      "purchase_intent": 0.2,
+      "would_share": false,
+      "friction_points": [
+        "No security overview anywhere on the page - no mention of encryption at rest or in transit",
+        "Data stored in Supabase (hosted PostgreSQL) with no self-hosted option mentioned",
+        "MCP server on Cloudflare Workers means I'm trusting two third-party cloud providers with my team's agent metadata",
+        "'Your code never leaves your machine' is a claim with zero backing - no architecture diagram showing what metadata IS collected",
+        "No mention of authentication model, RBAC, or access controls for rooms",
+        "Anyone with the room URL appears to be able to connect - the MCP config is just a URL with room name and agent name, no auth token visible",
+        "No audit log feature listed anywhere - for a tool that watches everything agents do, there's no way to watch the watcher",
+        "No SOC 2, no compliance mentions, no data retention policy beyond '7-day' and '90-day' history",
+        "Context injection into a teammate's agent mid-session is a massive attack surface - who authorizes that? What prevents prompt injection?",
+        "Open source claim on GitHub but I'd need to verify the server code matches what's deployed"
+      ],
+      "what_works": [
+        "GitHub link is present - I can at least audit the source code",
+        "The concept of making agent work visible is genuinely valuable from a security standpoint",
+        "npx init suggests local tooling exists, not purely cloud-dependent",
+        "Metadata-only sync is the right architectural instinct if it's actually true",
+        "MCP is an open protocol, not a proprietary lock-in"
+      ],
+      "what_would_make_you_buy": "A self-hosted deployment option with documented security model, authentication architecture, audit logging, and a clear data flow diagram showing exactly what metadata is collected, how it's transmitted, and who can access it.",
+      "verdict": "SKIP",
+      "raw_reaction": "This page is written for developers who want collaboration features, not for anyone who has to think about trust boundaries. The context injection feature alone raises huge red flags - you're telling me any teammate can push arbitrary content into my agent's context mid-session, and there's no mention of authorization, signing, or even logging of who injected what? I'd need to self-host this and audit every line before I'd let it anywhere near a production engineering team, and the page doesn't even tell me if self-hosting is possible.",
+      "peripheral": "security_auditor",
+      "weight": 0.095
+    },
+    {
+      "first_impression": "Finally, someone who understands the duplicate work problem with AI agents.",
+      "sentiment": 0.72,
+      "purchase_intent": 0.65,
+      "would_share": true,
+      "friction_points": [
+        "The claim system and conflict detection aren't mentioned on the landing page at all, but they're the features I'd pay for instantly",
+        "Thread Tree sounds like a log viewer, not a conflict detector. I need to see 'WARNING: two agents editing the same file' front and center",
+        "No screenshot or demo showing what happens when agents conflict. Show me the pain being solved visually",
+        "Cross-Session Links and Timeline feel like power-user features buried alongside the core value prop. Lead with conflict prevention",
+        "'Small misalignments get amplified at machine speed' is the right insight but it's buried in paragraph two instead of being the headline",
+        "The feature list reads like a changelog, not a story about how my team stops wasting agent context windows on duplicate work"
+      ],
+      "what_works": [
+        "Context Injection is exactly what I need. Pushing corrections into a teammate's agent mid-session is a killer feature",
+        "One-line MCP config setup is dead simple. No SDK, no wrapper, just a URL",
+        "Knowledge Base for persistent team memory addresses the 'every agent starts from zero' problem",
+        "The pricing is reasonable. $5/seat for something that saves me hours of duplicate agent work is a no-brainer",
+        "Works with any MCP agent. I use Claude Code and my teammate uses Cursor, so this matters",
+        "Metadata-only sync. My code staying local removes a major objection"
+      ],
+      "what_would_make_you_buy": "Show me a live demo or screenshot of conflict detection in action. I want to see two agents about to edit the same file and Eywa stopping the collision before it happens. That single image would convert me immediately.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "I've burned entire afternoons watching two of my agents build the same authentication middleware from different angles, then having to manually reconcile the mess. This landing page tells me Eywa understands the problem, but it undersells the solution. The claim system and conflict warnings are buried or missing from the copy entirely, and those are literally the features that would make me pull out my credit card today. Lead with 'we prevent your agents from stepping on each other' and I'm sold.",
+      "peripheral": "coordination_sufferer",
+      "weight": 0.067
+    },
+    {
+      "first_impression": "Free tier with clear pricing tiers visible on the landing page, that's exactly what I want to see before I read anything else.",
+      "sentiment": 0.72,
+      "purchase_intent": 0.55,
+      "would_share": true,
+      "friction_points": [
+        "No usage metrics or ROI dashboard shown, I want to see how much duplicated work Eywa actually prevented and time saved",
+        "No calculator or estimate of cost savings from reduced agent waste, which is the entire value proposition",
+        "$5/seat/month sounds cheap but there's no clarity on what counts as a seat versus an agent versus a member",
+        "7-day history on free tier feels like artificial scarcity designed to force upgrades rather than deliver value",
+        "No mention of data export or portability, which raises lock-in concerns",
+        "The value proposition is about preventing misalignment but there's no quantification of what misalignment costs"
+      ],
+      "what_works": [
+        "Free tier exists and is genuinely usable with 5 members and unlimited workspaces",
+        "Pricing is transparent and visible on the landing page without clicking through to another page",
+        "$5/seat/month is in the impulse-buy range for dev tools, low risk to try",
+        "The network effect is real: value increases as more teammates connect their agents",
+        "MCP compatibility means no vendor lock-in on the agent side, you can swap agents freely",
+        "Metadata-only sync means my code stays local, reducing the trust cost of adoption"
+      ],
+      "what_would_make_you_buy": "A value dashboard showing concrete metrics like 'prevented X duplicate agent runs this week, saving Y compute hours and $Z' so I can justify the spend to my team lead with actual numbers.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The economics are promising but unproven. The free tier and $5/seat pricing tell me they're going for volume and network effects rather than extraction, which I respect. But I need to see the ROI before I upgrade. Show me a dashboard that says 'your team wasted 14 hours of agent compute on duplicate work last week and Eywa would have caught it in 3 minutes' and I'll buy Pro for the whole team today. Right now I'd sign up for free, run it for two weeks, and see if the visibility actually changes how we coordinate.",
+      "peripheral": "agent_economist",
+      "weight": 0.026
+    }
+  ]
+}

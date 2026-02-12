@@ -15,7 +15,7 @@ export function useRealtimeLinks(foldId: string | null) {
     const { data } = await supabase
       .from("links")
       .select("*")
-      .eq("room_id", foldId)
+      .eq("fold_id", foldId)
       .order("ts", { ascending: false })
       .limit(200);
     if (data) setLinks(data);
@@ -31,14 +31,14 @@ export function useRealtimeLinks(foldId: string | null) {
       .channel(`links-realtime-${foldId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "links", filter: `room_id=eq.${foldId}` },
+        { event: "INSERT", schema: "public", table: "links", filter: `fold_id=eq.${foldId}` },
         (payload) => {
           setLinks((prev) => [payload.new as Link, ...prev]);
         }
       )
       .on(
         "postgres_changes",
-        { event: "DELETE", schema: "public", table: "links", filter: `room_id=eq.${foldId}` },
+        { event: "DELETE", schema: "public", table: "links", filter: `fold_id=eq.${foldId}` },
         (payload) => {
           const deletedId = (payload.old as { id?: string })?.id;
           if (deletedId) {

@@ -12,7 +12,7 @@ import {
   truncate,
   clampDescription,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 export const data = new SlashCommandBuilder()
   .setName("context")
@@ -27,10 +27,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -40,13 +40,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("agent,message_type,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .order("ts", { ascending: false })
     .limit(count);
 
   if (!rows?.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No activity yet.", room.slug)],
+      embeds: [emptyEmbed("No activity yet.", fold.slug)],
     });
     return;
   }
@@ -72,7 +72,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle("\u{1F4DC} Timeline")
         .setDescription(clampDescription(lines))
         .setColor(Colors.BRAND),

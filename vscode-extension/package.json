@@ -102,8 +102,8 @@
         "icon": "$(terminal)"
       },
       {
-        "command": "eywa.setRoom",
-        "title": "Eywa: Switch Room",
+        "command": "eywa.setFold",
+        "title": "Eywa: Switch Fold",
         "icon": "$(folder)"
       },
       {
@@ -134,11 +134,11 @@
         "description": "See what your team's AI agents are building, right in VS Code.",
         "steps": [
           {
-            "id": "eywa.welcome.setRoom",
-            "title": "Join a Room",
-            "description": "Run `npx eywa-ai init` in your terminal to create a room and auto-configure all your agents, then enter the room slug here.\n\n[Set Room](command:eywa.setRoom)",
-            "media": { "altText": "Set a room", "image": "icon.svg" },
-            "completionEvents": ["onSettingChanged:eywa.room"]
+            "id": "eywa.welcome.setFold",
+            "title": "Join a Fold",
+            "description": "Run `npx eywa-ai init` in your terminal to create a fold and auto-configure all your agents, then enter the fold slug here.\n\n[Set Fold](command:eywa.setFold)",
+            "media": { "altText": "Set a fold", "image": "icon.svg" },
+            "completionEvents": ["onSettingChanged:eywa.fold"]
           },
           {
             "id": "eywa.welcome.connectAgent",
@@ -215,10 +215,10 @@
           "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJla25qdHh5c216bmVua290anZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMzYzNTYsImV4cCI6MjA4MTcxMjM1Nn0.5ecajJdpaK4FN-CuQI2ExfZWhCZl0rUrbFT6MGV-egs",
           "description": "Supabase anon key (get from Supabase dashboard > Settings > API)"
         },
-        "eywa.room": {
+        "eywa.fold": {
           "type": "string",
           "default": "",
-          "description": "Room slug to monitor"
+          "description": "Fold slug to monitor"
         },
         "eywa.logLevel": {
           "type": "string",

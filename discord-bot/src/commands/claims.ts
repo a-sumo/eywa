@@ -11,7 +11,7 @@ import {
   truncate,
   clampDescription,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 const CLAIM_MAX_AGE = 2 * 60 * 60_000; // 2 hours
 
@@ -21,10 +21,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -35,7 +35,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const { data: claimRows } = await db()
     .from("memories")
     .select("agent,metadata,ts,session_id")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("metadata->>event", "claim")
     .gte("ts", twoHoursAgo)
     .order("ts", { ascending: false })
@@ -43,7 +43,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   if (!claimRows?.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No active work claims.", room.slug)],
+      embeds: [emptyEmbed("No active work claims.", fold.slug)],
     });
     return;
   }
@@ -54,7 +54,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     ? await db()
         .from("memories")
         .select("agent,session_id,metadata")
-        .eq("room_id", room.id)
+        .eq("fold_id", fold.id)
         .in("session_id", sessionIds)
         .in("metadata->>event", ["session_end", "session_done", "unclaim"])
         .order("ts", { ascending: false })
@@ -94,14 +94,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   if (!lines.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No active work claims.", room.slug)],
+      embeds: [emptyEmbed("No active work claims.", fold.slug)],
     });
     return;
   }
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(`\u{1F3F7}\uFE0F Active Claims (${lines.length})`)
         .setDescription(clampDescription(lines))
         .setColor(Colors.BRAND),

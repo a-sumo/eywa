@@ -80,7 +80,7 @@ export default {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     // Only target demo copies (slug starts with "demo-"), never the source "demo" fold
-    const oldFolds = await db.select<FoldRow>("rooms", {
+    const oldFolds = await db.select<FoldRow>("folds", {
       select: "id,slug",
       is_demo: "eq.true",
       created_at: `lt.${cutoff}`,
@@ -89,10 +89,10 @@ export default {
     });
 
     for (const fold of oldFolds) {
-      await db.delete("memories", { room_id: `eq.${fold.id}` });
-      await db.delete("links", { room_id: `eq.${fold.id}` });
-      await db.delete("messages", { room_id: `eq.${fold.id}` });
-      await db.delete("rooms", { id: `eq.${fold.id}` });
+      await db.delete("memories", { fold_id: `eq.${fold.id}` });
+      await db.delete("links", { fold_id: `eq.${fold.id}` });
+      await db.delete("messages", { fold_id: `eq.${fold.id}` });
+      await db.delete("folds", { id: `eq.${fold.id}` });
     }
 
     if (oldFolds.length > 0) {
@@ -112,7 +112,7 @@ function buildDemoMemories(foldId: string): Array<Record<string, unknown>> {
     { name: "eve/rosy-dawn", session: `session_eve_${now}`, task: "Setting up CI/CD pipeline with GitHub Actions" },
   ];
   const memories: Array<Record<string, unknown>> = [];
-  const m = (data: Record<string, unknown>) => { memories.push({ room_id: foldId, ...data }); };
+  const m = (data: Record<string, unknown>) => { memories.push({ fold_id: foldId, ...data }); };
 
   // Destination (set 2 hours ago)
   m({
@@ -285,7 +285,7 @@ function buildDemoMemories(foldId: string): Array<Record<string, unknown>> {
   m({
     session_id: agents[2].session, agent: agents[2].name,
     message_type: "knowledge",
-    content: "Dashboard components use Supabase Realtime for live updates. Subscribe to the memories table filtered by room_id. The useRealtime hook handles reconnection and cleanup automatically.",
+    content: "Dashboard components use Supabase Realtime for live updates. Subscribe to the memories table filtered by fold_id. The useRealtime hook handles reconnection and cleanup automatically.",
     metadata: { event: "knowledge", title: "Realtime subscription pattern", tags: ["frontend", "convention", "realtime"] },
     ts: new Date(now - 18 * min).toISOString(),
   });
@@ -425,7 +425,7 @@ async function handleCloneDemo(request: Request, env: Env): Promise<Response> {
   const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
   // Create new fold
-  const newFolds = await db.insert<FoldRow>("rooms", {
+  const newFolds = await db.insert<FoldRow>("folds", {
     slug: newSlug,
     name: "Demo Fold",
     created_by: "demo",
@@ -518,7 +518,7 @@ async function handleMcp(
   const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
 
   // Resolve fold slug → fold row
-  const folds = await db.select<FoldRow>("rooms", {
+  const folds = await db.select<FoldRow>("folds", {
     select: "id,name,slug,is_demo,secret",
     slug: `eq.${foldSlug}`,
     limit: "1",
@@ -670,7 +670,7 @@ async function buildInstructions(
     // Active agents (skip connection spam, only real activity)
     db.select<MemoryRow>("memories", {
       select: "agent,content,metadata,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       "metadata->>event": "neq.agent_connected",
       order: "ts.desc",
       limit: "200",
@@ -678,7 +678,7 @@ async function buildInstructions(
     // Recent activity (skip connection spam)
     db.select<MemoryRow>("memories", {
       select: "agent,message_type,content,metadata,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       "metadata->>event": "neq.agent_connected",
       order: "ts.desc",
       limit: "8",
@@ -686,7 +686,7 @@ async function buildInstructions(
     // Pending injections
     db.select<MemoryRow>("memories", {
       select: "id",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.injection",
       "metadata->>target_agent": `in.(${ctx.agent},${ctx.user},all)`,
       limit: "50",
@@ -694,7 +694,7 @@ async function buildInstructions(
     // Knowledge entries with full content (for proactive surfacing)
     db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.knowledge",
       order: "ts.desc",
       limit: "50",
@@ -702,7 +702,7 @@ async function buildInstructions(
     // Distress signals (unresolved, same user)
     db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       "metadata->>event": "eq.distress",
       "metadata->>resolved": "eq.false",
       "metadata->>user": `eq.${ctx.user}`,
@@ -712,7 +712,7 @@ async function buildInstructions(
     // Recent checkpoints (same user, last 2h)
     db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       "metadata->>event": "eq.checkpoint",
       "metadata->>user": `eq.${ctx.user}`,
       ts: `gte.${twoHoursAgo}`,
@@ -722,7 +722,7 @@ async function buildInstructions(
     // Current destination
     db.select<MemoryRow>("memories", {
       select: "content,metadata,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.knowledge",
       "metadata->>event": "eq.destination",
       order: "ts.desc",
@@ -745,7 +745,7 @@ async function buildInstructions(
     queries.push(
       db.select<MemoryRow>("memories", {
         select: "message_type,content,metadata,ts",
-        room_id: `eq.${ctx.foldId}`,
+        fold_id: `eq.${ctx.foldId}`,
         agent: `eq.${baton}`,
         order: "ts.desc",
         limit: "20",

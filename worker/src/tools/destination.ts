@@ -14,7 +14,7 @@ async function getLatestMemoryId(
 ): Promise<string | null> {
   const rows = await db.select<MemoryRow>("memories", {
     select: "id",
-    room_id: `eq.${foldId}`,
+    fold_id: `eq.${foldId}`,
     session_id: `eq.${sessionId}`,
     order: "ts.desc",
     limit: "1",
@@ -46,7 +46,7 @@ export function registerDestinationTools(
         // Fetch current destination
         const rows = await db.select<MemoryRow>("memories", {
           select: "id,content,metadata,ts,agent",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           "metadata->>event": "eq.destination",
           order: "ts.desc",
@@ -109,7 +109,7 @@ export function registerDestinationTools(
         // Check if a destination already exists - redirect to update if so
         const existing = await db.select<MemoryRow>("memories", {
           select: "id,metadata",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           "metadata->>event": "eq.destination",
           order: "ts.desc",
@@ -138,7 +138,7 @@ export function registerDestinationTools(
         }
 
         await db.insert("memories", {
-          room_id: ctx.foldId,
+          fold_id: ctx.foldId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
           parent_id: parentId,
@@ -171,7 +171,7 @@ export function registerDestinationTools(
         // Fetch current destination
         const rows = await db.select<MemoryRow>("memories", {
           select: "id,content,metadata,ts",
-          room_id: `eq.${ctx.foldId}`,
+          fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           "metadata->>event": "eq.destination",
           order: "ts.desc",
@@ -202,7 +202,7 @@ export function registerDestinationTools(
         // Create a new memory entry (append-only, preserves history)
         const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
         await db.insert("memories", {
-          room_id: ctx.foldId,
+          fold_id: ctx.foldId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
           parent_id: parentId,

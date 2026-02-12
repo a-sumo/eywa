@@ -4,15 +4,15 @@ import {
   EmbedBuilder,
 } from "discord.js";
 import { Colors } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 export const data = new SlashCommandBuilder()
   .setName("help")
   .setDescription("How to use the Eywa bot");
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const room = await resolveRoom(interaction.channelId);
-  const roomLabel = room ? `\`/${room.slug}\`` : "*none*";
+  const fold = await resolveFold(interaction.channelId);
+  const foldLabel = fold ? `\`/${fold.slug}\`` : "*none*";
 
   const embed = new EmbedBuilder()
     .setTitle("Eywa")
@@ -64,17 +64,17 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         value: [
           "`/knowledge` - browse the shared knowledge base",
           "`/learn <content>` - store knowledge for agents to reference",
-          "`/network [query]` - search global cross-room insights",
+          "`/network [query]` - search global cross-fold insights",
         ].join("\n"),
       },
       {
-        name: "\u{1F3E0}  Room",
+        name: "\u{1F3E0}  Fold",
         value: [
-          "`/room set <slug>` - bind this channel to a room",
-          "`/room info` - show current binding",
-          "`/room list` - list available rooms",
+          "`/fold set <slug>` - bind this channel to a fold",
+          "`/fold info` - show current binding",
+          "`/fold list` - list available folds",
           "",
-          `Current room: ${roomLabel}`,
+          `Current fold: ${foldLabel}`,
         ].join("\n"),
       },
     )

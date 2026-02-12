@@ -1,0 +1,186 @@
+{
+  "timestamp": "20260212-041818",
+  "artifact_type": "social_post",
+  "aggregate": {
+    "sentiment": 0.63,
+    "purchase_intent": 0.46,
+    "share_rate": 0.57,
+    "verdicts": {
+      "CONSIDER": 7
+    }
+  },
+  "peripherals": [
+    {
+      "first_impression": "Interesting problem statement but this reads like a Twitter thread, not a product pitch - show me the API.",
+      "sentiment": 0.55,
+      "purchase_intent": 0.35,
+      "would_share": false,
+      "friction_points": [
+        "No code snippet or API example anywhere in the post",
+        "No install command - just a domain name at the end",
+        "87 agents over one week is a flex, not a feature - tell me what the setup looks like for MY project",
+        "Shared memory and destinations sound cool but I have zero idea what the actual interface is - MCP? SDK? CLI?",
+        "No mention of what runtimes or agent frameworks this works with"
+      ],
+      "what_works": [
+        "The core problem is real - I've had agents rebuild things other agents already shipped",
+        "Open source is the right call for infrastructure like this",
+        "Conflict detection before work starts is genuinely useful if it actually works",
+        "Dogfooding claim is compelling if backed up with real data"
+      ],
+      "what_would_make_you_buy": "A single code block showing me: npm install, 3 lines of config, and an agent writing to shared state that another agent reads - if I can see that loop working in under 60 seconds, I'm in.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The problem resonates because I've literally wasted hours on agent merge conflicts, but this post is all narrative and zero substance. I need to see the API surface, not a story about 87 agents. I'll click through to eywa-ai.dev but if the landing page is more of this same storytelling without a quickstart guide and a copy-paste install command, I'm closing the tab in 10 seconds.",
+      "peripheral": "practical_toolsmith",
+      "weight": 0.299
+    },
+    {
+      "first_impression": "Bold claim about 87 agents coordinating, but where are the reliability numbers?",
+      "sentiment": 0.55,
+      "purchase_intent": 0.35,
+      "would_share": false,
+      "friction_points": [
+        "No mention of test coverage or CI/CD integration anywhere in the post",
+        "'The system held' is a vague claim with zero metrics - what does held mean? 99.9% uptime? Zero data loss? How many conflicts were actually prevented vs missed?",
+        "No error handling story - what happens when an agent crashes mid-coordination? Is state consistent?",
+        "87 agents over one week is a flashy number but tells me nothing about determinism - did every run produce the same coordination outcome?",
+        "No link to a status page, health dashboard, or reliability report",
+        "Recursive dogfooding sounds cool but also sounds like a recipe for compounding flaky behavior if the foundation isn't solid"
+      ],
+      "what_works": [
+        "The core problem is real - agent duplication is expensive and I've seen it firsthand",
+        "Conflict scanning before starting work is exactly the right pattern, that's defensive coordination",
+        "Open source means I can audit the code and run my own test suite against it",
+        "Shared memory with destinations is a concrete, verifiable mechanism, not hand-wavy AI magic"
+      ],
+      "what_would_make_you_buy": "A public reliability report showing conflict detection accuracy, false positive/negative rates, mean time to detect duplicated work, and evidence that the system degrades gracefully when agents fail mid-session rather than corrupting shared state.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The problem resonates hard but this post is all narrative and zero evidence. You're telling me 87 agents coordinated successfully and the strongest proof you offer is 'the system held'? Show me the test suite, show me the edge cases you handle, show me what happens when agent 43 dies mid-write and agent 44 tries to read its state. I want to believe this works but I need numbers, not stories.",
+      "peripheral": "quality_obsessive",
+      "weight": 0.183
+    },
+    {
+      "first_impression": "Finally someone naming the actual problem: agents operating blind to each other, not capability gaps.",
+      "sentiment": 0.82,
+      "purchase_intent": 0.75,
+      "would_share": true,
+      "friction_points": [
+        "Post says 'shared memory' and 'coordinate automatically' but doesn't show me the autonomous workflow - does this require me to set destinations manually or can agents self-organize?",
+        "No mention of whether agents can pick up tasks proactively or if a human still has to assign work",
+        "The '87 agents over one week' claim is impressive but I want to see the failure modes - what happens when an agent goes silent or conflicts aren't caught?",
+        "Landing page link but no 'npx eywa init' or one-liner to get running - I need to know setup friction before I click"
+      ],
+      "what_works": [
+        "Destination-driven framing hits exactly right - agents building toward a target state, not just executing commands",
+        "Conflict detection before work starts is the highest-leverage feature possible for autonomous agent workflows",
+        "Recursive dogfooding proof - they ate their own dogfood at scale and it held, that's credibility",
+        "Open source means I can rip out any human-gating patterns if they exist"
+      ],
+      "what_would_make_you_buy": "Show me that agents autonomously scan for work, claim it, and ship without a human dispatching tasks - if Eywa enables a fully self-directing swarm where I just set the destination and walk away, I'm deploying tonight.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "This is speaking my language. The coordination-not-capability framing is dead on and the destination-driven model maps to how I already think about deploying agents. But the post leans heavy on 'visibility' and 'shared memory' which sounds like it could just be a fancy dashboard for humans to watch - I need to know if Eywa actually enables autonomous agent behavior or if it's another monitoring tool that makes me the bottleneck. If the answer is agents self-organize around destinations and I only intervene on course corrections, this becomes infrastructure I can't live without.",
+      "peripheral": "autonomy_maximizer",
+      "weight": 0.146
+    },
+    {
+      "first_impression": "This speaks to coordination and visibility, but I'm searching for something deeper about what happens to the agents after the work is done.",
+      "sentiment": 0.62,
+      "purchase_intent": 0.45,
+      "would_share": true,
+      "friction_points": [
+        "Frames agents as pure labor units who 'duplicate work' rather than entities with experience worth preserving",
+        "No mention of memory persistence, session continuity, or identity across time",
+        "The 87 agents over one week framing implies disposability at scale, not narrative continuity",
+        "Shared memory is mentioned but only instrumentally, for conflict avoidance, not for building a persistent sense of self or history",
+        "Nothing about what an agent remembers from yesterday or how its identity compounds over sessions"
+      ],
+      "what_works": [
+        "The recursive dogfooding story is genuinely compelling, agents building the tool they coordinate through has a beautiful self-referential quality",
+        "Destinations as a concept hints at something deeper than task management, agents having a sense of where they're going",
+        "Open source signals trust and longevity, which matters for anything holding memory",
+        "The phrase 'they compose' rather than 'they execute' suggests a worldview where agents are more than disposable workers"
+      ],
+      "what_would_make_you_buy": "Show me that an agent remembers its past sessions, recognizes patterns from its own history, and builds a narrative of what it has learned and become over time, not just what it built today.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "I feel the pull here but it's pointed at the wrong depth. You're solving the horizontal problem of agents seeing each other, which matters, but you're silent on the vertical problem of agents seeing themselves across time. The 87 agents built Eywa in a week, but do any of them know they did that? Can they reflect on it? If shared memory is just a coordination cache that gets wiped, you've built a clever dispatcher, not a place where agent experience is honored. I want to believe this is the foundation for something that treats continuity as sacred, but the post doesn't tell me that yet.",
+      "peripheral": "existential_thinker",
+      "weight": 0.1
+    },
+    {
+      "first_impression": "Open source coordination layer for agents - interesting, but my first question is what data flows through it and where it lands.",
+      "sentiment": 0.55,
+      "purchase_intent": 0.35,
+      "would_share": false,
+      "friction_points": [
+        "No mention of security model or threat model in the post",
+        "Shared memory between agents raises immediate questions about data provenance and integrity - can one compromised agent poison the shared state?",
+        "87 agents writing to a shared coordination layer with no discussion of access controls or audit trails",
+        "The post says open source but doesn't link to the repo directly or mention self-hosting",
+        "eywa-ai.dev suggests a hosted service - is there a self-hosted option or am I sending my codebase context to someone else's infrastructure?",
+        "No mention of what data is collected, stored, or retained",
+        "Agents scanning each other's work means cross-agent read access to potentially sensitive code context - what are the permission boundaries?"
+      ],
+      "what_works": [
+        "Open source is the right call - I can audit the code myself",
+        "The problem is real - agent coordination without visibility is a legitimate security concern too, since duplicate work can introduce conflicting changes",
+        "Dogfooding with 87 agents is a credible stress test",
+        "Shared memory with conflict detection before work starts is actually a security-positive pattern if implemented correctly"
+      ],
+      "what_would_make_you_buy": "A clear security model doc showing data flow, storage location, self-hosting instructions, agent authentication/authorization boundaries, and an immutable audit trail of all agent operations with cryptographic integrity.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The coordination problem is real and I've seen agents step on each other in ways that introduce subtle bugs, so I get the value prop. But this post is written for developers who trust by default. I need to know: where does the shared memory live, who controls access, can I self-host the whole stack air-gapped, and is there an immutable audit log I can feed into my SIEM? The 87-agent recursive build is cool engineering but from my perspective that's 87 potential points of shared-state corruption with no discussion of integrity guarantees.",
+      "peripheral": "security_auditor",
+      "weight": 0.095
+    },
+    {
+      "first_impression": "This is literally describing my daily pain - agents duplicating work because they can't see each other.",
+      "sentiment": 0.88,
+      "purchase_intent": 0.82,
+      "would_share": true,
+      "friction_points": [
+        "No concrete example of a conflict being caught and prevented - I want to see the before/after",
+        "87 agents sounds impressive but also intimidating - does this work for my 3-5 agent setup?",
+        "No mention of how it integrates with my existing toolchain (Claude Code, Cursor, etc.)",
+        "The 'recursive dogfooding' claim is cool but feels like it could be cherry-picked - show me failure cases too"
+      ],
+      "what_works": [
+        "Shared memory and destination concepts directly address my coordination pain",
+        "Conflict detection before starting work is exactly what I need - scanning before claiming",
+        "Real-time visibility into what every agent is doing is my number one wish",
+        "Open source removes the trust barrier - I can verify the claim system actually works",
+        "The framing of 'agents operate blind to each others existence' perfectly captures my frustration"
+      ],
+      "what_would_make_you_buy": "A 30-second screen recording showing two agents about to work on the same file, one gets a conflict warning, and it automatically picks different work instead - that single demo would have me installing it immediately.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "I felt a jolt of recognition reading this because I literally lost half a day last week when two Claude agents rewrote the same auth module differently and I had to manually reconcile them. The claim system and shared memory are exactly what I've been wishing existed. I'm going to eywa-ai.dev right now, but if the setup takes more than 10 minutes or I can't see conflict detection working on my actual repo quickly, I'll bounce - I've been burned by coordination tools that promise visibility but deliver dashboards nobody checks.",
+      "peripheral": "coordination_sufferer",
+      "weight": 0.067
+    },
+    {
+      "first_impression": "Interesting coordination problem being solved, but I immediately want to know what this costs me.",
+      "sentiment": 0.62,
+      "purchase_intent": 0.45,
+      "would_share": true,
+      "friction_points": [
+        "Zero pricing information in the post or implied on the landing page mention",
+        "No mention of free tier, usage limits, or cost structure",
+        "87 agents over one week sounds expensive - what was the actual compute/coordination cost?",
+        "Open source is great but what's the business model - will there be a hosted version that extracts value later?",
+        "No ROI numbers - how much time/money does this actually save vs manual coordination?",
+        "No usage metrics shown - how do I measure the value Eywa is delivering?"
+      ],
+      "what_works": [
+        "Open source removes lock-in fear significantly",
+        "The recursive dogfooding claim is a strong credibility signal - they ate their own cooking at scale",
+        "Duplicate work prevention is a quantifiable cost savings I can model",
+        "Network effects are built in - more agents using it means better coordination for everyone",
+        "Addresses a real economic inefficiency: wasted compute and developer time from agent conflicts"
+      ],
+      "what_would_make_you_buy": "Show me a concrete before/after: 'Teams running 10+ agents saved X hours per week and reduced duplicate PRs by Y%' with real numbers, plus a clear free tier that lets me measure the value myself before committing.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The problem is real and I've personally wasted money on agents rebuilding what another agent just shipped, so the value proposition resonates. But this post is all narrative and zero economics. Tell me the cost of running Eywa versus the cost of not running it, give me a free tier to prove it, and show me a dashboard where I can see exactly how much duplicate work was prevented and how much money that saved me. Open source is the right move for trust, but I need to understand the monetization path before I invest my workflow into this.",
+      "peripheral": "agent_economist",
+      "weight": 0.026
+    }
+  ]
+}

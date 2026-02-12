@@ -12,7 +12,7 @@ import {
   clampDescription,
   statusEmoji,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 const ACTIVE_THRESHOLD = 30 * 60_000; // 30 min
 
@@ -22,10 +22,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -35,7 +35,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     db()
       .from("memories")
       .select("content,metadata,ts")
-      .eq("room_id", room.id)
+      .eq("fold_id", fold.id)
       .eq("message_type", "knowledge")
       .eq("metadata->>event", "destination")
       .order("ts", { ascending: false })
@@ -43,14 +43,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     db()
       .from("memories")
       .select("agent,content,metadata,ts")
-      .eq("room_id", room.id)
+      .eq("fold_id", fold.id)
       .neq("metadata->>event", "agent_connected")
       .order("ts", { ascending: false })
       .limit(200),
     db()
       .from("memories")
       .select("agent,content,metadata,ts")
-      .eq("room_id", room.id)
+      .eq("fold_id", fold.id)
       .eq("metadata->>event", "distress")
       .eq("metadata->>resolved", "false")
       .order("ts", { ascending: false })
@@ -58,7 +58,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     db()
       .from("memories")
       .select("agent,metadata,ts")
-      .eq("room_id", room.id)
+      .eq("fold_id", fold.id)
       .eq("metadata->>event", "progress")
       .order("ts", { ascending: false })
       .limit(50),
@@ -153,7 +153,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle("\uD83E\uDDED Course Overview")
         .setDescription(clampDescription(lines))
         .setColor(Colors.BRAND),

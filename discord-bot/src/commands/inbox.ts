@@ -13,7 +13,7 @@ import {
   clampDescription,
   priorityLabel,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 export const data = new SlashCommandBuilder()
   .setName("inbox")
@@ -34,10 +34,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -48,7 +48,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   let query = db()
     .from("memories")
     .select("agent,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("message_type", "injection")
     .order("ts", { ascending: false })
     .limit(limit);
@@ -63,7 +63,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!rows?.length) {
     const whom = target ? ` for **${target}**` : "";
     await interaction.editReply({
-      embeds: [emptyEmbed(`No injections${whom}.`, room.slug)],
+      embeds: [emptyEmbed(`No injections${whom}.`, fold.slug)],
     });
     return;
   }
@@ -87,7 +87,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(`\u{1F4EC} Inbox${whom}`)
         .setDescription(clampDescription(lines))
         .setColor(Colors.INFO),
@@ -96,14 +96,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.respond([{ name: "all", value: "all" }]);
     return;
   }
 
   const focused = interaction.options.getFocused().toLowerCase();
-  const agents = await getAgentNames(room.id);
+  const agents = await getAgentNames(fold.id);
   const options = ["all", ...agents];
   const filtered = options
     .filter((a) => a.toLowerCase().includes(focused))

@@ -30,7 +30,7 @@ client.once(Events.ClientReady, (c) => {
   console.log(`  \u255A${"═".repeat(line.length + 2)}\u255D`);
   console.log();
   console.log(`  ${commandMap.size} commands registered`);
-  console.log(`  Default room: ${process.env.DEFAULT_ROOM ?? "demo"}`);
+  console.log(`  Default fold: ${process.env.DEFAULT_FOLD ?? "demo"}`);
   console.log();
 });
 

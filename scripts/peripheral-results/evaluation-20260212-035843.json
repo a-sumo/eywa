@@ -1,0 +1,147 @@
+{
+  "timestamp": "20260212-035843",
+  "landing_page": {
+    "weighted_sentiment": 0.1,
+    "weighted_purchase_intent": 0.01,
+    "conversion_funnel": {
+      "BOUNCE": 6,
+      "SKIP": 1
+    },
+    "top_frictions": [
+      [
+        "60 second setup",
+        0.299
+      ],
+      [
+        "copy-paste command",
+        0.299
+      ],
+      [
+        "instant feedback",
+        0.299
+      ],
+      [
+        "clear API reference",
+        0.299
+      ],
+      [
+        "UI: clean interface",
+        0.299
+      ],
+      [
+        "health check on setup",
+        0.183
+      ],
+      [
+        "clear error messages",
+        0.183
+      ],
+      [
+        "status page",
+        0.183
+      ],
+      [
+        "reliability metrics",
+        0.183
+      ],
+      [
+        "UI: status indicators",
+        0.183
+      ]
+    ],
+    "missing_triggers": [
+      [
+        "simple API",
+        0.299
+      ],
+      [
+        "quick setup",
+        0.299
+      ],
+      [
+        "real examples",
+        0.299
+      ],
+      [
+        "good docs",
+        0.299
+      ],
+      [
+        "npm install",
+        0.299
+      ],
+      [
+        "reliable",
+        0.183
+      ],
+      [
+        "tested",
+        0.183
+      ],
+      [
+        "deterministic",
+        0.183
+      ],
+      [
+        "CI integration",
+        0.183
+      ],
+      [
+        "consistent",
+        0.183
+      ]
+    ],
+    "active_blockers": [],
+    "per_peripheral": [
+      {
+        "name": "practical_toolsmith",
+        "weight": 0.299,
+        "sentiment": 0.1,
+        "purchase_intent": 0,
+        "verdict": "BOUNCE"
+      },
+      {
+        "name": "quality_obsessive",
+        "weight": 0.183,
+        "sentiment": 0.1,
+        "purchase_intent": 0,
+        "verdict": "BOUNCE"
+      },
+      {
+        "name": "autonomy_maximizer",
+        "weight": 0.146,
+        "sentiment": 0.1,
+        "purchase_intent": 0,
+        "verdict": "BOUNCE"
+      },
+      {
+        "name": "existential_thinker",
+        "weight": 0.1,
+        "sentiment": 0.1,
+        "purchase_intent": 0,
+        "verdict": "BOUNCE"
+      },
+      {
+        "name": "security_auditor",
+        "weight": 0.095,
+        "sentiment": 0.1,
+        "purchase_intent": 0,
+        "verdict": "BOUNCE"
+      },
+      {
+        "name": "coordination_sufferer",
+        "weight": 0.067,
+        "sentiment": 0.16,
+        "purchase_intent": 0.2,
+        "verdict": "SKIP"
+      },
+      {
+        "name": "agent_economist",
+        "weight": 0.026,
+        "sentiment": 0.1,
+        "purchase_intent": 0,
+        "verdict": "BOUNCE"
+      }
+    ]
+  }
+}

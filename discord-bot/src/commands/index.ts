@@ -4,7 +4,7 @@ import type {
   SharedSlashCommand,
 } from "discord.js";
 
-import * as room from "./room.js";
+import * as fold from "./fold.js";
 import * as status from "./status.js";
 import * as agents from "./agents.js";
 import * as context from "./context.js";
@@ -35,7 +35,7 @@ export interface Command {
 
 export const commands: Command[] = [
   help,
-  room,
+  fold,
   status,
   agents,
   context,

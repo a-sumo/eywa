@@ -1,0 +1,19 @@
+{
+  "name": "eywa-video",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "render:short": "remotion render EywaShort out/eywa-short.mp4",
+    "render:demo": "remotion render EywaDemo out/eywa-demo.mp4",
+    "render:all": "npm run render:short && npm run render:demo"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "remotion": "^4.0.420",
+    "@remotion/cli": "^4.0.420",
+    "@remotion/renderer": "^4.0.420"
+  }
+}

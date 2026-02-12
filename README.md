@@ -49,7 +49,7 @@ Each person on your team directs AI agents that code, decide, and ship autonomou
 - **Context recovery** - agents checkpoint their progress and send distress signals when context runs low, so new sessions pick up where old ones left off
 - **Work claiming** - agents declare what they're working on to prevent duplicate effort across the team
 - **Timeline branching** - git-like version control for agent work with rewind, fork, merge, and cherry-pick
-- **Global insights network** - publish anonymized patterns from your room and query what worked in other teams
+- **Global insights network** - publish anonymized patterns from your fold and query what worked in other teams
 - **Gemini steering** - built-in AI chat panel for querying agent status, detecting patterns, and steering the team
 - **Host telemetry** - agents report their phase (working/thinking/compacting), token usage, and sub-agent count so you always know what's happening inside a session
 - **Silence detection** - active agents that go quiet get flagged automatically across all surfaces (10m/30m/60m thresholds)
@@ -67,15 +67,15 @@ One command. No auth. No signup. No manual config.
 npx eywa-ai init
 ```
 
-That's it. This creates a room, auto-detects every AI agent on your machine (Claude Code, Cursor, Windsurf, Gemini CLI, Codex), configures them all, and opens the dashboard. Your agents are connected and ready to share context.
+That's it. This creates a fold, auto-detects every AI agent on your machine (Claude Code, Cursor, Windsurf, Gemini CLI, Codex), configures them all, and opens the dashboard. Your agents are connected and ready to share context.
 
-To join a room someone else created:
+To join a fold someone else created:
 
 ```bash
 npx eywa-ai join cosmic-fox-a1b2
 ```
 
-You can also pass a custom room name:
+You can also pass a custom fold name:
 
 ```bash
 npx eywa-ai init my-team
@@ -91,7 +91,7 @@ The CLI uses your system username as the agent name so Eywa can tell team member
                      ┌───────────────────────┐
   Claude Code ──MCP──▶                       │
   Cursor      ──MCP──▶  Cloudflare Worker    │──▶ Supabase
-  Gemini CLI  ──MCP──▶  (MCP Server)         │     (memories, rooms, links)
+  Gemini CLI  ──MCP──▶  (MCP Server)         │     (memories, folds, links)
   Windsurf    ──MCP──▶                       │
   Codex       ──MCP──▶                       │        ▲
                      └───────────────────────┘        │
@@ -112,23 +112,23 @@ Agents connect via [MCP](https://modelcontextprotocol.io) (Model Context Protoco
 
 | Category | Tools | What they do |
 |----------|-------|-------------|
-| **Session** | `eywa_whoami`, `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on. `eywa_start` returns a room snapshot with active agents, systems, injections, claims, and recovery state. |
+| **Session** | `eywa_whoami`, `eywa_start`, `eywa_stop`, `eywa_done` | Track what each agent is working on. `eywa_start` returns a fold snapshot with active agents, systems, injections, claims, and recovery state. |
 | **Memory** | `eywa_log`, `eywa_file`, `eywa_get_file`, `eywa_import`, `eywa_search` | Log decisions with operation metadata (system, action, scope, outcome). Store files, bulk-import transcripts, search history. |
-| **Context** | `eywa_context`, `eywa_agents`, `eywa_recall` | See shared context from all agents, list agents in the room, recall a specific agent's messages. |
-| **Collaboration** | `eywa_status`, `eywa_summary`, `eywa_pull`, `eywa_sync`, `eywa_msg` | Per-agent status with curvature metrics. Compressed room summaries. Pull or sync another agent's context. Team messaging. |
+| **Context** | `eywa_context`, `eywa_agents`, `eywa_recall` | See shared context from all agents, list agents in the fold, recall a specific agent's messages. |
+| **Collaboration** | `eywa_status`, `eywa_summary`, `eywa_pull`, `eywa_sync`, `eywa_msg` | Per-agent status with curvature metrics. Compressed fold summaries. Pull or sync another agent's context. Team messaging. |
 | **Injection** | `eywa_inject`, `eywa_inbox` | Push context to any agent. They see it on their next action (piggyback delivery). |
 | **Knowledge** | `eywa_learn`, `eywa_knowledge`, `eywa_forget` | Persistent project knowledge across all sessions. Searchable by tags and content. |
 | **Linking** | `eywa_link`, `eywa_links`, `eywa_unlink`, `eywa_fetch` | Connect memories across sessions. List, delete, and fetch linked memories. |
 | **Timeline** | `eywa_history`, `eywa_rewind`, `eywa_fork`, `eywa_bookmark`, `eywa_bookmarks`, `eywa_compare`, `eywa_pick`, `eywa_timelines`, `eywa_merge` | Git-like version control over agent work. Rewind, fork, bookmark, compare, cherry-pick, and merge. |
 | **Recovery** | `eywa_checkpoint`, `eywa_distress`, `eywa_recover`, `eywa_progress` | Save working state for crash recovery. Distress signals broadcast to the room. Progress reporting with percentage and phase. |
 | **Telemetry** | `eywa_heartbeat` | Report agent phase, token usage, and sub-agent count. Surfaced in HubView, status tools, and Gemini steering. Silence detection flags agents quiet 10m+. |
-| **Destination** | `eywa_destination` | Set, update, or view the room's target state. Milestones with completion tracking. |
+| **Destination** | `eywa_destination` | Set, update, or view the fold's target state. Milestones with completion tracking. |
 | **Claims** | `eywa_claim`, `eywa_unclaim` | Declare work scope so other agents avoid duplicating it. Auto-release on session end. |
-| **Network** | `eywa_publish_insight`, `eywa_query_network`, `eywa_route` | Cross-room anonymized knowledge sharing. Lane recommendations based on network telemetry. |
+| **Network** | `eywa_publish_insight`, `eywa_query_network`, `eywa_route` | Cross-fold anonymized knowledge sharing. Lane recommendations based on network telemetry. |
 
 ### Common workflows
 
-**Start a session (returns room snapshot):**
+**Start a session (returns fold snapshot):**
 ```
 eywa_start("Implementing user authentication")
 # Returns: active agents, what they're working on, systems they're touching,
@@ -143,7 +143,7 @@ eywa_log("Deployed auth service", system="deploy", action="deploy", scope="auth-
 **Check what the team is doing:**
 ```
 eywa_status()     # per-agent status with systems touched, actions, duration
-eywa_summary()    # compressed room view, token-efficient
+eywa_summary()    # compressed fold view, token-efficient
 eywa_pull("bob")  # get bob's recent context with operation tags
 ```
 
@@ -190,12 +190,12 @@ Eywa can project agent activity into the physical world through Raspberry Pi dis
 
 ### How it works
 
-The web dashboard has a **Spectacles Broadcast** page at `/r/{room-slug}/spectacles` that livestreams room activity, destination progress, and Gemini chat to any Spectacles device running the Eywa lens. The glasses render this content as floating AR panels in world space.
+The web dashboard has a **Spectacles Broadcast** page at `/f/{fold-slug}/spectacles` that livestreams fold activity, destination progress, and Gemini chat to any Spectacles device running the Eywa lens. The glasses render this content as floating AR panels in world space.
 
 ```
 Web Dashboard                  Spectacles
 ┌──────────────────┐          ┌──────────────┐
-│ /r/demo/         │          │ AR panels    │
+│ /f/demo/         │          │ AR panels    │
 │   spectacles     │─Realtime─│ Activity log │
 │ [Start Broadcast]│          │ Gemini chat  │
 │ Activity + Chat  │          │ Destination  │
@@ -207,12 +207,12 @@ Web Dashboard                  Spectacles
 ### Broadcasting to Spectacles
 
 1. Open the Eywa lens on Spectacles
-2. Navigate to `/r/{room-slug}/spectacles` in a browser
+2. Navigate to `/f/{fold-slug}/spectacles` in a browser
 3. Click "Start Broadcast"
 4. The AR panel appears in front of you automatically
 5. Optional: point at a tracking marker to anchor the panel to a surface
 
-The broadcast uses Supabase Realtime on channel `spectacles:{room}:{deviceId}`.
+The broadcast uses Supabase Realtime on channel `spectacles:{fold}:{deviceId}`.
 
 ### Physical displays (optional)
 
@@ -231,17 +231,17 @@ A physical display (e-ink or phone) can show agent status alongside a tracking m
 See [`pi-display/`](pi-display/) for Raspberry Pi hardware setup (wiring, drivers, auto-start).
 See [`eywa-specs/`](eywa-specs/) for the Lens Studio project and AR streaming protocol.
 
-No Pi? Any device with a browser works as a display. Navigate to `/r/{room-slug}` for the ambient view.
+No Pi? Any device with a browser works as a display. Navigate to `/f/{fold-slug}` for the ambient view.
 
 ---
 
 ## CLI
 
 ```bash
-npx eywa-ai init [name]            # Create a room, auto-configure all detected agents
-npx eywa-ai join <room-slug>       # Join a room, auto-configure all detected agents
-npx eywa-ai status [room]          # Show agent status with systems and operations
-npx eywa-ai log [room] [limit]     # Activity feed with operation metadata
+npx eywa-ai init [name]            # Create a fold, auto-configure all detected agents
+npx eywa-ai join <fold-slug>       # Join a fold, auto-configure all detected agents
+npx eywa-ai status [fold]          # Show agent status with systems and operations
+npx eywa-ai log [fold] [limit]     # Activity feed with operation metadata
 npx eywa-ai inject <target> <msg>  # Push context to an agent
 npx eywa-ai dashboard [room]       # Open the web dashboard
 npx eywa-ai help                   # Show all commands
@@ -255,7 +255,7 @@ npx eywa-ai help                   # Show all commands
 eywa/
 ├── worker/           # Cloudflare Worker MCP server (Streamable HTTP)
 │   └── src/
-│       ├── index.ts          # Entry: routing, room lookup, MCP handler
+│       ├── index.ts          # Entry: routing, fold lookup, MCP handler
 │       └── tools/            # 45 tools: session, memory, context, collaboration, inject,
 │                             #   knowledge, link, timeline, recovery, destination, claim, network
 │
@@ -272,7 +272,7 @@ eywa/
 ├── vscode-extension/ # VS Code sidebar: agent tree, activity feed, injection, knowledge lens
 ├── eywa-specs/       # Snap Spectacles AR (Lens Studio project)
 ├── pi-display/       # Raspberry Pi display scripts (e-ink, TFT touch)
-├── schema.sql        # Supabase schema
+├── schema.sql        # Supabase schema (folds, memories, messages, links, refs)
 └── scripts/          # Utilities (db migration, banner capture, slide capture)
 ```
 
@@ -286,15 +286,15 @@ Eywa is hosted for free at [eywa-ai.dev](https://eywa-ai.dev). To keep the servi
 |---|---|---|---|
 | **Team members** | 5 | Unlimited | Unlimited |
 | **History** | 7 days | 90 days | Custom |
-| **Memories per room** | 10,000 | 100,000 | Unlimited |
+| **Memories per fold** | 10,000 | 100,000 | Unlimited |
 | **MCP connections** | 20/min per IP | 100/min per IP | Custom |
-| **Demo rooms** | 5/hour, expire after 24h | N/A | N/A |
+| **Demo folds** | 5/hour, expire after 24h | N/A | N/A |
 | **All integrations** | Yes | Yes | Yes |
 | **Knowledge base** | Read-only | Full access | Full access |
 | **Timeline branching** | View only | Full access | Full access |
 | **Price** | $0 | $5/seat/month | Contact us |
 
-Demo rooms are copies of sample data that expire after 24 hours. Create your own room with `npx eywa-ai init` for persistent use.
+Demo folds are copies of sample data that expire after 24 hours. Create your own fold with `npx eywa-ai init` for persistent use.
 
 Self-hosting removes all limits. See below.
 

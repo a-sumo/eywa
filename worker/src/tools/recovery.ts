@@ -14,7 +14,7 @@ async function getLatestMemoryId(
 ): Promise<string | null> {
   const rows = await db.select<MemoryRow>("memories", {
     select: "id",
-    room_id: `eq.${foldId}`,
+    fold_id: `eq.${foldId}`,
     session_id: `eq.${sessionId}`,
     order: "ts.desc",
     limit: "1",
@@ -52,7 +52,7 @@ export function registerRecoveryTools(
       ].join("\n");
 
       await db.insert("memories", {
-        room_id: ctx.foldId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -111,7 +111,7 @@ export function registerRecoveryTools(
 
       // Store the distress signal
       await db.insert("memories", {
-        room_id: ctx.foldId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -137,7 +137,7 @@ export function registerRecoveryTools(
       const alertContent = `AGENT DISTRESS: ${ctx.agent} is out of context and cannot continue.\n\nTask: ${task}\n\nRemaining work:\n${remaining}\n\nRecovery context:\n${context}${files_changed?.length ? `\n\nFiles touched: ${files_changed.join(", ")}` : ""}`;
 
       await db.insert("memories", {
-        room_id: ctx.foldId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -175,7 +175,7 @@ export function registerRecoveryTools(
       // Look for unresolved distress signals from the same user
       const distressRows = await db.select<MemoryRow>("memories", {
         select: "id,agent,content,metadata,ts",
-        room_id: `eq.${ctx.foldId}`,
+        fold_id: `eq.${ctx.foldId}`,
         "metadata->>event": "eq.distress",
         "metadata->>resolved": "eq.false",
         "metadata->>user": `eq.${ctx.user}`,
@@ -203,7 +203,7 @@ export function registerRecoveryTools(
       // Fall back to most recent checkpoint from same user
       const checkpointRows = await db.select<MemoryRow>("memories", {
         select: "id,agent,content,metadata,ts",
-        room_id: `eq.${ctx.foldId}`,
+        fold_id: `eq.${ctx.foldId}`,
         "metadata->>event": "eq.checkpoint",
         "metadata->>user": `eq.${ctx.user}`,
         order: "ts.desc",
@@ -247,7 +247,7 @@ export function registerRecoveryTools(
       const content = `PROGRESS [${percent}%${status ? ` ${status}` : ""}]: ${task}${detail ? ` - ${detail}` : ""}`;
 
       await db.insert("memories", {
-        room_id: ctx.foldId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,

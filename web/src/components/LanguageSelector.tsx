@@ -2,6 +2,17 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { supportedLanguages } from "../lib/i18n";
 
+const FLAG_BASE = "https://flagcdn.com/w40";
+const flagMap: Record<string, string> = {
+  en: `${FLAG_BASE}/us.png`,
+  ja: `${FLAG_BASE}/jp.png`,
+  zh: `${FLAG_BASE}/cn.png`,
+  hi: `${FLAG_BASE}/in.png`,
+  es: `${FLAG_BASE}/es.png`,
+  fr: `${FLAG_BASE}/fr.png`,
+  ar: `${FLAG_BASE}/sa.png`,
+};
+
 export function LanguageSelector() {
   const { i18n } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -24,11 +35,13 @@ export function LanguageSelector() {
         onClick={() => setOpen(!open)}
         aria-label="Select language"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="2" y1="12" x2="22" y2="12" />
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
+        <img
+          src={flagMap[current.code]}
+          alt={current.name}
+          className="language-flag"
+          width={24}
+          height={16}
+        />
         <span>{current.native}</span>
       </button>
       {open && (
@@ -42,6 +55,13 @@ export function LanguageSelector() {
                 setOpen(false);
               }}
             >
+              <img
+                src={flagMap[lang.code]}
+                alt={lang.name}
+                className="language-flag"
+                width={24}
+                height={16}
+              />
               <span className="language-selector-native">{lang.native}</span>
               <span className="language-selector-name">{lang.name}</span>
             </button>

@@ -10,7 +10,7 @@ import {
   truncate,
   clampDescription,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 // Curvature computation (mirrors worker/src/tools/collaboration.ts)
 const ACTION_WEIGHTS: Record<string, number> = {
@@ -57,10 +57,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -70,14 +70,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("agent,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .gte("ts", twoHoursAgo)
     .order("ts", { ascending: false })
     .limit(2000);
 
   if (!rows?.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No recent activity (last 2 hours).", room.slug)],
+      embeds: [emptyEmbed("No recent activity (last 2 hours).", fold.slug)],
     });
     return;
   }
@@ -234,7 +234,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle("\u{1F4C8} Team Metrics")
         .setDescription(clampDescription(lines))
         .setColor(teamKappa > 0 ? Colors.SUCCESS : teamKappa < 0 ? Colors.ERROR : Colors.WARNING),

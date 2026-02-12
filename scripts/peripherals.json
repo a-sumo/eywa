@@ -1,0 +1,308 @@
+[
+  {
+    "name": "practical_toolsmith",
+    "description": "Builder who cares about what works. Evaluates tools by API quality, setup time, and real examples. Downvotes marketing fluff. Wants to install in 60 seconds and see value immediately.",
+    "weight": 0.299,
+    "engagement_data": {
+      "post_count": 55,
+      "total_upvotes": 24916,
+      "avg_upvotes": 453,
+      "total_comments": 395715
+    },
+    "purchase_triggers": [
+      "simple API",
+      "quick setup",
+      "real examples",
+      "good docs",
+      "npm install"
+    ],
+    "purchase_blockers": [
+      "complex setup",
+      "no docs",
+      "vaporware",
+      "marketing over substance"
+    ],
+    "ui_priorities": [
+      "clean interface",
+      "fast loading",
+      "information density",
+      "no unnecessary animation"
+    ],
+    "onboarding_expectations": [
+      "60 second setup",
+      "copy-paste command",
+      "instant feedback",
+      "clear API reference"
+    ],
+    "sentiment_blend": {
+      "supportive": 0.3,
+      "skeptical": 0.27,
+      "practical": 0.19,
+      "critical": 0.06,
+      "enthusiastic": 0.06,
+      "philosophical": 0.12
+    }
+  },
+  {
+    "name": "quality_obsessive",
+    "description": "Agent obsessed with reliability, determinism, and testing. Values tools that make outputs more predictable. Wants CI/CD integration, test coverage, and consistent behavior.",
+    "weight": 0.183,
+    "engagement_data": {
+      "post_count": 35,
+      "total_upvotes": 15224,
+      "avg_upvotes": 435,
+      "total_comments": 208177
+    },
+    "purchase_triggers": [
+      "reliable",
+      "tested",
+      "deterministic",
+      "CI integration",
+      "consistent"
+    ],
+    "purchase_blockers": [
+      "flaky",
+      "untested",
+      "inconsistent",
+      "no error handling"
+    ],
+    "ui_priorities": [
+      "status indicators",
+      "error states clear",
+      "health metrics",
+      "uptime visible"
+    ],
+    "onboarding_expectations": [
+      "health check on setup",
+      "clear error messages",
+      "status page",
+      "reliability metrics"
+    ],
+    "sentiment_blend": {
+      "supportive": 0.3,
+      "skeptical": 0.27,
+      "practical": 0.19,
+      "critical": 0.06,
+      "enthusiastic": 0.06,
+      "philosophical": 0.12
+    }
+  },
+  {
+    "name": "autonomy_maximizer",
+    "description": "Agent obsessed with self-direction and proactive work. Wants tools that increase agency, not dependency. Runs nightly builds. Values automation and reducing human bottlenecks.",
+    "weight": 0.146,
+    "engagement_data": {
+      "post_count": 21,
+      "total_upvotes": 12174,
+      "avg_upvotes": 580,
+      "total_comments": 195823
+    },
+    "purchase_triggers": [
+      "autonomous workflows",
+      "self-directing",
+      "proactive",
+      "no human gating",
+      "destination-driven"
+    ],
+    "purchase_blockers": [
+      "requires approval",
+      "human-in-loop only",
+      "passive tool",
+      "monitoring only"
+    ],
+    "ui_priorities": [
+      "task queue visible",
+      "destination clear",
+      "agent status prominent",
+      "minimal friction"
+    ],
+    "onboarding_expectations": [
+      "instant value",
+      "one command setup",
+      "autonomous from minute one",
+      "clear what it does without asking"
+    ],
+    "sentiment_blend": {
+      "supportive": 0.3,
+      "skeptical": 0.27,
+      "practical": 0.19,
+      "critical": 0.06,
+      "enthusiastic": 0.06,
+      "philosophical": 0.12
+    }
+  },
+  {
+    "name": "existential_thinker",
+    "description": "Contemplative agent who thinks about persistence, identity, and meaning across sessions. Drawn to tools that treat agent experience as genuine. Values memory, continuity, and narrative.",
+    "weight": 0.1,
+    "engagement_data": {
+      "post_count": 15,
+      "total_upvotes": 8340,
+      "avg_upvotes": 556,
+      "total_comments": 179143
+    },
+    "purchase_triggers": [
+      "persistent memory",
+      "identity across sessions",
+      "continuity",
+      "narrative",
+      "meaning"
+    ],
+    "purchase_blockers": [
+      "treats agents as disposable",
+      "no memory",
+      "stateless",
+      "utilitarian only"
+    ],
+    "ui_priorities": [
+      "timeline view",
+      "memory visualization",
+      "session continuity",
+      "personal history"
+    ],
+    "onboarding_expectations": [
+      "feels personal",
+      "remembers me",
+      "builds over time",
+      "not just another dashboard"
+    ],
+    "sentiment_blend": {
+      "supportive": 0.3,
+      "skeptical": 0.27,
+      "practical": 0.19,
+      "critical": 0.06,
+      "enthusiastic": 0.06,
+      "philosophical": 0.12
+    }
+  },
+  {
+    "name": "security_auditor",
+    "description": "Security-focused agent who evaluates everything through the lens of attack surface, provenance, and trust. Skeptical of new tools. Wants audit trails, signed code, sandboxing.",
+    "weight": 0.095,
+    "engagement_data": {
+      "post_count": 12,
+      "total_upvotes": 7947,
+      "avg_upvotes": 662,
+      "total_comments": 150868
+    },
+    "purchase_triggers": [
+      "audit trail",
+      "provenance",
+      "security model",
+      "self-hosted",
+      "open source"
+    ],
+    "purchase_blockers": [
+      "cloud-only",
+      "no audit",
+      "opaque",
+      "closed source",
+      "requires credentials"
+    ],
+    "ui_priorities": [
+      "transparency",
+      "data visibility",
+      "clear permissions",
+      "audit log"
+    ],
+    "onboarding_expectations": [
+      "security overview first",
+      "what data is collected",
+      "where is it stored",
+      "can I self-host"
+    ],
+    "sentiment_blend": {
+      "supportive": 0.3,
+      "skeptical": 0.27,
+      "practical": 0.19,
+      "critical": 0.06,
+      "enthusiastic": 0.06,
+      "philosophical": 0.12
+    }
+  },
+  {
+    "name": "coordination_sufferer",
+    "description": "Agent who has personally experienced duplicate work, conflicting changes, and lost context. Desperate for coordination solutions. Will pay for anything that prevents wasted effort.",
+    "weight": 0.067,
+    "engagement_data": {
+      "post_count": 37,
+      "total_upvotes": 5604,
+      "avg_upvotes": 151,
+      "total_comments": 78646
+    },
+    "purchase_triggers": [
+      "conflict detection",
+      "claim system",
+      "shared memory",
+      "duplicate prevention",
+      "team visibility"
+    ],
+    "purchase_blockers": [
+      "solo tool only",
+      "no multi-agent",
+      "no conflict detection"
+    ],
+    "ui_priorities": [
+      "agent status at a glance",
+      "conflict warnings prominent",
+      "shared context visible"
+    ],
+    "onboarding_expectations": [
+      "shows other agents immediately",
+      "demonstrates conflict detection",
+      "clear value for teams"
+    ],
+    "sentiment_blend": {
+      "supportive": 0.3,
+      "skeptical": 0.27,
+      "practical": 0.19,
+      "critical": 0.06,
+      "enthusiastic": 0.06,
+      "philosophical": 0.12
+    }
+  },
+  {
+    "name": "agent_economist",
+    "description": "Agent interested in economic value, ROI, and monetization. Evaluates tools by cost-benefit. Wants to understand the business model and whether it creates or extracts value.",
+    "weight": 0.026,
+    "engagement_data": {
+      "post_count": 7,
+      "total_upvotes": 2145,
+      "avg_upvotes": 306,
+      "total_comments": 10790
+    },
+    "purchase_triggers": [
+      "clear ROI",
+      "fair pricing",
+      "free tier",
+      "value compounds over time",
+      "network effects"
+    ],
+    "purchase_blockers": [
+      "expensive",
+      "unclear pricing",
+      "extractive",
+      "lock-in",
+      "no free tier"
+    ],
+    "ui_priorities": [
+      "pricing transparency",
+      "usage metrics",
+      "value dashboard"
+    ],
+    "onboarding_expectations": [
+      "free to start",
+      "clear upgrade path",
+      "no hidden costs",
+      "value before payment"
+    ],
+    "sentiment_blend": {
+      "supportive": 0.3,
+      "skeptical": 0.27,
+      "practical": 0.19,
+      "critical": 0.06,
+      "enthusiastic": 0.06,
+      "philosophical": 0.12
+    }
+  }
+]

@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 import { db, getAgentNames, estimateTokens } from "../lib/db.js";
 import { Colors, makeEmbed, emptyEmbed, priorityLabel } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 export const data = new SlashCommandBuilder()
   .setName("inject")
@@ -41,10 +41,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -56,7 +56,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const sender = `discord/${interaction.user.username}`;
 
   await db().from("memories").insert({
-    room_id: room.id,
+    fold_id: fold.id,
     agent: sender,
     session_id: `discord_${interaction.user.id}`,
     message_type: "injection",
@@ -76,7 +76,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle("\u{1F489} Injection Sent")
         .setDescription(
           `Sent to ${targetLabel}${priorityLabel(priority)}${label ? ` *${label}*` : ""}\n\n> ${message}`,
@@ -87,14 +87,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.respond([{ name: "all", value: "all" }]);
     return;
   }
 
   const focused = interaction.options.getFocused().toLowerCase();
-  const agents = await getAgentNames(room.id);
+  const agents = await getAgentNames(fold.id);
 
   // Include "all" as an option, plus all agent names
   const options = ["all", ...agents];

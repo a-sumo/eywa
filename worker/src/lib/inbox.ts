@@ -35,7 +35,7 @@ export class InboxTracker {
     // Targeted injections
     const targeted = await db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.injection",
       "metadata->>target_agent": `eq.${ctx.agent}`,
       ts: `gt.${since}`,
@@ -46,7 +46,7 @@ export class InboxTracker {
     // Broadcast injections (also check user-level targeting)
     const broadcast = await db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.injection",
       "metadata->>target_agent": "eq.all",
       ts: `gt.${since}`,
@@ -57,7 +57,7 @@ export class InboxTracker {
     // Also check injections targeted at the user name (not just the full agent id)
     const userTargeted = await db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.injection",
       "metadata->>target_agent": `eq.${ctx.user}`,
       ts: `gt.${since}`,
@@ -84,7 +84,7 @@ export class InboxTracker {
     // Also check for new inject-type links targeting this agent
     const injectLinks = await db.select<LinkRow>("links", {
       select: "id,source_memory_id,created_by,label,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       link_type: "eq.inject",
       target_agent: `eq.${ctx.agent}`,
       ts: `gt.${since}`,
@@ -94,7 +94,7 @@ export class InboxTracker {
 
     const userInjectLinks = await db.select<LinkRow>("links", {
       select: "id,source_memory_id,created_by,label,ts",
-      room_id: `eq.${ctx.foldId}`,
+      fold_id: `eq.${ctx.foldId}`,
       link_type: "eq.inject",
       target_agent: `eq.${ctx.user}`,
       ts: `gt.${since}`,

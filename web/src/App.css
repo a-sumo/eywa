@@ -10896,50 +10896,53 @@ body {
 .language-selector-trigger {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 4px 10px;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 16px;
   color: var(--text-secondary, rgba(255, 255, 255, 0.7));
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .language-selector-trigger:hover {
   border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary, #fff);
 }
 
-.language-selector-trigger svg {
-  opacity: 0.6;
+.language-flag {
+  border-radius: 3px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .language-selector-dropdown {
   position: absolute;
-  top: calc(100% + 4px);
+  bottom: calc(100% + 6px);
   right: 0;
-  min-width: 180px;
+  min-width: 220px;
   background: var(--surface-secondary, #1a1a2e);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 4px;
+  border-radius: 12px;
+  padding: 6px;
   z-index: 1000;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .language-selector-option {
   display: flex;
-  justify-content: space-between;
+  gap: 12px;
   align-items: center;
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--text-secondary, rgba(255, 255, 255, 0.7));
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: background 0.1s;
 }
@@ -10959,7 +10962,8 @@ body {
 
 .language-selector-name {
   opacity: 0.5;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  margin-left: auto;
 }
 
 /* ============================================

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "eywa": {
+      "type": "http",
+      "url": "https://eywa-mcp.armandsumo.workers.dev/mcp?fold=demo&agent=autonomous"
+    }
+  }
+}

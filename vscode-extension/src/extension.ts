@@ -39,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
   const decorationManager = new AgentDecorationManager(() => client);
   const sessionTree = new SessionTreeProvider(() => client);
   const panelView = new PanelViewProvider(() => client);
-  const liveProvider = new LiveViewProvider(() => client, getConfig("room"));
+  const liveProvider = new LiveViewProvider(() => client, getConfig("fold"));
   const approvalTree = new ApprovalTreeProvider(() => client);
 
   // Track attention items for badge and notifications
@@ -121,7 +121,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Initialize client
   initClient(decorationManager, sessionTree, panelView, approvalTree, handleRealtimeEvent, context);
 
-  if (!getConfig("room")) {
+  if (!getConfig("fold")) {
     showWelcome();
   }
 
@@ -161,8 +161,8 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("eywa.openDashboard", () => {
-      const room = getConfig("room");
-      vscode.env.openExternal(vscode.Uri.parse(room ? `https://eywa-ai.dev/r/${room}` : "https://eywa-ai.dev"));
+      const fold = getConfig("fold");
+      vscode.env.openExternal(vscode.Uri.parse(fold ? `https://eywa-ai.dev/f/${fold}` : "https://eywa-ai.dev"));
     }),
 
     vscode.commands.registerCommand("eywa.login", async () => {
@@ -180,16 +180,16 @@ export function activate(context: vscode.ExtensionContext) {
       const config = vscode.workspace.getConfiguration("eywa");
       await config.update("supabaseUrl", result.supabaseUrl, true);
       await config.update("supabaseKey", result.supabaseKey, true);
-      await config.update("room", result.room, true);
-      vscode.window.showInformationMessage(`Connected to Eywa room: ${result.room}`);
+      await config.update("fold", result.fold, true);
+      vscode.window.showInformationMessage(`Connected to Eywa fold: ${result.fold}`);
     }),
 
     vscode.commands.registerCommand("eywa.connectAgent", async () => {
-      const room = await vscode.window.showInputBox({ prompt: "Room slug", placeHolder: "my-project", value: getConfig("room") });
-      if (!room) return;
+      const fold = await vscode.window.showInputBox({ prompt: "Fold slug", placeHolder: "my-project", value: getConfig("fold") });
+      if (!fold) return;
       const agent = await vscode.window.showInputBox({ prompt: "Agent name", placeHolder: "claude-code" });
       if (!agent) return;
-      const mcpUrl = `https://mcp.eywa-ai.dev/mcp?room=${room}&agent=${agent}`;
+      const mcpUrl = `https://mcp.eywa-ai.dev/mcp?fold=${fold}&agent=${agent}`;
       await vscode.env.clipboard.writeText(mcpUrl);
       vscode.window.showInformationMessage(`MCP URL copied! Add to your MCP config:\n${mcpUrl}`, "Open Terminal").then((action) => {
         if (action === "Open Terminal") {
@@ -198,7 +198,7 @@ export function activate(context: vscode.ExtensionContext) {
           terminal.show();
         }
       });
-      await vscode.workspace.getConfiguration("eywa").update("room", room, true);
+      await vscode.workspace.getConfiguration("eywa").update("fold", fold, true);
     }),
 
     vscode.commands.registerCommand("eywa.injectContext", async () => {
@@ -220,21 +220,21 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand("eywa.injectSelection", () => injectSelection(() => client)),
 
-    vscode.commands.registerCommand("eywa.setRoom", async () => {
-      const room = await vscode.window.showInputBox({
-        prompt: "Enter room slug", placeHolder: "my-project", value: getConfig("room"),
+    vscode.commands.registerCommand("eywa.setFold", async () => {
+      const fold = await vscode.window.showInputBox({
+        prompt: "Enter fold slug", placeHolder: "my-project", value: getConfig("fold"),
         validateInput: (v) => /^[a-zA-Z0-9_-]{1,64}$/.test(v) ? null : "Letters, numbers, hyphens, underscores only",
       });
-      if (!room) return;
-      await vscode.workspace.getConfiguration("eywa").update("room", room, true);
+      if (!fold) return;
+      await vscode.workspace.getConfiguration("eywa").update("fold", fold, true);
     }),
 
     vscode.commands.registerCommand("eywa.showStatus", async () => {
-      const room = getConfig("room");
+      const fold = getConfig("fold");
       const tabTitlesOn = fs.existsSync(TAB_TITLE_FLAG);
 
       const items: vscode.QuickPickItem[] = [
-        { label: `$(folder) ${room || "(no room)"}`, description: "Switch room", detail: room ? `Connected to /${room}` : "Click to set a room" },
+        { label: `$(folder) ${fold || "(no fold)"}`, description: "Switch fold", detail: fold ? `Connected to /${fold}` : "Click to set a fold" },
         { label: "", kind: vscode.QuickPickItemKind.Separator },
       ];
 
@@ -252,14 +252,14 @@ export function activate(context: vscode.ExtensionContext) {
       items.push(
         { label: "$(terminal) Agent tab titles", description: tabTitlesOn ? "ON" : "OFF", detail: "Show what Claude is doing in terminal tab names" },
         { label: "$(plug) Connect new agent", description: "" },
-        { label: "$(link-external) Open web dashboard", description: room || "" },
+        { label: "$(link-external) Open web dashboard", description: fold || "" },
         { label: "$(log-in) Login with browser", description: "" },
       );
 
-      const pick = await vscode.window.showQuickPick(items, { placeHolder: room ? `Eywa: /${room}` : "Eywa: set up your room" });
+      const pick = await vscode.window.showQuickPick(items, { placeHolder: fold ? `Eywa: /${fold}` : "Eywa: set up your fold" });
       if (!pick) return;
 
-      if (pick.label.includes(room || "(no room)")) vscode.commands.executeCommand("eywa.setRoom");
+      if (pick.label.includes(fold || "(no fold)")) vscode.commands.executeCommand("eywa.setFold");
       else if (pick.label.includes("Inject context")) vscode.commands.executeCommand("eywa.injectContext");
       else if (pick.label.includes("Agent tab titles")) vscode.commands.executeCommand("eywa.toggleTabTitles");
       else if (pick.label.includes("Open web dashboard")) vscode.commands.executeCommand("eywa.openDashboard");
@@ -347,9 +347,9 @@ export function activate(context: vscode.ExtensionContext) {
   // Config changes
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
+      if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.fold")) {
         initClient(decorationManager, sessionTree, panelView, approvalTree, handleRealtimeEvent, context);
-        liveProvider.setRoom(getConfig("room"));
+        liveProvider.setFold(getConfig("fold"));
         updateStatusBar();
       }
     }),
@@ -358,14 +358,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 async function showWelcome() {
   const action = await vscode.window.showInformationMessage(
-    "Welcome to Eywa. Run `npx eywa-ai init` in your terminal to create a room and auto-configure your agents, then set the room here.",
+    "Welcome to Eywa. Run `npx eywa-ai init` in your terminal to create a fold and auto-configure your agents, then set the fold here.",
     "Get Started",
-    "Set Room",
+    "Set Fold",
   );
   if (action === "Get Started") {
     vscode.commands.executeCommand("workbench.action.openWalkthrough", "curvilinear.eywa-agents#eywa.welcome");
-  } else if (action === "Set Room") {
-    vscode.commands.executeCommand("eywa.setRoom");
+  } else if (action === "Set Fold") {
+    vscode.commands.executeCommand("eywa.setFold");
   }
 }
 
@@ -374,9 +374,9 @@ function getConfig(key: string): string {
 }
 
 function updateStatusBar() {
-  const room = getConfig("room");
-  if (!room) { statusBarItem.text = "$(cloud) Eywa (unconfigured)"; return; }
-  statusBarItem.text = `$(cloud) Eywa: /${room}`;
+  const fold = getConfig("fold");
+  if (!fold) { statusBarItem.text = "$(cloud) Eywa (unconfigured)"; return; }
+  statusBarItem.text = `$(cloud) Eywa: /${fold}`;
 }
 
 function initClient(
@@ -389,14 +389,14 @@ function initClient(
 ) {
   const url = getConfig("supabaseUrl");
   const key = getConfig("supabaseKey");
-  const room = getConfig("room");
+  const fold = getConfig("fold");
 
   if (realtime && client) {
     realtime.unsubscribe(client.getSupabase());
   }
 
-  if (url && key && room) {
-    client = new EywaClient(url, key, room);
+  if (url && key && fold) {
+    client = new EywaClient(url, key, fold);
     updateStatusBar();
     decorationManager.seed();
     sessionTree.seed();
@@ -407,9 +407,9 @@ function initClient(
     const unsub = realtime.on(onEvent);
     context.subscriptions.push({ dispose: unsub });
 
-    client.resolveRoomId().then((roomId) => {
-      if (roomId && realtime && client) {
-        realtime.subscribe(client.getSupabase(), roomId);
+    client.resolveFoldId().then((foldId) => {
+      if (foldId && realtime && client) {
+        realtime.subscribe(client.getSupabase(), foldId);
       }
     });
   } else {

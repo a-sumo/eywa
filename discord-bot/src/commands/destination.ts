@@ -10,18 +10,18 @@ import {
   timeAgo,
   truncate,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 export const data = new SlashCommandBuilder()
   .setName("destination")
-  .setDescription("View or set the room destination (point B)")
+  .setDescription("View or set the fold destination (point B)")
   .addSubcommand((sub) =>
     sub.setName("view").setDescription("View the current destination and progress"),
   )
   .addSubcommand((sub) =>
     sub
       .setName("set")
-      .setDescription("Set a new destination for the room")
+      .setDescription("Set a new destination for the fold")
       .addStringOption((opt) =>
         opt
           .setName("target")
@@ -48,10 +48,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -62,7 +62,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const { data: rows } = await db()
       .from("memories")
       .select("agent,content,ts,metadata")
-      .eq("room_id", room.id)
+      .eq("fold_id", fold.id)
       .eq("message_type", "knowledge")
       .eq("metadata->>event", "destination")
       .order("ts", { ascending: false })
@@ -70,7 +70,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     if (!rows?.length) {
       await interaction.editReply({
-        embeds: [emptyEmbed("No destination set. Use `/destination set` to define point B.", room.slug)],
+        embeds: [emptyEmbed("No destination set. Use `/destination set` to define point B.", fold.slug)],
       });
       return;
     }
@@ -112,7 +112,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({
       embeds: [
-        makeEmbed(room.slug)
+        makeEmbed(fold.slug)
           .setTitle("\uD83C\uDFAF Destination")
           .setDescription(lines.join("\n"))
           .setColor(Colors.BRAND),
@@ -135,7 +135,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const sender = `discord/${interaction.user.username}`;
     await db().from("memories").insert({
-      room_id: room.id,
+      fold_id: fold.id,
       agent: sender,
       session_id: `discord_${interaction.user.id}`,
       message_type: "knowledge",
@@ -157,7 +157,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({
       embeds: [
-        makeEmbed(room.slug)
+        makeEmbed(fold.slug)
           .setTitle("\uD83C\uDFAF Destination Set")
           .setDescription(`**${truncate(target, 300)}**${msText}`)
           .setColor(Colors.SUCCESS),
@@ -173,7 +173,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const { data: rows } = await db()
       .from("memories")
       .select("id,agent,content,ts,metadata")
-      .eq("room_id", room.id)
+      .eq("fold_id", fold.id)
       .eq("message_type", "knowledge")
       .eq("metadata->>event", "destination")
       .order("ts", { ascending: false })
@@ -181,7 +181,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     if (!rows?.length) {
       await interaction.editReply({
-        embeds: [emptyEmbed("No destination set.", room.slug)],
+        embeds: [emptyEmbed("No destination set.", fold.slug)],
       });
       return;
     }
@@ -200,7 +200,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         embeds: [
           emptyEmbed(
             `No milestone matching "${milestone}". Available: ${milestones.join(", ")}`,
-            room.slug,
+            fold.slug,
           ),
         ],
       });
@@ -212,7 +212,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     // Insert updated destination (append-only)
     await db().from("memories").insert({
-      room_id: room.id,
+      fold_id: fold.id,
       agent: sender,
       session_id: `discord_${interaction.user.id}`,
       message_type: "knowledge",
@@ -231,7 +231,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({
       embeds: [
-        makeEmbed(room.slug)
+        makeEmbed(fold.slug)
           .setTitle("\u2705 Milestone Completed")
           .setDescription(`**${match}**\n\nProgress: ${done}/${total} (${pct}%)`)
           .setColor(Colors.SUCCESS),

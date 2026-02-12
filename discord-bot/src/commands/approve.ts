@@ -11,7 +11,7 @@ import {
   truncate,
   clampDescription,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 const RISK_EMOJI: Record<string, string> = {
   low: "\u{1F7E2}",       // green
@@ -83,10 +83,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
 async function listApprovals(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -96,7 +96,7 @@ async function listApprovals(interaction: ChatInputCommandInteraction) {
   let query = db()
     .from("memories")
     .select("id,agent,content,metadata,ts")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("message_type", "approval_request")
     .order("ts", { ascending: false })
     .limit(50);
@@ -112,7 +112,7 @@ async function listApprovals(interaction: ChatInputCommandInteraction) {
       ? "No approval requests found."
       : "No pending approval requests.";
     await interaction.editReply({
-      embeds: [emptyEmbed(msg, room.slug)],
+      embeds: [emptyEmbed(msg, fold.slug)],
     });
     return;
   }
@@ -153,7 +153,7 @@ async function listApprovals(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(`\u{1F6E1}\uFE0F ${title}`)
         .setDescription(clampDescription(lines))
         .setColor(Colors.BRAND),
@@ -166,10 +166,10 @@ async function resolveApproval(
   decision: "approved" | "denied",
 ) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -185,7 +185,7 @@ async function resolveApproval(
   let query = db()
     .from("memories")
     .select("id,agent,metadata,content")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .eq("message_type", "approval_request");
 
   if (approvalId.length < 36) {
@@ -199,7 +199,7 @@ async function resolveApproval(
   if (!rows?.length) {
     await interaction.editReply({
       embeds: [
-        makeEmbed(room.slug)
+        makeEmbed(fold.slug)
           .setDescription(`Approval request not found: \`${approvalId}\``)
           .setColor(Colors.WARNING),
       ],
@@ -214,7 +214,7 @@ async function resolveApproval(
     });
     await interaction.editReply({
       embeds: [
-        makeEmbed(room.slug)
+        makeEmbed(fold.slug)
           .setDescription(
             `Multiple matches for \`${approvalId}\`:\n${matches.join("\n")}\n\nProvide a more specific ID.`,
           )
@@ -231,7 +231,7 @@ async function resolveApproval(
   if (meta.status !== "pending") {
     await interaction.editReply({
       embeds: [
-        makeEmbed(room.slug)
+        makeEmbed(fold.slug)
           .setDescription(
             `This request was already **${meta.status}** by ${(meta.resolved_by as string) || "unknown"}.`,
           )
@@ -263,7 +263,7 @@ async function resolveApproval(
       : `DENIED by ${resolvedBy}: ${action}${message ? `. Reason: ${message}` : ". Do NOT proceed."}`;
 
   await db().from("memories").insert({
-    room_id: room.id,
+    fold_id: fold.id,
     agent: resolvedBy,
     message_type: "injection",
     content: notifContent,
@@ -282,7 +282,7 @@ async function resolveApproval(
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle(`${emoji} ${verb}`)
         .setDescription(
           `**${truncate(action, 120)}**\n\n` +

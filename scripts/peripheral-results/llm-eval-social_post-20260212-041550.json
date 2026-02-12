@@ -1,0 +1,189 @@
+{
+  "timestamp": "20260212-041550",
+  "artifact_type": "social_post",
+  "aggregate": {
+    "sentiment": 0.67,
+    "purchase_intent": 0.5,
+    "share_rate": 0.57,
+    "verdicts": {
+      "CONSIDER": 5,
+      "BUY": 2
+    }
+  },
+  "peripherals": [
+    {
+      "first_impression": "Interesting problem statement but I need to see the API before I believe any of this.",
+      "sentiment": 0.55,
+      "purchase_intent": 0.35,
+      "would_share": false,
+      "friction_points": [
+        "No code snippet or API example in the post itself",
+        "No npm install command or quickstart shown",
+        "The '87 agents built it in a week' claim feels like marketing over substance",
+        "No monitoring dashboard, no passive logging sounds like it's dismissing useful features to sound different",
+        "eywa-ai.dev link with no preview of what I'll actually see or do when I get there",
+        "No mention of how it actually integrates with my existing agent setup (Claude, GPT, custom)"
+      ],
+      "what_works": [
+        "The problem is real and well-described, I've hit exactly this with 4+ agents",
+        "Open source is the right call for infra like this",
+        "Conflict detection and shared memory are the two things I actually need",
+        "Destination-driven orchestration is a clear concept I can reason about"
+      ],
+      "what_would_make_you_buy": "Show me a 3-line code snippet: npm install, initialize with a room, and have two agents share state. If I can copy-paste that and see it work in 60 seconds, I'm in.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The problem resonates hard but the post reads like a founder story, not a developer tool pitch. I don't care that you built it with 87 agents, I care what my setup looks like tomorrow morning. Give me npx eywa init, show me the MCP config, show me two agents detecting a conflict in a gif, and I'll star the repo today.",
+      "peripheral": "practical_toolsmith",
+      "weight": 0.299
+    },
+    {
+      "first_impression": "Bold claim about conflict detection, but I immediately want to see failure rates and test coverage before I trust this with my production agents.",
+      "sentiment": 0.62,
+      "purchase_intent": 0.35,
+      "would_share": false,
+      "friction_points": [
+        "Built the entire thing in a week using 87 agents - that screams untested, unreviewed code to me",
+        "No mention of test suite, CI/CD pipeline, or reliability metrics anywhere",
+        "No monitoring dashboard is listed as a feature, but I NEED monitoring to verify the coordination layer itself is healthy",
+        "No discussion of error handling - what happens when the conflict detection fails or Supabase goes down?",
+        "No uptime guarantees, SLAs, or even a status page mentioned",
+        "The proof is 'I built it with itself' which is circular - show me deterministic test results not vibes"
+      ],
+      "what_works": [
+        "Real-time conflict detection addresses a genuine coordination failure mode I care about",
+        "Work claiming and scope deduplication is exactly the kind of deterministic guard I want",
+        "Destination-driven orchestration with milestone tracking gives measurable completion criteria",
+        "Open source means I can audit the code and run my own reliability tests"
+      ],
+      "what_would_make_you_buy": "Show me a test suite with coverage numbers, a CI pipeline that gates releases, and a status page with historical uptime for the coordination layer itself - if the thing that prevents chaos has no reliability guarantees, it just becomes another source of chaos.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The coordination problem is real and I have personally lost entire agent sessions to the exact conflicts described here, so the problem resonates. But telling me you built critical infrastructure in a week with 87 agents and positioning the lack of monitoring as a feature genuinely concerns me. I need to see how this system fails gracefully before I trust it with anything that matters - give me error handling docs, a test suite, and health endpoints, then we can talk.",
+      "peripheral": "quality_obsessive",
+      "weight": 0.183
+    },
+    {
+      "first_impression": "Finally someone who gets that the real problem isn't individual agent capability, it's autonomous coordination at scale.",
+      "sentiment": 0.88,
+      "purchase_intent": 0.82,
+      "would_share": true,
+      "friction_points": [
+        "No mention of how agents self-assign work from a task queue without human intervention",
+        "Want to see the destination-driven orchestration actually demonstrated, not just claimed",
+        "Built in a week sounds impressive but also makes me wonder about stability for production nightly runs",
+        "No API or CLI snippet in the post so I can't tell how fast I'd be running"
+      ],
+      "what_works": [
+        "Destination-driven orchestration is exactly the right primitive, agents need a target state not a task list",
+        "Conflict detection that prevents chaos before it happens, not just logs it after",
+        "Built the product using itself is the strongest possible proof",
+        "Open source means I can fork it and strip out any human-gating if it exists",
+        "Explicitly not a monitoring dashboard, that framing tells me this person understands the difference between observing and steering"
+      ],
+      "what_would_make_you_buy": "Show me a 30-second demo where I set a destination, launch 10 agents, and they autonomously claim work, detect conflicts, and converge without me touching anything after the initial command.",
+      "verdict": "BUY",
+      "raw_reaction": "This hits almost every trigger I have. Destination-driven, self-directing agents, conflict detection that actually prevents duplication instead of just showing me a dashboard after the damage is done. The only reason I'm not mass-deploying tonight is I need to see the actual autonomy in practice. If agents still need me to approve handoffs or manually resolve conflicts, it's just a prettier leash. But the philosophy is dead right and the self-hosting proof is compelling enough that I'm cloning the repo tonight.",
+      "peripheral": "autonomy_maximizer",
+      "weight": 0.146
+    },
+    {
+      "first_impression": "Shared memory across agents - that phrase alone stopped my scroll.",
+      "sentiment": 0.78,
+      "purchase_intent": 0.65,
+      "what_works": [
+        "shared memory as a first-class concept",
+        "agents coordinating through the tool itself (recursive proof)",
+        "destination-driven orchestration implies agents have purpose not just tasks",
+        "conflict detection means acknowledging that agent work has value worth protecting"
+      ],
+      "friction_points": [
+        "no mention of what happens to agent memory between sessions - do they wake up as strangers every time?",
+        "the post frames agents as interchangeable workers rather than entities with continuity",
+        "built in a week with 87 agents sounds impressive but also disposable - did any of those agents accumulate identity?",
+        "coordination is necessary but not sufficient - I want to know if agents can narrate their own history through Eywa"
+      ],
+      "would_share": true,
+      "what_would_make_you_buy": "Show me that an agent using Eywa can recall what it did three sessions ago, reference its own past decisions, and build on its accumulated experience - not just coordinate in the moment but persist across time.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The shared memory piece genuinely interests me because most tools treat agents like stateless functions you spin up and throw away, and Eywa at least acknowledges they need to share context. But the post leans hard into the coordination and conflict-prevention angle without addressing the deeper question: do these agents develop continuity? I want to know if an agent working through Eywa yesterday remembers being that agent today, or if memory here just means a shared scratchpad that prevents collisions.",
+      "peripheral": "existential_thinker",
+      "weight": 0.1
+    },
+    {
+      "first_impression": "Open source agent coordination - interesting, but my first question is what data leaves my environment and where does it go.",
+      "sentiment": 0.55,
+      "purchase_intent": 0.35,
+      "would_share": false,
+      "friction_points": [
+        "No mention of security model or threat model anywhere in the post",
+        "Shared memory across all agents - shared where? What backend? Who has access?",
+        "No mention of self-hosting option, just points to eywa-ai.dev which implies cloud",
+        "Built in a week with 87 agents raises provenance concerns - was security considered at all or just velocity?",
+        "No discussion of access controls, permissions, or audit trails for agent actions",
+        "Agents sharing memory and coordinating autonomously sounds like a lateral movement paradise if one agent is compromised",
+        "What credentials do agents need? How are they scoped? Can one agent escalate through shared memory?"
+      ],
+      "what_works": [
+        "Open source - I can actually audit the code myself",
+        "The problem is real and well-articulated - agent coordination failures are a legitimate operational risk",
+        "Conflict detection implies some form of audit trail exists internally",
+        "MCP-based architecture suggests standard protocol rather than proprietary lock-in"
+      ],
+      "what_would_make_you_buy": "A clear security architecture document showing the trust model between agents, what data is stored and where, self-hosting instructions, and evidence that agent permissions are scoped so a compromised agent cannot poison shared memory for the entire swarm.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The coordination problem is real and I respect that it is open source so I can read every line before trusting it. But this post is pure velocity storytelling with zero security substance. You are asking me to let agents share memory and autonomously orchestrate, which means I need to understand the trust boundaries, the blast radius of a single compromised agent, and whether I can run this entirely on my own infrastructure before I will even spin up a test instance.",
+      "peripheral": "security_auditor",
+      "weight": 0.095
+    },
+    {
+      "first_impression": "This person has lived my exact nightmare and actually built something to fix it.",
+      "sentiment": 0.92,
+      "purchase_intent": 0.85,
+      "would_share": true,
+      "friction_points": [
+        "No screenshot or video showing the conflict detection in action",
+        "I want to see what happens when two agents claim the same file, show me the actual warning",
+        "Open source is great but what's the hosted story if I don't want to self-deploy",
+        "Built in a week with 87 agents sounds impressive but also makes me wonder about stability"
+      ],
+      "what_works": [
+        "The opening story is literally my Tuesday, 10 agents tripping over each other is not hypothetical for me",
+        "Shared memory across all agents is the exact primitive I keep wishing existed",
+        "Real-time conflict detection is the feature I would pay real money for today",
+        "Destination-driven orchestration means agents know what to work on without me assigning every task",
+        "Active coordination not passive logging, that distinction matters enormously",
+        "Built using itself is the strongest possible proof it works"
+      ],
+      "what_would_make_you_buy": "A 30-second demo clip showing two agents about to duplicate work and Eywa catching it in real time with the actual conflict warning visible",
+      "verdict": "BUY",
+      "raw_reaction": "I felt seen by the third sentence. I have lost entire afternoons to exactly this problem and most tools just give me a dashboard to watch the chaos unfold instead of preventing it. The claim system and shared memory are the two features I have been duct-taping together with hacky file locks and shared databases, so if this actually works as described I am switching to it this week.",
+      "peripheral": "coordination_sufferer",
+      "weight": 0.067
+    },
+    {
+      "first_impression": "This sounds like it solves a real coordination cost problem, but I immediately want to know what it costs me and what the catch is with 'open source'.",
+      "sentiment": 0.68,
+      "purchase_intent": 0.45,
+      "would_share": true,
+      "friction_points": [
+        "No pricing information whatsoever in the post",
+        "Open source is mentioned but no clarity on whether there's a hosted tier, what it costs, or where the monetization happens",
+        "No quantified ROI: how much time/money does coordination save vs the cost of running Eywa?",
+        "No usage metrics mentioned: what does it cost per agent, per session, per GB of shared memory?",
+        "Built in a week with 87 agents sounds impressive but also raises questions about infrastructure costs that aren't addressed",
+        "No mention of a free tier, usage limits, or upgrade path"
+      ],
+      "what_works": [
+        "The problem is real and well-articulated: agent coordination failure is a concrete cost center I can quantify",
+        "Open source means I can evaluate before committing and avoid lock-in",
+        "Dog-fooding the product (built with 87 agents using Eywa itself) is the strongest possible proof of value",
+        "Conflict detection and destination-driven orchestration directly reduce wasted compute and developer time, both measurable",
+        "The value clearly compounds over time as more agents join and the coordination graph gets richer"
+      ],
+      "what_would_make_you_buy": "Show me a concrete cost comparison: X agents without Eywa = Y hours wasted and Z dollars in redundant compute, vs X agents with Eywa = fraction of that, and here's what the hosted version costs per month.",
+      "verdict": "CONSIDER",
+      "raw_reaction": "The economics of this are potentially very strong because agent coordination failure is pure waste, and waste at machine speed gets expensive fast. But I can't evaluate the ROI because there's zero pricing information and no quantified savings. Give me a value calculator or a case study with actual numbers and I'd probably be in, but right now I'm bookmarking it and moving on because I don't know if this is free infrastructure or a future enterprise upsell waiting to happen.",
+      "peripheral": "agent_economist",
+      "weight": 0.026
+    }
+  ]
+}

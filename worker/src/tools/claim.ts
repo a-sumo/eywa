@@ -51,7 +51,7 @@ export async function getActiveClaims(
 
   const claimRows = await db.select<MemoryRow>("memories", {
     select: "agent,metadata,ts,session_id",
-    room_id: `eq.${foldId}`,
+    fold_id: `eq.${foldId}`,
     "metadata->>event": "eq.claim",
     ts: `gte.${twoHoursAgo}`,
     order: "ts.desc",
@@ -65,7 +65,7 @@ export async function getActiveClaims(
   const endRows = sessionIds.length > 0
     ? await db.select<MemoryRow>("memories", {
         select: "session_id,metadata",
-        room_id: `eq.${foldId}`,
+        fold_id: `eq.${foldId}`,
         session_id: `in.(${sessionIds.join(",")})`,
         "metadata->>event": `in.(session_end,session_done,unclaim)`,
         order: "ts.desc",
@@ -114,7 +114,7 @@ export async function getActiveClaims(
   // We get the latest memory per agent and check if it's older than the stale threshold
   const recentRows = await db.select<MemoryRow>("memories", {
     select: "agent,ts",
-    room_id: `eq.${foldId}`,
+    fold_id: `eq.${foldId}`,
     agent: `in.(${candidateAgents.join(",")})`,
     ts: `gte.${staleThreshold}`,
     order: "ts.desc",
@@ -210,7 +210,7 @@ export function registerClaimTools(
 
       // Store the claim
       await db.insert("memories", {
-        room_id: ctx.foldId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         message_type: "resource",
@@ -261,7 +261,7 @@ export function registerClaimTools(
     },
     async () => {
       await db.insert("memories", {
-        room_id: ctx.foldId,
+        fold_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         message_type: "resource",

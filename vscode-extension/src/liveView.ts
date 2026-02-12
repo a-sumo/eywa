@@ -63,12 +63,12 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   private attentionItems: AttentionItem[] = [];
   private tasks: TaskInfo[] = [];
   private getClient: () => EywaClient | undefined;
-  private room: string;
+  private fold: string;
   private onAttentionChange?: (items: AttentionItem[]) => void;
 
-  constructor(getClient: () => EywaClient | undefined, room: string) {
+  constructor(getClient: () => EywaClient | undefined, fold: string) {
     this.getClient = getClient;
-    this.room = room;
+    this.fold = fold;
   }
 
   /** Register callback for attention count changes (used for badge + notifications). */
@@ -88,15 +88,15 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
       : undefined;
   }
 
-  setRoom(room: string) {
-    this.room = room;
+  setFold(fold: string) {
+    this.fold = fold;
     this.agents.clear();
     this.activity = [];
     this.destination = null;
     this.agentProgress = [];
     this.attentionItems = [];
     this.tasks = [];
-    this.postMessage({ type: "loading", room });
+    this.postMessage({ type: "loading", fold });
     this.loadInitial();
   }
 
@@ -106,7 +106,7 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
     view.webview.html = this.getHtml();
 
     view.webview.onDidReceiveMessage(async (msg) => {
-      if (msg.type === "setRoom") vscode.commands.executeCommand("eywa.setRoom");
+      if (msg.type === "setFold") vscode.commands.executeCommand("eywa.setFold");
       else if (msg.type === "inject") {
         if (msg.targetAgent) {
           // Quick inject to a specific agent from detail panel
@@ -160,7 +160,7 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   async loadInitial() {
     const client = this.getClient();
     if (!client) {
-      this.postMessage({ type: "noRoom" });
+      this.postMessage({ type: "noFold" });
       return;
     }
 
@@ -219,7 +219,7 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
 
       this.pushState();
     } catch (err) {
-      this.postMessage({ type: "error", message: "Could not connect to room" });
+      this.postMessage({ type: "error", message: "Could not connect to fold" });
     }
   }
 
@@ -403,7 +403,7 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
       type: "state",
       agents: sorted,
       activity: this.activity,
-      room: this.room,
+      fold: this.fold,
       avatars: avatarMap,
       destination: this.destination,
       agentProgress: this.agentProgress,
@@ -438,12 +438,12 @@ export class LiveViewProvider implements vscode.WebviewViewProvider {
   }
   .logo { width: 20px; height: 20px; flex-shrink: 0; opacity: 0.7; }
   .logo path, .logo rect { fill: var(--vscode-foreground); }
-  .header-room {
+  .header-fold {
     flex: 1; min-width: 0;
     font-weight: 600; font-size: 12px;
     cursor: pointer; opacity: 0.9;
   }
-  .header-room:hover { opacity: 1; text-decoration: underline; }
+  .header-fold:hover { opacity: 1; text-decoration: underline; }
   .header-meta { font-size: 10px; opacity: 0.4; font-weight: 400; margin-left: 4px; }
   .header-actions { display: flex; gap: 2px; flex-shrink: 0; }
   .ibtn {
@@ -900,13 +900,13 @@ function render(data) {
   if (!data) {
     root.innerHTML = '<div class="state-msg">'
       + '<svg class="state-icon" viewBox="0 0 250 250" fill="none"><path d="M116 124.524C116 110.47 128.165 99.5067 142.143 100.963L224.55 109.547C232.478 110.373 238.5 117.055 238.5 125.025C238.5 133.067 232.372 139.785 224.364 140.522L141.858 148.112C127.977 149.389 116 138.463 116 124.524Z"/><path d="M120.76 120.274C134.535 120.001 145.285 132.097 143.399 145.748L131.891 229.05C131.094 234.817 126.162 239.114 120.341 239.114C114.442 239.114 109.478 234.703 108.785 228.845L98.9089 145.354C97.351 132.184 107.5 120.536 120.76 120.274Z"/><path d="M122.125 5.51834C128.648 5.51832 134.171 10.3232 135.072 16.7832L147.586 106.471C149.482 120.063 139.072 132.267 125.35 132.538C111.847 132.805 101.061 121.382 102.1 107.915L109.067 17.6089C109.593 10.7878 115.284 5.51835 122.125 5.51834Z"/><path d="M12 126.211C12 117.753 18.3277 110.632 26.7274 109.638L95.0607 101.547C109.929 99.787 123 111.402 123 126.374V128.506C123 143.834 109.333 155.552 94.1845 153.213L26.1425 142.706C18.005 141.449 12 134.445 12 126.211Z"/><rect width="69.09" height="37.63" rx="18.81" transform="matrix(-0.682 -0.731 0.715 -0.7 165.13 184.31)"/><rect width="69.09" height="37.47" rx="18.73" transform="matrix(-0.682 0.731 -0.714 -0.7 182.38 88.9)"/><rect width="75.28" height="37.98" rx="18.99" transform="matrix(0.679 0.734 -0.717 0.697 95.87 64.43)"/><rect width="71.22" height="41.64" rx="20.82" transform="matrix(0.799 -0.601 0.583 0.813 55 149.83)"/></svg>'
-      + '<p>Set a room to start<br>monitoring your agents.</p>'
-      + '<button class="btn" onclick="vscode.postMessage({type:\\'setRoom\\'})">Set Room</button></div>';
+      + '<p>Set a fold to start<br>monitoring your agents.</p>'
+      + '<button class="btn" onclick="vscode.postMessage({type:\\'setFold\\'})">Set Fold</button></div>';
     return;
   }
 
   lastData = data;
-  const { agents, activity, room, avatars, destination, agentProgress, attention, tasks } = data;
+  const { agents, activity, fold, avatars, destination, agentProgress, attention, tasks } = data;
   const active = agents.filter(a => a.status === 'active').length;
   const progressMap = {};
   if (agentProgress) {
@@ -916,7 +916,7 @@ function render(data) {
 
   // Header
   let html = '<div class="header">' + LOGO
-    + '<div class="header-room" onclick="vscode.postMessage({type:\\'setRoom\\'})" title="Switch room">/' + esc(room)
+    + '<div class="header-fold" onclick="vscode.postMessage({type:\\'setFold\\'})" title="Switch fold">/' + esc(fold)
     + '<span class="header-meta">' + (active > 0 ? active + ' active' : '') + '</span></div>'
     + '<div class="header-actions">'
     + '<button class="ibtn" onclick="vscode.postMessage({type:\\'refresh\\'})" title="Refresh"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13 3a8 8 0 00-11 0l1 1a6.5 6.5 0 019 0L11 5h4V1l-2 2zM3 13a8 8 0 0011 0l-1-1a6.5 6.5 0 01-9 0L5 11H1v4l2-2z"/></svg></button>'
@@ -1136,15 +1136,15 @@ window.addEventListener('message', e => {
   if (m.type === 'state') {
     vscode.setState(m);
     render(m);
-  } else if (m.type === 'noRoom') {
-    // Only show noRoom if we don't already have data
+  } else if (m.type === 'noFold') {
+    // Only show noFold if we don't already have data
     const prev = vscode.getState();
     if (!prev || prev.type !== 'state') {
       vscode.setState(null);
       render(null);
     }
   } else if (m.type === 'loading') {
-    root.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Connecting to /' + esc(m.room) + '</p></div>';
+    root.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Connecting to /' + esc(m.fold) + '</p></div>';
   } else if (m.type === 'error') {
     root.innerHTML = '<div class="state-msg"><p>' + esc(m.message) + '</p>'
       + '<button class="btn" onclick="vscode.postMessage({type:\\'refresh\\'})">Retry</button></div>';

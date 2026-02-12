@@ -440,7 +440,7 @@ async function handleGetAgentStatus(foldId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .order("ts", { ascending: false })
     .limit(500);
 
@@ -548,7 +548,7 @@ async function handleGetThread(
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .ilike("agent", `%${agent}%`)
     .order("ts", { ascending: true })
     .limit(limit);
@@ -580,7 +580,7 @@ async function handleGetKnowledge(
   let query = supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .eq("message_type", "knowledge")
     .order("ts", { ascending: false })
     .limit(30);
@@ -725,7 +725,7 @@ async function handleDetectPatterns(foldId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .gte("ts", thirtyMinAgo)
     .order("ts", { ascending: false })
     .limit(300);
@@ -796,7 +796,7 @@ async function handleGetDistressSignals(foldId: string): Promise<string> {
   const { data: distress, error: dErr } = await supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .eq("metadata->>event", "distress")
     .order("ts", { ascending: false })
     .limit(10);
@@ -806,7 +806,7 @@ async function handleGetDistressSignals(foldId: string): Promise<string> {
   const { data: checkpoints, error: cErr } = await supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .eq("metadata->>event", "checkpoint")
     .gte("ts", fourHoursAgo)
     .order("ts", { ascending: false })
@@ -872,7 +872,7 @@ async function handleGetDestination(foldId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .eq("message_type", "knowledge")
     .eq("metadata->>event", "destination")
     .order("ts", { ascending: false })
@@ -989,7 +989,7 @@ async function handleInjectToAgent(
   const validPriority = ["normal", "high", "urgent"].includes(priority) ? priority : "normal";
 
   const { error } = await supabase.from("memories").insert({
-    room_id: foldId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "injection",
@@ -1032,7 +1032,7 @@ async function handleApproveAction(
     .from("memories")
     .select("*")
     .eq("id", approvalId)
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .single();
 
   if (fetchErr || !req) return `Approval request not found: ${approvalId}`;
@@ -1063,7 +1063,7 @@ async function handleApproveAction(
     : "APPROVED: Your request has been approved. Proceed.";
 
   await supabase.from("memories").insert({
-    room_id: foldId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "injection",
@@ -1091,7 +1091,7 @@ async function handleDenyAction(
     .from("memories")
     .select("*")
     .eq("id", approvalId)
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .single();
 
   if (fetchErr || !req) return `Approval request not found: ${approvalId}`;
@@ -1116,7 +1116,7 @@ async function handleDenyAction(
   if (updateErr) return `Failed to update approval: ${updateErr.message}`;
 
   await supabase.from("memories").insert({
-    room_id: foldId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "injection",
@@ -1139,7 +1139,7 @@ async function handleGetPendingApprovals(foldId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("id, agent, ts, content, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .eq("metadata->>event", "approval_request")
     .eq("metadata->>status", "pending")
     .order("ts", { ascending: false })
@@ -1192,7 +1192,7 @@ async function handleCreateTask(
   const { data: existing } = await supabase
     .from("memories")
     .select("id, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .eq("message_type", "task")
     .order("ts", { ascending: false })
     .limit(100);
@@ -1211,7 +1211,7 @@ async function handleCreateTask(
   }
 
   const { data, error } = await supabase.from("memories").insert({
-    room_id: foldId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "task",
@@ -1251,7 +1251,7 @@ async function handleGetTasks(
   const { data, error } = await supabase
     .from("memories")
     .select("id, agent, ts, content, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .eq("message_type", "task")
     .order("ts", { ascending: false })
     .limit(100);
@@ -1328,7 +1328,7 @@ async function handleUpdateTask(
     .from("memories")
     .select("*")
     .eq("id", taskId)
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .eq("message_type", "task")
     .single();
 
@@ -1373,7 +1373,7 @@ async function handleSetDestination(
   const { data: existing } = await supabase
     .from("memories")
     .select("id, metadata")
-    .eq("room_id", foldId)
+    .eq("fold_id", foldId)
     .eq("message_type", "knowledge")
     .eq("metadata->>event", "destination")
     .order("ts", { ascending: false })
@@ -1393,7 +1393,7 @@ async function handleSetDestination(
 
     // Create new entry (append-only)
     const { error } = await supabase.from("memories").insert({
-      room_id: foldId,
+      fold_id: foldId,
       agent: "gemini-steering",
       session_id: `gemini_${Date.now()}`,
       message_type: "knowledge",
@@ -1423,7 +1423,7 @@ async function handleSetDestination(
   }
 
   const { error } = await supabase.from("memories").insert({
-    room_id: foldId,
+    fold_id: foldId,
     agent: "gemini-steering",
     session_id: `gemini_${Date.now()}`,
     message_type: "knowledge",

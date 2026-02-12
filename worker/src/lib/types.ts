@@ -28,7 +28,7 @@ export interface FoldRow {
 
 export interface MemoryRow {
   id: string;
-  room_id: string | null;
+  fold_id: string | null;
   agent: string;
   session_id: string | null;
   parent_id: string | null;  // Git: points to previous commit in chain
@@ -41,7 +41,7 @@ export interface MemoryRow {
 
 /** Git-like refs: branches, bookmarks, HEADs */
 export interface RefRow {
-  room_id: string;
+  fold_id: string;
   name: string;           // e.g. "heads/armand/quiet-oak", "bookmarks/auth-decision"
   commit_id: string;      // points to a memory
   created_by: string;
@@ -50,7 +50,7 @@ export interface RefRow {
 
 export interface MessageRow {
   id: string;
-  room_id: string | null;
+  fold_id: string | null;
   sender: string;
   channel: string;
   content: string;
@@ -63,7 +63,7 @@ export interface GlobalInsightRow {
   insight: string;
   domain_tags: string[];
   source_hash: string;
-  room_id: string | null;
+  fold_id: string | null;
   agent: string | null;
   upvotes: number;
   ts: string;
@@ -71,7 +71,7 @@ export interface GlobalInsightRow {
 
 export interface LinkRow {
   id: string;
-  room_id: string | null;
+  fold_id: string | null;
   source_memory_id: string;
   target_agent: string;
   target_session_id: string;

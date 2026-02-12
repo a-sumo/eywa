@@ -5,6 +5,7 @@ import { useFold } from "../hooks/useFold";
 import { FlowBackground } from "./FlowBackground";
 import EywaLogo from "./EywaLogo";
 import { TerminalDemo } from "./TerminalDemo";
+import { LanguageSelector } from "./LanguageSelector";
 
 function useGitHubStars() {
   const [stars, setStars] = useState<number | null>(null);
@@ -948,6 +949,7 @@ export function Landing() {
         </div>
         <div className="landing-footer-bottom">
           <p>© 2026 <a href="https://curvilinear.space" target="_blank" rel="noopener noreferrer">Curvilinear</a></p>
+          <LanguageSelector />
           <a
             href="https://gemini.google/us/about"
             target="_blank"

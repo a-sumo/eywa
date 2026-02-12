@@ -86,18 +86,18 @@ export function priorityLabel(p: string): string {
 
 // ── Embed builders ──────────────────────────────────────────────
 
-export function makeEmbed(room?: string) {
+export function makeEmbed(fold?: string) {
   const embed = new EmbedBuilder().setTimestamp();
-  if (room) embed.setFooter({ text: `\u{1F3E0} /${room}` });
+  if (fold) embed.setFooter({ text: `\u{1F3E0} /${fold}` });
   return embed;
 }
 
-export function errorEmbed(msg: string, room?: string) {
-  return makeEmbed(room)
+export function errorEmbed(msg: string, fold?: string) {
+  return makeEmbed(fold)
     .setDescription(`\u26A0\uFE0F ${msg}`)
     .setColor(Colors.WARNING);
 }
 
-export function emptyEmbed(msg: string, room?: string) {
-  return makeEmbed(room).setDescription(msg).setColor(Colors.MUTED);
+export function emptyEmbed(msg: string, fold?: string) {
+  return makeEmbed(fold).setDescription(msg).setColor(Colors.MUTED);
 }

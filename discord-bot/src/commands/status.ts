@@ -12,7 +12,7 @@ import {
   truncate,
   clampDescription,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 const ACTIVE_THRESHOLD = 30 * 60_000; // 30 min
 const RECENT_THRESHOLD = 2 * 60 * 60_000; // 2 hours
@@ -23,10 +23,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -34,12 +34,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("agent,message_type,content,ts,metadata")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .order("ts", { ascending: false });
 
   if (!rows?.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No agents found.", room.slug)],
+      embeds: [emptyEmbed("No agents found.", fold.slug)],
     });
     return;
   }
@@ -80,7 +80,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       meaningful = true;
     }
 
-    // Skip agents whose only activity is "connected to room"
+    // Skip agents whose only activity is "connected to fold"
     if (!meaningful && (row.content ?? "").startsWith("Agent ")) {
       // still register them for the idle count, but mark not meaningful
     }
@@ -140,14 +140,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   if (!lines.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No active agents.", room.slug)],
+      embeds: [emptyEmbed("No active agents.", fold.slug)],
     });
     return;
   }
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle("\u{1F52E} Agent Status")
         .setDescription(clampDescription(lines))
         .setColor(Colors.BRAND),

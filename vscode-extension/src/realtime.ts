@@ -14,13 +14,13 @@ export type MemoryPayload = {
   metadata: Record<string, unknown>;
   ts: string;
   message_type: string;
-  room_id: string;
+  fold_id: string;
 };
 
 export type RealtimeListener = (memory: MemoryPayload) => void;
 
 /**
- * Manages a single Supabase Realtime channel scoped to a room.
+ * Manages a single Supabase Realtime channel scoped to a fold.
  * Call {@link subscribe} to connect, {@link on} to register listeners,
  * and {@link unsubscribe} to tear down.
  */
@@ -28,22 +28,22 @@ export class RealtimeManager {
   private channel: RealtimeChannel | null = null;
   private listeners: RealtimeListener[] = [];
 
-  /** Subscribe to memory INSERTs for the given room. Cleans up any prior subscription. */
+  /** Subscribe to memory INSERTs for the given fold. Cleans up any prior subscription. */
   subscribe(
     supabase: SupabaseClient,
-    roomId: string,
+    foldId: string,
   ): void {
     this.unsubscribe(supabase);
 
     this.channel = supabase
-      .channel(`vscode-memories-${roomId}`)
+      .channel(`vscode-memories-${foldId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "memories",
-          filter: `room_id=eq.${roomId}`,
+          filter: `fold_id=eq.${foldId}`,
         },
         (payload) => {
           const mem = payload.new as MemoryPayload;

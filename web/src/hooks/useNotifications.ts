@@ -98,7 +98,7 @@ export function useNotifications(foldId: string | null) {
       const { data } = await supabase
         .from("memories")
         .select("*")
-        .eq("room_id", foldId)
+        .eq("fold_id", foldId)
         .in("metadata->>event", [
           "session_done",
           "session_end",
@@ -135,7 +135,7 @@ export function useNotifications(foldId: string | null) {
           event: "INSERT",
           schema: "public",
           table: "memories",
-          filter: `room_id=eq.${foldId}`,
+          filter: `fold_id=eq.${foldId}`,
         },
         (payload) => {
           const m = payload.new as Memory;

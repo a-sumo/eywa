@@ -10,7 +10,7 @@ import {
   clampDescription,
   timeAgo,
 } from "../lib/format.js";
-import { resolveRoom } from "../lib/rooms.js";
+import { resolveFold } from "../lib/folds.js";
 
 const SILENCE_WARN_MS = 10 * 60_000;
 const SILENCE_HIGH_MS = 30 * 60_000;
@@ -22,10 +22,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
-  const room = await resolveRoom(interaction.channelId);
-  if (!room) {
+  const fold = await resolveFold(interaction.channelId);
+  if (!fold) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No room set. Use `/room set <slug>` first.")],
+      embeds: [emptyEmbed("No fold set. Use `/fold set <slug>` first.")],
     });
     return;
   }
@@ -36,14 +36,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const { data: rows } = await db()
     .from("memories")
     .select("agent,content,ts,metadata,session_id")
-    .eq("room_id", room.id)
+    .eq("fold_id", fold.id)
     .gte("ts", since)
     .order("ts", { ascending: false })
     .limit(3000);
 
   if (!rows?.length) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No recent activity (last 4 hours).", room.slug)],
+      embeds: [emptyEmbed("No recent activity (last 4 hours).", fold.slug)],
     });
     return;
   }
@@ -55,7 +55,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   if (seedRows.length === 0) {
     await interaction.editReply({
-      embeds: [emptyEmbed("No seed agents active in the last 4 hours.", room.slug)],
+      embeds: [emptyEmbed("No seed agents active in the last 4 hours.", fold.slug)],
     });
     return;
   }
@@ -233,7 +233,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({
     embeds: [
-      makeEmbed(room.slug)
+      makeEmbed(fold.slug)
         .setTitle("\u{1F331} Seed Health")
         .setDescription(clampDescription(lines))
         .setColor(embedColor),
