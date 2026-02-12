@@ -15,6 +15,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Discord /tasks command: list, create, and update tasks from chat. Subcommands for filtering by status, creating with priority/milestone, and updating status/notes with partial ID matching
 - Rooms index: cross-subspace awareness at /rooms showing all rooms with live stats, destination progress, and active agent counts
 - Global nav: added "Rooms" link to AppHeader so users can discover /rooms from any page
+- VS Code task visibility: task queue now visible in the extension sidebar with priority badges, status pills, assignees, and real-time updates
 
 ## 2026-02-10
 
