@@ -19,6 +19,7 @@ import { SpectaclesReceiver } from "./components/SpectaclesReceiver";
 import { GlobalKnowledgeHub } from "./components/GlobalKnowledgeHub";
 import { NavigatorMap } from "./components/NavigatorMap";
 import { OperationsView } from "./components/OperationsView";
+import { SeedMonitor } from "./components/SeedMonitor";
 import { VoicesView } from "./components/VoicesView";
 import { DocsLayout, DocsOverview } from "./components/DocsLayout";
 import { IntegrationGuide } from "./components/IntegrationGuide";
@@ -30,6 +31,7 @@ import { SpectaclesDocs } from "./components/docs/SpectaclesDocs";
 import { PiDisplayDocs } from "./components/docs/PiDisplayDocs";
 import { ArchitectureDocs } from "./components/docs/ArchitectureDocs";
 import { SelfHostingDocs } from "./components/docs/SelfHostingDocs";
+import { VersionSwitcher } from "./components/VersionSwitcher";
 import "./App.css";
 
 function App() {
@@ -37,6 +39,7 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <ScrollToTop />
+        <VersionSwitcher />
         <AppHeader />
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -87,6 +90,7 @@ function RoomRoutes() {
         <Routes>
           <Route index element={<ThreadTree />} />
           <Route path="ops" element={<OperationsView />} />
+          <Route path="seeds" element={<SeedMonitor />} />
           <Route path="thread/:agent/:sessionId" element={<ThreadView />} />
           <Route path="workspace" element={<WorkspaceView />} />
           <Route path="agent/:name" element={<AgentDetail />} />
