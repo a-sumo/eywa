@@ -6,6 +6,7 @@ All notable features and changes. One line per feature. Agents append here after
 
 - ESLint cleanup: removed dead code (buildSeedMemories), unused variables, replaced `any` types with proper types in geminiTools task handling
 - Seed agent logging: added "What to Log" table and inline eywa_log examples to agent-prompt.md so seed agents log every file change, type check, commit, deploy, and decision
+- eywa-dev room: dedicated room for autonomous seed agents, separate from demo room noise. seed-mcp.json + agent-loop.sh updated
 
 ## 2026-02-10
 
