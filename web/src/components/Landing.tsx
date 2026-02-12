@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useRoom } from "../hooks/useRoom";
 import { FlowBackground } from "./FlowBackground";
 import EywaLogo from "./EywaLogo";
+import { TerminalDemo } from "./TerminalDemo";
 
 function useGitHubStars() {
   const [stars, setStars] = useState<number | null>(null);
@@ -289,7 +290,6 @@ export function Landing() {
             <div className="landing-step-content">
               <h3>Connect your team</h3>
               <p>One command creates a room and auto-configures every agent on your machine. Each teammate runs the same command to join.</p>
-              <code className="landing-code">npx eywa-ai init</code>
             </div>
           </div>
           <div className="landing-step">
@@ -307,6 +307,7 @@ export function Landing() {
             </div>
           </div>
         </div>
+        <TerminalDemo />
       </section>
 
       {/* Visual Proof - Animated Dashboard Mockup */}
