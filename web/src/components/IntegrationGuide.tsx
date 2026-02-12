@@ -50,8 +50,8 @@ const integrations: Record<string, IntegrationConfig> = {
       </svg>
     ),
     website: "https://cursor.sh",
-    mcpDocs: "https://docs.cursor.com/advanced/mcp",
-    configPath: "~/.cursor/mcp.json",
+    mcpDocs: "https://cursor.com/docs",
+    configPath: "~/.cursor/mcp.json (global) or .cursor/mcp.json (project)",
     configExample: `{
   "mcpServers": {
     "eywa": {
@@ -80,8 +80,8 @@ const integrations: Record<string, IntegrationConfig> = {
         <path clipRule="evenodd" d="M23.78 5.004h-.228a2.187 2.187 0 00-2.18 2.196v4.912c0 .98-.804 1.775-1.76 1.775a1.818 1.818 0 01-1.472-.773L13.168 5.95a2.197 2.197 0 00-1.81-.95c-1.134 0-2.154.972-2.154 2.173v4.94c0 .98-.797 1.775-1.76 1.775-.57 0-1.136-.289-1.472-.773L.408 5.098C.282 4.918 0 5.007 0 5.228v4.284c0 .216.066.426.188.604l5.475 7.889c.324.466.8.812 1.351.938 1.377.316 2.645-.754 2.645-2.117V11.89c0-.98.787-1.775 1.76-1.775h.002c.586 0 1.135.288 1.472.773l4.972 7.163a2.15 2.15 0 001.81.95c1.158 0 2.151-.973 2.151-2.173v-4.939c0-.98.787-1.775 1.76-1.775h.194c.122 0 .22-.1.22-.222V5.225a.221.221 0 00-.22-.222z"/>
       </svg>
     ),
-    website: "https://codeium.com/windsurf",
-    mcpDocs: "https://docs.codeium.com/windsurf/mcp",
+    website: "https://windsurf.com",
+    mcpDocs: "https://docs.windsurf.com/windsurf/cascade/mcp",
     configPath: "~/.codeium/windsurf/mcp_config.json",
     configExample: `{
   "mcpServers": {
@@ -142,22 +142,18 @@ const integrations: Record<string, IntegrationConfig> = {
       </svg>
     ),
     website: "https://github.com/openai/codex",
-    configPath: "~/.codex/config.json",
-    configExample: `{
-  "mcpServers": {
-    "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=codex/alice"
-    }
-  }
-}`,
+    configPath: "~/.codex/config.toml",
+    configExample: `[mcp_servers.eywa]
+url = "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=codex/alice"`,
     features: [
-      "MCP support via config",
-      "Lightweight CLI interface",
+      "Native MCP support via config.toml",
+      "Streamable HTTP transport",
       "GPT-4 powered",
       "Code generation focus",
     ],
     notes: [
-      "Codex CLI supports MCP natively",
+      "Codex uses TOML configuration, not JSON",
+      "You can also add via CLI: codex mcp add eywa --url https://mcp.eywa-ai.dev/mcp?room=my-team&agent=codex/alice",
       "Set OPENAI_API_KEY in your environment",
     ],
   },
@@ -173,8 +169,8 @@ const integrations: Record<string, IntegrationConfig> = {
       </svg>
     ),
     website: "https://github.com/cline/cline",
-    mcpDocs: "https://github.com/cline/cline#mcp-support",
-    configPath: "VS Code MCP settings",
+    mcpDocs: "https://docs.cline.bot/mcp/configuring-mcp-servers",
+    configPath: "cline_mcp_settings.json (via Cline extension)",
     configExample: `{
   "mcpServers": {
     "eywa": {
@@ -183,13 +179,13 @@ const integrations: Record<string, IntegrationConfig> = {
   }
 }`,
     features: [
-      "MCP support via VS Code settings",
+      "MCP support via extension settings",
       "Autonomous task execution",
       "File system access",
       "Terminal integration",
     ],
     notes: [
-      "Configure MCP in VS Code settings",
+      "Open the Cline panel, click the MCP Servers icon, then 'Advanced MCP Settings' to edit the config",
       "Cline will prompt to approve tool usage",
     ],
   },
