@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ConnectAgent } from "./ConnectAgent";
 import { supabase } from "../lib/supabase";
 
@@ -8,14 +8,35 @@ interface OnboardingOverlayProps {
   onDismiss: () => void;
 }
 
+function onboardingKey(roomId: string) {
+  return `eywa-onboarding-dismissed-${roomId}`;
+}
+
 /**
  * Three-step onboarding wizard for empty rooms.
  * Step 1: Connect an AI agent
  * Step 2: Set a destination (what are you working toward?)
  * Step 3: Waiting for first session to appear
+ *
+ * Persists dismissal to localStorage so users don't see it again on refresh.
  */
 export function OnboardingOverlay({ slug, roomId, onDismiss }: OnboardingOverlayProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
+
+  // Auto-dismiss if already dismissed for this room
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(onboardingKey(roomId))) {
+        onDismiss();
+      }
+    } catch {}
+  }, [roomId, onDismiss]);
+
+  // Wrap onDismiss to persist
+  const handleDismiss = useCallback(() => {
+    try { localStorage.setItem(onboardingKey(roomId), "1"); } catch {}
+    onDismiss();
+  }, [roomId, onDismiss]);
 
   // Destination state
   const [dest, setDest] = useState("");
@@ -63,7 +84,7 @@ export function OnboardingOverlay({ slug, roomId, onDismiss }: OnboardingOverlay
       {/* Header */}
       <div className="onboarding-header">
         <h2 className="onboarding-title">Set up your room</h2>
-        <button className="onboarding-dismiss" onClick={onDismiss}>
+        <button className="onboarding-dismiss" onClick={handleDismiss}>
           Skip setup
         </button>
       </div>
@@ -216,7 +237,7 @@ export function OnboardingOverlay({ slug, roomId, onDismiss }: OnboardingOverlay
             <div className="onboarding-actions">
               <button
                 className="onboarding-btn-primary"
-                onClick={onDismiss}
+                onClick={handleDismiss}
               >
                 Go to Hub
               </button>

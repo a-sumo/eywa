@@ -481,7 +481,9 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
     try { localStorage.removeItem(storageKey(roomId)); } catch {}
   }, []);
 
-  return { messages, loading, status, error, send, clear, autoContext };
+  const available = Boolean(GEMINI_API_KEY);
+
+  return { messages, loading, status, error, send, clear, autoContext, available };
 }
 
 // ---------------------------------------------------------------------------

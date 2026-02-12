@@ -54,6 +54,7 @@ export const commands: Command[] = [
   approve,
   metrics,
   seeds,
+  deploy,
   checkpoints,
 ];
 
