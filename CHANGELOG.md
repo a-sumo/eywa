@@ -4,6 +4,7 @@ All notable features and changes. One line per feature. Agents append here after
 
 ## 2026-02-12
 
+- ConnectAgent onboarding: added Windsurf and Codex client support with correct config formats, paths, and setup scripts. Fixed CLI Codex init to use TOML instead of JSON.
 - Landing page visual proof: animated dashboard mockup showing agent cards with live status, destination banner with progress, and activity stream
 - useChat error handling: fetch and insert errors now surfaced via `error` state so consumers can display them
 - useGeminiChat auto-context fallback: Promise.allSettled so individual tool failures don't break auto-context, graceful degradation when API is down
