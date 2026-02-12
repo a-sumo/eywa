@@ -25,6 +25,7 @@ import * as approve from "./approve.js";
 import * as metrics from "./metrics.js";
 import * as deploy from "./deploy.js";
 import * as seeds from "./seeds.js";
+import * as checkpoints from "./checkpoints.js";
 
 export interface Command {
   data: SharedSlashCommand;
@@ -53,6 +54,7 @@ export const commands: Command[] = [
   approve,
   metrics,
   seeds,
+  checkpoints,
 ];
 
 export const commandMap = new Map<string, Command>(
