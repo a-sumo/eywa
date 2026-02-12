@@ -37,6 +37,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Landing page memory persistence: animated crystal icon, three value props (permanence, structure, ownership) drawing from VISION.md storage narrative
 - Landing page memory persistence: narrative section about stored context, permanence, structured knowledge, and data ownership with animated crystal icon
 - Landing page trust and security: three-card section (metadata only, open source, self-hostable) with data flow visualization showing what Eywa sees vs what stays local
+- Onboarding overlay: three-step wizard for empty rooms (connect agent, set destination, wait for first session) with progress indicators and Nightly Aurora styling
 
 ## 2026-02-10
 
