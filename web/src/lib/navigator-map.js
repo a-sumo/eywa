@@ -788,25 +788,17 @@ export class NavigatorMap {
         const c = this.nodeColor(node);
         this.drawSourceMarker(sx, sy, size, c);
       } else if (node.type === 'action') {
+        // Actions are the curve segments between states, not visible dots.
+        // They still shape the curve as Catmull-Rom waypoints.
+        continue;
+      } else {
+        // state: filled dot in agent color
         const c = this.nodeColor(node);
         const dotR = 5;
         ctx.fillStyle = rgba(c, t.actionFill);
         ctx.beginPath(); ctx.arc(sx, sy, dotR, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = rgba(c, t.actionStroke);
         ctx.lineWidth = 1.5; ctx.stroke();
-        const glow = ctx.createRadialGradient(sx, sy, dotR * 0.5, sx, sy, dotR * 4);
-        glow.addColorStop(0, rgba(c, t.glowInner));
-        glow.addColorStop(1, rgba(c, 0));
-        ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(sx, sy, dotR * 4, 0, Math.PI * 2); ctx.fill();
-      } else {
-        // state: ring outline in agent color
-        const c = this.nodeColor(node);
-        const dotR = 5.5;
-        ctx.fillStyle = rgba(t.stateInner, t.stateInnerAlpha);
-        ctx.beginPath(); ctx.arc(sx, sy, dotR, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = rgba(c, t.stateStroke);
-        ctx.lineWidth = 1.8; ctx.stroke();
       }
 
       // --- Outcome encoding ---
@@ -1142,13 +1134,12 @@ export class NavigatorMap {
         ctx.globalAlpha = this.nodeAlphaFn(nd.id) * alpha;
 
         if (nd.type === 'action') {
-          ctx.fillStyle = rgba(c, t.actionFill);
-          ctx.beginPath(); ctx.arc(sx, sy, 4.5, 0, Math.PI * 2); ctx.fill();
+          continue; // actions are curve segments, not dots
         } else {
-          // state: ring
-          ctx.fillStyle = rgba(t.stateInner, t.stateInnerAlpha);
+          // state: filled dot
+          ctx.fillStyle = rgba(c, t.actionFill);
           ctx.beginPath(); ctx.arc(sx, sy, 4, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = rgba(c, t.stateStroke);
+          ctx.strokeStyle = rgba(c, t.actionStroke);
           ctx.lineWidth = 1.2;
           ctx.stroke();
         }
@@ -1464,7 +1455,7 @@ export class NavigatorMap {
     const agents = data ? (data.meta.agents || []) : [];
 
     // Pre-calculate legend height for glass panel
-    let legendH = pad + 28 + 5 * 20; // header + 5 type rows
+    let legendH = pad + 28 + 4 * 20; // header + 4 type rows (goal, origin, state, action)
     if (agents.length > 1) legendH += 14 + agents.length * 27;
     if (Math.abs(this.zoom - 1) > 0.05) legendH += 30;
     legendH += pad;
@@ -1500,10 +1491,11 @@ export class NavigatorMap {
     ctx.fillStyle = rgba(t.goal, 0.8);
     ctx.beginPath(); ctx.arc(lx + 6, ly + 5, 4.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = rgba(t.text, 0.5);
-    ctx.fillText('destination', lx + 18, ly);
+    ctx.fillText('goal', lx + 18, ly);
     ly += 20;
 
     // source: outlined circle
+    const sampleC = this.agentPalette[0];
     ctx.fillStyle = rgba(t.text, 0.15);
     ctx.beginPath(); ctx.arc(lx + 6, ly + 5, 4.5, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = rgba(t.text, 0.4);
@@ -1513,34 +1505,28 @@ export class NavigatorMap {
     ctx.fillText('origin', lx + 18, ly);
     ly += 20;
 
-    // action: filled circle
-    const sampleC = this.agentPalette[0];
+    // state: filled dot
     ctx.fillStyle = rgba(sampleC, 0.75);
     ctx.beginPath(); ctx.arc(lx + 6, ly + 5, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = rgba(t.text, 0.5);
-    ctx.fillText('action', lx + 18, ly);
-    ly += 20;
-
-    // state: ring outline
-    ctx.fillStyle = rgba(t.stateInner, t.stateInnerAlpha);
-    ctx.beginPath(); ctx.arc(lx + 6, ly + 5, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = rgba(sampleC, 0.6);
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    ctx.strokeStyle = rgba(sampleC, 0.9);
+    ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = rgba(t.text, 0.5);
     ctx.fillText('state', lx + 18, ly);
     ly += 20;
 
-    // arrow: direction indicator
+    // action: curve segment with arrow
+    ctx.strokeStyle = rgba(sampleC, 0.35);
+    ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(lx, ly + 5); ctx.lineTo(lx + 12, ly + 5); ctx.stroke();
     ctx.fillStyle = rgba(sampleC, 0.6);
     ctx.beginPath();
-    ctx.moveTo(lx + 10, ly + 5);
-    ctx.lineTo(lx + 2, ly + 2);
-    ctx.lineTo(lx + 2, ly + 8);
+    ctx.moveTo(lx + 12, ly + 5);
+    ctx.lineTo(lx + 7, ly + 2);
+    ctx.lineTo(lx + 7, ly + 8);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = rgba(t.text, 0.5);
-    ctx.fillText('direction', lx + 18, ly);
+    ctx.fillText('action', lx + 18, ly);
     ly += 20;
 
     this._legendHits = [];

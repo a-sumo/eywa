@@ -2,11 +2,18 @@
  * SpectaclesView.tsx
  *
  * Fullscreen Guild Navigator map for Spectacles streaming.
- * Web users see the interactive canvas (same renderer as NavigatorMap.tsx).
- * A hidden canvas renders frames and broadcasts to Spectacles via Supabase Realtime.
  *
- * Both the visible and broadcast canvases use the vendored navigator-map.js
- * for pixel-identical rendering with guild-navigator.
+ * Architecture:
+ * 1. Web page renders the navigator map on a visible canvas (for debugging/preview)
+ * 2. A hidden broadcast canvas renders frames at ~5fps
+ * 3. Frames are sent to Spectacles via Supabase Realtime
+ * 4. Spectacles sends SIK interaction events (zoom, pan, select, etc.) back via Realtime
+ * 5. This view processes those events and updates the renderer accordingly
+ *
+ * Controls follow Spectacles ergonomics:
+ * - Tap targets: 2.0+ cm (44px+ on web fallback)
+ * - Pinch uncertainty: 1-2 cm, generous padding
+ * - Gestures: clap (expand), snap (reset), peace sign (focus)
  */
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -14,16 +21,57 @@ import { useFoldContext } from "../context/FoldContext";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { supabase } from "../lib/supabase";
 import { NavigatorMap as NavigatorMapRenderer } from "../lib/navigator-map.js";
-import type { NavigatorMapData } from "../lib/navigator-map.js";
+import type { NavigatorMapData, NavigatorMapNode } from "../lib/navigator-map.js";
 import {
   syncEywaRoom,
   getMap,
   listRooms,
   connectStream,
-  BASE_URL,
 } from "../lib/navigatorClient";
 
-// --- Main Component ---
+// --- SIK Interaction Event Types ---
+// These arrive from Spectacles via Supabase Realtime broadcast
+interface SikEvent {
+  type:
+    | "zoom_in"
+    | "zoom_out"
+    | "pan"
+    | "reset_view"
+    | "select"
+    | "toggle_agent"
+    | "toggle_grid"
+    | "toggle_theme"
+    | "toggle_info";
+  // zoom
+  factor?: number;
+  // pan (normalized -1 to 1, relative to canvas)
+  dx?: number;
+  dy?: number;
+  // select (normalized 0-1 coords on the broadcast canvas)
+  x?: number;
+  y?: number;
+  // toggle_agent
+  agent?: string;
+}
+
+// --- Button style for Spectacles-sized controls ---
+// Min 44px touch target per ergonomics spec (2cm at screen distance)
+const CTRL_BTN: React.CSSProperties = {
+  minWidth: 48,
+  minHeight: 48,
+  padding: "10px 16px",
+  fontSize: 16,
+  fontWeight: 600,
+  borderRadius: 12,
+  border: "none",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  touchAction: "manipulation",
+  userSelect: "none",
+};
 
 export function SpectaclesView() {
   const { fold } = useFoldContext();
@@ -35,6 +83,8 @@ export function SpectaclesView() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [channelReady, setChannelReady] = useState(false);
   const [broadcasting, setBroadcasting] = useState(false);
+  const [gridMode, setGridMode] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   const roomSlug = fold?.slug || "demo";
   const deviceId = useMemo(() => {
@@ -52,7 +102,7 @@ export function SpectaclesView() {
   // Visible canvas + renderer
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mapRef = useRef<NavigatorMapRenderer | null>(null);
-  const hoveredRef = useRef<import("../lib/navigator-map.js").NavigatorMapNode | null>(null);
+  const hoveredRef = useRef<NavigatorMapNode | null>(null);
   const draggingRef = useRef(false);
   const dragMovedRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
@@ -97,7 +147,20 @@ export function SpectaclesView() {
     requestAnimationFrame(() => map.draw(hoveredRef.current));
   }
 
-  // Find best Navigator fold on load
+  // Sync both renderers' view state (zoom, pan) so broadcast matches visible
+  function syncBroadcastView() {
+    const vis = mapRef.current;
+    const brd = broadcastMapRef.current;
+    if (!vis || !brd) return;
+    brd.setZoom(vis.zoom);
+    // Scale pan proportionally to broadcast canvas size
+    const sx = brd.W / vis.W;
+    const sy = brd.H / vis.H;
+    brd.setPan(vis.panX * sx, vis.panY * sy);
+    brd.draw(hoveredRef.current);
+  }
+
+  // --- Data loading ---
   useEffect(() => {
     listRooms()
       .then((rooms) => {
@@ -171,7 +234,6 @@ export function SpectaclesView() {
       }
     };
 
-    // SSE for live updates
     const cleanupSSE = connectStream(roomId, (state) => {
       const d = state as NavigatorMapData;
       mapDataRef.current = d;
@@ -180,7 +242,6 @@ export function SpectaclesView() {
       redraw();
     });
 
-    // Also periodic re-sync + fetch
     const tick = async () => { await syncData(); await fetchMap(); };
     fetchMap();
     const interval = setInterval(tick, 30_000);
@@ -188,7 +249,87 @@ export function SpectaclesView() {
     return () => { cancelled = true; clearInterval(interval); cleanupSSE(); };
   }, [roomId, syncData]);
 
-  // Supabase broadcast channel
+  // --- SIK Interaction Handler ---
+  // Processes interaction events from Spectacles via Supabase Realtime
+  const handleSikEvent = useCallback((evt: SikEvent) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    switch (evt.type) {
+      case "zoom_in": {
+        const factor = evt.factor || 1.3;
+        targetZoomRef.current = Math.min(20, targetZoomRef.current * factor);
+        startViewAnim();
+        break;
+      }
+      case "zoom_out": {
+        const factor = evt.factor || 0.7;
+        targetZoomRef.current = Math.max(0.1, targetZoomRef.current * factor);
+        startViewAnim();
+        break;
+      }
+      case "pan": {
+        // dx/dy are normalized -1 to 1, scale to canvas pixels
+        const px = (evt.dx || 0) * map.W * 0.2;
+        const py = (evt.dy || 0) * map.H * 0.2;
+        targetPanRef.current = {
+          x: targetPanRef.current.x + px,
+          y: targetPanRef.current.y + py,
+        };
+        startViewAnim();
+        break;
+      }
+      case "reset_view": {
+        targetZoomRef.current = 1;
+        targetPanRef.current = { x: 0, y: 0 };
+        startViewAnim();
+        break;
+      }
+      case "select": {
+        // Normalized coords (0-1) on the broadcast canvas, map to visible canvas
+        if (evt.x != null && evt.y != null) {
+          const sx = evt.x * map.W;
+          const sy = evt.y * map.H;
+          const agent = map.hitTestLegend(sx, sy);
+          if (agent) {
+            map.toggleAgent(agent);
+          } else {
+            const node = map.hitTest(sx, sy);
+            hoveredRef.current = node;
+          }
+          redraw();
+        }
+        break;
+      }
+      case "toggle_agent": {
+        if (evt.agent) {
+          map.toggleAgent(evt.agent);
+          redraw();
+        }
+        break;
+      }
+      case "toggle_grid": {
+        const next = !map.gridMode;
+        map.setGridMode(next);
+        setGridMode(next);
+        redraw();
+        break;
+      }
+      case "toggle_theme": {
+        setTheme((t) => (t === "dark" ? "light" : "dark"));
+        break;
+      }
+      case "toggle_info": {
+        setShowInfo((v) => !v);
+        break;
+      }
+    }
+
+    // After any interaction, sync broadcast canvas
+    syncBroadcastView();
+  }, []);
+
+  // --- Supabase Realtime channel ---
   useEffect(() => {
     if (!fold?.slug) return;
     const channelKey = `spectacles:${fold.slug}:${deviceId}`;
@@ -196,8 +337,18 @@ export function SpectaclesView() {
       config: { broadcast: { ack: false, self: false } },
     });
 
+    // Listen for SIK interaction events from Spectacles
+    channel.on("broadcast", { event: "interaction" }, (msg) => {
+      const payload = msg.payload as SikEvent;
+      if (payload?.type) {
+        handleSikEvent(payload);
+      }
+    });
+
+    // Listen for sync requests
     channel.on("broadcast", { event: "sync_request" }, () => {
       console.log("[SpectaclesView] Sync request from glasses");
+      syncData();
     });
 
     channel.subscribe((status) => {
@@ -210,9 +361,9 @@ export function SpectaclesView() {
       channelRef.current = null;
       setChannelReady(false);
     };
-  }, [fold?.slug, deviceId]);
+  }, [fold?.slug, deviceId, handleSikEvent, syncData]);
 
-  // Broadcast loop: render map to hidden canvas using NavigatorMap, send frames
+  // --- Broadcast loop ---
   useEffect(() => {
     if (!channelReady) return;
 
@@ -220,17 +371,14 @@ export function SpectaclesView() {
     const W = 1024;
     const H = 768;
 
-    // Create hidden canvas for broadcast rendering
     const bCanvas = document.createElement("canvas");
     bCanvas.style.cssText = "position:absolute;left:-9999px;width:1024px;height:768px";
     document.body.appendChild(bCanvas);
     broadcastCanvasRef.current = bCanvas;
 
-    // Create a NavigatorMap renderer for the broadcast canvas
     const bMap = new NavigatorMapRenderer(bCanvas, { theme: themeRef.current });
     broadcastMapRef.current = bMap;
 
-    // Seed with current data if available
     if (mapDataRef.current) bMap.setData(mapDataRef.current);
 
     setBroadcasting(true);
@@ -248,7 +396,6 @@ export function SpectaclesView() {
       const channel = channelRef.current;
       if (!channel) return;
 
-      // Create tile quad on first frame
       if (!tileCreated) {
         channel.send({
           type: "broadcast",
@@ -259,20 +406,18 @@ export function SpectaclesView() {
               id: TILE_ID,
               x: 0, y: 0, z: 0.5,
               w: W, h: H, scale: 1,
-              layer: 0, visible: true, interactive: false, draggable: false,
+              layer: 0, visible: true, interactive: true, draggable: false,
             }],
           },
         });
         tileCreated = true;
       }
 
-      // Sync theme
+      // Sync theme + view state
       if (bMap.themeName !== themeRef.current) bMap.setTheme(themeRef.current);
+      syncBroadcastView();
+      bMap.draw(hoveredRef.current);
 
-      // Render frame
-      bMap.draw(null);
-
-      // Capture and send
       try {
         const blob = await new Promise<Blob | null>((resolve) => bCanvas.toBlob(resolve, "image/jpeg", 0.8));
         if (!blob) return;
@@ -289,7 +434,7 @@ export function SpectaclesView() {
       } catch {
         // encoding can fail if tab is backgrounded
       }
-    }, 200); // ~5fps
+    }, 200);
 
     intervalRef.current = loop;
     return () => {
@@ -303,7 +448,7 @@ export function SpectaclesView() {
     };
   }, [channelReady, deviceId]);
 
-  // --- Interaction handlers (same pattern as NavigatorMap.tsx) ---
+  // --- View animation (smooth zoom/pan) ---
   const VIEW_LERP = 0.18;
 
   function startViewAnim() {
@@ -334,14 +479,24 @@ export function SpectaclesView() {
     }
   }
 
+  // --- Canvas event handlers (web fallback) ---
+  // Convert viewport coords to canvas-local coords (renderer uses canvas-local CSS pixels)
+  function canvasLocal(e: { clientX: number; clientY: number }) {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return { x: e.clientX, y: e.clientY };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
   function onWheel(e: React.WheelEvent) {
     e.preventDefault();
     const map = mapRef.current;
     if (!map) return;
     const factor = e.deltaY > 0 ? 0.9 : 1.1;
     const newZoom = Math.max(0.1, Math.min(20, targetZoomRef.current * factor));
-    const mx = e.clientX - map.cx;
-    const my = e.clientY - map.cy;
+    // Zoom toward cursor: offset from canvas center in canvas-local coords
+    const { x, y } = canvasLocal(e);
+    const mx = x - map.cx;
+    const my = y - map.cy;
     targetPanRef.current = {
       x: mx - (mx - targetPanRef.current.x) * (newZoom / targetZoomRef.current),
       y: my - (my - targetPanRef.current.y) * (newZoom / targetZoomRef.current),
@@ -370,11 +525,12 @@ export function SpectaclesView() {
       redraw();
       return;
     }
-    const node = map.hitTest(e.clientX, e.clientY);
+    const { x, y } = canvasLocal(e);
+    const node = map.hitTest(x, y);
     if (node !== hoveredRef.current) { hoveredRef.current = node; redraw(); }
     const canvas = canvasRef.current;
     if (canvas) {
-      canvas.style.cursor = (node || map.hitTestLegend(e.clientX, e.clientY)) ? "pointer" : "default";
+      canvas.style.cursor = (node || map.hitTestLegend(x, y)) ? "pointer" : "default";
     }
   }
 
@@ -384,18 +540,30 @@ export function SpectaclesView() {
     if (dragMovedRef.current) return;
     const map = mapRef.current;
     if (!map) return;
-    const agent = map.hitTestLegend(e.clientX, e.clientY);
+    const { x, y } = canvasLocal(e);
+    const agent = map.hitTestLegend(x, y);
     if (agent) { map.toggleAgent(agent); redraw(); }
   }
 
   function onDoubleClick() {
-    targetZoomRef.current = 1;
-    targetPanRef.current = { x: 0, y: 0 };
-    startViewAnim();
+    handleSikEvent({ type: "reset_view" });
   }
 
-  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+  // --- Web control handlers (map to SIK events for consistency) ---
+  const zoomIn = () => handleSikEvent({ type: "zoom_in", factor: 1.4 });
+  const zoomOut = () => handleSikEvent({ type: "zoom_out", factor: 0.6 });
+  const resetView = () => handleSikEvent({ type: "reset_view" });
+  const toggleGrid = () => handleSikEvent({ type: "toggle_grid" });
+  const toggleTheme = () => handleSikEvent({ type: "toggle_theme" });
+  const toggleInfo = () => handleSikEvent({ type: "toggle_info" });
+
   const isDark = theme === "dark";
+  const bg = isDark ? "#080a08" : "#fafafa";
+  const fg = isDark ? "#e6edf3" : "#1a1a1a";
+  const accent = isDark ? "#00e878" : "#6417ec";
+  const btnBg = isDark ? "rgba(0,232,120,0.08)" : "rgba(100,23,236,0.06)";
+  const btnBorder = isDark ? "rgba(0,232,120,0.2)" : "rgba(100,23,236,0.2)";
+  const btnActive = isDark ? "rgba(0,232,120,0.18)" : "rgba(100,23,236,0.14)";
 
   return (
     <div
@@ -404,72 +572,12 @@ export function SpectaclesView() {
         flexDirection: "column",
         height: "100vh",
         width: "100vw",
-        background: isDark ? "#080a08" : "#fafafa",
-        color: isDark ? "#e6edf3" : "#1a1a1a",
+        background: bg,
+        color: fg,
         overflow: "hidden",
+        fontFamily: "Inter, system-ui, sans-serif",
       }}
     >
-      {/* Minimal toolbar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "6px 14px",
-          borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"}`,
-          background: isDark ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.8)",
-          flexShrink: 0,
-        }}
-      >
-        <span style={{
-          fontSize: 13, fontWeight: 600, color: "#15D1FF",
-          fontFamily: "var(--font-display, 'Plus Jakarta Sans', system-ui, sans-serif)",
-        }}>
-          Eywa
-        </span>
-        <span style={{ fontSize: 11, color: isDark ? "#484f58" : "#999" }}>
-          /{roomSlug}
-        </span>
-
-        {broadcasting && (
-          <span style={{
-            fontSize: 10, fontWeight: 700, color: "#4ade80",
-            background: "rgba(74,222,128,0.12)", padding: "2px 6px",
-            borderRadius: 3, letterSpacing: "0.5px",
-          }}>
-            BROADCASTING
-          </span>
-        )}
-
-        <div style={{ flex: 1 }} />
-
-        <button
-          onClick={toggleTheme}
-          style={{
-            background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
-            color: isDark ? "#e6edf3" : "#333",
-            border: `1px solid ${isDark ? "#30363d" : "#ddd"}`,
-            borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer",
-          }}
-        >
-          {isDark ? "Light" : "Dark"}
-        </button>
-
-        <button
-          onClick={syncData}
-          disabled={syncing}
-          style={{
-            background: syncing ? (isDark ? "#1e1e2e" : "#eee") : "rgba(21,209,255,0.12)",
-            color: syncing ? (isDark ? "#6b7280" : "#999") : "#15D1FF",
-            border: "1px solid rgba(21,209,255,0.3)",
-            borderRadius: 6, padding: "4px 10px", fontSize: 11,
-            cursor: syncing ? "default" : "pointer",
-          }}
-        >
-          {syncing ? "Syncing..." : "Sync"}
-        </button>
-      </div>
-
       {/* Navigator map canvas */}
       <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
         <canvas
@@ -483,15 +591,202 @@ export function SpectaclesView() {
           onClick={onClick}
           onDoubleClick={onDoubleClick}
         />
+
+        {/* Empty state */}
         {!mapDataRef.current && (
           <div style={{
             position: "absolute", inset: 0, display: "flex",
             alignItems: "center", justifyContent: "center",
-            color: isDark ? "#484f58" : "#999", fontSize: 13, pointerEvents: "none",
+            color: isDark ? "#484f58" : "#999", fontSize: 15, pointerEvents: "none",
           }}>
             {syncing ? "Syncing fold data..." : "Connecting..."}
           </div>
         )}
+
+        {/* Info overlay */}
+        {showInfo && mapDataRef.current && (
+          <div
+            onClick={() => setShowInfo(false)}
+            style={{
+              position: "absolute", inset: 0, display: "flex",
+              alignItems: "center", justifyContent: "center",
+              background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)",
+              zIndex: 20, cursor: "pointer",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: isDark ? "#0c0e0c" : "#fafafa",
+                border: `1px solid ${isDark ? "rgba(0,220,100,0.15)" : "rgba(80,60,140,0.15)"}`,
+                borderRadius: 16, padding: "28px 24px", maxWidth: 480, maxHeight: "80vh",
+                overflow: "auto", cursor: "default",
+              }}
+            >
+              <h3 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 600, color: accent, textTransform: "uppercase", letterSpacing: 1 }}>
+                Fold: {roomSlug}
+              </h3>
+              <p style={{ margin: "0 0 8px", fontSize: 12, lineHeight: 1.6, opacity: 0.7 }}>
+                {mapDataRef.current.meta.itemCount} items across {mapDataRef.current.meta.agents.length} agent{mapDataRef.current.meta.agents.length !== 1 ? "s" : ""}
+              </p>
+              {mapDataRef.current.meta.agents.map((a) => (
+                <div key={a} style={{ fontSize: 12, opacity: 0.6, padding: "2px 0" }}>{a}</div>
+              ))}
+              <button
+                onClick={() => setShowInfo(false)}
+                style={{ ...CTRL_BTN, marginTop: 16, background: btnBg, color: accent, border: `1px solid ${btnBorder}` }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Broadcast status indicator */}
+        {broadcasting && (
+          <div style={{
+            position: "absolute", top: 12, left: 12,
+            fontSize: 11, fontWeight: 700, color: "#4ade80",
+            background: "rgba(0,0,0,0.5)", padding: "6px 12px",
+            borderRadius: 8, letterSpacing: "0.5px",
+            backdropFilter: "blur(4px)",
+          }}>
+            BROADCASTING
+          </div>
+        )}
+
+        {channelReady && !broadcasting && (
+          <div style={{
+            position: "absolute", top: 12, left: 12,
+            fontSize: 11, fontWeight: 600, color: "#f59e0b",
+            background: "rgba(0,0,0,0.5)", padding: "6px 12px",
+            borderRadius: 8, backdropFilter: "blur(4px)",
+          }}>
+            CHANNEL READY
+          </div>
+        )}
+      </div>
+
+      {/* Control bar - large touch targets per Spectacles ergonomics */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          padding: "10px 16px",
+          borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)"}`,
+          background: isDark ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.9)",
+          flexShrink: 0,
+          flexWrap: "wrap",
+        }}
+      >
+        {/* Fold name */}
+        <span style={{ fontSize: 13, fontWeight: 600, color: accent, marginRight: 8 }}>
+          {roomSlug}
+        </span>
+
+        {/* Zoom controls */}
+        <button
+          onClick={zoomOut}
+          style={{ ...CTRL_BTN, background: btnBg, color: fg, border: `1px solid ${btnBorder}` }}
+          title="Zoom out"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="9" cy="9" r="6" /><line x1="13.5" y1="13.5" x2="18" y2="18" /><line x1="6" y1="9" x2="12" y2="9" />
+          </svg>
+        </button>
+
+        <button
+          onClick={zoomIn}
+          style={{ ...CTRL_BTN, background: btnBg, color: fg, border: `1px solid ${btnBorder}` }}
+          title="Zoom in"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="9" cy="9" r="6" /><line x1="13.5" y1="13.5" x2="18" y2="18" /><line x1="6" y1="9" x2="12" y2="9" /><line x1="9" y1="6" x2="9" y2="12" />
+          </svg>
+        </button>
+
+        <button
+          onClick={resetView}
+          style={{ ...CTRL_BTN, background: btnBg, color: fg, border: `1px solid ${btnBorder}` }}
+          title="Reset view"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 10a7 7 0 0112.9-3.8M17 10a7 7 0 01-12.9 3.8" />
+            <polyline points="3 4 3 10 9 10" /><polyline points="17 16 17 10 11 10" />
+          </svg>
+        </button>
+
+        <div style={{ width: 1, height: 32, background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }} />
+
+        {/* Grid toggle */}
+        <button
+          onClick={toggleGrid}
+          style={{
+            ...CTRL_BTN,
+            background: gridMode ? btnActive : btnBg,
+            color: gridMode ? accent : fg,
+            border: `1px solid ${gridMode ? accent : btnBorder}`,
+          }}
+          title="Grid view"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+            <rect x="3" y="3" width="6" height="6" rx="1" /><rect x="11" y="3" width="6" height="6" rx="1" />
+            <rect x="3" y="11" width="6" height="6" rx="1" /><rect x="11" y="11" width="6" height="6" rx="1" />
+          </svg>
+        </button>
+
+        {/* Info */}
+        <button
+          onClick={toggleInfo}
+          style={{
+            ...CTRL_BTN,
+            background: showInfo ? btnActive : btnBg,
+            color: showInfo ? accent : fg,
+            border: `1px solid ${showInfo ? accent : btnBorder}`,
+          }}
+          title="Fold info"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+            <circle cx="10" cy="10" r="7" /><line x1="10" y1="9" x2="10" y2="14" /><circle cx="10" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
+          </svg>
+        </button>
+
+        {/* Theme */}
+        <button
+          onClick={toggleTheme}
+          style={{ ...CTRL_BTN, background: btnBg, color: fg, border: `1px solid ${btnBorder}` }}
+          title="Toggle theme"
+        >
+          {isDark ? (
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              <circle cx="10" cy="10" r="4" /><line x1="10" y1="2" x2="10" y2="4" /><line x1="10" y1="16" x2="10" y2="18" />
+              <line x1="2" y1="10" x2="4" y2="10" /><line x1="16" y1="10" x2="18" y2="10" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              <path d="M16 11.5A6.5 6.5 0 018.5 4a6.5 6.5 0 107.5 7.5z" />
+            </svg>
+          )}
+        </button>
+
+        <div style={{ width: 1, height: 32, background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }} />
+
+        {/* Sync */}
+        <button
+          onClick={syncData}
+          disabled={syncing}
+          style={{
+            ...CTRL_BTN,
+            background: syncing ? (isDark ? "#1a1a1a" : "#eee") : "rgba(21,209,255,0.12)",
+            color: syncing ? (isDark ? "#6b7280" : "#999") : "#15D1FF",
+            border: "1px solid rgba(21,209,255,0.3)",
+            cursor: syncing ? "default" : "pointer",
+          }}
+        >
+          {syncing ? "Syncing..." : "Sync"}
+        </button>
       </div>
     </div>
   );
