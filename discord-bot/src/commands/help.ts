@@ -44,6 +44,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           "`/tasks create <title>` - create a task for agents to pick up",
           "`/tasks update <id>` - update a task's status or add notes",
           "`/checkpoints` - view seed checkpoints and distress signals",
+          "`/deploy list` - recent deployments",
+          "`/deploy health` - deployment success rate and stats",
         ].join("\n"),
       },
       {

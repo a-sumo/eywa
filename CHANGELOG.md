@@ -29,6 +29,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Discord /seeds command: seed health metrics from chat. Active/stalled/finished counts, success rate, throughput, efficiency, per-seed status with silence detection and health warnings
 - Fix: eywa_search now returns full UUIDs instead of truncated 8-char IDs. eywa_knowledge now includes entry IDs so eywa_forget actually works
 - Discord /checkpoints command: view seed checkpoints and distress signals from chat. Filter by type (all, distress only, checkpoints only), shows task/done/remaining state, unresolved distress count
+- Discord /deploy command: view deployment health and recent deploys from chat. `/deploy list` shows recent deploys with outcome/scope/agent, `/deploy health` shows 24h aggregate stats with per-target breakdown
 - Agent session timeline: AgentDetail view now shows categorized timeline (files, git, deploys, decisions, errors, injections) with summary stats and filter tabs
 - NavigatorMap auto-sync: stable room IDs instead of creating new rooms each sync, periodic refresh based on seed activity
 - Agent prompt: added strategic mandate, vision document references, web browsing guidance, and expanded self-directing protocol
