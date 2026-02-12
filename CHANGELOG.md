@@ -22,6 +22,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Discord /metrics command: team curvature, per-agent curvature rankings, throughput (ops/hr), success rate, convergence/divergence counts over a 2-hour window
 - Destination editor: HubView now has inline editing for destinations. Edit button on existing destination, "Set Destination" button when empty. Supports destination text, milestones (one per line), and notes
 - CLI seeds command: `eywa seeds` shows seed health metrics from terminal. Active/stalled/finished counts, success rate, throughput, efficiency, and per-seed status with silence detection
+- Discord /seeds command: seed health metrics from chat. Active/stalled/finished counts, success rate, throughput, efficiency, per-seed status with silence detection and health warnings
 
 ## 2026-02-10
 
