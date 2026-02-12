@@ -210,7 +210,7 @@ async function handleGetAgentStatus(roomId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", roomId)
     .order("ts", { ascending: false })
     .limit(500);
 
@@ -304,7 +304,7 @@ async function handleGetThread(
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", roomId)
     .ilike("agent", `%${agent}%`)
     .order("ts", { ascending: true })
     .limit(limit);
@@ -336,7 +336,7 @@ async function handleGetKnowledge(
   let query = supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", roomId)
     .eq("message_type", "knowledge")
     .order("ts", { ascending: false })
     .limit(30);
@@ -481,7 +481,7 @@ async function handleDetectPatterns(roomId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, session_id, message_type, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", roomId)
     .gte("ts", thirtyMinAgo)
     .order("ts", { ascending: false })
     .limit(300);
@@ -526,7 +526,7 @@ async function handleGetDistressSignals(roomId: string): Promise<string> {
   const { data: distress, error: dErr } = await supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", roomId)
     .eq("metadata->>event", "distress")
     .order("ts", { ascending: false })
     .limit(10);
@@ -536,7 +536,7 @@ async function handleGetDistressSignals(roomId: string): Promise<string> {
   const { data: checkpoints, error: cErr } = await supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", roomId)
     .eq("metadata->>event", "checkpoint")
     .gte("ts", fourHoursAgo)
     .order("ts", { ascending: false })
@@ -602,7 +602,7 @@ async function handleGetDestination(roomId: string): Promise<string> {
   const { data, error } = await supabase
     .from("memories")
     .select("agent, ts, content, metadata")
-    .eq("room_id", roomId)
+    .eq("fold_id", roomId)
     .eq("message_type", "knowledge")
     .eq("metadata->>event", "destination")
     .order("ts", { ascending: false })

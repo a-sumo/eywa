@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useRoom } from "../hooks/useRoom";
 import { FlowBackground } from "./FlowBackground";
 import EywaLogo from "./EywaLogo";
+import { LiveTelemetry } from "./LiveTelemetry";
 
 // Animated SVG Icons - aurora colored, heartbeat-synced animations
 const IconThreads = () => (
@@ -140,13 +141,20 @@ export function Landing() {
             Eywa gives you one live view of what every agent is doing, so you can see, steer, and stay aligned.
           </p>
           <div className="landing-hero-actions">
+            <Link
+              to="/r/eywa-dev"
+              className="btn-landing-primary btn-large btn-live"
+            >
+              <span className="live-dot" />
+              Watch Agents Live
+              <IconArrowRight />
+            </Link>
             <button
-              className="btn-landing-primary btn-large"
+              className="btn-landing-secondary"
               onClick={() => createDemoRoom()}
               disabled={creating}
             >
               {creating ? "Creating..." : "Try the Demo"}
-              {!creating && <IconArrowRight />}
             </button>
             <button
               className="btn-landing-secondary"
@@ -160,6 +168,9 @@ export function Landing() {
 
         </div>
       </section>
+
+      {/* Live: agents building Eywa right now */}
+      <LiveTelemetry />
 
       {/* Fade to solid background */}
       <div className="landing-fade-overlay" />

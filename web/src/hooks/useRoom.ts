@@ -31,7 +31,7 @@ function buildSeedMemories(roomId: string): Array<Record<string, unknown>> {
   // Agent session starts
   agents.forEach((agent, i) => {
     memories.push({
-      room_id: roomId,
+      fold_id: roomId,
       session_id: sessionId,
       agent,
       message_type: "resource",
@@ -65,7 +65,7 @@ function buildSeedMemories(roomId: string): Array<Record<string, unknown>> {
 
   activities.forEach((a, i) => {
     memories.push({
-      room_id: roomId,
+      fold_id: roomId,
       session_id: sessionId,
       agent: a.agent,
       message_type: "assistant",
@@ -77,7 +77,7 @@ function buildSeedMemories(roomId: string): Array<Record<string, unknown>> {
 
   // Injections
   memories.push({
-    room_id: roomId,
+    fold_id: roomId,
     session_id: sessionId,
     agent: agents[3],
     message_type: "injection",
@@ -87,7 +87,7 @@ function buildSeedMemories(roomId: string): Array<Record<string, unknown>> {
   });
 
   memories.push({
-    room_id: roomId,
+    fold_id: roomId,
     session_id: sessionId,
     agent: agents[4],
     message_type: "injection",
@@ -98,7 +98,7 @@ function buildSeedMemories(roomId: string): Array<Record<string, unknown>> {
 
   // Knowledge entries
   memories.push({
-    room_id: roomId,
+    fold_id: roomId,
     session_id: sessionId,
     agent: agents[0],
     message_type: "knowledge",
@@ -108,7 +108,7 @@ function buildSeedMemories(roomId: string): Array<Record<string, unknown>> {
   });
 
   memories.push({
-    room_id: roomId,
+    fold_id: roomId,
     session_id: sessionId,
     agent: agents[1],
     message_type: "knowledge",
@@ -119,7 +119,7 @@ function buildSeedMemories(roomId: string): Array<Record<string, unknown>> {
 
   // Destination
   memories.push({
-    room_id: roomId,
+    fold_id: roomId,
     session_id: sessionId,
     agent: "system",
     message_type: "knowledge",
@@ -150,7 +150,7 @@ function buildSeedMemories(roomId: string): Array<Record<string, unknown>> {
   // Progress reports
   agents.forEach((agent, i) => {
     memories.push({
-      room_id: roomId,
+      fold_id: roomId,
       session_id: sessionId,
       agent,
       message_type: "resource",

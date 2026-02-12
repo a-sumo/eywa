@@ -3,6 +3,7 @@ import { Link, useParams, useLocation } from "react-router-dom";
 import { useRoomContext } from "../context/RoomContext";
 import { AgentList } from "./AgentList";
 import { DemoBanner } from "./DemoBanner";
+import { LiveBanner } from "./LiveBanner";
 
 interface RoomLayoutProps {
   children: ReactNode;
@@ -42,6 +43,7 @@ export function RoomLayout({ children }: RoomLayoutProps) {
   return (
     <div className="app">
       <DemoBanner />
+      <LiveBanner />
       <div className="app-body">
         <aside className="sidebar">
           <AgentList />

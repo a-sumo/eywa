@@ -112,7 +112,7 @@ export function GlobalKnowledgeHub() {
       insight: publishText.trim(),
       domain_tags: tags,
       source_hash: sourceHash,
-      room_id: room.id,
+      fold_id: room.id,
       agent: "dashboard",
     });
 

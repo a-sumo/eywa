@@ -765,7 +765,7 @@ export function ThreadTree() {
     setInjectSending(true);
     try {
       await supabase.from("memories").insert({
-        room_id: room.id,
+        fold_id: room.id,
         agent: "web-user",
         session_id: `web_${Date.now()}`,
         message_type: "injection",

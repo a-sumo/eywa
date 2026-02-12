@@ -15,7 +15,7 @@ export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?:
     let query = supabase
       .from("memories")
       .select("*")
-      .eq("room_id", roomId)
+      .eq("fold_id", roomId)
       .order("ts", { ascending: false })
       .limit(limit);
 
@@ -37,7 +37,7 @@ export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?:
       .channel(`memories-realtime-${roomId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "memories", filter: `room_id=eq.${roomId}` },
+        { event: "INSERT", schema: "public", table: "memories", filter: `fold_id=eq.${roomId}` },
         (payload) => {
           setMemories((prev) => [payload.new as Memory, ...prev].slice(0, limit));
         }
@@ -82,7 +82,7 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
     let query = supabase
       .from("memories")
       .select("agent, ts, session_id, metadata")
-      .eq("room_id", roomId)
+      .eq("fold_id", roomId)
       .order("ts", { ascending: false })
       .limit(1000);
 
@@ -125,7 +125,7 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
       .channel(`agents-realtime-${roomId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "memories", filter: `room_id=eq.${roomId}` },
+        { event: "INSERT", schema: "public", table: "memories", filter: `fold_id=eq.${roomId}` },
         (payload) => {
           // Incremental update: merge new row into existing map
           const row = payload.new as { agent: string; ts: string; session_id: string; metadata: Record<string, unknown> };

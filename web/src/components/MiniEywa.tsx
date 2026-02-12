@@ -180,7 +180,7 @@ function PixelCreature({ name, size = 16 }: { name: string; size?: number }) {
 
 async function injectToAgent(target: string, content: string, roomId: string) {
   await supabase.from("memories").insert({
-    room_id: roomId,
+    fold_id: roomId,
     agent: "web-user",
     session_id: `web_${Date.now()}`,
     message_type: "injection",

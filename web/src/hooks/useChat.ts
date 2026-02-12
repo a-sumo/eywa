@@ -15,7 +15,7 @@ export function useChat(roomId: string | null, channel = "general") {
     const { data } = await supabase
       .from("messages")
       .select("*")
-      .eq("room_id", roomId)
+      .eq("fold_id", roomId)
       .eq("channel", channel)
       .order("ts", { ascending: true })
       .limit(200);
@@ -36,7 +36,7 @@ export function useChat(roomId: string | null, channel = "general") {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `room_id=eq.${roomId}`,
+          filter: `fold_id=eq.${roomId}`,
         },
         (payload) => {
           const msg = payload.new as Message;
@@ -56,7 +56,7 @@ export function useChat(roomId: string | null, channel = "general") {
     async (sender: string, content: string) => {
       if (!roomId) return;
       await supabase.from("messages").insert({
-        room_id: roomId,
+        fold_id: roomId,
         sender,
         channel,
         content,
