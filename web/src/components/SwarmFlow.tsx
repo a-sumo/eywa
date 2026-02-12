@@ -125,7 +125,19 @@ function extractAgentVectors(
     return b.opCount - a.opCount;
   });
 
-  return vectors;
+  // Only show agents seen in the last hour, cap at 30
+  const oneHourAgo = now - 60 * 60 * 1000;
+  const filtered = vectors.filter(v => {
+    const entry = agentMap.get(v.id);
+    return entry && entry.lastSeen > oneHourAgo;
+  });
+
+  // If no recent agents, show top 10 by op count as context
+  if (filtered.length === 0) {
+    return vectors.slice(0, 10);
+  }
+
+  return filtered.slice(0, 30);
 }
 
 // Extract destination direction from memories
