@@ -12,6 +12,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Seed health dashboard: aggregate stats (success rate, throughput, efficiency) and per-seed success rate bars in SeedMonitor
 - Self-directing seeds: protocol and knowledge base entries so seeds auto-generate tasks when the queue is empty
 - Swarm navigator: real-time animated canvas in SeedMonitor showing seeds as orbiting particles with trails, success rate arcs, and operation ripple effects
+- Discord /tasks command: list, create, and update tasks from chat. Subcommands for filtering by status, creating with priority/milestone, and updating status/notes with partial ID matching
 
 ## 2026-02-10
 
