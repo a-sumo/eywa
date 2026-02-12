@@ -15,7 +15,7 @@ async function getLatestMemoryId(
 ): Promise<string | null> {
   const rows = await db.select<MemoryRow>("memories", {
     select: "id",
-    fold_id: `eq.${foldId}`,
+    room_id: `eq.${foldId}`,
     session_id: `eq.${sessionId}`,
     order: "ts.desc",
     limit: "1",
@@ -43,7 +43,7 @@ export function registerKnowledgeTools(
     async ({ content, tags, title }) => {
       const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
       await db.insert("memories", {
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -81,7 +81,7 @@ export function registerKnowledgeTools(
     async ({ tag, search, limit }) => {
       const params: Record<string, string> = {
         select: "id,agent,content,metadata,ts",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         message_type: "eq.knowledge",
         order: "ts.desc",
         limit: String(limit),
@@ -146,7 +146,7 @@ export function registerKnowledgeTools(
       try {
         await db.delete("memories", {
           id: `eq.${knowledge_id}`,
-          fold_id: `eq.${ctx.foldId}`,
+          room_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
         });
       } catch (err) {

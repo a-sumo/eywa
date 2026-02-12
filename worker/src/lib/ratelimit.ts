@@ -58,6 +58,6 @@ export async function checkMemoryCap(
   foldId: string,
   cap: number,
 ): Promise<{ allowed: boolean; current: number }> {
-  const current = await db.count("memories", { fold_id: `eq.${foldId}` });
+  const current = await db.count("memories", { room_id: `eq.${foldId}` });
   return { allowed: current < cap, current };
 }

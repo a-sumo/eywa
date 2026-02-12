@@ -56,7 +56,7 @@ export function registerCollaborationTools(
     async () => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "agent,content,ts,metadata",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         order: "ts.desc",
       });
 
@@ -200,20 +200,20 @@ export function registerCollaborationTools(
       const [memRows, knowledgeRows, injectionRows] = await Promise.all([
         db.select<MemoryRow>("memories", {
           select: "agent,message_type,content,metadata,ts",
-          fold_id: `eq.${ctx.foldId}`,
+          room_id: `eq.${ctx.foldId}`,
           ts: `gte.${since}`,
           order: "ts.desc",
           limit: "500",
         }),
         db.select<MemoryRow>("memories", {
           select: "id",
-          fold_id: `eq.${ctx.foldId}`,
+          room_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           limit: "100",
         }),
         db.select<MemoryRow>("memories", {
           select: "id,metadata",
-          fold_id: `eq.${ctx.foldId}`,
+          room_id: `eq.${ctx.foldId}`,
           message_type: "eq.injection",
           ts: `gte.${since}`,
           limit: "100",
@@ -307,7 +307,7 @@ export function registerCollaborationTools(
     async ({ agent, limit }) => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "message_type,content,ts,metadata",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         agent: `eq.${agent}`,
         order: "ts.desc",
         limit: String(limit),
@@ -352,7 +352,7 @@ export function registerCollaborationTools(
       // Find their most recent session
       const sessionRows = await db.select<MemoryRow>("memories", {
         select: "session_id",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         agent: `eq.${agent}`,
         order: "ts.desc",
         limit: "1",
@@ -373,7 +373,7 @@ export function registerCollaborationTools(
 
       const rows = await db.select<MemoryRow>("memories", {
         select: "message_type,content,ts,metadata",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         agent: `eq.${agent}`,
         session_id: `eq.${targetSession}`,
         order: "ts.asc",
@@ -421,7 +421,7 @@ export function registerCollaborationTools(
     },
     async ({ content, channel }) => {
       await db.insert("messages", {
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         sender: ctx.agent,
         channel,
         content,

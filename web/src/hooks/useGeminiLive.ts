@@ -68,7 +68,7 @@ export function useGeminiLive({ foldId, foldSlug, voice = "Kore", onEvent }: Use
         supabase
           .from("memories")
           .select("content, metadata")
-          .eq("fold_id", foldId)
+          .eq("room_id", foldId)
           .eq("message_type", "knowledge")
           .eq("metadata->>event", "destination")
           .order("ts", { ascending: false })
@@ -76,7 +76,7 @@ export function useGeminiLive({ foldId, foldSlug, voice = "Kore", onEvent }: Use
         supabase
           .from("memories")
           .select("agent")
-          .eq("fold_id", foldId)
+          .eq("room_id", foldId)
           .order("ts", { ascending: false })
           .limit(200),
       ]);

@@ -32,7 +32,7 @@ export function DemoBanner() {
     const name = `${adj.charAt(0).toUpperCase() + adj.slice(1)} ${noun.charAt(0).toUpperCase() + noun.slice(1)}`;
 
     const { data, error } = await supabase
-      .from("folds")
+      .from("rooms")
       .insert({ slug, name, is_demo: false })
       .select()
       .single();

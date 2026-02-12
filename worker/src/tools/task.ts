@@ -40,7 +40,7 @@ export function registerTaskTools(
       // Check for duplicate titles in active tasks
       const existing = await db.select<MemoryRow>("memories", {
         select: "id,metadata",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         message_type: "eq.task",
         order: "ts.desc",
         limit: "100",
@@ -62,7 +62,7 @@ export function registerTaskTools(
       }
 
       const rows = await db.insert<MemoryRow>("memories", {
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         message_type: "task",
@@ -112,7 +112,7 @@ export function registerTaskTools(
     async ({ status, assigned_to, milestone, include_done }) => {
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,agent,content,metadata,ts",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         message_type: "eq.task",
         order: "ts.desc",
         limit: "100",
@@ -211,7 +211,7 @@ export function registerTaskTools(
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,metadata,content",
         id: `eq.${task_id}`,
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         message_type: "eq.task",
         limit: "1",
       });
@@ -248,7 +248,7 @@ export function registerTaskTools(
       // Auto-create a work claim for conflict detection
       const title = (meta.title as string) || "";
       await db.insert("memories", {
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         message_type: "resource",
@@ -290,7 +290,7 @@ export function registerTaskTools(
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,metadata,content",
         id: `eq.${task_id}`,
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         message_type: "eq.task",
         limit: "1",
       });
@@ -360,7 +360,7 @@ export function registerTaskTools(
       const parentRows = await db.select<MemoryRow>("memories", {
         select: "id,metadata",
         id: `eq.${parent_task}`,
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         message_type: "eq.task",
         limit: "1",
       });
@@ -379,7 +379,7 @@ export function registerTaskTools(
 
       for (const sub of subtasks) {
         const rows = await db.insert<MemoryRow>("memories", {
-          fold_id: ctx.foldId,
+          room_id: ctx.foldId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
           message_type: "task",

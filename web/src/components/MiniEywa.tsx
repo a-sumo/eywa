@@ -180,7 +180,7 @@ function PixelCreature({ name, size = 16 }: { name: string; size?: number }) {
 
 async function injectToAgent(target: string, content: string, foldId: string) {
   await supabase.from("memories").insert({
-    fold_id: foldId,
+    room_id: foldId,
     agent: "web-user",
     session_id: `web_${Date.now()}`,
     message_type: "injection",
@@ -206,7 +206,7 @@ function MiniFoldPicker({ currentSlug, onClose }: { currentSlug: string; onClose
 
   useEffect(() => {
     supabase
-      .from("folds")
+      .from("rooms")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20)

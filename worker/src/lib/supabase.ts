@@ -69,7 +69,7 @@ export class SupabaseClient {
   /**
    * DELETE rows matching PostgREST filters.
    * @param table   Table name
-   * @param filters PostgREST filter params (e.g. { id: "eq.abc", fold_id: "eq.xyz" })
+   * @param filters PostgREST filter params (e.g. { id: "eq.abc", room_id: "eq.xyz" })
    */
   async delete(
     table: string,

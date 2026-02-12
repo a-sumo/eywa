@@ -34,7 +34,7 @@ export function registerTelemetryTools(
         : null;
 
       await db.insert("memories", {
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         message_type: "telemetry",
@@ -76,7 +76,7 @@ export async function storeHostTelemetry(
   const shortType = notificationType.replace("notifications/host.", "");
 
   await db.insert("memories", {
-    fold_id: ctx.foldId,
+    room_id: ctx.foldId,
     agent: ctx.agent,
     session_id: ctx.sessionId,
     message_type: "telemetry",
@@ -101,7 +101,7 @@ export async function getLatestTelemetry(
 ): Promise<MemoryRow[]> {
   const query: Record<string, string> = {
     select: "agent,content,metadata,ts",
-    fold_id: `eq.${foldId}`,
+    room_id: `eq.${foldId}`,
     message_type: "eq.telemetry",
     order: "ts.desc",
     limit: agent ? "1" : "20",

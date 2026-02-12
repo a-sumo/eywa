@@ -96,7 +96,7 @@ export function registerNetworkTools(
         insight,
         domain_tags: domain_tags ?? [],
         source_hash: sourceHash,
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         agent: ctx.agent,
       });
 
@@ -183,7 +183,7 @@ export function registerNetworkTools(
       if (!routeQuery) {
         const destRows = await db.select<MemoryRow>("memories", {
           select: "metadata",
-          fold_id: `eq.${ctx.foldId}`,
+          room_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
           "metadata->>event": "eq.destination",
           order: "ts.desc",

@@ -30,7 +30,7 @@ export function FoldProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       const { data, error: fetchError } = await supabase
-        .from("folds")
+        .from("rooms")
         .select("*")
         .eq("slug", slug)
         .single();

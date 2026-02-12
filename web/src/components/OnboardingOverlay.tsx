@@ -55,7 +55,7 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
       progress[m] = false;
     }
     await supabase.from("memories").insert({
-      fold_id: foldId,
+      room_id: foldId,
       agent: "web-user",
       session_id: `web_${Date.now()}`,
       message_type: "knowledge",

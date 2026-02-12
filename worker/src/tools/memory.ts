@@ -15,7 +15,7 @@ async function getLatestMemoryId(
 ): Promise<string | null> {
   const rows = await db.select<MemoryRow>("memories", {
     select: "id",
-    fold_id: `eq.${foldId}`,
+    room_id: `eq.${foldId}`,
     session_id: `eq.${sessionId}`,
     order: "ts.desc",
     limit: "1",
@@ -60,7 +60,7 @@ export function registerMemoryTools(
     async ({ role, content, system, action, scope, outcome }) => {
       const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
       await db.insert("memories", {
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -103,7 +103,7 @@ export function registerMemoryTools(
       const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
       const fileId = `file_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
       await db.insert("memories", {
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -193,7 +193,7 @@ export function registerMemoryTools(
       // Log session start
       if (task_description) {
         const inserted = await db.insert<MemoryRow>("memories", {
-          fold_id: ctx.foldId,
+          room_id: ctx.foldId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
           parent_id: parentId,
@@ -211,7 +211,7 @@ export function registerMemoryTools(
       let count = 0;
       for (const msg of messages) {
         const inserted = await db.insert<MemoryRow>("memories", {
-          fold_id: ctx.foldId,
+          room_id: ctx.foldId,
           agent: ctx.agent,
           session_id: ctx.sessionId,
           parent_id: parentId,
@@ -253,7 +253,7 @@ export function registerMemoryTools(
       const sanitized = query.replace(/[%_*(),.]/g, (c) => `\\${c}`);
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,agent,message_type,content,ts",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         content: `ilike.*${sanitized}*`,
         order: "ts.desc",
         limit: String(limit),

@@ -15,7 +15,7 @@ async function getLatestMemoryId(
 ): Promise<string | null> {
   const rows = await db.select<MemoryRow>("memories", {
     select: "id",
-    fold_id: `eq.${foldId}`,
+    room_id: `eq.${foldId}`,
     session_id: `eq.${sessionId}`,
     order: "ts.desc",
     limit: "1",
@@ -45,7 +45,7 @@ export function registerInjectTools(
     async ({ target, content, priority, label }) => {
       const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
       await db.insert("memories", {
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         parent_id: parentId,
@@ -83,7 +83,7 @@ export function registerInjectTools(
       // Get injections targeted at this agent (full agent id)
       const targeted = await db.select<MemoryRow>("memories", {
         select: "id,agent,content,metadata,ts",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         message_type: "eq.injection",
         "metadata->>target_agent": `eq.${ctx.agent}`,
         order: "ts.desc",
@@ -93,7 +93,7 @@ export function registerInjectTools(
       // Get injections targeted at the user name (e.g. "armand" matches "armand/quiet-oak")
       const userTargeted = await db.select<MemoryRow>("memories", {
         select: "id,agent,content,metadata,ts",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         message_type: "eq.injection",
         "metadata->>target_agent": `eq.${ctx.user}`,
         order: "ts.desc",
@@ -103,7 +103,7 @@ export function registerInjectTools(
       // Get broadcast injections
       const broadcast = await db.select<MemoryRow>("memories", {
         select: "id,agent,content,metadata,ts",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         message_type: "eq.injection",
         "metadata->>target_agent": "eq.all",
         order: "ts.desc",
@@ -113,7 +113,7 @@ export function registerInjectTools(
       // Get inject-type links targeting this agent's sessions
       const injectLinks = await db.select<LinkRow>("links", {
         select: "id,source_memory_id,created_by,label,ts",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         link_type: "eq.inject",
         target_agent: `eq.${ctx.agent}`,
         order: "ts.desc",
@@ -123,7 +123,7 @@ export function registerInjectTools(
       // Also check links targeting the user name
       const userInjectLinks = await db.select<LinkRow>("links", {
         select: "id,source_memory_id,created_by,label,ts",
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         link_type: "eq.inject",
         target_agent: `eq.${ctx.user}`,
         order: "ts.desc",

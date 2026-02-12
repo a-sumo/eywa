@@ -34,7 +34,7 @@ export function FoldsIndex() {
     setError(null);
 
     const { data: foldList, error: foldErr } = await supabase
-      .from("folds")
+      .from("rooms")
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -54,29 +54,29 @@ export function FoldsIndex() {
           supabase
             .from("memories")
             .select("agent")
-            .eq("fold_id", fold.id)
+            .eq("room_id", fold.id)
             .gte("ts", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
             .limit(500),
           supabase
             .from("memories")
             .select("agent")
-            .eq("fold_id", fold.id)
+            .eq("room_id", fold.id)
             .gte("ts", fiveMinAgo)
             .limit(200),
           supabase
             .from("memories")
             .select("id", { count: "exact", head: true })
-            .eq("fold_id", fold.id),
+            .eq("room_id", fold.id),
           supabase
             .from("memories")
             .select("ts")
-            .eq("fold_id", fold.id)
+            .eq("room_id", fold.id)
             .order("ts", { ascending: false })
             .limit(1),
           supabase
             .from("memories")
             .select("metadata")
-            .eq("fold_id", fold.id)
+            .eq("room_id", fold.id)
             .eq("message_type", "knowledge")
             .order("ts", { ascending: false })
             .limit(50),

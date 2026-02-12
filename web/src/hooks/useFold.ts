@@ -29,7 +29,7 @@ export function useFold() {
     const name = generateFoldName(slug);
 
     const { data, error: insertError } = await supabase
-      .from("folds")
+      .from("rooms")
       .insert({
         slug,
         name,
@@ -82,7 +82,7 @@ export function useFold() {
 
       // Fetch the full fold record
       const { data } = await supabase
-        .from("folds")
+        .from("rooms")
         .select("*")
         .eq("id", result.id)
         .single();
@@ -115,7 +115,7 @@ export function useFold() {
 
   const joinFold = useCallback(async (slug: string): Promise<Fold | null> => {
     const { data, error: fetchError } = await supabase
-      .from("folds")
+      .from("rooms")
       .select("*")
       .eq("slug", slug)
       .single();

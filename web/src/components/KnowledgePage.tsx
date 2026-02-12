@@ -70,7 +70,7 @@ function RoomKnowledge() {
       const { data, error } = await supabase
         .from("memories")
         .select("*")
-        .eq("fold_id", fold!.id)
+        .eq("room_id", fold!.id)
         .eq("message_type", "knowledge")
         .order("ts", { ascending: false })
         .limit(200);
@@ -87,7 +87,7 @@ function RoomKnowledge() {
           event: "INSERT",
           schema: "public",
           table: "memories",
-          filter: `fold_id=eq.${fold.id}`,
+          filter: `room_id=eq.${fold.id}`,
         },
         (payload) => {
           const row = payload.new as Memory;
@@ -102,7 +102,7 @@ function RoomKnowledge() {
           event: "DELETE",
           schema: "public",
           table: "memories",
-          filter: `fold_id=eq.${fold.id}`,
+          filter: `room_id=eq.${fold.id}`,
         },
         (payload) => {
           const oldRow = payload.old as { id?: string };

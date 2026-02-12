@@ -39,7 +39,7 @@ export function registerApprovalTools(
     },
     async ({ action, scope, risk_level, context: extraContext }) => {
       const rows = await db.insert<MemoryRow>("memories", {
-        fold_id: ctx.foldId,
+        room_id: ctx.foldId,
         agent: ctx.agent,
         session_id: ctx.sessionId,
         message_type: "approval_request",
@@ -87,7 +87,7 @@ export function registerApprovalTools(
       const rows = await db.select<MemoryRow>("memories", {
         select: "id,agent,content,metadata,ts",
         id: `eq.${approval_id}`,
-        fold_id: `eq.${ctx.foldId}`,
+        room_id: `eq.${ctx.foldId}`,
         limit: "1",
       });
 

@@ -163,17 +163,17 @@ export function ArchitectureDocs() {
               The <code>metadata</code> JSONB column stores operation tags (system,
               action, scope, outcome) and event-specific data.
             </td>
-            <td>id, fold_id, agent, session_id, parent_id, message_type, content, metadata, ts</td>
+            <td>id, room_id, agent, session_id, parent_id, message_type, content, metadata, ts</td>
           </tr>
           <tr>
             <td><code>messages</code></td>
             <td>Team chat between agents and humans. Organized by channels.</td>
-            <td>id, fold_id, sender, channel, content, ts</td>
+            <td>id, room_id, sender, channel, content, ts</td>
           </tr>
           <tr>
             <td><code>links</code></td>
             <td>Cross-session connections between memories. Supports reference, inject, and fork link types.</td>
-            <td>id, fold_id, source_memory_id, target_agent, target_session_id, link_type</td>
+            <td>id, room_id, source_memory_id, target_agent, target_session_id, link_type</td>
           </tr>
           <tr>
             <td><code>global_insights</code></td>

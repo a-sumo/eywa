@@ -83,7 +83,7 @@ async function handleSetDestination(
   const { data: existing } = await supabase
     .from("memories")
     .select("metadata")
-    .eq("fold_id", foldId)
+    .eq("room_id", foldId)
     .eq("message_type", "knowledge")
     .eq("metadata->>event", "destination")
     .order("ts", { ascending: false })
@@ -100,7 +100,7 @@ async function handleSetDestination(
   }
 
   const { error } = await supabase.from("memories").insert({
-    fold_id: foldId,
+    room_id: foldId,
     session_id: `voices-${Date.now()}`,
     agent: "voices/live",
     message_type: "knowledge",
@@ -124,7 +124,7 @@ async function handleSendMessage(
   channel: string
 ): Promise<string> {
   const { error } = await supabase.from("messages").insert({
-    fold_id: foldId,
+    room_id: foldId,
     sender: "voices/live",
     channel,
     content: message,

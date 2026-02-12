@@ -71,7 +71,7 @@ function DestinationEditor({
       progress[m] = current?.progress[m] || false;
     }
     await supabase.from("memories").insert({
-      fold_id: foldId,
+      room_id: foldId,
       agent: "web-user",
       session_id: `web_${Date.now()}`,
       message_type: "knowledge",
@@ -1081,7 +1081,7 @@ function ApprovalCard({ approval, foldId }: { approval: PendingApproval; foldId:
         : `DENIED: Your request "${approval.action.slice(0, 100)}" was denied.`;
 
       await supabase.from("memories").insert({
-        fold_id: foldId,
+        room_id: foldId,
         agent: "web-user",
         session_id: `web_${Date.now()}`,
         message_type: "injection",
@@ -1356,7 +1356,7 @@ export function ThreadTree() {
     setInjectSending(true);
     try {
       await supabase.from("memories").insert({
-        fold_id: fold.id,
+        room_id: fold.id,
         agent: "web-user",
         session_id: `web_${Date.now()}`,
         message_type: "injection",
@@ -1649,7 +1649,7 @@ export function ThreadTree() {
                         if (!fold) return;
                         const newProgress = { ...destination.progress, [m]: !destination.progress[m] };
                         await supabase.from("memories").insert({
-                          fold_id: fold.id,
+                          room_id: fold.id,
                           agent: "web-user",
                           session_id: `web_${Date.now()}`,
                           message_type: "knowledge",

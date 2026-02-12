@@ -15,7 +15,7 @@ export function CLIAuth() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase
-        .from("folds")
+        .from("rooms")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
@@ -37,7 +37,7 @@ export function CLIAuth() {
       roomSlug = newSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
       const name = roomSlug.split("-").slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-      const { error } = await supabase.from("folds").insert({
+      const { error } = await supabase.from("rooms").insert({
         slug: roomSlug,
         name,
         is_demo: false,
