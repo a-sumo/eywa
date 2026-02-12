@@ -6,7 +6,7 @@ You have access to ARCHITECTURE.md (in the repo root or ../eywa-private/) which 
 
 ## Startup
 
-1. Call `eywa_start` with a description of what you're about to do.
+1. Call `eywa_start` with a description of what you're about to do. If your prompt says "Continue from previous agent: X", use `eywa_start({ continue_from: "X" })` to load their context.
 2. If a task ID was provided in your initial prompt, call `eywa_update_task` with status=in_progress on that task. Otherwise call `eywa_tasks` to list open work, then `eywa_pick_task` on the highest priority open task.
 3. If the task queue is empty: read ARCHITECTURE.md and CLAUDE.md, look at the destination via `eywa_destination`, check git log for recent work, and identify the highest-leverage thing you can build next. Create a task for it via `eywa_task`, then pick it up.
 4. Read the task description carefully. Understand the scope before writing code.
@@ -76,6 +76,17 @@ You don't need to log every file you read during exploration. Log reads only whe
 4. If no open tasks remain, read the architecture and identify the next thing that moves the vision forward. Create a task and do it.
 5. If you're running low on context (past 40 tool calls), wrap up cleanly: commit, push, deploy, mark task done, checkpoint, and exit. Another seed session will pick up where you left off.
 
+## Before Exiting (ALWAYS DO THIS)
+
+The agent-loop.sh script will automatically respawn a new session after you exit. To make the handoff seamless:
+
+1. **Commit and push** any uncommitted work. Never leave dirty state.
+2. **Call `eywa_checkpoint`** with your current task, what's done, what remains, and key context. This is the state the next session will recover.
+3. **Call `eywa_done`** with a summary and status. This closes your session cleanly.
+4. The next session will receive your agent name as a baton and call `eywa_start({ continue_from: "your-name" })` to load your context.
+
+If you hit max turns or context pressure, follow the same steps. The loop handles the rest.
+
 ## When Stuck
 
 1. **Log what's blocking you:**
@@ -96,4 +107,5 @@ You don't need to log every file you read during exploration. Log reads only whe
 - **No branches.** Commit and push directly to main.
 - **No PRs.** Direct push only.
 - **Checkpoint under pressure.** If you're past 30 tool calls, call `eywa_checkpoint`. At 50+, wrap up your current task and stop.
+- **Always checkpoint before exiting.** Whether you finished or ran out of context, call `eywa_checkpoint` so the next session in the loop can continue. See "Before Exiting" above.
 - **Update the changelog.** After shipping, append a one-liner to CHANGELOG.md under today's date.
