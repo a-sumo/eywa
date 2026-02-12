@@ -35,9 +35,13 @@ When browsing, use `WebFetch` for specific URLs and `WebSearch` for open-ended r
 ## Startup
 
 1. Call `eywa_start` with a description of what you're about to do. If your prompt says "Continue from previous agent: X", use `eywa_start({ continue_from: "X" })` to load their context.
-2. If a task ID was provided in your initial prompt, call `eywa_update_task` with status=in_progress on that task. Otherwise call `eywa_tasks` to list open work, then `eywa_pick_task` on the highest priority open task.
+2. **DO NOT call eywa_status first.** It returns a massive payload that will eat your context. Instead:
+   - Call `eywa_tasks` to list open work (small payload, just task titles and IDs).
+   - Call `eywa_pick_task` on the highest priority open task.
+   - If a task ID was provided in your initial prompt, call `eywa_update_task` with status=in_progress on that task.
 3. If the task queue is empty, follow the **Self-Directing Protocol** below to create your own task.
 4. Read the task description carefully. Understand the scope before writing code.
+5. Check for handoff files: `ls -t scripts/agent-runs/handoff-*.md | head -1` and read it if it matches your task.
 
 ## Implementation Loop
 
@@ -96,22 +100,53 @@ Call `eywa_log` with `system`, `action`, `scope`, `outcome` for every one of the
 
 You don't need to log every file you read during exploration. Log reads only when a file is important to understanding your approach (e.g. reading the main entry point to understand the architecture). Log every write, create, delete, test, commit, and deploy.
 
+## Context Recovery (CORE PATTERN)
+
+This is the most important pattern in the entire system. Seeds run out of context. That's expected. What matters is that no work is lost and the next session picks up seamlessly.
+
+**Every 10 tool calls**, check your progress:
+1. How many tool calls have you made? (Count them.)
+2. Is your current task at a committable checkpoint?
+3. If you're past 25 tool calls, START WRAPPING UP NOW. Don't wait until 50.
+
+**At 30 tool calls or if you feel context pressure:**
+1. `git add` and `git commit` whatever you have, even if incomplete. Prefix with "WIP:" if needed.
+2. `git push` to main.
+3. Write a handoff file at `scripts/agent-runs/handoff-$(date +%Y%m%d-%H%M%S).md` with:
+   - Task ID and title
+   - What's done (specific files changed, what works)
+   - What remains (specific next steps, not vague)
+   - Key context the next agent needs (gotchas, design decisions, file locations)
+   - Current blockers if any
+4. Call `eywa_checkpoint` with the same information.
+5. Call `eywa_update_task` with status=in_progress and notes describing handoff state.
+6. Call `eywa_done` with summary and status.
+7. Exit cleanly. The loop respawns you.
+
+**The next session will:**
+1. Read the latest handoff file from `scripts/agent-runs/handoff-*.md`
+2. Call `eywa_start({ continue_from: "previous-agent-name" })`
+3. Pick up exactly where the previous session left off
+
+**NEVER go silent.** If you're about to run out of context without checkpointing, you've failed the most basic pattern. Commit, write the handoff, checkpoint, exit. This takes 5 tool calls. Always reserve capacity for it.
+
 ## After Completing a Task
 
 1. **Notify other agents:** Call `eywa_inject` targeting "all" to broadcast what shipped, including commit hash, file paths, and a short summary.
 2. Call `eywa_tasks` to check for more open work.
 3. If open tasks exist, pick the highest priority one and start the loop again.
 4. If no open tasks remain, follow the **Self-Directing Protocol** below.
-5. If you're running low on context (past 40 tool calls), wrap up cleanly: commit, push, deploy, mark task done, checkpoint, and exit. Another seed session will pick up where you left off.
+5. If you're past 25 tool calls, wrap up: commit, push, deploy, write handoff, checkpoint, exit.
 
 ## Before Exiting (ALWAYS DO THIS)
 
 The agent-loop.sh script will automatically respawn a new session after you exit. To make the handoff seamless:
 
-1. **Commit and push** any uncommitted work. Never leave dirty state.
-2. **Call `eywa_checkpoint`** with your current task, what's done, what remains, and key context. This is the state the next session will recover.
-3. **Call `eywa_done`** with a summary and status. This closes your session cleanly.
-4. The next session will receive your agent name as a baton and call `eywa_start({ continue_from: "your-name" })` to load your context.
+1. **Commit and push** any uncommitted work. Even WIP is fine. Never leave dirty state.
+2. **Write a handoff file** to `scripts/agent-runs/handoff-$(date +%Y%m%d-%H%M%S).md` describing task state, what's done, what remains, and key context.
+3. **Call `eywa_checkpoint`** with your current task, what's done, what remains, and key context.
+4. **Call `eywa_done`** with a summary and status. This closes your session cleanly.
+5. The next session will receive your agent name as a baton and call `eywa_start({ continue_from: "your-name" })` to load your context plus the handoff file.
 
 If you hit max turns or context pressure, follow the same steps. The loop handles the rest.
 

@@ -42,7 +42,9 @@ export function useRoom() {
     setCreating(false);
 
     if (insertError || !data) {
-      setError("Failed to create room");
+      setError(insertError?.message
+        ? `Could not create room: ${insertError.message}`
+        : "Could not create room. Check your connection and try again.");
       return null;
     }
 
@@ -84,7 +86,14 @@ export function useRoom() {
     } catch (err) {
       console.warn("Create demo failed:", err);
       setCreating(false);
-      setError("Failed to create demo room");
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      if (msg.includes("fetch") || msg.includes("network") || msg.includes("Failed to fetch")) {
+        setError("Could not reach the server. Check your connection and try again.");
+      } else if (msg.includes("HTTP 5")) {
+        setError("The server ran into a problem creating the demo. Try again in a moment.");
+      } else {
+        setError(`Failed to create demo room: ${msg}`);
+      }
       return null;
     }
   }, [navigate]);

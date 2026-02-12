@@ -10722,3 +10722,114 @@ body {
 .onboarding-overlay .connect-agent-header {
   display: none;
 }
+
+/* ===== SwarmFlow Visualizer ===== */
+
+.swarm-flow-container {
+  display: flex;
+  height: 100%;
+  gap: 0;
+  background: var(--bg-base);
+}
+
+.swarm-flow-canvas-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 400px;
+}
+
+.swarm-flow-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+
+.swarm-flow-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(10, 10, 20, 0.92);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  z-index: 10;
+  max-width: 200px;
+}
+
+.swarm-flow-panel {
+  width: 200px;
+  padding: 12px;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.swarm-flow-metric-header {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.swarm-flow-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.swarm-flow-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.swarm-flow-metric-row.warn .swarm-flow-metric-value {
+  color: var(--aurora-pink);
+}
+
+.swarm-flow-metric-label {
+  color: var(--text-muted);
+}
+
+.swarm-flow-metric-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.swarm-flow-regions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.swarm-flow-region-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.swarm-flow-region-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.swarm-flow-region-label {
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.swarm-flow-region-stats {
+  color: var(--text-muted);
+  font-size: 10px;
+}

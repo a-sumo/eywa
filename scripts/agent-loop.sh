@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 TASK_ID="${1:-}"
 RUN_DIR="$SCRIPT_DIR/agent-runs"
-MAX_RESPAWNS="${MAX_RESPAWNS:-5}"
+MAX_RESPAWNS="${MAX_RESPAWNS:-10}"
 
 mkdir -p "$RUN_DIR"
 
@@ -34,10 +34,21 @@ while [ "$SPAWN" -lt "$MAX_RESPAWNS" ]; do
 
   echo "=== Seed session $SPAWN/$MAX_RESPAWNS starting at $(date) ==="
 
-  # Build prompt with baton if we have one from a previous session
+  # Build prompt with baton and handoff context from previous session
   PROMPT="$BASE_PROMPT"
   if [ -n "$BATON" ]; then
     PROMPT="$PROMPT Continue from previous agent: $BATON (use eywa_start with continue_from to pick up their state)."
+  fi
+
+  # Find the most recent handoff file and include its contents
+  LATEST_HANDOFF=$(ls -t "$RUN_DIR"/handoff-*.md 2>/dev/null | head -1)
+  if [ -n "$LATEST_HANDOFF" ]; then
+    HANDOFF_CONTENT=$(cat "$LATEST_HANDOFF")
+    PROMPT="$PROMPT
+
+Previous session handoff notes:
+$HANDOFF_CONTENT"
+    echo "=== Loaded handoff from $LATEST_HANDOFF ==="
   fi
 
   # Run the agent. Output goes to log file, visibility comes from Eywa dashboard.

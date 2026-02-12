@@ -4,6 +4,7 @@ import { supabase, type Message } from "../lib/supabase";
 export function useChat(roomId: string | null, channel = "general") {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchInitial = useCallback(async () => {
     if (!roomId) {
@@ -12,14 +13,19 @@ export function useChat(roomId: string | null, channel = "general") {
       return;
     }
 
-    const { data } = await supabase
+    const { data, error: queryError } = await supabase
       .from("messages")
       .select("*")
       .eq("room_id", roomId)
       .eq("channel", channel)
       .order("ts", { ascending: true })
       .limit(200);
-    if (data) setMessages(data);
+    if (queryError) {
+      setError(queryError.message);
+    } else {
+      setError(null);
+      if (data) setMessages(data);
+    }
     setLoading(false);
   }, [roomId, channel]);
 
@@ -55,15 +61,18 @@ export function useChat(roomId: string | null, channel = "general") {
   const send = useCallback(
     async (sender: string, content: string) => {
       if (!roomId) return;
-      await supabase.from("messages").insert({
+      const { error: insertError } = await supabase.from("messages").insert({
         room_id: roomId,
         sender,
         channel,
         content,
       });
+      if (insertError) {
+        setError(insertError.message);
+      }
     },
     [roomId, channel]
   );
 
-  return { messages, loading, send };
+  return { messages, loading, error, send };
 }
