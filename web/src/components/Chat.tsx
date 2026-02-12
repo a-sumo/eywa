@@ -9,7 +9,7 @@ function timeStr(ts: string): string {
 
 export function Chat() {
   const { room } = useRoomContext();
-  const { messages, loading, send } = useChat(room?.id ?? null, "general");
+  const { messages, loading, error, send } = useChat(room?.id ?? null, "general");
   const [input, setInput] = useState("");
   const [sender, setSender] = useState(
     () => localStorage.getItem("eywa_user") || ""
@@ -74,6 +74,7 @@ export function Chat() {
       </div>
       <div className="chat-messages">
         {loading && <div className="feed-loading">Loading...</div>}
+        {error && <div className="feed-loading" style={{ color: "var(--error)" }}>Failed to load messages: {error}</div>}
         {messages.map((m) => (
           <div key={m.id} className="chat-msg">
             <span className="chat-msg-sender">{m.sender}</span>

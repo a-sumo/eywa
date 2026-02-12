@@ -452,7 +452,7 @@ function AgentCard({ state, expanded, onToggle }: {
 
 export function OperationsView() {
   const { room } = useRoomContext();
-  const { memories, loading } = useRealtimeMemories(room?.id ?? null, 500);
+  const { memories, loading, error } = useRealtimeMemories(room?.id ?? null, 500);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [showIdle, setShowIdle] = useState(false);
   const prevCountRef = useRef(0);
@@ -513,6 +513,10 @@ export function OperationsView() {
 
   if (loading) {
     return <div className="ops-view" style={{ padding: "2rem", opacity: 0.4 }}>Loading operations...</div>;
+  }
+
+  if (error) {
+    return <div className="ops-view" style={{ padding: "2rem", color: "var(--error)" }}>Failed to load operations: {error}</div>;
   }
 
   return (

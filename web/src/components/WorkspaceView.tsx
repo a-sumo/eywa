@@ -321,6 +321,7 @@ export function WorkspaceView() {
     error: chatError,
     send: sendChat,
     clear: clearChat,
+    autoContextError,
   } = useGeminiChat(contextSummary, room?.id);
 
   const [chatInput, setChatInput] = useState("");
@@ -583,6 +584,11 @@ export function WorkspaceView() {
           </div>
 
           <div className="eywa-terminal">
+            {autoContextError && (
+              <div style={{ color: "var(--color-text-secondary)", fontSize: "0.75rem", opacity: 0.7, padding: "0.5rem 1rem" }}>
+                Room context unavailable. Chat works but without live agent data.
+              </div>
+            )}
             {chatMessages.length === 0 && !chatLoading && (
               <div className="eywa-terminal-empty">
                 {contextMemories.length === 0 ? (

@@ -133,6 +133,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [autoContext, setAutoContext] = useState("");
+  const [autoContextError, setAutoContextError] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const autoContextFetched = useRef(false);
 
@@ -148,37 +149,46 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
     if (!roomId || autoContextFetched.current) return;
     autoContextFetched.current = true;
 
-    // Fetch agent status, distress signals, patterns, destination, and pending approvals in parallel
-    Promise.all([
+    // Fetch agent status, distress signals, patterns, destination, and pending approvals in parallel.
+    // Use Promise.allSettled so individual tool failures don't break the entire auto-context.
+    Promise.allSettled([
       executeTool(roomId, { name: "get_agent_status", args: {} }),
       executeTool(roomId, { name: "get_distress_signals", args: {} }),
       executeTool(roomId, { name: "detect_patterns", args: {} }),
       executeTool(roomId, { name: "get_destination", args: {} }),
       executeTool(roomId, { name: "get_pending_approvals", args: {} }),
     ]).then(([statusResult, distressResult, patternsResult, destResult, approvalsResult]) => {
-      const parts: string[] = [statusResult.response.result];
+      const safeResult = (r: PromiseSettledResult<GeminiFunctionResponse>) =>
+        r.status === "fulfilled" ? r.value.response.result : "";
 
-      const distressText = distressResult.response.result;
+      const statusText = safeResult(statusResult);
+      const distressText = safeResult(distressResult);
+      const patternsText = safeResult(patternsResult);
+      const destText = safeResult(destResult);
+      const approvalsText = safeResult(approvalsResult);
+
+      const parts: string[] = [];
+      if (statusText) parts.push(statusText);
+
       if (distressText && !distressText.includes("No distress signals") && !distressText.includes("appear healthy")) {
         parts.push("\n" + distressText);
       }
 
-      const patternsText = patternsResult.response.result;
       if (patternsText && !patternsText.includes("No significant patterns") && !patternsText.includes("No recent activity")) {
         parts.push("\n" + patternsText);
       }
 
-      const destText = destResult.response.result;
       if (destText && !destText.includes("No destination set")) {
         parts.push("\n" + destText);
       }
 
-      const approvalsText = approvalsResult.response.result;
       if (approvalsText && !approvalsText.includes("No pending approvals")) {
         parts.push("\n" + approvalsText);
       }
 
-      setAutoContext(parts.join("\n"));
+      if (parts.length > 0) {
+        setAutoContext(parts.join("\n"));
+      }
 
       // If there are distress signals, patterns, or pending approvals, show a proactive alert
       const hasDistress = distressText && distressText.includes("UNRESOLVED DISTRESS");
@@ -203,6 +213,15 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
           },
         ]);
       }
+      // Track how many tools failed for context quality indicator
+      const failedCount = [statusResult, distressResult, patternsResult, destResult, approvalsResult]
+        .filter(r => r.status === "rejected").length;
+      if (failedCount >= 3) {
+        setAutoContextError(true);
+      }
+    }).catch(() => {
+      // All tools failed or processing error. Gemini still works, just without auto-context.
+      setAutoContextError(true);
     });
   }, [roomId]);
 
@@ -210,6 +229,8 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
   useEffect(() => {
     autoContextFetched.current = false;
     setAutoContext("");
+    setAutoContextError(false);
+    setAutoContextError(false);
     setMessages(loadMessages(roomId));
   }, [roomId]);
 
@@ -483,7 +504,7 @@ export function useGeminiChat(systemContext: string, roomId?: string | null) {
 
   const available = Boolean(GEMINI_API_KEY);
 
-  return { messages, loading, status, error, send, clear, autoContext, available };
+  return { messages, loading, status, error, send, clear, autoContext, autoContextError, available };
 }
 
 // ---------------------------------------------------------------------------

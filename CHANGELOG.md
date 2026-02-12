@@ -4,6 +4,12 @@ All notable features and changes. One line per feature. Agents append here after
 
 ## 2026-02-12
 
+- useChat error handling: fetch and insert errors now surfaced via `error` state so consumers can display them
+- useGeminiChat auto-context fallback: Promise.allSettled so individual tool failures don't break auto-context, graceful degradation when API is down
+- Hook error display: ThreadTree, OperationsView, Feed, and Chat now show Supabase query errors instead of silently failing
+- AppHeader demo error: "Try Demo" button now shows creating state and error messages
+- Gemini auto-context fallback UI: HubView and WorkspaceView show notice when room context is unavailable
+
 - ESLint cleanup: removed dead code (buildSeedMemories), unused variables, replaced `any` types with proper types in geminiTools task handling
 - Seed agent logging: added "What to Log" table and inline eywa_log examples to agent-prompt.md so seed agents log every file change, type check, commit, deploy, and decision
 - eywa-dev room: dedicated room for autonomous seed agents, separate from demo room noise. seed-mcp.json + agent-loop.sh updated

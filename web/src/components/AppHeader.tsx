@@ -10,7 +10,7 @@ const GitHubIcon = () => (
 
 export function AppHeader() {
   const location = useLocation();
-  const { createDemoRoom, creating } = useRoom();
+  const { createDemoRoom, creating, error } = useRoom();
 
   const isDocs = location.pathname.startsWith("/docs");
   const isRoom = location.pathname.startsWith("/r/");
@@ -48,8 +48,9 @@ export function AppHeader() {
                 onClick={() => createDemoRoom()}
                 disabled={creating}
               >
-                Try Demo
+                {creating ? "Creating..." : "Try Demo"}
               </button>
+              {error && <span style={{ color: "var(--error)", fontSize: "0.75rem" }}>{error}</span>}
               <Link to="/docs" className="global-header-cta">
                 Get Started
               </Link>

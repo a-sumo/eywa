@@ -1260,7 +1260,7 @@ export function ThreadTree() {
   const [timeRange, setTimeRange] = useState(24);
   const sinceMs = timeRange > 0 ? timeRange * 60 * 60 * 1000 : undefined;
 
-  const { memories, loading } = useRealtimeMemories(room?.id ?? null, 500, sinceMs);
+  const { memories, loading, error } = useRealtimeMemories(room?.id ?? null, 500, sinceMs);
 
   // Agent card expansion
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
@@ -1280,6 +1280,7 @@ export function ThreadTree() {
     error: chatError,
     send: sendChat,
     clear: clearChat,
+    autoContextError,
   } = useGeminiChat("", room?.id);
   const [chatInput, setChatInput] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -1545,6 +1546,19 @@ export function ThreadTree() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="hub-view">
+        <div className="hub-header">
+          <h2 className="hub-title">Hub</h2>
+        </div>
+        <div className="hub-empty" style={{ color: "var(--error)" }}>
+          Failed to load activity: {error}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="hub-view hub-two-col">
       {/* LEFT: Dashboard content */}
@@ -1570,6 +1584,18 @@ export function ThreadTree() {
           <span className="hub-stat"><b>{idleCount}</b> idle</span>
         </div>
       </div>
+
+      {/* Query error banner */}
+      {error && (
+        <div className="hub-error-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>Could not load room data: {error}</span>
+        </div>
+      )}
 
       {/* Destination banner */}
       {editingDest ? (
@@ -1770,7 +1796,12 @@ export function ThreadTree() {
           )}
         </div>
         <div className="hub-chat-messages">
-          {chatMessages.length === 0 && !chatLoading && (
+          {autoContextError && (
+            <div className="hub-steering-empty" style={{ color: "var(--color-text-secondary)", fontSize: "0.75rem", opacity: 0.7 }}>
+              Room context unavailable. Steering works but without live agent data.
+            </div>
+          )}
+          {chatMessages.length === 0 && !chatLoading && !autoContextError && (
             <div className="hub-steering-empty">
               Ask about agent status, patterns, progress, or course corrections.
             </div>
