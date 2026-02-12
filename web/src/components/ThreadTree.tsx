@@ -40,6 +40,108 @@ function extractDestination(memories: Memory[]): Destination | null {
   return null;
 }
 
+// --- Destination Editor ---
+
+function DestinationEditor({
+  current,
+  roomId,
+  onClose,
+}: {
+  current: Destination | null;
+  roomId: string;
+  onClose: () => void;
+}) {
+  const [dest, setDest] = useState(current?.destination || "");
+  const [milestoneText, setMilestoneText] = useState(
+    current?.milestones.join("\n") || ""
+  );
+  const [notes, setNotes] = useState(current?.notes || "");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!dest.trim() || !roomId) return;
+    setSaving(true);
+    const milestones = milestoneText
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    // Preserve existing progress for milestones that still exist
+    const progress: Record<string, boolean> = {};
+    for (const m of milestones) {
+      progress[m] = current?.progress[m] || false;
+    }
+    await supabase.from("memories").insert({
+      room_id: roomId,
+      agent: "web-user",
+      session_id: `web_${Date.now()}`,
+      message_type: "knowledge",
+      content: `DESTINATION: ${dest.trim()}`,
+      token_count: Math.floor(dest.length / 4),
+      metadata: {
+        event: "destination",
+        destination: dest.trim(),
+        milestones,
+        progress,
+        notes: notes.trim() || null,
+        set_by: current?.setBy || "web-user",
+        last_updated_by: "web-user",
+      },
+    });
+    setSaving(false);
+    onClose();
+  }
+
+  return (
+    <div className="hub-dest-editor">
+      <div className="hub-dest-editor-header">
+        <span className="hub-destination-label">
+          {current ? "Edit Destination" : "Set Destination"}
+        </span>
+        <button className="hub-dest-editor-close" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+      <div className="hub-dest-editor-field">
+        <label className="hub-dest-editor-label">Where are we going?</label>
+        <textarea
+          className="hub-dest-editor-input"
+          value={dest}
+          onChange={(e) => setDest(e.target.value)}
+          placeholder="Describe the target state. What does done look like?"
+          rows={2}
+        />
+      </div>
+      <div className="hub-dest-editor-field">
+        <label className="hub-dest-editor-label">Milestones (one per line)</label>
+        <textarea
+          className="hub-dest-editor-input"
+          value={milestoneText}
+          onChange={(e) => setMilestoneText(e.target.value)}
+          placeholder="Key checkpoints on the route to destination"
+          rows={4}
+        />
+      </div>
+      <div className="hub-dest-editor-field">
+        <label className="hub-dest-editor-label">Notes</label>
+        <textarea
+          className="hub-dest-editor-input hub-dest-editor-notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Blockers, course corrections, context..."
+          rows={2}
+        />
+      </div>
+      <button
+        className="hub-dest-editor-save"
+        onClick={handleSave}
+        disabled={!dest.trim() || saving}
+      >
+        {saving ? "Saving..." : current ? "Update Destination" : "Set Destination"}
+      </button>
+    </div>
+  );
+}
+
 // --- Tasks ---
 
 interface TaskItem {
@@ -1166,6 +1268,9 @@ export function ThreadTree() {
   // Collapsed groups
   const [showFinished, setShowFinished] = useState(false);
 
+  // Destination editor
+  const [editingDest, setEditingDest] = useState(false);
+
   // Unified input mode: talk to Gemini or inject to agents
   const [inputMode, setInputMode] = useState<"gemini" | "inject">("gemini");
   const {
@@ -1519,10 +1624,23 @@ export function ThreadTree() {
       </div>
 
       {/* Destination banner */}
-      {destination && (
+      {editingDest ? (
+        <DestinationEditor
+          current={destination}
+          roomId={room?.id || ""}
+          onClose={() => setEditingDest(false)}
+        />
+      ) : destination ? (
         <div className="hub-destination">
           <div className="hub-destination-header">
             <span className="hub-destination-label">Destination</span>
+            <button
+              className="hub-dest-edit-btn"
+              onClick={() => setEditingDest(true)}
+              title="Edit destination"
+            >
+              Edit
+            </button>
             <span className="hub-activity-time">{timeAgo(destination.ts)}</span>
           </div>
           <div className="hub-destination-text">{destination.destination}</div>
@@ -1586,6 +1704,13 @@ export function ThreadTree() {
             <div className="hub-destination-notes">{destination.notes}</div>
           )}
         </div>
+      ) : (
+        <button
+          className="hub-dest-set-btn"
+          onClick={() => setEditingDest(true)}
+        >
+          + Set Destination
+        </button>
       )}
 
       {/* Deploy health */}

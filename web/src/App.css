@@ -4152,6 +4152,137 @@ body {
   margin-top: 6px;
 }
 
+/* Destination editor */
+.hub-dest-edit-btn {
+  background: none;
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  color: #a78bfa;
+  font-size: 0.65rem;
+  padding: 1px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  transition: background 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.hub-dest-edit-btn:hover {
+  background: rgba(167, 139, 250, 0.12);
+  border-color: rgba(167, 139, 250, 0.5);
+}
+
+.hub-dest-set-btn {
+  display: block;
+  width: 100%;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px dashed rgba(139, 92, 246, 0.3);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 10px;
+  color: #a78bfa;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  text-align: center;
+}
+
+.hub-dest-set-btn:hover {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.hub-dest-editor {
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.hub-dest-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.hub-dest-editor-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.hub-dest-editor-close:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hub-dest-editor-field {
+  margin-bottom: 8px;
+}
+
+.hub-dest-editor-label {
+  display: block;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.hub-dest-editor-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.hub-dest-editor-input:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.hub-dest-editor-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.hub-dest-editor-notes {
+  font-size: 0.75rem;
+}
+
+.hub-dest-editor-save {
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  color: #c4b5fd;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease-in-out;
+  width: 100%;
+}
+
+.hub-dest-editor-save:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.35);
+}
+
+.hub-dest-editor-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Deploy health */
 .hub-deploy-health {
   margin: 0 0 12px;
