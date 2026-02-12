@@ -52,16 +52,16 @@ export function AgentList() {
         Graph
       </button>
       <button
-        className={`agent-chip ${isActive(`${basePath}/map`) ? "active" : ""}`}
+        className={`agent-chip experimental ${isActive(`${basePath}/map`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/map`)}
       >
-        Map
+        Map <span className="chip-badge">LIVE</span>
       </button>
       <button
-        className={`agent-chip ${isActive(`${basePath}/flow`) ? "active" : ""}`}
+        className={`agent-chip experimental ${isActive(`${basePath}/flow`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/flow`)}
       >
-        Flow
+        Flow <span className="chip-badge">LIVE</span>
       </button>
       <button
         className={`agent-chip ${isActive(`${basePath}/spectacles`) ? "active" : ""}`}

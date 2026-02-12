@@ -268,17 +268,22 @@ export function SwarmFlow() {
 
   return (
     <div className="swarm-flow-container">
-      <div className="swarm-flow-canvas-wrap">
-        <canvas
-          ref={canvasRef}
-          className="swarm-flow-canvas"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-        />
-        <div ref={tooltipRef} className="swarm-flow-tooltip" style={{ display: "none" }} />
+      <div className="experimental-banner">
+        <span className="experimental-banner-badge">LIVE</span>
+        Generated in real-time from Eywa telemetry. This view is experimental.
       </div>
-      {metrics && (
-        <div className="swarm-flow-panel">
+      <div className="swarm-flow-body">
+        <div className="swarm-flow-canvas-wrap">
+          <canvas
+            ref={canvasRef}
+            className="swarm-flow-canvas"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+          />
+          <div ref={tooltipRef} className="swarm-flow-tooltip" style={{ display: "none" }} />
+        </div>
+        {metrics && (
+          <div className="swarm-flow-panel">
           <div className="swarm-flow-metric-header">Swarm Physics</div>
           <div className="swarm-flow-metrics">
             <MetricRow label="Agents" value={`${metrics.activeAgents}/${metrics.totalAgents}`} />
@@ -315,7 +320,8 @@ export function SwarmFlow() {
             </>
           )}
         </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

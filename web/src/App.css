@@ -10723,13 +10723,64 @@ body {
   display: none;
 }
 
+/* ===== Experimental badges ===== */
+
+.agent-chip.experimental {
+  opacity: 0.7;
+}
+
+.agent-chip.experimental:hover {
+  opacity: 1;
+}
+
+.chip-badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--aurora-purple);
+  color: var(--text-primary);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.experimental-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(139, 92, 246, 0.08);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.experimental-banner-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--aurora-purple);
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
 /* ===== SwarmFlow Visualizer ===== */
 
 .swarm-flow-container {
   display: flex;
+  flex-direction: column;
   height: 100%;
-  gap: 0;
   background: var(--bg-base);
+}
+
+.swarm-flow-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 .swarm-flow-canvas-wrap {

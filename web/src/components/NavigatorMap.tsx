@@ -351,6 +351,10 @@ export function NavigatorMap() {
         background: isDark ? "#080a08" : "#fafafa",
       }}
     >
+      <div className="experimental-banner">
+        <span className="experimental-banner-badge">LIVE</span>
+        Generated in real-time from Eywa telemetry. This view is experimental.
+      </div>
       {/* Toolbar */}
       <div
         style={{
