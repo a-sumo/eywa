@@ -289,7 +289,7 @@ export function Landing() {
             <div className="landing-step-number">1</div>
             <div className="landing-step-content">
               <h3>Connect your team</h3>
-              <p>One command creates a room and auto-configures every agent on your machine. Each teammate runs the same command to join.</p>
+              <p><code className="landing-code">npx eywa-ai init</code> creates a room and auto-configures every agent on your machine. Each teammate runs the same command to join.</p>
             </div>
           </div>
           <div className="landing-step">
@@ -924,6 +924,7 @@ export function Landing() {
               <h4>Product</h4>
               <a href="#features">Features</a>
               <a href="#pricing">Pricing</a>
+              <a href="#quickstart">Quick Start</a>
               <button className="landing-footer-link-btn" onClick={() => createDemoRoom()} disabled={creating}>Try the Demo</button>
             </div>
             <div className="landing-footer-col">
