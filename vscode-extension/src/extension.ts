@@ -14,6 +14,7 @@ import { SessionTreeProvider } from "./sessionTree";
 import { PanelViewProvider } from "./panelView";
 import { startLoginFlow } from "./authServer";
 import { LiveViewProvider } from "./liveView";
+import { ApprovalTreeProvider } from "./approvalTree";
 import type { AttentionItem } from "./client";
 
 const TAB_TITLE_FLAG = path.join(os.homedir(), ".config", "eywa", "tab-title");
@@ -39,6 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
   const sessionTree = new SessionTreeProvider(() => client);
   const panelView = new PanelViewProvider(() => client);
   const liveProvider = new LiveViewProvider(() => client, getConfig("room"));
+  const approvalTree = new ApprovalTreeProvider(() => client);
 
   // Track attention items for badge and notifications
   let knownAttentionAgents = new Set<string>();
@@ -112,11 +114,12 @@ export function activate(context: vscode.ExtensionContext) {
     sessionTree.handleEvent(mem);
     panelView.handleEvent(mem);
     liveProvider.handleEvent(mem);
+    approvalTree.handleEvent(mem);
     updateStatusBar();
   }
 
   // Initialize client
-  initClient(decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
+  initClient(decorationManager, sessionTree, panelView, approvalTree, handleRealtimeEvent, context);
 
   if (!getConfig("room")) {
     showWelcome();
@@ -130,6 +133,7 @@ export function activate(context: vscode.ExtensionContext) {
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.window.registerTreeDataProvider("eywaSessions", sessionTree),
+    vscode.window.registerTreeDataProvider("eywaApprovals", approvalTree),
     // Agent decoration lifecycle
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (editor) decorationManager.updateDecorations(editor);
@@ -143,6 +147,7 @@ export function activate(context: vscode.ExtensionContext) {
     { dispose: () => decorationManager.dispose() },
     { dispose: () => sessionTree.dispose() },
     { dispose: () => panelView.dispose() },
+    { dispose: () => approvalTree.dispose() },
   );
 
   // Commands
@@ -152,6 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
       sessionTree.seed();
       panelView.seed();
       liveProvider.loadInitial();
+      approvalTree.seed();
     }),
 
     vscode.commands.registerCommand("eywa.openDashboard", () => {
@@ -273,6 +279,22 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }),
 
+    vscode.commands.registerCommand("eywa.approveRequest", (item: unknown) => {
+      if (item && typeof item === "object" && "approval" in item) {
+        approvalTree.approveRequest(item as Parameters<typeof approvalTree.approveRequest>[0]);
+      }
+    }),
+
+    vscode.commands.registerCommand("eywa.denyRequest", (item: unknown) => {
+      if (item && typeof item === "object" && "approval" in item) {
+        approvalTree.denyRequest(item as Parameters<typeof approvalTree.denyRequest>[0]);
+      }
+    }),
+
+    vscode.commands.registerCommand("eywa.refreshApprovals", () => {
+      approvalTree.seed();
+    }),
+
     vscode.commands.registerCommand("eywa.tagTerminal", async () => {
       const terminal = vscode.window.activeTerminal;
       if (!terminal) {
@@ -326,7 +348,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.room")) {
-        initClient(decorationManager, sessionTree, panelView, handleRealtimeEvent, context);
+        initClient(decorationManager, sessionTree, panelView, approvalTree, handleRealtimeEvent, context);
         liveProvider.setRoom(getConfig("room"));
         updateStatusBar();
       }
@@ -361,6 +383,7 @@ function initClient(
   decorationManager: AgentDecorationManager,
   sessionTree: SessionTreeProvider,
   panelView: PanelViewProvider,
+  approvalTree: ApprovalTreeProvider,
   onEvent: (mem: MemoryPayload) => void,
   context: vscode.ExtensionContext,
 ) {
@@ -378,6 +401,7 @@ function initClient(
     decorationManager.seed();
     sessionTree.seed();
     panelView.seed();
+    approvalTree.seed();
 
     realtime = new RealtimeManager();
     const unsub = realtime.on(onEvent);

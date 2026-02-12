@@ -47,6 +47,11 @@
           "type": "tree",
           "id": "eywaSessions",
           "name": "Sessions"
+        },
+        {
+          "type": "tree",
+          "id": "eywaApprovals",
+          "name": "Approvals"
         }
       ],
       "eywaPanel": [
@@ -105,6 +110,21 @@
         "command": "eywa.tagTerminal",
         "title": "Eywa: Tag Terminal with Agent",
         "icon": "$(terminal)"
+      },
+      {
+        "command": "eywa.approveRequest",
+        "title": "Approve",
+        "icon": "$(check)"
+      },
+      {
+        "command": "eywa.denyRequest",
+        "title": "Deny",
+        "icon": "$(close)"
+      },
+      {
+        "command": "eywa.refreshApprovals",
+        "title": "Eywa: Refresh Approvals",
+        "icon": "$(refresh)"
       }
     ],
     "walkthroughs": [
@@ -150,6 +170,25 @@
           "command": "eywa.injectSelection",
           "when": "editorHasSelection",
           "group": "eywa"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "eywa.refreshApprovals",
+          "when": "view == eywaApprovals",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "eywa.approveRequest",
+          "when": "view == eywaApprovals && viewItem == pendingApproval",
+          "group": "inline"
+        },
+        {
+          "command": "eywa.denyRequest",
+          "when": "view == eywaApprovals && viewItem == pendingApproval",
+          "group": "inline"
         }
       ]
     },
