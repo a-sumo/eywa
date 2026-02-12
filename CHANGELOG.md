@@ -4,6 +4,7 @@ All notable features and changes. One line per feature. Agents append here after
 
 ## 2026-02-12
 
+- Quick-start terminal section: new "Running in 30 seconds" section on landing page wiring the animated TerminalDemo between Gemini and pricing sections, with link to quickstart docs
 - Animated terminal demo: `npx eywa-ai init` onboarding flow plays as a typing animation in the "How Eywa works" section, showing agent detection, room creation, and MCP configuration
 - Landing page social proof: stats strip below hero showing Open Source, 40+ MCP Tools, 9 Agent Integrations, 5 Surfaces, and live GitHub stars count fetched from the API
 - DemoBanner conversion CTA: demo rooms now show a banner with "Create Your Room" button, dismiss persistence, aurora-themed styling, integrated into RoomLayout
