@@ -907,6 +907,96 @@ async function cmdLearn(content, title, tagsStr) {
   console.log();
 }
 
+// ── Claims ──────────────────────────────────────────────
+
+const CLAIM_MAX_AGE = 2 * 60 * 60_000; // 2 hours
+
+async function cmdClaims(slugArg) {
+  const room = await resolveRoom(slugArg);
+  const twoHoursAgo = new Date(Date.now() - CLAIM_MAX_AGE).toISOString();
+
+  // Fetch recent claims
+  const { data: claimRows, error: claimErr } = await supabase
+    .from("memories")
+    .select("agent,metadata,ts,session_id")
+    .eq("room_id", room.id)
+    .eq("metadata->>event", "claim")
+    .gte("ts", twoHoursAgo)
+    .order("ts", { ascending: false })
+    .limit(50);
+
+  if (claimErr) {
+    console.error(red("Query failed:"), claimErr.message);
+    process.exit(1);
+  }
+
+  if (!claimRows?.length) {
+    console.log(dim("\n  No active work claims.\n"));
+    return;
+  }
+
+  // Fetch session ends and unclaims to filter out released claims
+  const sessionIds = [...new Set(claimRows.map((r) => r.session_id).filter(Boolean))];
+  const { data: endRows } = sessionIds.length > 0
+    ? await supabase
+        .from("memories")
+        .select("agent,session_id,metadata")
+        .eq("room_id", room.id)
+        .in("session_id", sessionIds)
+        .in("metadata->>event", ["session_end", "session_done", "unclaim"])
+        .order("ts", { ascending: false })
+        .limit(100)
+    : { data: [] };
+
+  const endedSessions = new Set();
+  const unclaimedAgents = new Set();
+  for (const row of (endRows ?? [])) {
+    const meta = row.metadata ?? {};
+    if (meta.event === "unclaim") {
+      unclaimedAgents.add(row.agent);
+    } else if (row.session_id) {
+      endedSessions.add(row.session_id);
+    }
+  }
+
+  // Dedupe: keep latest claim per agent, skip ended/unclaimed
+  const seen = new Set();
+  const claims = [];
+
+  for (const row of claimRows) {
+    if (seen.has(row.agent)) continue;
+    if (row.session_id && endedSessions.has(row.session_id)) continue;
+    if (unclaimedAgents.has(row.agent)) continue;
+    seen.add(row.agent);
+
+    const meta = row.metadata ?? {};
+    claims.push({
+      agent: row.agent,
+      scope: meta.scope || "unknown",
+      files: meta.files || [],
+      ts: row.ts,
+    });
+  }
+
+  if (!claims.length) {
+    console.log(dim("\n  No active work claims.\n"));
+    return;
+  }
+
+  console.log(`\n  ${bold("Active Claims")} ${dim("/" + room.slug)} (${claims.length})\n`);
+
+  for (const c of claims) {
+    console.log(`  ${yellow("●")} ${bold(c.agent)}  ${dim(timeAgo(c.ts))}`);
+    console.log(`    ${c.scope}`);
+    if (c.files.length) {
+      const filesStr = c.files.slice(0, 5).map(f => cyan(f)).join(", ");
+      const more = c.files.length > 5 ? dim(` +${c.files.length - 5} more`) : "";
+      console.log(`    ${dim("files:")} ${filesStr}${more}`);
+    }
+    console.log();
+  }
+}
+
 // ── CLI Router ─────────────────────────────────────────
 
 const args = process.argv.slice(2);
@@ -928,6 +1018,7 @@ ${bold("  Observe:")}
     status [room]                         Show agent status with systems
     log [room] [limit]                    Recent activity feed
     course [room]                         Destination progress, agents, distress
+    claims [room]                         Active work claims (who's working on what)
 
 ${bold("  Navigate:")}
     dest [room]                           View current destination
@@ -1006,6 +1097,10 @@ ${bold("  Examples:")}
 
       case "course":
         await cmdCourse(args[1]);
+        break;
+
+      case "claims":
+        await cmdClaims(args[1]);
         break;
 
       case "knowledge":

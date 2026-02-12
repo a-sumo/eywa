@@ -18,6 +18,7 @@ All notable features and changes. One line per feature. Agents append here after
 - VS Code task visibility: task queue now visible in the extension sidebar with priority badges, status pills, assignees, and real-time updates
 - Discord /approve command: view pending approvals, approve or deny agent requests from chat with /approve list, /approve yes, /approve no
 - Deploy health: HubView now shows deployment status indicator with last deploy time, outcome, and expandable log of all recent deploys by agent
+- CLI claims command: `eywa claims` shows active work claims with agent, scope, files, and timestamp. Matches Discord /claims visibility from the terminal
 
 ## 2026-02-10
 
