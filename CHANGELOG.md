@@ -4,6 +4,7 @@ All notable features and changes. One line per feature. Agents append here after
 
 ## 2026-02-12
 
+- DemoBanner conversion CTA: demo rooms now show a banner with "Create Your Room" button, dismiss persistence, aurora-themed styling, integrated into RoomLayout
 - Code splitting: lazy-load all non-landing routes via React.lazy + Suspense, reducing initial JS bundle from 985KB to 472KB (52% smaller)
 - ConnectAgent onboarding: added Windsurf and Codex client support with correct config formats, paths, and setup scripts. Fixed CLI Codex init to use TOML instead of JSON.
 - Landing page visual proof: animated dashboard mockup showing agent cards with live status, destination banner with progress, and activity stream
