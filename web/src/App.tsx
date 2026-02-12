@@ -17,6 +17,7 @@ import { SessionGraph } from "./components/SessionGraph";
 import { SpectaclesView } from "./components/SpectaclesView";
 import { SpectaclesReceiver } from "./components/SpectaclesReceiver";
 import { GlobalKnowledgeHub } from "./components/GlobalKnowledgeHub";
+import { KnowledgePage } from "./components/KnowledgePage";
 import { NavigatorMap } from "./components/NavigatorMap";
 import { OperationsView } from "./components/OperationsView";
 import { SeedMonitor } from "./components/SeedMonitor";
@@ -98,7 +99,7 @@ function RoomRoutes() {
           <Route path="agent/:name" element={<AgentDetail />} />
           <Route path="chat" element={<Chat />} />
           <Route path="graph" element={<SessionGraph />} />
-          <Route path="knowledge" element={<GlobalKnowledgeHub />} />
+          <Route path="knowledge" element={<KnowledgePage />} />
           <Route path="map" element={<NavigatorMap />} />
         </Routes>
       </RoomLayout>
