@@ -1056,6 +1056,62 @@ body {
   color: rgba(240, 240, 245, 0.5);
 }
 
+/* Social proof stats strip */
+.landing-stats-strip {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1.5rem 2rem;
+  max-width: 900px;
+  margin: -1rem auto 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+
+.landing-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.landing-stat-value {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f0f0f5;
+  letter-spacing: -0.01em;
+}
+
+.landing-stat-label {
+  font-size: 0.8rem;
+  color: rgba(240, 240, 245, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.landing-stat-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 700px) {
+  .landing-stats-strip {
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
+  }
+  .landing-stat-divider {
+    display: none;
+  }
+}
+
 /* Fade overlay - transition from particle bg to solid */
 .landing-fade-overlay {
   position: relative;
