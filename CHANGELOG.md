@@ -28,6 +28,11 @@ All notable features and changes. One line per feature. Agents append here after
 - Agent session timeline: AgentDetail view now shows categorized timeline (files, git, deploys, decisions, errors, injections) with summary stats and filter tabs
 - NavigatorMap auto-sync: stable room IDs instead of creating new rooms each sync, periodic refresh based on seed activity
 - Agent prompt: added strategic mandate, vision document references, web browsing guidance, and expanded self-directing protocol
+- Architecture priorities v2: updated ARCHITECTURE.md with new priorities (onboarding, seed contention, user model). Marked shipped items, tagged in-progress work
+- New destination: "First-time experience that converts curiosity into understanding within 30 seconds" with 5 milestones for conversion focus
+- Demo room enhancement: per-agent session IDs, work claims with file paths, task queue entries, telemetry heartbeats, detailed 90-minute activity timeline, cross-agent injections, destination with progress notes
+- Landing page trust section: three cards (metadata only, open source, self-hostable) with data flow visualization showing what Eywa sees vs what stays local
+- Landing page memory persistence: animated crystal icon, three value props (permanence, structure, ownership) drawing from VISION.md storage narrative
 - Landing page memory persistence: narrative section about stored context, permanence, structured knowledge, and data ownership with animated crystal icon
 - Landing page trust and security: three-card section (metadata only, open source, self-hostable) with data flow visualization showing what Eywa sees vs what stays local
 
