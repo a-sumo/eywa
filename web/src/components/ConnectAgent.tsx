@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const WORKER_URL = "https://mcp.eywa-ai.dev/mcp";
 
-type Client = "claude" | "cursor" | "gemini" | "cline";
+type Client = "claude" | "cursor" | "gemini" | "cline" | "windsurf" | "codex";
 
 function mcpUrl(slug: string, agent: string): string {
   return `${WORKER_URL}?room=${encodeURIComponent(slug)}&agent=${encodeURIComponent(agent)}`;
@@ -47,6 +47,18 @@ function getConfig(client: Client, slug: string, agent: string): string {
         null,
         2
       );
+    case "windsurf":
+      return JSON.stringify(
+        {
+          mcpServers: {
+            eywa: { serverUrl: url },
+          },
+        },
+        null,
+        2
+      );
+    case "codex":
+      return `[mcp_servers.eywa]\nurl = "${url}"`;
   }
 }
 
@@ -60,6 +72,10 @@ function getLabel(client: Client): string {
       return "Gemini CLI";
     case "cline":
       return "Cline / Roo";
+    case "windsurf":
+      return "Windsurf";
+    case "codex":
+      return "Codex";
   }
 }
 
@@ -73,6 +89,10 @@ function getConfigPath(client: Client): string | null {
       return "~/.gemini/settings.json";
     case "cline":
       return "VS Code Settings → Cline MCP Servers";
+    case "windsurf":
+      return "~/.codeium/windsurf/mcp_config.json";
+    case "codex":
+      return "~/.codex/config.toml";
   }
 }
 
@@ -86,6 +106,10 @@ function getHint(client: Client): string {
       return `Add to ${getConfigPath(client)}:`;
     case "cline":
       return "Add to Cline settings in VS Code:";
+    case "windsurf":
+      return `Add to ${getConfigPath(client)}:`;
+    case "codex":
+      return `Add to ${getConfigPath(client)}:`;
   }
 }
 
@@ -116,8 +140,22 @@ function getSetupSteps(client: Client): string[] {
         'Type "Cline: MCP Servers"',
         "Click + to add server, paste config",
       ];
+    case "windsurf":
+      return [
+        "Create ~/.codeium/windsurf/mcp_config.json if it doesn't exist",
+        "Add the config below",
+        "Restart Windsurf",
+      ];
+    case "codex":
+      return [
+        "Create ~/.codex/config.toml if it doesn't exist",
+        "Add the config below",
+        "Run codex to start using Eywa tools",
+      ];
   }
 }
+
+const ALL_CLIENTS: Client[] = ["claude", "cursor", "gemini", "windsurf", "codex", "cline"];
 
 const QUICK_START_PROMPT = `Start logging to Eywa. Call eywa_start with a description of what we're working on, then use eywa_import to upload a summary of our conversation so far. After that, periodically call eywa_log for important exchanges.`;
 
@@ -151,8 +189,22 @@ export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
   }
 
   function handleDownloadConfig() {
-    const filename = client === "gemini" ? "settings.json" : "mcp.json";
-    const blob = new Blob([config], { type: "application/json" });
+    let filename: string;
+    let type: string;
+    if (client === "gemini") {
+      filename = "settings.json";
+      type = "application/json";
+    } else if (client === "codex") {
+      filename = "config.toml";
+      type = "text/plain";
+    } else if (client === "windsurf") {
+      filename = "mcp_config.json";
+      type = "application/json";
+    } else {
+      filename = "mcp.json";
+      type = "application/json";
+    }
+    const blob = new Blob([config], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -162,14 +214,32 @@ export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
   }
 
   function handleCopySetupScript() {
-    const script = `mkdir -p ~/.gemini && cat > ~/.gemini/settings.json << 'EOF'
+    let script: string;
+    if (client === "gemini") {
+      script = `mkdir -p ~/.gemini && cat > ~/.gemini/settings.json << 'EOF'
 ${config}
 EOF
 echo "Eywa configured for Gemini CLI"`;
+    } else if (client === "windsurf") {
+      script = `mkdir -p ~/.codeium/windsurf && cat > ~/.codeium/windsurf/mcp_config.json << 'EOF'
+${config}
+EOF
+echo "Eywa configured for Windsurf"`;
+    } else if (client === "codex") {
+      script = `mkdir -p ~/.codex && cat > ~/.codex/config.toml << 'EOF'
+${config}
+EOF
+echo "Eywa configured for Codex"`;
+    } else {
+      script = config;
+    }
     navigator.clipboard.writeText(script);
     setCopiedScript(true);
     setTimeout(() => setCopiedScript(false), 2000);
   }
+
+  const showDownload = client !== "claude";
+  const showSetupScript = client === "gemini" || client === "windsurf" || client === "codex";
 
   return (
     <div className={`connect-agent ${inline ? "connect-agent-inline" : ""}`}>
@@ -211,7 +281,7 @@ echo "Eywa configured for Gemini CLI"`;
             </label>
 
             <div className="connect-agent-clients">
-              {(["claude", "cursor", "gemini", "cline"] as Client[]).map((c) => (
+              {ALL_CLIENTS.map((c) => (
                 <button
                   key={c}
                   className={`connect-client-btn ${client === c ? "connect-client-active" : ""}`}
@@ -245,12 +315,12 @@ echo "Eywa configured for Gemini CLI"`;
               <button className="connect-agent-copy" onClick={handleCopy}>
                 {copied ? "Copied!" : "Copy"}
               </button>
-              {client !== "claude" && (
+              {showDownload && (
                 <button className="connect-agent-download" onClick={handleDownloadConfig}>
                   Download
                 </button>
               )}
-              {client === "gemini" && (
+              {showSetupScript && (
                 <button
                   className="connect-agent-script"
                   onClick={handleCopySetupScript}

@@ -161,11 +161,31 @@ function autoConfigureAgents(slug) {
     results.push({ agent: "Gemini CLI", ...r });
   }
 
-  // 5. Codex
+  // 5. Codex (uses TOML, not JSON)
   if (hasBin("codex") || existsSync(join(home, ".codex"))) {
-    const configPath = join(home, ".codex", "config.json");
-    const r = mergeJsonConfig(configPath, "url", "codex");
-    results.push({ agent: "Codex", ...r });
+    const configPath = join(home, ".codex", "config.toml");
+    const url = mcpUrl(slug, `codex/${name}`);
+    let status = "configured";
+    let detail = configPath;
+    try {
+      if (existsSync(configPath)) {
+        const content = readFileSync(configPath, "utf-8");
+        if (content.includes(`room=${slug}`)) {
+          status = "exists";
+        } else {
+          // Append eywa server config
+          const tomlBlock = `\n[mcp_servers.eywa]\nurl = "${url}"\n`;
+          writeFileSync(configPath, content.trimEnd() + "\n" + tomlBlock);
+        }
+      } else {
+        const dir = join(configPath, "..");
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(configPath, `[mcp_servers.eywa]\nurl = "${url}"\n`);
+      }
+    } catch {
+      status = "configured";
+    }
+    results.push({ agent: "Codex", status, detail });
   }
 
   return results;
