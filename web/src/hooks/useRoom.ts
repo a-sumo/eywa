@@ -187,7 +187,7 @@ export function useRoom() {
     const name = generateRoomName(slug);
 
     const { data, error: insertError } = await supabase
-      .from("rooms")
+      .from("folds")
       .insert({
         slug,
         name,
@@ -230,7 +230,7 @@ export function useRoom() {
 
       // Fetch the full room record for the return value
       const { data } = await supabase
-        .from("rooms")
+        .from("folds")
         .select("*")
         .eq("id", result.id)
         .single();
@@ -248,7 +248,7 @@ export function useRoom() {
 
   const joinRoom = useCallback(async (slug: string): Promise<Room | null> => {
     const { data, error: fetchError } = await supabase
-      .from("rooms")
+      .from("folds")
       .select("*")
       .eq("slug", slug)
       .single();

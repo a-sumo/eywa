@@ -206,7 +206,7 @@ function MiniRoomPicker({ currentSlug, onClose }: { currentSlug: string; onClose
 
   useEffect(() => {
     supabase
-      .from("rooms")
+      .from("folds")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20)
