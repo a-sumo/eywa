@@ -222,7 +222,7 @@ export function Landing() {
           <span className="landing-stat-value">5</span>
           <span className="landing-stat-label">{t("stats.surfaces")}</span>
         </div>
-        {stars != null && (
+        {stars != null && stars > 0 && (
           <>
             <div className="landing-stat-divider" />
             <div className="landing-stat">
@@ -891,7 +891,7 @@ export function Landing() {
         <div className="landing-community-links">
           <a href="https://github.com/a-sumo/eywa" className="btn-community btn-community-github" target="_blank" rel="noopener noreferrer">
             <IconGitHub />
-            <span>GitHub{stars != null ? ` (${stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars} stars)` : ""}</span>
+            <span>GitHub{stars != null && stars > 0 ? ` (${stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars} stars)` : ""}</span>
           </a>
           <a href="https://discord.gg/TyEUUnNm" className="btn-community btn-community-discord" target="_blank" rel="noopener noreferrer">
             <IconDiscord />
