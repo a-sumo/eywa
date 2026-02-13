@@ -38,6 +38,7 @@ eywa-specs/*.lock
 
 # Claude Code
 .claude/
+.mcp.json
 
 # Agent run logs
 scripts/agent-runs/
