@@ -180,8 +180,9 @@ function buildDemoMemories(foldId: string): Array<Record<string, unknown>> {
   agents.forEach((a, i) => {
     m({
       session_id: a.session, agent: a.name,
-      message_type: "resource",
+      message_type: "task",
       content: `TASK: ${a.task}`,
+      token_count: Math.floor(a.task.length / 4),
       metadata: {
         event: "task",
         title: a.task,
@@ -196,6 +197,11 @@ function buildDemoMemories(foldId: string): Array<Record<string, unknown>> {
           "CI/CD pipeline and deployment",
         ][i],
         assigned_to: a.name,
+        created_by: a.name,
+        claimed_at: new Date(now - (85 - i * 10) * min).toISOString(),
+        completed_at: null,
+        blocked_reason: i === 3 ? "Race condition in session refresh - two concurrent requests can both read the same refresh token" : null,
+        notes: null,
       },
       ts: new Date(now - (85 - i * 10) * min).toISOString(),
     });
@@ -342,6 +348,8 @@ function buildDemoMemories(foldId: string): Array<Record<string, unknown>> {
   });
 
   // Telemetry (heartbeats showing agent phases and context usage)
+  const tokensUsed = [45000, 38000, 52000, 28000, 41000];
+  const tokensLimit = 200000;
   agents.forEach((a, i) => {
     m({
       session_id: a.session, agent: a.name,
@@ -350,10 +358,12 @@ function buildDemoMemories(foldId: string): Array<Record<string, unknown>> {
       metadata: {
         event: "heartbeat",
         phase: ["working", "working", "working", "blocked", "deploying"][i],
-        tokens_used: [45000, 38000, 52000, 28000, 41000][i],
-        tokens_limit: 200000,
+        tokens_used: tokensUsed[i],
+        tokens_limit: tokensLimit,
+        token_percent: Math.round((tokensUsed[i] / tokensLimit) * 100),
         detail: progressData[i].detail,
         subagents: [0, 1, 0, 0, 2][i],
+        user: a.name.split("/")[0],
       },
       ts: new Date(now - (3 - i * 0.5) * min).toISOString(),
     });
