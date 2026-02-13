@@ -98,23 +98,23 @@ export class EywaGeminiLive extends BaseScriptComponent {
     const headers = this.snapCloudRequirements.getSupabaseHeaders();
 
     try {
-      // Fetch room ID from slug
-      const roomRes = await this.internetModule.fetch(
-        restUrl + "rooms?slug=eq." + this.roomSlug + "&select=id&limit=1",
+      // Fetch fold ID from slug
+      const foldRes = await this.internetModule.fetch(
+        restUrl + "folds?slug=eq." + this.roomSlug + "&select=id&limit=1",
         { method: "GET", headers: headers }
       );
-      const roomText = await roomRes.text();
-      const rooms = JSON.parse(roomText);
-      if (!rooms || rooms.length === 0) {
-        print("[EywaGeminiLive] Room not found: " + this.roomSlug);
+      const foldText = await foldRes.text();
+      const folds = JSON.parse(foldText);
+      if (!folds || folds.length === 0) {
+        print("[EywaGeminiLive] Fold not found: " + this.roomSlug);
         return;
       }
-      const roomId = rooms[0].id;
+      const foldId = folds[0].id;
 
       // Fetch recent memories (last 30) and destination in parallel
-      const memoriesUrl = restUrl + "memories?room_id=eq." + roomId
+      const memoriesUrl = restUrl + "memories?fold_id=eq." + foldId
         + "&order=ts.desc&limit=30&select=agent,content,metadata,message_type,ts";
-      const destUrl = restUrl + "memories?room_id=eq." + roomId
+      const destUrl = restUrl + "memories?fold_id=eq." + foldId
         + "&message_type=eq.knowledge&metadata->>event=eq.destination"
         + "&order=ts.desc&limit=1&select=content,metadata";
 
@@ -360,20 +360,20 @@ export class EywaGeminiLive extends BaseScriptComponent {
     const headers = this.snapCloudRequirements.getSupabaseHeaders();
 
     try {
-      // Get room ID
-      const roomRes = await this.internetModule.fetch(
-        restUrl + "rooms?slug=eq." + this.roomSlug + "&select=id&limit=1",
+      // Get fold ID
+      const foldRes = await this.internetModule.fetch(
+        restUrl + "folds?slug=eq." + this.roomSlug + "&select=id&limit=1",
         { method: "GET", headers: headers }
       );
-      const roomText = await roomRes.text();
-      const rooms = JSON.parse(roomText);
-      if (!rooms || rooms.length === 0) return;
+      const foldText = await foldRes.text();
+      const folds = JSON.parse(foldText);
+      if (!folds || folds.length === 0) return;
 
-      const roomId = rooms[0].id;
+      const foldId = folds[0].id;
 
       // Write injection to memories table
       const body = JSON.stringify({
-        room_id: roomId,
+        fold_id: foldId,
         session_id: "spectacles-voice-" + Date.now(),
         agent: "spectacles/voice",
         message_type: "injection",

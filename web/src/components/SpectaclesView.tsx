@@ -337,11 +337,49 @@ export function SpectaclesView() {
       config: { broadcast: { ack: false, self: false } },
     });
 
-    // Listen for SIK interaction events from Spectacles
+    // Listen for SIK interaction events from Spectacles (legacy format)
     channel.on("broadcast", { event: "interaction" }, (msg) => {
       const payload = msg.payload as SikEvent;
       if (payload?.type) {
         handleSikEvent(payload);
+      }
+    });
+
+    // Listen for interact events from TilePanel (tap/hover on quads)
+    channel.on("broadcast", { event: "interact" }, (msg) => {
+      const p = msg.payload;
+      if (!p?.type) return;
+      const map = mapRef.current;
+      if (!map) return;
+
+      if (p.type === "tap" && p.u != null && p.v != null) {
+        const sx = p.u * map.W;
+        const sy = p.v * map.H;
+        const agent = map.hitTestLegend(sx, sy);
+        if (agent) {
+          map.toggleAgent(agent);
+        } else {
+          hoveredRef.current = map.hitTest(sx, sy);
+        }
+        redraw();
+        syncBroadcastView();
+      } else if (p.type === "hover" || p.type === "hover_move") {
+        if (p.u != null && p.v != null) {
+          const sx = p.u * map.W;
+          const sy = p.v * map.H;
+          const node = map.hitTest(sx, sy);
+          if (node !== hoveredRef.current) {
+            hoveredRef.current = node;
+            redraw();
+            syncBroadcastView();
+          }
+        }
+      } else if (p.type === "hover_exit") {
+        if (hoveredRef.current) {
+          hoveredRef.current = null;
+          redraw();
+          syncBroadcastView();
+        }
       }
     });
 
@@ -405,7 +443,7 @@ export function SpectaclesView() {
               op: "create",
               id: TILE_ID,
               x: 0, y: 0, z: 0.5,
-              w: W, h: H, scale: 1,
+              w: W, h: H, s: 0.58,
               layer: 0, visible: true, interactive: true, draggable: false,
             }],
           },

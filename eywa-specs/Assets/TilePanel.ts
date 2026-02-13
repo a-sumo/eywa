@@ -578,7 +578,7 @@ export class TilePanel extends BaseScriptComponent {
     // Scale based on pixel dimensions and pixelsPerCm
     const widthCm = entry.w / this.pixelsPerCm;
     const heightCm = entry.h / this.pixelsPerCm;
-    const s = (op.s !== undefined ? op.s : 1) as number;
+    const s = (op.s !== undefined ? op.s : (op.scale !== undefined ? op.scale : 1)) as number;
     entry.obj.getTransform().setLocalScale(new vec3(widthCm * s, heightCm * s, 1));
 
     this.quads.set(id, entry);
@@ -761,7 +761,7 @@ export class TilePanel extends BaseScriptComponent {
       const h = (op.h !== undefined ? op.h : entry.h) as number;
       entry.w = w;
       entry.h = h;
-      const s = (op.s !== undefined ? op.s : 1) as number;
+      const s = (op.s !== undefined ? op.s : (op.scale !== undefined ? op.scale : 1)) as number;
       entry.obj.getTransform().setLocalScale(new vec3(w / this.pixelsPerCm * s, h / this.pixelsPerCm * s, 1));
     }
 
