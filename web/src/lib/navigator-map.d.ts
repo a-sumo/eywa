@@ -17,6 +17,19 @@ export interface NavigatorMapData {
       predictedHumanMinutes: number;
       speedup?: number;
     }>;
+    regions?: Array<{
+      id: number;
+      label: string;
+      nodeCount: number;
+      bounds: { minX: number; minY: number; maxX: number; maxY: number };
+    }>;
+    warpLanes?: Array<{
+      fromId: string;
+      toId: string;
+      strength: number;
+      type: string;
+      bridge?: string;
+    }>;
   };
   nodes: Array<{
     id: string;
@@ -28,6 +41,8 @@ export interface NavigatorMapData {
     ts?: number;
     meta?: Record<string, unknown>;
     polar?: Record<string, { r: number; theta: number }>;
+    axes?: Record<string, { x: number; y: number; polar?: Record<string, { r: number; theta: number }> }>;
+    regionId?: number;
   }>;
   trajectory: Array<{
     from: string;
@@ -83,8 +98,12 @@ export class NavigatorMap {
   goalSy: number;
   dimmedAgents: Set<string>;
   devMode: boolean;
+  gridMode: boolean;
   nodeAlphaFn: (nodeId: string) => number;
   themeName: string;
+  activeLayer: string;
+  availableLayers: string[] | null;
+  hoveredWarpLane: unknown | null;
 
   constructor(canvas: HTMLCanvasElement, opts?: NavigatorMapOpts);
 
@@ -92,13 +111,18 @@ export class NavigatorMap {
   setData(mapData: NavigatorMapData): void;
   setZoom(z: number): void;
   setPan(x: number, y: number): void;
+  setGridMode(on: boolean): void;
   resetView(): void;
   resize(): void;
   destroy(): void;
 
   hitTest(screenX: number, screenY: number): NavigatorMapNode | null;
   hitTestLegend(screenX: number, screenY: number): string | null;
+  hitTestLayerPanel(screenX: number, screenY: number): string | null;
+  hitTestWarpLane(screenX: number, screenY: number): unknown | null;
+  hitTestWarpLanePanel?(screenX: number, screenY: number): unknown | null;
   toggleAgent(agent: string): void;
+  switchLayer(layerName: string): Record<string, { x: number; y: number }> | null;
   toScreen(node: { x: number; y: number }): { sx: number; sy: number };
   recalcGoalScreen(): void;
 

@@ -38,6 +38,7 @@ const THEMES = {
     goal: [200, 160, 40],
     stateInner: [255, 255, 255],
     gradCircle: '#fafafa',
+    accent: [100, 23, 236],
     agentPalette: [
       [100, 23, 236],
       [20, 140, 180],
@@ -64,6 +65,7 @@ const THEMES = {
     goal: [0, 255, 200],
     stateInner: [10, 14, 10],
     gradCircle: '#0c0e0c',
+    accent: [0, 230, 120],
     agentPalette: [
       [0, 230, 120],
       [0, 190, 255],
@@ -128,6 +130,16 @@ export class NavigatorMap {
     // grid view mode (small multiples)
     this.gridMode = false;
 
+    // layer switching (multi-axis dimension stacks)
+    this.activeLayer = 'domain';
+    this.availableLayers = null; // set from data.meta.layers
+    this._layerHits = [];
+
+    // warp lanes (cross-domain morphisms)
+    this.hoveredWarpLane = null;
+    this._warpLaneHits = [];
+    this._warpPanelHits = [];
+
     this.resize();
   }
 
@@ -163,6 +175,14 @@ export class NavigatorMap {
           if (!node.agent && nodeAgent[node.id]) node.agent = nodeAgent[node.id];
         }
       }
+      // Detect available layers from meta or node axes
+      if (mapData.meta.layers) {
+        this.availableLayers = mapData.meta.layers;
+      } else if (mapData.nodes?.[0]?.axes) {
+        this.availableLayers = ['domain', ...Object.keys(mapData.nodes[0].axes)];
+      } else {
+        this.availableLayers = null;
+      }
     }
     this.recalcGoalScreen();
   }
@@ -197,6 +217,49 @@ export class NavigatorMap {
   }
 
   setGridMode(on) { this.gridMode = !!on; }
+
+  // Switch to a different axis layer. Swaps node x/y to that axis's coords.
+  // Returns the previous positions for animation.
+  switchLayer(layerName) {
+    if (!this.data?.nodes || !this.availableLayers) return null;
+    if (!this.availableLayers.includes(layerName)) return null;
+    if (layerName === this.activeLayer) return null;
+
+    // Capture current positions for lerp animation
+    const prev = {};
+    for (const n of this.data.nodes) {
+      prev[n.id] = { x: n.x, y: n.y };
+    }
+
+    // Swap coordinates
+    for (const n of this.data.nodes) {
+      if (layerName === 'domain') {
+        // Domain coords are the original x/y (stored in _domainX/_domainY)
+        if (n._domainX != null) { n.x = n._domainX; n.y = n._domainY; }
+        if (n._domainPolar) n.polar = n._domainPolar;
+      } else if (n.axes?.[layerName]) {
+        // Save domain coords on first switch
+        if (n._domainX == null) { n._domainX = n.x; n._domainY = n.y; n._domainPolar = n.polar; }
+        n.x = n.axes[layerName].x;
+        n.y = n.axes[layerName].y;
+        if (n.axes[layerName].polar) n.polar = n.axes[layerName].polar;
+      }
+    }
+
+    this.activeLayer = layerName;
+    this.recalcGoalScreen();
+    return prev;
+  }
+
+  hitTestLayerPanel(screenX, screenY) {
+    for (const hit of this._layerHits) {
+      if (screenX >= hit.x && screenX <= hit.x + hit.w &&
+          screenY >= hit.y && screenY <= hit.y + hit.h) {
+        return hit.layer;
+      }
+    }
+    return null;
+  }
 
   toggleAgent(agent) {
     if (this.dimmedAgents.has(agent)) this.dimmedAgents.delete(agent);
@@ -265,7 +328,9 @@ export class NavigatorMap {
     }
 
     this.drawGrid();
+    this.drawRegions();
     this.drawRadialRings();
+    this.drawWarpLanes();
     this.drawTrajectory();
     this.drawNodes(hoveredNode);
     this.drawEdgeFades();
@@ -273,7 +338,9 @@ export class NavigatorMap {
     this.drawAlignmentPanel();
     this.drawComparisonPanel();
     this.drawCurvaturePanel();
+    this.drawWarpLanePanel();
     this.drawLegend();
+    this.drawLayerPanel();
     return true;
   }
 
@@ -459,6 +526,68 @@ export class NavigatorMap {
       });
     }
     return sources;
+  }
+
+  drawRegions() {
+    const regions = this.data?.meta?.regions;
+    if (!regions || regions.length <= 1) return;
+
+    const { ctx, t } = this;
+    const dark = this.themeName === 'dark';
+    const nodes = this.data.nodes;
+
+    // Group nodes by region
+    const regionNodes = {};
+    for (const n of nodes) {
+      if (n.region) {
+        if (!regionNodes[n.region]) regionNodes[n.region] = [];
+        regionNodes[n.region].push(n);
+      }
+    }
+
+    for (const region of regions) {
+      const rNodes = regionNodes[region.id];
+      if (!rNodes || rNodes.length < 2) continue;
+
+      // Compute bounding box from actual node positions
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const n of rNodes) {
+        minX = Math.min(minX, n.x);
+        maxX = Math.max(maxX, n.x);
+        minY = Math.min(minY, n.y);
+        maxY = Math.max(maxY, n.y);
+      }
+      // Pad the bounds
+      const pad = 0.12;
+      minX -= pad; maxX += pad;
+      minY -= pad; maxY += pad;
+
+      // Convert corners to screen space (note: y is flipped in toScreen)
+      const tl = this.toScreen({ x: minX, y: maxY });
+      const br = this.toScreen({ x: maxX, y: minY });
+      const w = br.sx - tl.sx;
+      const h = br.sy - tl.sy;
+
+      if (w < 20 || h < 20) continue; // too small to draw
+
+      // Dashed rectangle
+      ctx.save();
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = dark ? 'rgba(0, 220, 100, 0.12)' : 'rgba(100, 60, 180, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(tl.sx, tl.sy, w, h, 8);
+      ctx.stroke();
+
+      // Region label at top-left corner
+      ctx.setLineDash([]);
+      ctx.font = '600 9px Inter, system-ui, sans-serif';
+      ctx.fillStyle = dark ? 'rgba(0, 220, 100, 0.2)' : 'rgba(100, 60, 180, 0.18)';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(region.label, tl.sx + 6, tl.sy + 4);
+      ctx.restore();
+    }
   }
 
   drawRadialRings() {
@@ -1590,8 +1719,248 @@ export class NavigatorMap {
       ctx.font = '500 12px Inter, system-ui, sans-serif';
       ctx.fillStyle = rgba(t.text, 0.35);
       ctx.fillText(`${Math.round(this.zoom * 100)}%`, lx, ly);
+      ly += 14;
     }
 
+    this._legendBottom = ly;
+  }
+
+  // --- Warp lanes (cross-domain morphisms) ---
+
+  drawWarpLanes() {
+    const warpLanes = this.data?.warpLanes;
+    if (!warpLanes || warpLanes.length === 0) return;
+
+    const { ctx, t } = this;
+    const nodeMap = {};
+    for (const n of this.data.nodes) nodeMap[n.id] = n;
+
+    // Warp lane colors: violet in light, cyan in dark
+    const warpColor = this.themeName === 'dark' ? [0, 220, 255] : [140, 60, 220];
+
+    this._warpLaneHits = [];
+    const visibleThreshold = 0.6;
+
+    for (const wl of warpLanes) {
+      if (wl.strength < visibleThreshold) continue;
+      const fromNode = nodeMap[wl.fromId];
+      const toNode = nodeMap[wl.toId];
+      if (!fromNode || !toNode) continue;
+
+      const p1 = this.toScreen(fromNode);
+      const p2 = this.toScreen(toNode);
+
+      // Bezier control points: curve outward perpendicular to the line
+      const mx = (p1.sx + p2.sx) / 2;
+      const my = (p1.sy + p2.sy) / 2;
+      const dx = p2.sx - p1.sx;
+      const dy = p2.sy - p1.sy;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const curveAmount = Math.min(len * 0.3, 60);
+      // Perpendicular offset
+      const nx = -dy / (len || 1) * curveAmount;
+      const ny = dx / (len || 1) * curveAmount;
+      const cpx = mx + nx;
+      const cpy = my + ny;
+
+      const alpha = Math.min(0.6, wl.strength * 0.7);
+      const isHovered = this.hoveredWarpLane === wl;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(p1.sx, p1.sy);
+      ctx.quadraticCurveTo(cpx, cpy, p2.sx, p2.sy);
+
+      // Dashed line
+      ctx.setLineDash([8, 6]);
+      ctx.lineWidth = isHovered ? 2.5 : 1.5;
+      ctx.strokeStyle = rgba(warpColor, isHovered ? 0.8 : alpha);
+      ctx.stroke();
+
+      // Diamond markers at endpoints
+      ctx.setLineDash([]);
+      for (const p of [p1, p2]) {
+        const s = 4;
+        ctx.beginPath();
+        ctx.moveTo(p.sx, p.sy - s);
+        ctx.lineTo(p.sx + s, p.sy);
+        ctx.lineTo(p.sx, p.sy + s);
+        ctx.lineTo(p.sx - s, p.sy);
+        ctx.closePath();
+        ctx.fillStyle = rgba(warpColor, isHovered ? 0.9 : alpha + 0.15);
+        ctx.fill();
+      }
+
+      // Bridge label at midpoint (on hover or if strong enough)
+      if (isHovered || wl.strength > 0.75) {
+        const labelText = wl.bridge || (wl.type === 'intra-stack' ? 'cross-domain' : 'cross-level');
+        // Evaluate quadratic bezier at t=0.5
+        const lx = 0.25 * p1.sx + 0.5 * cpx + 0.25 * p2.sx;
+        const ly = 0.25 * p1.sy + 0.5 * cpy + 0.25 * p2.sy;
+        ctx.font = '500 9px Inter, system-ui, sans-serif';
+        const tw = ctx.measureText(labelText).width;
+        ctx.fillStyle = rgba(t.bgRgb, 0.7);
+        ctx.fillRect(lx - tw / 2 - 3, ly - 6, tw + 6, 12);
+        ctx.fillStyle = rgba(warpColor, isHovered ? 0.95 : 0.6);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labelText, lx, ly);
+      }
+
+      ctx.restore();
+
+      // Store hit test data (sample points along the bezier)
+      this._warpLaneHits.push({ wl, p1, p2, cpx, cpy });
+    }
+  }
+
+  hitTestWarpLane(screenX, screenY) {
+    const tolerance = 12;
+    for (const { wl, p1, p2, cpx, cpy } of this._warpLaneHits) {
+      // Sample 20 points along the quadratic bezier
+      for (let i = 0; i <= 20; i++) {
+        const t = i / 20;
+        const it = 1 - t;
+        const x = it * it * p1.sx + 2 * it * t * cpx + t * t * p2.sx;
+        const y = it * it * p1.sy + 2 * it * t * cpy + t * t * p2.sy;
+        if ((screenX - x) ** 2 + (screenY - y) ** 2 < tolerance * tolerance) {
+          return wl;
+        }
+      }
+    }
+    return null;
+  }
+
+  drawWarpLanePanel() {
+    const warpLanes = this.data?.warpLanes;
+    if (!warpLanes || warpLanes.length === 0) return;
+
+    const { ctx, W, H, t } = this;
+    const dark = this.themeName === 'dark';
+    const warpColor = dark ? [0, 220, 255] : [140, 60, 220];
+
+    // Position: bottom-right, above comparison panel
+    const px = W - 240;
+    const py = 16;
+    const panelW = 224;
+    const maxVisible = 6;
+    const visible = warpLanes.filter(wl => wl.strength >= 0.6).slice(0, maxVisible);
+    if (visible.length === 0) return;
+
+    const rowH = 18;
+    const headerH = 22;
+    const panelH = headerH + visible.length * rowH + 8;
+
+    drawGlassPanel(ctx, px, py, panelW, panelH, t.bgRgb, dark);
+
+    // Header
+    ctx.font = '600 10px Inter, system-ui, sans-serif';
+    ctx.fillStyle = rgba(warpColor, 0.7);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`WARP LANES (${warpLanes.length})`, px + 10, py + headerH / 2);
+
+    // Lanes
+    ctx.font = '400 10px Inter, system-ui, sans-serif';
+    this._warpPanelHits = [];
+
+    for (let i = 0; i < visible.length; i++) {
+      const wl = visible[i];
+      const ry = py + headerH + i * rowH;
+      const isHovered = this.hoveredWarpLane === wl;
+
+      // Strength bar
+      const barW = 40;
+      const barH = 6;
+      const barX = px + 10;
+      const barY = ry + (rowH - barH) / 2;
+      ctx.fillStyle = rgba(warpColor, 0.08);
+      ctx.fillRect(barX, barY, barW, barH);
+      ctx.fillStyle = rgba(warpColor, isHovered ? 0.7 : 0.4);
+      ctx.fillRect(barX, barY, barW * wl.strength, barH);
+
+      // Label: from → to
+      const nodeMap = {};
+      for (const n of this.data.nodes) nodeMap[n.id] = n;
+      const from = nodeMap[wl.fromId];
+      const to = nodeMap[wl.toId];
+      const fromLabel = (from?.label || wl.fromId).slice(0, 14);
+      const toLabel = (to?.label || wl.toId).slice(0, 14);
+      ctx.fillStyle = rgba(t.text, isHovered ? 0.8 : 0.45);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${fromLabel} ↔ ${toLabel}`, barX + barW + 6, ry + rowH / 2);
+
+      this._warpPanelHits.push({ wl, x: px, y: ry, w: panelW, h: rowH });
+    }
+  }
+
+  hitTestWarpLanePanel(screenX, screenY) {
+    for (const hit of this._warpPanelHits) {
+      if (screenX >= hit.x && screenX <= hit.x + hit.w &&
+          screenY >= hit.y && screenY <= hit.y + hit.h) {
+        return hit.wl;
+      }
+    }
+    return null;
+  }
+
+  // --- Layer panel (multi-axis dimension stacks) ---
+
+  drawLayerPanel() {
+    if (!this.availableLayers || this.availableLayers.length <= 1) return;
+
+    const { ctx, W, t } = this;
+    const layers = this.availableLayers;
+    this._layerHits = [];
+
+    // Position: top-left, below the legend
+    const px = 16;
+    let py = this._legendBottom ? this._legendBottom + 12 : 250;
+
+    // Header
+    ctx.font = '500 9px Inter, system-ui, sans-serif';
+    ctx.fillStyle = rgba(t.text, 0.3);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('LAYERS', px, py + 8);
+    py += 16;
+
+    ctx.font = '500 10px Inter, system-ui, sans-serif';
+    const LABEL_MAP = { domain: 'Domain', structural: 'Structure', abstraction: 'Abstract' };
+
+    let x = px;
+    const pillH = 22;
+    const pillR = 11;
+    const gap = 4;
+
+    for (const layer of layers) {
+      const label = LABEL_MAP[layer] || layer;
+      const tw = ctx.measureText(label).width;
+      const pillW = tw + 16;
+      const active = layer === this.activeLayer;
+
+      ctx.beginPath();
+      ctx.roundRect(x, py, pillW, pillH, pillR);
+      if (active) {
+        ctx.fillStyle = rgba(t.accent || t.text, 0.12);
+        ctx.fill();
+        ctx.strokeStyle = rgba(t.accent || t.text, 0.4);
+      } else {
+        ctx.fillStyle = rgba(t.text, 0.03);
+        ctx.fill();
+        ctx.strokeStyle = rgba(t.text, 0.12);
+      }
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = active ? rgba(t.accent || t.text, 0.85) : rgba(t.text, 0.35);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, x + pillW / 2, py + pillH / 2);
+
+      this._layerHits.push({ layer, x, y: py, w: pillW, h: pillH });
+      x += pillW + gap;
+    }
   }
 
   // Unit system — named after women who expanded human understanding.
