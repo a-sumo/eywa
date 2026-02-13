@@ -77,7 +77,7 @@ export function registerTimelineTools(
 ) {
   server.tool(
     "eywa_history",
-    "View the history of a session. Shows what happened, when, and in what order. Like scrolling back through a conversation.",
+    "[COORDINATION] View the history of a session. Shows what happened, when, and in what order. Like scrolling back through a conversation.",
     {
       session: z.string().optional().describe("Session to view (defaults to your current session)"),
       limit: z.number().optional().default(20).describe("How many items to show"),
@@ -123,7 +123,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_rewind",
-    "Rewind to an earlier point in the timeline. This moves your current position back, like an undo. You can always go forward again.",
+    "[COORDINATION] Rewind to an earlier point in the timeline. This moves your current position back, like an undo. You can always go forward again.",
     {
       to: z.string().describe("The ID of the point to rewind to (from eywa_history)"),
     },
@@ -170,7 +170,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_fork",
-    "Create a new timeline branching from the current point (or any point). Use this to explore alternatives without affecting the original work.",
+    "[COORDINATION] Create a new timeline branching from the current point (or any point). Use this to explore alternatives without affecting the original work.",
     {
       name: z.string().describe("Name for the new timeline (e.g., 'try-redis', 'experiment-v2')"),
       from: z.string().optional().describe("Point to fork from (defaults to current position)"),
@@ -236,7 +236,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_bookmark",
-    "Bookmark an important moment so you can easily find it later. Good for marking decisions, milestones, or points you might want to return to.",
+    "[CONTEXT] Bookmark an important moment so you can easily find it later. Good for marking decisions, milestones, or points you might want to return to.",
     {
       name: z.string().describe("Name for the bookmark (e.g., 'decided-on-postgres', 'auth-working')"),
       at: z.string().optional().describe("Point to bookmark (defaults to current position)"),
@@ -299,7 +299,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_bookmarks",
-    "List all bookmarks in this fold. Bookmarks mark important moments across all timelines.",
+    "[COORDINATION] List all bookmarks in this fold. Bookmarks mark important moments across all timelines.",
     {},
     {
       readOnlyHint: true,
@@ -336,7 +336,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_compare",
-    "Compare two points in the timeline to see what changed between them. Useful for understanding how work evolved.",
+    "[COORDINATION] Compare two points in the timeline to see what changed between them. Useful for understanding how work evolved.",
     {
       from: z.string().describe("Starting point (older)"),
       to: z.string().optional().describe("Ending point (newer, defaults to current)"),
@@ -433,7 +433,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_pick",
-    "Copy specific moments from another timeline into your current one. Like cherry-picking the best parts of someone else's work.",
+    "[COORDINATION] Copy specific moments from another timeline into your current one. Like cherry-picking the best parts of someone else's work.",
     {
       ids: z.array(z.string()).describe("IDs of the moments to bring in (from eywa_history)"),
     },
@@ -503,7 +503,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_timelines",
-    "List all timelines (branches) in this fold. Shows what parallel work streams exist.",
+    "[COORDINATION] List all timelines (branches) in this fold. Shows what parallel work streams exist.",
     {},
     {
       readOnlyHint: true,
@@ -562,7 +562,7 @@ export function registerTimelineTools(
 
   server.tool(
     "eywa_merge",
-    "Combine another timeline into your current one. If there are conflicts, they'll be flagged for review.",
+    "[COORDINATION] Combine another timeline into your current one. If there are conflicts, they'll be flagged for review.",
     {
       timeline: z.string().describe("Name of the timeline to merge in"),
     },

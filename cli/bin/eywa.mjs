@@ -5,6 +5,7 @@ import { exec, execSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { createInterface } from "node:readline";
 
 // ── Baked-in defaults (public Supabase project) ─────
 // Uses the anon key (public, RLS-enforced). NOT the service_role key.
@@ -386,10 +387,36 @@ async function cmdInit(nameArg) {
   // Save as default fold (including secret)
   saveConfig({ ...loadConfig(), fold: slug, foldId: existing?.id || null, secret });
 
-  // Auto-detect and configure agents
-  const results = await autoConfigureAgents(slug, secret);
-  console.log();
-  const agentsFound = printAgentResults(results);
+  // Show data disclosure
+  console.log(`
+  ${bold("Eywa coordinates your agents by sharing:")}
+    ${green("✓")} Task descriptions, status updates, progress
+    ${green("✓")} File paths being worked on (not contents)
+    ${green("✓")} Decisions, knowledge entries, operation logs
+
+  ${bold("Some tools can also share:")}
+    ${yellow("△")} Code snippets (eywa_file, eywa_checkpoint, eywa_inject)
+    ${yellow("△")} Full conversation imports (eywa_import)
+
+  ${dim("Eywa never accesses your filesystem directly.")}
+  ${dim("Self-host for full control: github.com/a-sumo/eywa")}
+`);
+
+  // Prompt for consent before auto-configuring agents
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise(resolve => rl.question('  Configure detected agents? [Y/n] ', resolve));
+  rl.close();
+
+  let agentsFound = false;
+
+  if (answer.toLowerCase() === 'n') {
+    console.log('\n  Skipped agent configuration. You can configure manually later.');
+  } else {
+    // Auto-detect and configure agents
+    const results = await autoConfigureAgents(slug, secret);
+    console.log();
+    agentsFound = printAgentResults(results);
+  }
 
   if (!agentsFound) {
     printConfigs(slug, displayName, secret);
@@ -404,6 +431,18 @@ async function cmdInit(nameArg) {
   const dashUrl = `${DASHBOARD_BASE}/${slug}`;
   console.log(`  ${bold("Dashboard:")} ${cyan(dashUrl)}`);
   console.log(`  ${dim("Agent name:")} ${userName()}`);
+  console.log();
+
+  // Write .eywa.json marker file in the current working directory
+  const eywaJsonPath = join(process.cwd(), ".eywa.json");
+  const eywaJsonContent = {
+    fold: slug,
+    enabled: true,
+    sharing: "coordination",
+    note: "Eywa shares agent coordination metadata through MCP tools. Some tools (eywa_file, eywa_checkpoint) can include code context. Self-host for full control.",
+  };
+  writeFileSync(eywaJsonPath, JSON.stringify(eywaJsonContent, null, 2) + "\n");
+  console.log(`  ${dim("Created .eywa.json in this directory.")}`);
   console.log();
 
   // Open dashboard

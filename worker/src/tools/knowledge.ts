@@ -30,7 +30,7 @@ export function registerKnowledgeTools(
 ) {
   server.tool(
     "eywa_learn",
-    "Store persistent project knowledge that survives across sessions. Use for architecture decisions, conventions, gotchas, API patterns, or anything future sessions should know.",
+    "[CONTEXT] Store persistent project knowledge that survives across sessions. Use for architecture decisions, conventions, gotchas, API patterns, or anything future sessions should know.",
     {
       content: z.string().describe("The knowledge to store"),
       tags: z.array(z.string()).optional().describe("Tags for categorization (e.g. 'architecture', 'api', 'convention', 'gotcha')"),
@@ -68,7 +68,7 @@ export function registerKnowledgeTools(
 
   server.tool(
     "eywa_knowledge",
-    "Retrieve the project knowledge base. Returns persistent context accumulated across all sessions: architecture decisions, conventions, gotchas, patterns.",
+    "[COORDINATION] Retrieve the project knowledge base. Returns persistent context accumulated across all sessions: architecture decisions, conventions, gotchas, patterns.",
     {
       tag: z.string().optional().describe("Filter by tag"),
       search: z.string().optional().describe("Search within knowledge content"),
@@ -133,7 +133,7 @@ export function registerKnowledgeTools(
 
   server.tool(
     "eywa_forget",
-    "Remove a knowledge entry by its ID. Use when knowledge is outdated or incorrect.",
+    "[COORDINATION] Remove a knowledge entry by its ID. Use when knowledge is outdated or incorrect.",
     {
       knowledge_id: z.string().describe("The ID of the knowledge entry to remove"),
     },

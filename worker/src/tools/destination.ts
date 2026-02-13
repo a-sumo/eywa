@@ -29,7 +29,7 @@ export function registerDestinationTools(
 ) {
   server.tool(
     "eywa_destination",
-    "Set, update, or view the fold's destination (point B). A destination is the target state the team is working toward. Setting a destination helps all agents understand the goal and enables progress tracking.",
+    "[CONTEXT] Set, update, or view the fold's destination (point B). A destination is the target state the team is working toward. Setting a destination helps all agents understand the goal and enables progress tracking.",
     {
       action: z.enum(["set", "update", "get"]).describe("set: define a new destination. update: modify progress/milestones. get: view current destination."),
       destination: z.string().optional().describe("The target state (point B). What does 'done' look like? Required for set."),

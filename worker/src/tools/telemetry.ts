@@ -13,7 +13,7 @@ export function registerTelemetryTools(
   // Agent-callable heartbeat (pragmatic fallback until hosts emit notifications natively)
   server.tool(
     "eywa_heartbeat",
-    "Report a heartbeat with your current phase and status. Call every few minutes during long tasks so the team can see you're alive. This is the agent-side fallback for MCP Host Telemetry (see docs/mcp-host-telemetry.md).",
+    "[CONTEXT] Report a heartbeat with your current phase and status. Call every few minutes during long tasks so the team can see you're alive. This is the agent-side fallback for MCP Host Telemetry (see docs/mcp-host-telemetry.md).",
     {
       phase: z.enum(VALID_PHASES).describe("Current phase: working, thinking, compacting, waiting_approval, idle, error"),
       tokens_used: z.number().optional().describe("Total tokens consumed this session"),

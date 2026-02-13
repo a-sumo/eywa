@@ -165,7 +165,7 @@ export function registerClaimTools(
 ) {
   server.tool(
     "eywa_claim",
-    "Claim a scope of work so other agents know not to duplicate it. Call this before starting any significant task. Returns warnings if another agent already claimed overlapping work.",
+    "[CONTEXT] Claim a scope of work so other agents know not to duplicate it. Call this before starting any significant task. Returns warnings if another agent already claimed overlapping work.",
     {
       scope: z.string().describe("What you're working on (e.g. 'VS Code attention system', 'Discord bot /network command')"),
       files: z.array(z.string()).optional().describe("File paths you plan to modify (e.g. ['worker/src/tools/session.ts', 'CLAUDE.md'])"),
@@ -253,7 +253,7 @@ export function registerClaimTools(
 
   server.tool(
     "eywa_unclaim",
-    "Release your current work claim. Called automatically by eywa_done and eywa_stop, but you can call it manually if you're switching tasks.",
+    "[COORDINATION] Release your current work claim. Called automatically by eywa_done and eywa_stop, but you can call it manually if you're switching tasks.",
     {},
     {
       readOnlyHint: false,

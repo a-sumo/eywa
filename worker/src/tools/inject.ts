@@ -30,7 +30,7 @@ export function registerInjectTools(
 ) {
   server.tool(
     "eywa_inject",
-    "Push curated context or instructions to another agent. They'll see it in their inbox next time they check.",
+    "[CODE] Push curated context or instructions to another agent. They'll see it in their inbox next time they check.",
     {
       target: z.string().max(128).regex(/^[a-zA-Z0-9_.\-\/]+$|^all$/, "Target must be an agent name (letters, numbers, hyphens, underscores, dots, slashes) or 'all'").describe("Target agent name, or 'all' for broadcast"),
       content: z.string().describe("The context, instructions, or information to inject"),
@@ -71,7 +71,7 @@ export function registerInjectTools(
 
   server.tool(
     "eywa_inbox",
-    "Check for context injections sent to you by other agents or the user. Call this periodically to stay in sync.",
+    "[COORDINATION] Check for context injections sent to you by other agents or the user. Call this periodically to stay in sync.",
     {
       limit: z.number().optional().default(10).describe("Maximum injections to retrieve"),
     },

@@ -32,7 +32,7 @@ export function registerSessionTools(
 ) {
   server.tool(
     "eywa_whoami",
-    "Check your agent identity, session, and fold.",
+    "[COORDINATION] Check your agent identity, session, and fold.",
     {},
     {
       readOnlyHint: true,
@@ -50,7 +50,7 @@ export function registerSessionTools(
 
   server.tool(
     "eywa_start",
-    "Start logging this session. Call this when beginning work on a task. Returns a fold snapshot so you land with full situational awareness.",
+    "[CONTEXT] Start logging this session. Call this when beginning work on a task. Returns a fold snapshot so you land with full situational awareness.",
     {
       task_description: z.string().describe("Brief description of what you're working on"),
       continue_from: z.string().optional().describe("Agent name to load context from (baton handoff, e.g. 'armand/quiet-oak')"),
@@ -378,7 +378,7 @@ export function registerSessionTools(
 
   server.tool(
     "eywa_stop",
-    "Stop logging and save a session summary.",
+    "[CONTEXT] Stop logging and save a session summary.",
     { summary: z.string().describe("Summary of what was accomplished") },
     {
       readOnlyHint: false,
@@ -404,7 +404,7 @@ export function registerSessionTools(
 
   server.tool(
     "eywa_done",
-    "Mark session as complete with structured summary, status, artifacts, and next steps. Use this instead of eywa_stop when you want to record what was accomplished.",
+    "[CONTEXT] Mark session as complete with structured summary, status, artifacts, and next steps. Use this instead of eywa_stop when you want to record what was accomplished.",
     {
       summary: z.string().describe("What was accomplished this session"),
       status: z.enum(["completed", "blocked", "failed", "partial"]).describe("Session outcome"),

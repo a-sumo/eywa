@@ -10,7 +10,7 @@ export function registerContextTools(
 ) {
   server.tool(
     "eywa_context",
-    "Get shared context from all agents. See what others are working on, including what systems they're operating on.",
+    "[COORDINATION] Get shared context from all agents. See what others are working on, including what systems they're operating on.",
     {
       limit: z.number().optional().default(20).describe("Maximum messages to retrieve"),
     },
@@ -50,7 +50,7 @@ export function registerContextTools(
 
   server.tool(
     "eywa_agents",
-    "List all agents that have logged to Eywa in this fold.",
+    "[COORDINATION] List all agents that have logged to Eywa in this fold.",
     {},
     {
       readOnlyHint: true,
@@ -89,7 +89,7 @@ export function registerContextTools(
 
   server.tool(
     "eywa_recall",
-    "Recall messages from a specific agent.",
+    "[COORDINATION] Recall messages from a specific agent.",
     {
       agent: z.string().describe("Agent name to query"),
       limit: z.number().optional().default(20).describe("Maximum messages to retrieve"),

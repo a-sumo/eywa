@@ -30,7 +30,7 @@ export function registerMemoryTools(
 ) {
   server.tool(
     "eywa_log",
-    "Log a message to Eywa shared memory. Optionally tag with operation metadata so other agents and humans can see what systems you're touching and what you're doing.",
+    "[CONTEXT] Log a message to Eywa shared memory. Optionally tag with operation metadata so other agents and humans can see what systems you're touching and what you're doing.",
     {
       role: z
         .string()
@@ -86,7 +86,7 @@ export function registerMemoryTools(
 
   server.tool(
     "eywa_file",
-    "Store a file or large code block. Returns a reference ID.",
+    "[CODE] Store a file or large code block. Returns a reference ID.",
     {
       path: z.string().describe('File path or identifier (e.g., "src/auth.py")'),
       content: z.string().describe("The file content"),
@@ -130,7 +130,7 @@ export function registerMemoryTools(
 
   server.tool(
     "eywa_get_file",
-    "Retrieve a stored file by its ID.",
+    "[COORDINATION] Retrieve a stored file by its ID.",
     {
       file_id: z
         .string()
@@ -167,7 +167,7 @@ export function registerMemoryTools(
 
   server.tool(
     "eywa_import",
-    "Bulk-import a conversation transcript into Eywa. Use this to upload an existing session's history.",
+    "[CODE] Bulk-import a conversation transcript into Eywa. Use this to upload an existing session's history.",
     {
       messages: z
         .array(
@@ -239,7 +239,7 @@ export function registerMemoryTools(
 
   server.tool(
     "eywa_search",
-    "Search Eywa for messages containing a query string.",
+    "[COORDINATION] Search Eywa for messages containing a query string.",
     {
       query: z.string().describe("Text to search for"),
       limit: z.number().optional().default(10).describe("Maximum results"),

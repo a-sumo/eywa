@@ -25,7 +25,7 @@ export function registerApprovalTools(
 ) {
   server.tool(
     "eywa_request_approval",
-    "Request human approval before taking a risky action. The request appears in the dashboard and the human can approve or deny it. Poll with eywa_check_approval to see the decision.",
+    "[CONTEXT] Request human approval before taking a risky action. The request appears in the dashboard and the human can approve or deny it. Poll with eywa_check_approval to see the decision.",
     {
       action: z.string().describe("What you want to do (e.g. 'delete staging database', 'force-push to main', 'deploy to production')"),
       scope: z.string().optional().describe("What files, systems, or services are affected"),
@@ -75,7 +75,7 @@ export function registerApprovalTools(
 
   server.tool(
     "eywa_check_approval",
-    "Check the status of a pending approval request. Returns whether it was approved, denied, or is still pending.",
+    "[COORDINATION] Check the status of a pending approval request. Returns whether it was approved, denied, or is still pending.",
     {
       approval_id: z.string().uuid("approval_id must be a valid UUID").describe("The approval ID returned by eywa_request_approval"),
     },

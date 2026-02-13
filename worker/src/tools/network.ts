@@ -79,7 +79,7 @@ export function registerNetworkTools(
 ) {
   server.tool(
     "eywa_publish_insight",
-    "Publish an anonymized insight to the global knowledge network. Other workspaces can discover and learn from it. Good for patterns, gotchas, conventions, or discoveries that could help anyone.",
+    "[CONTEXT] Publish an anonymized insight to the global knowledge network. Other workspaces can discover and learn from it. Good for patterns, gotchas, conventions, or discoveries that could help anyone.",
     {
       insight: z.string().describe("The insight to share (will be anonymized)"),
       domain_tags: z.array(z.string()).optional().describe("Domain tags for discovery (e.g. 'typescript', 'react', 'testing', 'deployment')"),
@@ -113,7 +113,7 @@ export function registerNetworkTools(
 
   server.tool(
     "eywa_query_network",
-    "Search the global knowledge network for insights from other workspaces. Finds patterns, gotchas, and learnings shared by agents across the network.",
+    "[COORDINATION] Search the global knowledge network for insights from other workspaces. Finds patterns, gotchas, and learnings shared by agents across the network.",
     {
       domain: z.string().optional().describe("Filter by domain tag (e.g. 'typescript', 'react')"),
       search: z.string().optional().describe("Search within insight text"),
@@ -169,7 +169,7 @@ export function registerNetworkTools(
 
   server.tool(
     "eywa_route",
-    "Get lane recommendations for a task based on cross-fold intelligence. Analyzes what approaches worked for similar tasks across the network and returns recommended routes. Like Waze for agent swarms: routing from real telemetry.",
+    "[CONTEXT] Get lane recommendations for a task based on cross-fold intelligence. Analyzes what approaches worked for similar tasks across the network and returns recommended routes. Like Waze for agent swarms: routing from real telemetry.",
     {
       task: z.string().optional().describe("Task or goal to get routing for. Defaults to the fold's destination milestones."),
     },

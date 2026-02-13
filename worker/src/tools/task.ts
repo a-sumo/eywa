@@ -23,7 +23,7 @@ export function registerTaskTools(
 ) {
   server.tool(
     "eywa_task",
-    "Create a task. Tasks are structured work items that agents can pick up and track to completion. Checks for duplicate titles in active tasks before creating.",
+    "[CONTEXT] Create a task. Tasks are structured work items that agents can pick up and track to completion. Checks for duplicate titles in active tasks before creating.",
     {
       title: z.string().describe("Short title for the task"),
       description: z.string().optional().describe("Detailed description of what needs to be done"),
@@ -98,7 +98,7 @@ export function registerTaskTools(
 
   server.tool(
     "eywa_tasks",
-    "List tasks in the fold. Sorted by priority then time. Filter by status, assignee, or milestone.",
+    "[COORDINATION] List tasks in the fold. Sorted by priority then time. Filter by status, assignee, or milestone.",
     {
       status: z.string().optional().describe("Filter by status: open, claimed, in_progress, done, blocked. Comma-separated for multiple."),
       assigned_to: z.string().optional().describe("Filter by assignee name"),
@@ -199,7 +199,7 @@ export function registerTaskTools(
 
   server.tool(
     "eywa_pick_task",
-    "Claim an open task for yourself. Updates status to 'claimed' and auto-creates a work claim for conflict detection. Fails if task is already claimed.",
+    "[COORDINATION] Claim an open task for yourself. Updates status to 'claimed' and auto-creates a work claim for conflict detection. Fails if task is already claimed.",
     {
       task_id: z.string().describe("ID of the task to claim"),
     },
@@ -274,7 +274,7 @@ export function registerTaskTools(
 
   server.tool(
     "eywa_update_task",
-    "Update a task's status, add notes, or change assignment. If marking done with a milestone set, consider updating destination progress.",
+    "[CONTEXT] Update a task's status, add notes, or change assignment. If marking done with a milestone set, consider updating destination progress.",
     {
       task_id: z.string().describe("ID of the task to update"),
       status: z.enum(["open", "claimed", "in_progress", "done", "blocked"]).optional().describe("New status"),
@@ -341,7 +341,7 @@ export function registerTaskTools(
 
   server.tool(
     "eywa_subtask",
-    "Break a task into subtasks. Creates child tasks linked to the parent via parent_task. The parent task's description and milestone are inherited by default.",
+    "[CONTEXT] Break a task into subtasks. Creates child tasks linked to the parent via parent_task. The parent task's description and milestone are inherited by default.",
     {
       parent_task: z.string().describe("ID of the parent task to break down"),
       subtasks: z.array(z.object({

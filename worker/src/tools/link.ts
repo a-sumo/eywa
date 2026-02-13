@@ -10,7 +10,7 @@ export function registerLinkTools(
 ) {
   server.tool(
     "eywa_link",
-    "Create a link connecting a specific memory to another session. Use this to reference, fork, or inject a memory into a different agent's session.",
+    "[CONTEXT] Create a link connecting a specific memory to another session. Use this to reference, fork, or inject a memory into a different agent's session.",
     {
       source_memory_id: z.string().uuid("source_memory_id must be a valid UUID").describe("UUID of the memory to link from"),
       target_agent: z.string().describe("Target agent name (e.g. 'armand/quiet-oak')"),
@@ -73,7 +73,7 @@ export function registerLinkTools(
 
   server.tool(
     "eywa_links",
-    "List links in this fold. Shows connections between memories and sessions.",
+    "[COORDINATION] List links in this fold. Shows connections between memories and sessions.",
     {
       limit: z.number().optional().default(20).describe("Maximum links to return"),
       target_agent: z.string().optional().describe("Filter by target agent"),
@@ -122,7 +122,7 @@ export function registerLinkTools(
 
   server.tool(
     "eywa_unlink",
-    "Delete a link by its ID.",
+    "[COORDINATION] Delete a link by its ID.",
     {
       link_id: z.string().uuid("link_id must be a valid UUID").describe("UUID of the link to delete"),
     },
@@ -145,7 +145,7 @@ export function registerLinkTools(
 
   server.tool(
     "eywa_fetch",
-    "Fetch a specific memory by ID. Use this to pull context from another session into your current context.",
+    "[COORDINATION] Fetch a specific memory by ID. Use this to pull context from another session into your current context.",
     {
       memory_id: z.string().uuid("memory_id must be a valid UUID").describe("UUID of the memory to fetch"),
     },

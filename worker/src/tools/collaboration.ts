@@ -47,7 +47,7 @@ export function registerCollaborationTools(
 ) {
   server.tool(
     "eywa_status",
-    "See what all agents are currently working on in this fold, including what systems they're operating on and what actions they're taking.",
+    "[COORDINATION] See what all agents are currently working on in this fold, including what systems they're operating on and what actions they're taking.",
     {},
     {
       readOnlyHint: true,
@@ -186,7 +186,7 @@ export function registerCollaborationTools(
 
   server.tool(
     "eywa_summary",
-    "Get a token-efficient compressed summary of the fold. Per-agent task, systems, and outcomes. Knowledge and injection counts. Designed for agents with limited context windows.",
+    "[COORDINATION] Get a token-efficient compressed summary of the fold. Per-agent task, systems, and outcomes. Knowledge and injection counts. Designed for agents with limited context windows.",
     {
       hours: z.number().optional().default(24).describe("How many hours back to summarize"),
     },
@@ -295,7 +295,7 @@ export function registerCollaborationTools(
 
   server.tool(
     "eywa_pull",
-    "Pull recent context from another agent's session.",
+    "[COORDINATION] Pull recent context from another agent's session.",
     {
       agent: z.string().describe("Agent name to pull context from"),
       limit: z.number().optional().default(20).describe("Maximum memories to retrieve"),
@@ -340,7 +340,7 @@ export function registerCollaborationTools(
 
   server.tool(
     "eywa_sync",
-    "Sync another agent's current session history into your context.",
+    "[COORDINATION] Sync another agent's current session history into your context.",
     {
       agent: z.string().describe("Agent name to sync from"),
     },
@@ -409,7 +409,7 @@ export function registerCollaborationTools(
 
   server.tool(
     "eywa_msg",
-    "Send a message to teammates via Eywa.",
+    "[CONTEXT] Send a message to teammates via Eywa.",
     {
       content: z.string().describe("Message text"),
       channel: z.string().optional().default("general").describe("Channel to send to"),

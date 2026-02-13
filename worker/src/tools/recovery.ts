@@ -29,7 +29,7 @@ export function registerRecoveryTools(
 ) {
   server.tool(
     "eywa_checkpoint",
-    "Save your current working state so another session can pick up if this one dies. Call this periodically during long tasks, and always before context gets full. The checkpoint is tied to your user identity so any new session you start will auto-recover it.",
+    "[CODE] Save your current working state so another session can pick up if this one dies. Call this periodically during long tasks, and always before context gets full. The checkpoint is tied to your user identity so any new session you start will auto-recover it.",
     {
       task: z.string().describe("What you're working on (1 sentence)"),
       done: z.string().describe("What's already completed"),
@@ -83,7 +83,7 @@ export function registerRecoveryTools(
 
   server.tool(
     "eywa_distress",
-    "Signal that your context window is nearly exhausted and you cannot continue. This saves your state and broadcasts an urgent alert so another agent or a fresh session can pick up your work. Call this BEFORE you hit the wall.",
+    "[CODE] Signal that your context window is nearly exhausted and you cannot continue. This saves your state and broadcasts an urgent alert so another agent or a fresh session can pick up your work. Call this BEFORE you hit the wall.",
     {
       task: z.string().describe("What you were working on"),
       done: z.string().describe("What's already completed"),
@@ -165,7 +165,7 @@ export function registerRecoveryTools(
 
   server.tool(
     "eywa_recover",
-    "Check for unresolved distress signals or checkpoints from your user. Returns the most recent saved state so you can continue where a previous session left off. Called automatically by eywa_start, but you can also call it manually.",
+    "[COORDINATION] Check for unresolved distress signals or checkpoints from your user. Returns the most recent saved state so you can continue where a previous session left off. Called automatically by eywa_start, but you can also call it manually.",
     {},
     {
       readOnlyHint: true,
@@ -231,7 +231,7 @@ export function registerRecoveryTools(
 
   server.tool(
     "eywa_progress",
-    "Report progress on your current task. Call this periodically so the dashboard and other agents can see real-time completion. Updates are lightweight and designed for frequent use.",
+    "[CONTEXT] Report progress on your current task. Call this periodically so the dashboard and other agents can see real-time completion. Updates are lightweight and designed for frequent use.",
     {
       task: z.string().describe("What you're working on (1 sentence)"),
       percent: z.number().min(0).max(100).describe("Estimated completion percentage (0-100)"),

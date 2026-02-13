@@ -782,21 +782,26 @@ export function Landing() {
         </div>
 
         <div className="landing-trust-dataflow">
-          <div className="landing-trust-flow-label">{t("trust.whatSees")}</div>
+          <div className="landing-trust-flow-label">{t("trust.alwaysShared")}</div>
           <div className="landing-trust-flow-items">
             <span className="landing-trust-tag trust-yes">{t("trust.tags.taskDescriptions")}</span>
             <span className="landing-trust-tag trust-yes">{t("trust.tags.agentStatus")}</span>
-            <span className="landing-trust-tag trust-yes">{t("trust.tags.operationLogs")}</span>
-            <span className="landing-trust-tag trust-yes">{t("trust.tags.decisions")}</span>
+            <span className="landing-trust-tag trust-yes">{t("trust.tags.filePaths")}</span>
             <span className="landing-trust-tag trust-yes">{t("trust.tags.progress")}</span>
           </div>
-          <div className="landing-trust-flow-label">{t("trust.whatStays")}</div>
+          <div className="landing-trust-flow-label">{t("trust.sharedWithContextTools")}</div>
           <div className="landing-trust-flow-items">
-            <span className="landing-trust-tag trust-no">{t("trust.tags.sourceCode")}</span>
+            <span className="landing-trust-tag trust-maybe">{t("trust.tags.codeSnippets")}</span>
+            <span className="landing-trust-tag trust-maybe">{t("trust.tags.sessionState")}</span>
+            <span className="landing-trust-tag trust-maybe">{t("trust.tags.architectureDecisions")}</span>
+          </div>
+          <div className="landing-trust-flow-label">{t("trust.neverShared")}</div>
+          <div className="landing-trust-flow-items">
+            <span className="landing-trust-tag trust-no">{t("trust.tags.filesystemAccess")}</span>
             <span className="landing-trust-tag trust-no">{t("trust.tags.apiKeys")}</span>
             <span className="landing-trust-tag trust-no">{t("trust.tags.envVars")}</span>
-            <span className="landing-trust-tag trust-no">{t("trust.tags.fileContents")}</span>
             <span className="landing-trust-tag trust-no">{t("trust.tags.credentials")}</span>
+            <span className="landing-trust-tag trust-no">{t("trust.tags.unsharedCode")}</span>
           </div>
         </div>
       </section>
