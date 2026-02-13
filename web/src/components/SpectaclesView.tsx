@@ -86,6 +86,13 @@ export function SpectaclesView() {
   const [gridMode, setGridMode] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
+  // Voice state (events from Spectacles EywaGeminiLive)
+  const [voiceInput, setVoiceInput] = useState<string | null>(null);
+  const [voiceResponse, setVoiceResponse] = useState<string | null>(null);
+  const [voiceInjects, setVoiceInjects] = useState<Array<{ message: string; ts: number }>>([]);
+  const voiceInputTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voiceResponseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const roomSlug = fold?.slug || "demo";
   const deviceId = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -389,6 +396,34 @@ export function SpectaclesView() {
       syncData();
     });
 
+    // Voice events from Spectacles (EywaGeminiLive)
+    channel.on("broadcast", { event: "voice_input" }, (msg) => {
+      const p = msg.payload;
+      if (p?.text) {
+        setVoiceInput(p.text);
+        // Auto-dismiss after 4s
+        if (voiceInputTimer.current) clearTimeout(voiceInputTimer.current);
+        voiceInputTimer.current = setTimeout(() => setVoiceInput(null), 4000);
+      }
+    });
+
+    channel.on("broadcast", { event: "voice_response" }, (msg) => {
+      const p = msg.payload;
+      if (p?.text) {
+        setVoiceResponse(p.text);
+        // Auto-dismiss after 6s
+        if (voiceResponseTimer.current) clearTimeout(voiceResponseTimer.current);
+        voiceResponseTimer.current = setTimeout(() => setVoiceResponse(null), 6000);
+      }
+    });
+
+    channel.on("broadcast", { event: "voice_inject" }, (msg) => {
+      const p = msg.payload;
+      if (p?.message) {
+        setVoiceInjects((prev) => [...prev.slice(-4), { message: p.message, ts: Date.now() }]);
+      }
+    });
+
     channel.subscribe((status) => {
       if (status === "SUBSCRIBED") setChannelReady(true);
     });
@@ -398,6 +433,8 @@ export function SpectaclesView() {
       supabase.removeChannel(channel);
       channelRef.current = null;
       setChannelReady(false);
+      if (voiceInputTimer.current) clearTimeout(voiceInputTimer.current);
+      if (voiceResponseTimer.current) clearTimeout(voiceResponseTimer.current);
     };
   }, [fold?.slug, deviceId, handleSikEvent, syncData]);
 
@@ -701,6 +738,51 @@ export function SpectaclesView() {
             borderRadius: 8, backdropFilter: "blur(4px)",
           }}>
             CHANNEL READY
+          </div>
+        )}
+
+        {/* Voice overlay: shows transcripts from Spectacles EywaGeminiLive */}
+        {(voiceInput || voiceResponse || voiceInjects.length > 0) && (
+          <div style={{
+            position: "absolute", bottom: 80, left: 12, right: 12,
+            display: "flex", flexDirection: "column", gap: 6,
+            pointerEvents: "none", zIndex: 15,
+          }}>
+            {/* Voice injects (commands sent to agents) */}
+            {voiceInjects.slice(-2).map((inj, i) => (
+              <div key={inj.ts + i} style={{
+                fontSize: 11, color: "#e879f9", fontWeight: 600,
+                background: "rgba(232,121,249,0.08)", padding: "6px 12px",
+                borderRadius: 8, border: "1px solid rgba(232,121,249,0.2)",
+                backdropFilter: "blur(4px)",
+              }}>
+                INJECTED: {inj.message}
+              </div>
+            ))}
+
+            {/* User speech (what was said) */}
+            {voiceInput && (
+              <div style={{
+                fontSize: 12, color: "#f87171", fontWeight: 500,
+                background: "rgba(248,113,113,0.08)", padding: "6px 12px",
+                borderRadius: 8, border: "1px solid rgba(248,113,113,0.15)",
+                backdropFilter: "blur(4px)",
+              }}>
+                You: {voiceInput}
+              </div>
+            )}
+
+            {/* Gemini response */}
+            {voiceResponse && (
+              <div style={{
+                fontSize: 12, color: "#15D1FF", fontWeight: 500,
+                background: "rgba(21,209,255,0.08)", padding: "6px 12px",
+                borderRadius: 8, border: "1px solid rgba(21,209,255,0.15)",
+                backdropFilter: "blur(4px)",
+              }}>
+                Eywa: {voiceResponse.length > 200 ? voiceResponse.slice(0, 197) + "..." : voiceResponse}
+              </div>
+            )}
           </div>
         )}
       </div>

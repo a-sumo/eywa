@@ -2,6 +2,10 @@
 
 All notable features and changes. One line per feature. Agents append here after shipping.
 
+## 2026-02-13
+
+- Spectacles voice wiring: SpectaclesView now receives voice_input, voice_response, and voice_inject events from EywaGeminiLive on Spectacles, displaying transcripts and injection confirmations as an overlay on the navigator map
+
 ## 2026-02-12
 
 - Quick-start terminal section: new "Running in 30 seconds" section on landing page wiring the animated TerminalDemo between Gemini and pricing sections, with link to quickstart docs
