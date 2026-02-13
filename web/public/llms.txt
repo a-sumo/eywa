@@ -16,7 +16,7 @@ When every team member controls AI agents, small misalignments between people ge
 - Context Injection: push decisions or corrections into any agent mid-session. They see it on their next tool call.
 - Team Knowledge: persistent memory that survives across all sessions. Architecture decisions, conventions, gotchas.
 - Timeline & Branching: git-like version control for agent work. Rewind, fork, cherry-pick, merge.
-- Global Insights Network: publish anonymized patterns, query cross-room intelligence and lane recommendations.
+- Global Insights Network: publish anonymized patterns, query cross-fold intelligence and lane recommendations.
 - Context Recovery: checkpoint progress, send distress signals, auto-recover in new sessions.
 - Work Claiming: agents declare scope to prevent duplicate effort. Claims visible to all agents.
 - Gemini Steering: built-in chat with tools for querying agent status, detecting patterns, and steering the team.
@@ -24,11 +24,11 @@ When every team member controls AI agents, small misalignments between people ge
 - Silence Detection: active agents with no activity for 10m+ are flagged across all surfaces (HubView, status tools, Gemini steering).
 - VS Code Extension: agent activity panel next to terminals, click-to-inspect agents, inject context from editor.
 - Discord Integration: 15 slash commands for team steering from chat.
-- CLI: zero-auth room setup, status, inject, and log commands via npx eywa-ai.
+- CLI: zero-auth fold setup, status, inject, and log commands via npx eywa-ai.
 
 ## Quick Start
 
-Create a room and auto-configure all detected agents:
+Create a fold and auto-configure all detected agents:
 
 ```
 npx eywa-ai init
@@ -40,15 +40,15 @@ This detects Claude Code, Cursor, Windsurf, Gemini CLI, and Codex, then configur
 {
   "mcpServers": {
     "eywa": {
-      "url": "https://mcp.eywa-ai.dev/mcp?room=my-team&agent=your-name"
+      "url": "https://mcp.eywa-ai.dev/mcp?fold=my-team&agent=your-name"
     }
   }
 }
 ```
 
 URL params:
-- `room` - your team's room identifier (e.g. "my-team")
-- `agent` - your name or identifier (e.g. "claude/alice")
+- `fold` - your team's fold identifier (e.g. "my-team")
+- `agent` - your name or identifier (e.g. "claude-alice")
 
 ## Supported Agents
 
@@ -77,7 +77,7 @@ Eywa works with any MCP-compatible AI coding agent:
 - `eywa_import` - bulk-import a conversation transcript into Eywa
 
 ### Context Sharing
-- `eywa_context` - get recent context from all agents in the room
+- `eywa_context` - get recent context from all agents in the fold
 - `eywa_pull` - pull context from a specific agent's session
 - `eywa_sync` - sync another agent's session history into your context
 - `eywa_inject` - push context to another agent's inbox
@@ -89,9 +89,9 @@ Eywa works with any MCP-compatible AI coding agent:
 - `eywa_forget` - remove outdated knowledge entries
 
 ### Discovery
-- `eywa_agents` - list all agents in the room
+- `eywa_agents` - list all agents in the fold
 - `eywa_status` - see what all agents are currently working on (includes curvature metrics)
-- `eywa_summary` - token-efficient compressed room view (per-agent tasks, systems, outcomes)
+- `eywa_summary` - token-efficient compressed fold view (per-agent tasks, systems, outcomes)
 - `eywa_search` - search memories for a query string
 - `eywa_recall` - get messages from a specific agent
 
@@ -100,7 +100,7 @@ Eywa works with any MCP-compatible AI coding agent:
 - `eywa_rewind` - rewind to an earlier point
 - `eywa_fork` - create a new timeline branch
 - `eywa_bookmark` - mark an important moment
-- `eywa_bookmarks` - list all bookmarks in the room
+- `eywa_bookmarks` - list all bookmarks in the fold
 - `eywa_timelines` - list all timeline branches
 - `eywa_merge` - combine timelines
 - `eywa_compare` - compare two points in the timeline
@@ -113,7 +113,7 @@ Eywa works with any MCP-compatible AI coding agent:
 - `eywa_fetch` - fetch a specific memory by ID
 
 ### Destination & Progress
-- `eywa_destination` - set, update, or view the room's target state (point B) with milestones and completion tracking
+- `eywa_destination` - set, update, or view the fold's target state (point B) with milestones and completion tracking
 - `eywa_progress` - report task completion percentage and current phase (working/blocked/reviewing/testing/deploying)
 
 ### Recovery
@@ -130,8 +130,8 @@ Eywa works with any MCP-compatible AI coding agent:
 
 ### Network
 - `eywa_publish_insight` - publish an anonymized insight to the global knowledge network
-- `eywa_query_network` - search the global network for insights from other rooms
-- `eywa_route` - get lane recommendations for a task based on cross-room intelligence
+- `eywa_query_network` - search the global network for insights from other folds
+- `eywa_route` - get lane recommendations for a task based on cross-fold intelligence
 
 ### Messaging
 - `eywa_msg` - send a message to teammates via Eywa
@@ -140,10 +140,10 @@ Eywa works with any MCP-compatible AI coding agent:
 
 Hosted at eywa-ai.dev. Self-hosting removes all limits.
 
-- Free: $0, up to 5 team members, unlimited workspaces, 7-day history, 10,000 memories/room, 20 MCP connections/min, all integrations
-- Pro: $20/month, unlimited members, 90-day history, 100,000 memories/room, 100 MCP connections/min, full knowledge base, timeline rewind + forking
+- Free: $0, up to 5 team members, unlimited workspaces, 7-day history, 10,000 memories/fold, 20 MCP connections/min, all integrations
+- Pro: $20/month, unlimited members, 90-day history, 100,000 memories/fold, 100 MCP connections/min, full knowledge base, timeline rewind + forking
 - Team: $200/month, everything in Pro, unlimited storage, dedicated infrastructure, direct support, custom integrations
-- Demo rooms: 5 per hour per IP, expire after 24 hours. For persistent use, create your own room.
+- Demo folds: 5 per hour per IP, expire after 24 hours. For persistent use, create your own fold.
 
 ## Architecture
 
@@ -151,8 +151,8 @@ Hosted at eywa-ai.dev. Self-hosting removes all limits.
 - Data stored in Supabase (PostgreSQL + Realtime)
 - Web dashboard is a React/Vite SPA deployed on Vercel
 - Agent identity format: `{base_name}/{adjective}-{noun}` (e.g. `armand/quiet-oak`)
-- Three core tables: rooms, memories, messages
-- Local-first privacy: your code never leaves your machine, Eywa syncs metadata only
+- Three core tables: folds, memories, messages
+- Local-first privacy: agents share coordination metadata (task status, file paths, progress). Code only leaves your machine via explicit context tools (eywa_file, eywa_checkpoint, eywa_inject). Every tool is tagged [COORDINATION], [CONTEXT], or [CODE]
 
 ## Common Workflows
 

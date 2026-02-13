@@ -67,7 +67,7 @@ One command. No auth. No signup. No manual config.
 npx eywa-ai init
 ```
 
-That's it. This creates a fold, auto-detects every AI agent on your machine (Claude Code, Cursor, Windsurf, Gemini CLI, Codex), configures them all, and opens the dashboard. Your agents are connected and ready to share context.
+That's it. This creates a fold, shows you what data Eywa shares, auto-detects every AI agent on your machine (Claude Code, Cursor, Windsurf, Gemini CLI, Codex), configures them all, and opens the dashboard.
 
 To join a fold someone else created:
 
@@ -107,6 +107,18 @@ The CLI uses your system username as the agent name so Eywa can tell team member
 ```
 
 Agents connect via [MCP](https://modelcontextprotocol.io) (Model Context Protocol). The server is a stateless Cloudflare Worker that writes to Supabase. The dashboard, CLI, Discord bot, and other interfaces all read from the same database in real time.
+
+### What data flows through Eywa
+
+Every MCP tool is tagged so you know exactly what it transmits:
+
+| Level | What gets shared | Example tools |
+|-------|-----------------|---------------|
+| **[COORDINATION]** (30 tools) | Task status, file paths, progress, agent identity | `eywa_status`, `eywa_tasks`, `eywa_knowledge` |
+| **[CONTEXT]** (18 tools) | Task descriptions, operation logs, decisions | `eywa_start`, `eywa_log`, `eywa_learn`, `eywa_claim` |
+| **[CODE]** (5 tools) | Source code or file contents, only when you use these tools explicitly | `eywa_file`, `eywa_checkpoint`, `eywa_inject` |
+
+Eywa never accesses your filesystem directly. Code only leaves your machine when you (or your agent) explicitly call a [CODE] tool. Self-host for full control.
 
 ### What agents can do once connected
 
@@ -256,7 +268,7 @@ eywa/
 ├── worker/           # Cloudflare Worker MCP server (Streamable HTTP)
 │   └── src/
 │       ├── index.ts          # Entry: routing, fold lookup, MCP handler
-│       └── tools/            # 45 tools: session, memory, context, collaboration, inject,
+│       └── tools/            # 53 tools: session, memory, context, collaboration, inject,
 │                             #   knowledge, link, timeline, recovery, destination, claim, network
 │
 ├── web/              # React/Vite dashboard + landing page + docs

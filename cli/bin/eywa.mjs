@@ -5,7 +5,6 @@ import { exec, execSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { createInterface } from "node:readline";
 
 // ── Baked-in defaults (public Supabase project) ─────
 // Uses the anon key (public, RLS-enforced). NOT the service_role key.
@@ -402,21 +401,10 @@ async function cmdInit(nameArg) {
   ${dim("Self-host for full control: github.com/a-sumo/eywa")}
 `);
 
-  // Prompt for consent before auto-configuring agents
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const answer = await new Promise(resolve => rl.question('  Configure detected agents? [Y/n] ', resolve));
-  rl.close();
-
-  let agentsFound = false;
-
-  if (answer.toLowerCase() === 'n') {
-    console.log('\n  Skipped agent configuration. You can configure manually later.');
-  } else {
-    // Auto-detect and configure agents
-    const results = await autoConfigureAgents(slug, secret);
-    console.log();
-    agentsFound = printAgentResults(results);
-  }
+  // Auto-detect and configure agents
+  const results = await autoConfigureAgents(slug, secret);
+  console.log();
+  const agentsFound = printAgentResults(results);
 
   if (!agentsFound) {
     printConfigs(slug, displayName, secret);
