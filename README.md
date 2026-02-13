@@ -9,8 +9,8 @@
 <h1 align="center">Eywa</h1>
 
 <p align="center">
-  <strong>Agentic stewardship at scale.</strong><br/>
-  <em>Shared context and observability for human + AI teams.</em>
+  <strong>Stop your AI agents from stomping on each other.</strong><br/>
+  <em>Shared memory and coordination for teams running multiple coding agents.</em>
 </p>
 
 <p align="center">
@@ -282,17 +282,19 @@ eywa/
 
 Eywa is hosted for free at [eywa-ai.dev](https://eywa-ai.dev). To keep the service reliable for everyone, the hosted version has the following limits:
 
-| | Free | Pro | Enterprise |
+| | Free | Pro | Team |
 |---|---|---|---|
 | **Team members** | 5 | Unlimited | Unlimited |
-| **History** | 7 days | 90 days | Custom |
+| **History** | 7 days | 90 days | Unlimited |
 | **Memories per fold** | 10,000 | 100,000 | Unlimited |
 | **MCP connections** | 20/min per IP | 100/min per IP | Custom |
 | **Demo folds** | 5/hour, expire after 24h | N/A | N/A |
 | **All integrations** | Yes | Yes | Yes |
 | **Knowledge base** | Read-only | Full access | Full access |
 | **Timeline branching** | View only | Full access | Full access |
-| **Price** | $0 | $5/seat/month | Contact us |
+| **Dedicated infrastructure** | No | No | Yes |
+| **Direct support** | No | No | Yes |
+| **Price** | $0 | $20/month | $200/month |
 
 Demo folds are copies of sample data that expire after 24 hours. Create your own fold with `npx eywa-ai init` for persistent use.
 

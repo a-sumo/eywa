@@ -11,10 +11,10 @@ export interface LiveTelemetry {
   loading: boolean;
 }
 
-const LIVE_SLUG = "live";
+const LIVE_SLUG = "demo";
 
 /**
- * Fetches real-time telemetry from the "live" fold for display on the landing page.
+ * Fetches real-time activity from the eywa-dev fold for display on the landing page.
  * Subscribes to Supabase realtime so counters tick up as agents work.
  */
 export function useLiveTelemetry(): LiveTelemetry {

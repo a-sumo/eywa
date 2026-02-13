@@ -141,8 +141,8 @@ Eywa works with any MCP-compatible AI coding agent:
 Hosted at eywa-ai.dev. Self-hosting removes all limits.
 
 - Free: $0, up to 5 team members, unlimited workspaces, 7-day history, 10,000 memories/room, 20 MCP connections/min, all integrations
-- Pro: $5/seat/month, unlimited members, 90-day history, 100,000 memories/room, 100 MCP connections/min, team knowledge base, timeline rewind + forking, priority support
-- Enterprise: contact us, custom deployment, custom integrations, unlimited storage, volume discounts
+- Pro: $20/month, unlimited members, 90-day history, 100,000 memories/room, 100 MCP connections/min, full knowledge base, timeline rewind + forking
+- Team: $200/month, everything in Pro, unlimited storage, dedicated infrastructure, direct support, custom integrations
 - Demo rooms: 5 per hour per IP, expire after 24 hours. For persistent use, create your own room.
 
 ## Architecture

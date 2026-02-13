@@ -1076,6 +1076,7 @@ body {
   border-radius: 12px;
   overflow: hidden;
   backdrop-filter: blur(12px);
+  position: relative;
 }
 
 .live-telemetry-chrome {
@@ -1286,15 +1287,159 @@ body {
   transform: translateX(3px);
 }
 
-.live-telemetry-empty {
-  text-align: center;
-  padding: 1.5rem 1.25rem;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.4);
+/* Scanline sweep */
+.live-telemetry-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.4), transparent);
+  animation: lt-scanline 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
 }
 
-.live-telemetry-empty p {
-  margin: 0 0 0.75rem;
+@keyframes lt-scanline {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* Agent cards */
+.live-agents {
+  padding: 0 1.25rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.live-agent-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  transition: background 0.3s;
+}
+
+.live-agent-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Blinking agent dots */
+.live-agent-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+  animation: agent-blink 1.5s ease-in-out infinite;
+}
+
+.live-agent-dot--fast { animation-duration: 1s; }
+.live-agent-dot--med  { animation-duration: 1.8s; animation-delay: 0.3s; }
+.live-agent-dot--slow { animation-duration: 2.5s; animation-delay: 0.7s; }
+
+@keyframes agent-blink {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(74, 222, 128, 0.6); }
+  50% { opacity: 0.25; box-shadow: 0 0 1px rgba(74, 222, 128, 0.2); }
+}
+
+.live-agent-name {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(78, 234, 255, 0.85);
+  font-weight: 600;
+  flex-shrink: 0;
+  min-width: 52px;
+}
+
+.live-agent-task {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  animation: task-fade 0.5s ease-out;
+}
+
+@keyframes task-fade {
+  from { opacity: 0; transform: translateX(6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Progress bars */
+.live-agent-progress {
+  width: 60px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.live-agent-bar {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(74, 222, 128, 0.6), rgba(78, 234, 255, 0.6));
+}
+
+.live-agent-bar--0 { animation: progress-fill-0 8s ease-in-out infinite; }
+.live-agent-bar--1 { animation: progress-fill-1 12s ease-in-out infinite; }
+.live-agent-bar--2 { animation: progress-fill-2 15s ease-in-out infinite; }
+
+@keyframes progress-fill-0 {
+  0%   { width: 15%; }
+  40%  { width: 70%; }
+  75%  { width: 95%; }
+  80%  { width: 100%; background: rgba(74, 222, 128, 0.8); }
+  85%  { width: 10%; }
+  100% { width: 15%; }
+}
+
+@keyframes progress-fill-1 {
+  0%   { width: 25%; }
+  30%  { width: 45%; }
+  60%  { width: 80%; }
+  85%  { width: 100%; background: rgba(74, 222, 128, 0.8); }
+  90%  { width: 5%; }
+  100% { width: 25%; }
+}
+
+@keyframes progress-fill-2 {
+  0%   { width: 10%; }
+  50%  { width: 55%; }
+  80%  { width: 88%; }
+  90%  { width: 100%; background: rgba(74, 222, 128, 0.8); }
+  95%  { width: 8%; }
+  100% { width: 10%; }
+}
+
+/* Event dot colors by type */
+.live-telemetry-event-dot--operation { background: rgba(74, 222, 128, 0.7); }
+.live-telemetry-event-dot--knowledge { background: rgba(168, 130, 255, 0.7); }
+.live-telemetry-event-dot--task      { background: rgba(78, 234, 255, 0.7); }
+.live-telemetry-event-dot--decision  { background: rgba(255, 200, 60, 0.7); }
+.live-telemetry-event-dot--message   { background: rgba(255, 130, 170, 0.7); }
+.live-telemetry-event-dot--telemetry { background: rgba(74, 222, 128, 0.5); }
+
+/* Real events glow slightly */
+.live-telemetry-event--real {
+  background: rgba(74, 222, 128, 0.04);
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+.live-telemetry-event--real .live-telemetry-event-content {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 @keyframes live-pulse {
@@ -1307,6 +1452,9 @@ body {
   .live-telemetry-stats { flex-wrap: wrap; gap: 1rem 1.5rem; }
   .live-telemetry-stat-divider { display: none; }
   .live-telemetry-feed { display: none; }
+  .live-agents { padding: 0 0.75rem; }
+  .live-agent-task { display: none; }
+  .live-agent-progress { width: 40px; }
 }
 
 .btn-landing-primary.btn-live {

@@ -166,26 +166,19 @@ export function Landing() {
           </p>
           <div className="landing-hero-actions">
             <Link
-              to="/f/eywa-dev"
+              to="/f/demo"
               className="btn-landing-primary btn-large btn-live"
             >
               <span className="live-dot" />
-              Watch Agents Live
+              {t("hero.tryDemo")}
               <IconArrowRight />
             </Link>
-            <button
-              className="btn-landing-secondary"
-              onClick={() => createDemoFold()}
-              disabled={creating}
-            >
-              {creating ? tc("creating") : t("hero.tryDemo")}
-            </button>
             <button
               className="btn-landing-secondary"
               onClick={() => createFold()}
               disabled={creating}
             >
-              {t("hero.createFold")}
+              {creating ? tc("creating") : t("hero.createFold")}
             </button>
           </div>
           {error && (
@@ -870,22 +863,22 @@ export function Landing() {
               <li>{t("pricing.pro.knowledge")}</li>
               <li>{t("pricing.pro.timeline")}</li>
             </ul>
-            <a href="mailto:eywa.ai.team@gmail.com" className="btn-landing-primary" style={{ width: "100%" }}>
+            <button className="btn-landing-primary" style={{ width: "100%" }} onClick={() => createFold()}>
               {t("pricing.pro.cta")}
-            </a>
+            </button>
           </div>
           <div className="landing-pricing-card">
-            <h3>{t("pricing.enterprise.title")}</h3>
-            <div className="landing-pricing-price">{t("pricing.enterprise.price")}</div>
+            <h3>{t("pricing.team.title")}</h3>
+            <div className="landing-pricing-price">{t("pricing.team.price")}</div>
             <ul className="landing-pricing-features">
-              <li>{t("pricing.enterprise.everything")}</li>
-              <li>{t("pricing.enterprise.storage")}</li>
-              <li>{t("pricing.enterprise.deployment")}</li>
-              <li>{t("pricing.enterprise.integrations")}</li>
-              <li>{t("pricing.enterprise.discounts")}</li>
+              <li>{t("pricing.team.everything")}</li>
+              <li>{t("pricing.team.storage")}</li>
+              <li>{t("pricing.team.deployment")}</li>
+              <li>{t("pricing.team.support")}</li>
+              <li>{t("pricing.team.integrations")}</li>
             </ul>
             <a href="mailto:eywa.ai.team@gmail.com" className="btn-landing-secondary" style={{ width: "100%" }}>
-              {t("pricing.enterprise.cta")}
+              {t("pricing.team.cta")}
             </a>
           </div>
         </div>
