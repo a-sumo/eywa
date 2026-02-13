@@ -41,7 +41,7 @@ while [ "$SPAWN" -lt "$MAX_RESPAWNS" ]; do
   fi
 
   # Find the most recent handoff file and include its contents
-  LATEST_HANDOFF=$(ls -t "$RUN_DIR"/handoff-*.md 2>/dev/null | head -1)
+  LATEST_HANDOFF=$(ls -t "$RUN_DIR"/handoff-*.md 2>/dev/null | head -1 || true)
   if [ -n "$LATEST_HANDOFF" ]; then
     HANDOFF_CONTENT=$(cat "$LATEST_HANDOFF")
     PROMPT="$PROMPT

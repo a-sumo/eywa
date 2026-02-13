@@ -51,14 +51,35 @@ export function DemoBanner() {
     <div style={styles.banner}>
       <div style={styles.content}>
         <div style={styles.left}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}>
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
+          <div style={styles.badge}>{t("demo.label")}</div>
           <span style={styles.text}>
-            {t("demo.banner")}
+            {t("demo.bannerEnhanced")}
           </span>
+          <div style={styles.pills}>
+            <span style={styles.pill}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              {t("demo.pillPersistent")}
+            </span>
+            <span style={styles.pill}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              {t("demo.pillMcpUrl")}
+            </span>
+            <span style={styles.pill}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              {t("demo.pillTeam")}
+            </span>
+          </div>
         </div>
         <div style={styles.actions}>
           <button
@@ -66,7 +87,13 @@ export function DemoBanner() {
             onClick={handleCreateFold}
             disabled={creating}
           >
-            {creating ? tc("creating") : t("demo.createOwn")}
+            {creating ? tc("creating") : t("demo.createCta")}
+            {!creating && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 4 }}>
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            )}
           </button>
           <button style={styles.dismissBtn} onClick={handleDismiss} aria-label="Dismiss">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -82,31 +109,62 @@ export function DemoBanner() {
 
 const styles: Record<string, React.CSSProperties> = {
   banner: {
-    background: "linear-gradient(135deg, rgba(78, 234, 255, 0.06), rgba(168, 85, 247, 0.06))",
-    borderBottom: "1px solid rgba(78, 234, 255, 0.15)",
-    padding: "8px 16px",
+    background: "linear-gradient(135deg, rgba(100, 23, 236, 0.08) 0%, rgba(231, 43, 118, 0.06) 50%, rgba(21, 209, 255, 0.08) 100%)",
+    borderBottom: "1px solid rgba(100, 23, 236, 0.2)",
+    padding: "10px 16px",
     zIndex: 10,
-    position: "relative",
+    position: "relative" as const,
   },
   content: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: "12px",
+    gap: "16px",
     maxWidth: "1200px",
     margin: "0 auto",
   },
   left: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "12px",
     flex: 1,
     minWidth: 0,
+    flexWrap: "wrap" as const,
+  },
+  badge: {
+    fontSize: "10px",
+    fontWeight: 700,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.08em",
+    color: "#E72B76",
+    background: "rgba(231, 43, 118, 0.12)",
+    border: "1px solid rgba(231, 43, 118, 0.25)",
+    borderRadius: "4px",
+    padding: "2px 8px",
+    flexShrink: 0,
   },
   text: {
     fontSize: "13px",
     color: "rgba(255, 255, 255, 0.7)",
     lineHeight: 1.4,
+  },
+  pills: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap" as const,
+  },
+  pill: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "11px",
+    color: "rgba(255, 255, 255, 0.5)",
+    background: "rgba(255, 255, 255, 0.04)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    borderRadius: "12px",
+    padding: "2px 8px",
+    whiteSpace: "nowrap" as const,
   },
   actions: {
     display: "flex",
@@ -115,26 +173,30 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   createBtn: {
-    padding: "5px 14px",
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "6px 16px",
     fontSize: "12px",
     fontWeight: 600,
-    border: "1px solid rgba(78, 234, 255, 0.3)",
+    border: "none",
     borderRadius: "6px",
-    background: "rgba(78, 234, 255, 0.1)",
-    color: "#4eeaff",
+    background: "linear-gradient(135deg, #6417EC 0%, #E72B76 100%)",
+    color: "#fff",
     cursor: "pointer",
     whiteSpace: "nowrap" as const,
-    transition: "background 0.2s, border-color 0.2s",
+    transition: "opacity 0.2s ease-in-out, transform 0.15s ease-in-out",
+    boxShadow: "0 2px 8px rgba(100, 23, 236, 0.3)",
   },
   dismissBtn: {
     padding: "4px",
     border: "none",
     background: "transparent",
-    color: "rgba(255, 255, 255, 0.4)",
+    color: "rgba(255, 255, 255, 0.35)",
     cursor: "pointer",
     borderRadius: "4px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    transition: "color 0.15s ease-in-out",
   },
 };
