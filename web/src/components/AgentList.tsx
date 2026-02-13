@@ -14,12 +14,24 @@ function timeAgo(ts: string): string {
 
 import { agentColor } from "../lib/agentColor";
 
+// Dev mode: add ?dev=1 to any URL or set localStorage.setItem('eywa-dev', '1')
+function useDevMode() {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  if (params.get("dev") === "1") {
+    try { localStorage.setItem("eywa-dev", "1"); } catch {}
+    return true;
+  }
+  try { return localStorage.getItem("eywa-dev") === "1"; } catch { return false; }
+}
+
 export function AgentList() {
   const { fold } = useFoldContext();
   const { slug } = useParams<{ slug: string }>();
   const agents = useRealtimeAgents(fold?.id ?? null, 24 * 60 * 60 * 1000);
   const navigate = useNavigate();
   const location = useLocation();
+  const devMode = useDevMode();
 
   const basePath = `/f/${slug}`;
   const isActive = (path: string) => location.pathname === path;
@@ -51,18 +63,22 @@ export function AgentList() {
       >
         Graph
       </button>
-      <button
-        className={`agent-chip experimental ${isActive(`${basePath}/map`) ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/map`)}
-      >
-        Map <span className="chip-badge">LIVE</span>
-      </button>
-      <button
-        className={`agent-chip ${isActive(`${basePath}/spectacles`) ? "active" : ""}`}
-        onClick={() => navigate(`${basePath}/spectacles`)}
-      >
-        Spectacles
-      </button>
+      {devMode && (
+        <>
+          <button
+            className={`agent-chip experimental ${isActive(`${basePath}/map`) ? "active" : ""}`}
+            onClick={() => navigate(`${basePath}/map`)}
+          >
+            Map <span className="chip-badge">LIVE</span>
+          </button>
+          <button
+            className={`agent-chip ${isActive(`${basePath}/spectacles`) ? "active" : ""}`}
+            onClick={() => navigate(`${basePath}/spectacles`)}
+          >
+            Spectacles
+          </button>
+        </>
+      )}
 
       {/* Spacer pushes agents to bottom */}
       <div style={{ flex: 1 }} />

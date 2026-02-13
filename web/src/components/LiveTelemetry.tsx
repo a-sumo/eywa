@@ -3,24 +3,24 @@ import { Link } from "react-router-dom";
 import { useLiveTelemetry } from "../hooks/useLiveTelemetry";
 
 const SIM_AGENTS = [
-  { name: "seed/alpha", tasks: ["refactoring MCP tool handlers", "updating worker routing logic", "optimizing memory queries"] },
-  { name: "seed/bravo", tasks: ["writing integration tests", "validating fold permissions", "testing realtime subscriptions"] },
-  { name: "seed/charlie", tasks: ["analyzing codebase patterns", "mapping dependency graph", "reviewing type definitions"] },
+  { name: "marcus/claude-code", tasks: ["adding OAuth callback handler", "wiring up session middleware", "writing token refresh logic"] },
+  { name: "priya/cursor", tasks: ["building user settings page", "hooking up profile API", "fixing avatar upload flow"] },
+  { name: "james/windsurf", tasks: ["migrating payments to Stripe v3", "updating webhook signatures", "adding invoice PDF export"] },
 ];
 
 const SIM_EVENTS = [
-  { agent: "seed/alpha", type: "operation", content: "Updated worker/src/tools/eywa-mcp.ts" },
-  { agent: "seed/bravo", type: "knowledge", content: "Mapped fold routing: 12 endpoints consolidated" },
-  { agent: "seed/charlie", type: "task", content: "Created: migrate legacy room references" },
-  { agent: "seed/alpha", type: "decision", content: "Using streaming over polling for realtime" },
-  { agent: "seed/bravo", type: "operation", content: "Fixed memory deduplication edge case" },
-  { agent: "seed/charlie", type: "knowledge", content: "12 cross-module dependencies identified" },
-  { agent: "seed/alpha", type: "task", content: "Completed: refactor auth middleware chain" },
-  { agent: "seed/bravo", type: "message", content: "Coordinating shared types with seed/alpha" },
-  { agent: "seed/charlie", type: "operation", content: "Query optimization: 340ms to 45ms" },
-  { agent: "seed/alpha", type: "knowledge", content: "Verified Worker memory limit: 128MB" },
-  { agent: "seed/bravo", type: "task", content: "Started: WebSocket reconnection handler" },
-  { agent: "seed/charlie", type: "decision", content: "Chose incremental migration over rewrite" },
+  { agent: "marcus/claude-code", type: "operation", content: "Updated src/auth/oauth-callback.ts" },
+  { agent: "priya/cursor", type: "knowledge", content: "Settings page needs same auth guard as dashboard" },
+  { agent: "james/windsurf", type: "task", content: "Stripe webhook handler passing all test cases" },
+  { agent: "marcus/claude-code", type: "decision", content: "Using httpOnly cookies over localStorage for tokens" },
+  { agent: "priya/cursor", type: "operation", content: "Added avatar crop component to settings" },
+  { agent: "james/windsurf", type: "knowledge", content: "Stripe v3 requires idempotency keys on retries" },
+  { agent: "marcus/claude-code", type: "task", content: "Session middleware integrated with existing routes" },
+  { agent: "priya/cursor", type: "message", content: "Marcus, the auth guard on /settings needs your OAuth context" },
+  { agent: "james/windsurf", type: "operation", content: "Invoice PDF generation: 2.3s down to 400ms" },
+  { agent: "marcus/claude-code", type: "knowledge", content: "Refresh token rotation prevents replay attacks" },
+  { agent: "priya/cursor", type: "task", content: "Profile API hooked up, avatar upload working" },
+  { agent: "james/windsurf", type: "decision", content: "Keeping Stripe v2 webhooks active during migration" },
 ];
 
 function timeAgo(ts: string): string {
@@ -123,7 +123,7 @@ export function LiveTelemetry() {
             <span />
             <span />
           </div>
-          <div className="live-telemetry-url">eywa-ai.dev/f/demo</div>
+          <div className="live-telemetry-url">eywa-ai.dev/f/acme-eng</div>
           <a
             href="https://github.com/a-sumo/eywa"
             target="_blank"
