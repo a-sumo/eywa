@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useFoldContext } from "../context/FoldContext";
 import { agentColor } from "../lib/agentColor";
+import { PRIORITY_COLORS, STATUS_COLORS, SYSTEM_COLORS, OUTCOME_COLORS } from "../lib/colors";
 import type { Memory } from "../lib/supabase";
 
 // --- Types ---
@@ -161,36 +162,7 @@ function buildSeedStates(memories: Memory[]): Map<string, SeedState> {
 
 // --- Styling constants ---
 
-const PRIORITY_COLORS: Record<string, string> = {
-  urgent: "#ef4444",
-  high: "#f97316",
-  normal: "#6b8cff",
-  low: "#64748b",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  open: "#4eeaff",
-  claimed: "#a855f7",
-  in_progress: "#f97316",
-  done: "#4ade80",
-  blocked: "#fcd34d",
-};
-
-const SYSTEM_COLORS: Record<string, string> = {
-  git: "#f97316",
-  filesystem: "#64748b",
-  ci: "#eab308",
-  deploy: "#22c55e",
-  database: "#06b6d4",
-  api: "#8b5cf6",
-  other: "#a78bfa",
-};
-
-const OUTCOME_COLORS: Record<string, string> = {
-  success: "#6ee7b7",
-  failure: "#fca5a5",
-  blocked: "#fcd34d",
-};
+// Color constants imported from ../lib/colors
 
 // --- Components ---
 
@@ -220,11 +192,11 @@ function TaskCard({ task }: { task: Task }) {
     <div
       onClick={() => setExpanded(!expanded)}
       style={{
-        border: `1px solid ${task.status === "in_progress" ? "rgba(249, 115, 22, 0.3)" : "rgba(255,255,255,0.06)"}`,
+        border: `1px solid ${task.status === "in_progress" ? "rgba(232, 197, 106, 0.25)" : "var(--border-subtle, rgba(68,71,78,1))"}`,
         borderRadius: "6px",
         padding: "8px 10px",
         marginBottom: "4px",
-        background: task.status === "in_progress" ? "rgba(249, 115, 22, 0.04)" : "rgba(255,255,255,0.02)",
+        background: task.status === "in_progress" ? "rgba(232, 197, 106, 0.04)" : "var(--bg-surface, rgba(29,32,40,1))",
         cursor: "pointer",
       }}
     >
@@ -262,10 +234,10 @@ function SeedCard({ state, expanded, onToggle }: {
   return (
     <div
       style={{
-        border: `1px solid ${state.status === "active" ? "rgba(52, 211, 153, 0.3)" : "rgba(255,255,255,0.06)"}`,
+        border: `1px solid ${state.status === "active" ? "rgba(129, 201, 149, 0.25)" : "var(--border-subtle, rgba(68,71,78,1))"}`,
         borderRadius: "6px",
         marginBottom: "4px",
-        background: state.status === "active" ? "rgba(52, 211, 153, 0.04)" : "rgba(255,255,255,0.02)",
+        background: state.status === "active" ? "rgba(129, 201, 149, 0.04)" : "var(--bg-surface, rgba(29,32,40,1))",
       }}
     >
       <div
@@ -283,7 +255,7 @@ function SeedCard({ state, expanded, onToggle }: {
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: state.status === "active" ? "#34d399" : state.status === "finished" ? "#64748b" : "#eab308",
+            background: state.status === "active" ? "#81C995" : state.status === "finished" ? "#8E9099" : "#E8C56A",
             flexShrink: 0,
           }}
         />
@@ -310,7 +282,7 @@ function SeedCard({ state, expanded, onToggle }: {
         </span>
       </div>
       {expanded && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", maxHeight: "400px", overflow: "auto" }}>
+        <div style={{ borderTop: "1px solid var(--border-subtle, rgba(68,71,78,1))", maxHeight: "400px", overflow: "auto" }}>
           {state.recentOps.map((op) => (
             <div
               key={op.id}
@@ -327,7 +299,7 @@ function SeedCard({ state, expanded, onToggle }: {
                 {op.ts.slice(11, 19)}
               </span>
               {op.system && <Badge label={op.system} color={SYSTEM_COLORS[op.system] || "#a78bfa"} />}
-              {op.action && <Badge label={op.action} color="#67e8f9" />}
+              {op.action && <Badge label={op.action} color="#AAC7FF" />}
               {op.outcome && <Badge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#888"} />}
               <span style={{ opacity: 0.6, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {op.content}
@@ -351,16 +323,10 @@ export function SeedMonitor() {
   const { t } = useTranslation("fold");
   const { fold } = useFoldContext();
   const { memories, loading } = useRealtimeMemories(fold?.id ?? null, 500);
-  const [expandedSeeds, setExpandedSeeds] = useState<Set<string>>(new Set());
-
   const tasks = useMemo(() => extractTasks(memories), [memories]);
-  const seedStates = useMemo(() => buildSeedStates(memories), [memories]);
 
   const activeTasks = tasks.filter((tk) => tk.status !== "done");
   const doneTasks = tasks.filter((tk) => tk.status === "done");
-
-  const activeSeeds = Array.from(seedStates.values()).filter((s) => s.status === "active");
-  const finishedSeeds = Array.from(seedStates.values()).filter((s) => s.status === "finished");
 
   // Live feed: only seed agent operations with system/action tags (signal, not noise)
   const liveFeed = useMemo(() => {
@@ -382,16 +348,15 @@ export function SeedMonitor() {
 
   return (
     <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
-      {/* Left panel: tasks + seeds */}
+      {/* Left panel: task queue only */}
       <div style={{
         width: "340px",
         flexShrink: 0,
-        borderRight: "1px solid rgba(255,255,255,0.06)",
+        borderRight: "1px solid var(--border-subtle)",
         overflow: "auto",
         padding: "12px",
       }}>
-        {/* Task queue */}
-        <div style={{ marginBottom: "16px" }}>
+        <div>
           <div style={{
             fontSize: "10px",
             fontWeight: 700,
@@ -419,71 +384,6 @@ export function SeedMonitor() {
             </details>
           )}
         </div>
-
-        {/* Active seeds */}
-        <div style={{ marginBottom: "16px" }}>
-          <div style={{
-            fontSize: "10px",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: "var(--text-secondary)",
-            marginBottom: "8px",
-          }}>
-            {t("seeds.activeSeeds", { count: activeSeeds.length })}
-          </div>
-          {activeSeeds.length === 0 && (
-            <div style={{ fontSize: "11px", opacity: 0.3, padding: "8px 0" }}>
-              {t("seeds.noSeeds")} <code style={{ fontSize: "10px", background: "rgba(255,255,255,0.06)", padding: "1px 4px", borderRadius: "2px" }}>./scripts/agent-loop.sh</code>
-            </div>
-          )}
-          {activeSeeds.map((s) => (
-            <SeedCard
-              key={s.agent}
-              state={s}
-              expanded={expandedSeeds.has(s.agent)}
-              onToggle={() => {
-                setExpandedSeeds((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(s.agent)) next.delete(s.agent);
-                  else next.add(s.agent);
-                  return next;
-                });
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Finished seeds */}
-        {finishedSeeds.length > 0 && (
-          <div>
-            <div style={{
-              fontSize: "10px",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "var(--text-secondary)",
-              marginBottom: "8px",
-            }}>
-              {t("seeds.finishedSeeds", { count: finishedSeeds.length })}
-            </div>
-            {finishedSeeds.map((s) => (
-              <SeedCard
-                key={s.agent}
-                state={s}
-                expanded={expandedSeeds.has(s.agent)}
-                onToggle={() => {
-                  setExpandedSeeds((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(s.agent)) next.delete(s.agent);
-                    else next.add(s.agent);
-                    return next;
-                  });
-                }}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Right panel: live feed */}
@@ -515,7 +415,7 @@ export function SeedMonitor() {
                 gap: "8px",
                 padding: "4px 0",
                 fontSize: "11px",
-                borderBottom: "1px solid rgba(255,255,255,0.03)",
+                borderBottom: "1px solid var(--border-subtle, rgba(68,71,78,1))",
               }}
             >
               <span style={{ opacity: 0.25, fontFamily: "monospace", fontSize: "10px", flexShrink: 0, paddingTop: "1px" }}>
@@ -526,7 +426,7 @@ export function SeedMonitor() {
               </span>
               <div style={{ flex: 1, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "3px" }}>
                 {op.system && <Badge label={op.system} color={SYSTEM_COLORS[op.system] || "#a78bfa"} />}
-                {op.action && <Badge label={op.action} color="#67e8f9" />}
+                {op.action && <Badge label={op.action} color="#AAC7FF" />}
                 {op.outcome && <Badge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#888"} />}
                 <span style={{ opacity: 0.6, lineHeight: 1.4 }}>
                   {op.content}

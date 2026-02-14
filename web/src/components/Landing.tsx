@@ -59,23 +59,6 @@ const IconBrain = () => (
   </svg>
 );
 
-const IconCode = () => (
-  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <polyline className="anim-bracket bl" points="13,6 5,16 13,26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <polyline className="anim-bracket br" points="19,6 27,16 19,26" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <line className="anim-cursor-line" x1="16" y1="10" x2="16" y2="22" strokeWidth="2.5" strokeLinecap="round"/>
-  </svg>
-);
-
-const IconChat = () => (
-  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <path className="anim-bubble" d="M27 20.5a2.5 2.5 0 0 1-2.5 2.5H9.5L5 27.5V7.5A2.5 2.5 0 0 1 7.5 5h17A2.5 2.5 0 0 1 27 7.5z" strokeWidth="2.5" strokeLinejoin="round"/>
-    <circle className="anim-typing d1" cx="11" cy="14" r="1.8"/>
-    <circle className="anim-typing d2" cx="16" cy="14" r="1.8"/>
-    <circle className="anim-typing d3" cx="21" cy="14" r="1.8"/>
-  </svg>
-);
-
 const IconDestination = () => (
   <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
     <circle className="anim-target-outer" cx="16" cy="14" r="11" strokeWidth="2.5"/>
@@ -276,45 +259,6 @@ export function Landing() {
             <div className="landing-feature-icon"><IconSurfaces /></div>
             <h3>{t("features.surfaces.title")}</h3>
             <p>{t("features.surfaces.description")}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Surfaces */}
-      <section className="landing-section landing-section-alt">
-        <h2 className="landing-section-title">{t("surfaces.title")}</h2>
-        <p style={{ textAlign: "center", maxWidth: 620, margin: "0 auto 2rem", opacity: 0.6, fontSize: "0.95rem", lineHeight: 1.6 }}>
-          {t("surfaces.subtitle")}
-        </p>
-        <div className="landing-surfaces-strip">
-          <div className="landing-surface-item">
-            <IconSurfaces />
-            <span>{t("surfaces.web")}</span>
-          </div>
-          <div className="landing-surface-item">
-            <IconCode />
-            <span>{t("surfaces.vscode")}</span>
-          </div>
-          <div className="landing-surface-item">
-            <IconChat />
-            <span>{t("surfaces.discord")}</span>
-          </div>
-          <div className="landing-surface-item">
-            <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <polyline className="anim-bracket bl" points="10,22 4,14 10,6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <line className="anim-cursor-line" x1="16" y1="24" x2="26" y2="24" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
-            <span>{t("surfaces.cli")}</span>
-          </div>
-          <div className="landing-surface-item">
-            <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path className="anim-stream s1" d="M4 16h6" strokeWidth="2.5" strokeLinecap="round"/>
-              <path className="anim-stream s2" d="M22 16h6" strokeWidth="2.5" strokeLinecap="round"/>
-              <rect className="anim-cube-back" x="8" y="10" width="16" height="12" rx="3" strokeWidth="2.5"/>
-              <circle className="anim-target-center" cx="14" cy="16" r="1.5" fill="var(--aurora-cyan, #4eeaff)"/>
-              <circle className="anim-target-center" cx="18" cy="16" r="1.5" fill="var(--aurora-cyan, #4eeaff)"/>
-            </svg>
-            <span>{t("surfaces.spectacles")}</span>
           </div>
         </div>
       </section>
@@ -546,25 +490,6 @@ export function Landing() {
         </div>
       </section>
 
-      {/* Powered by Gemini */}
-      <section className="landing-section landing-gemini-section">
-        <div className="landing-gemini-content">
-          <a
-            href="https://gemini.google/us/about"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="landing-gemini-logo"
-          >
-            <img src="/gemini.svg" alt="Gemini" className="gemini-logo-img" />
-            <span className="gemini-logo-text">Gemini</span>
-          </a>
-          <h2 className="landing-gemini-title">{t("gemini.title")}</h2>
-          <p className="landing-gemini-description">
-            {t("gemini.description")}
-          </p>
-        </div>
-      </section>
-
       {/* Quick Start Terminal */}
       <section className="landing-section" id="quickstart">
         <h2 className="landing-section-title">{t("quickstart.title")}</h2>
@@ -626,22 +551,6 @@ export function Landing() {
               {t("pricing.team.cta")}
             </a>
           </div>
-        </div>
-      </section>
-
-      {/* Open Source Community */}
-      <section className="landing-cta-section">
-        <h2>{t("community.title")}</h2>
-        <p>{t("community.description")}</p>
-        <div className="landing-community-links">
-          <a href="https://github.com/a-sumo/eywa" className="btn-community btn-community-github" target="_blank" rel="noopener noreferrer">
-            <IconGitHub />
-            <span>GitHub{stars != null && stars > 0 ? ` (${stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars} stars)` : ""}</span>
-          </a>
-          <a href="https://discord.gg/TyEUUnNm" className="btn-community btn-community-discord" target="_blank" rel="noopener noreferrer">
-            <IconDiscord />
-            <span>{t("community.joinDiscord")}</span>
-          </a>
         </div>
       </section>
 
