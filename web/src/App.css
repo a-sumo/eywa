@@ -4131,22 +4131,22 @@ body {
   color: var(--text-primary);
 }
 
-/* Primary Eywa button */
+/* Primary Eywa button - flat, armandsumo-aligned */
 .agent-chip.eywa-primary {
-  background: linear-gradient(135deg, rgba(68, 136, 255, 0.15), rgba(68, 255, 136, 0.1));
-  border: 1px solid rgba(68, 136, 255, 0.3);
-  color: #6bb4ff;
+  background: rgba(140, 169, 255, 0.1);
+  border: 1px solid rgba(140, 169, 255, 0.2);
+  color: var(--m3-primary);
   font-weight: 700;
   font-size: 1.05rem;
   margin-bottom: 0.5rem;
 }
 .agent-chip.eywa-primary:hover {
-  background: linear-gradient(135deg, rgba(68, 136, 255, 0.25), rgba(68, 255, 136, 0.15));
-  border-color: rgba(68, 136, 255, 0.5);
+  background: rgba(140, 169, 255, 0.16);
+  border-color: rgba(140, 169, 255, 0.3);
 }
 .agent-chip.eywa-primary.active {
-  background: linear-gradient(135deg, rgba(68, 136, 255, 0.3), rgba(68, 255, 136, 0.2));
-  border-color: #4488ff;
+  background: rgba(140, 169, 255, 0.2);
+  border-color: rgba(140, 169, 255, 0.35);
 }
 
 /* Labs toggle */

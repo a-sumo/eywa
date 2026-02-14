@@ -181,7 +181,7 @@ export function DashboardMockup() {
           <div className="landing-proof-dots">
             <span /><span /><span />
           </div>
-          <div className="landing-proof-url">eywa-ai.dev/f/acme-eng</div>
+          <div className="landing-proof-url">eywa-ai.dev/rooms/acme-eng</div>
         </div>
 
         {/* Destination banner */}

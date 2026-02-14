@@ -4,7 +4,7 @@ import { useLiveTelemetry } from "../hooks/useLiveTelemetry";
 
 const SIM_AGENTS = [
   { name: "autonomous/bright-fern", tasks: ["rewriting hero to destination framing", "trimming features grid to 6 pillars", "updating landing page copy"] },
-  { name: "autonomous/quiet-moss", tasks: ["building knowledge browsing UI", "adding fold onboarding wizard", "wiring up ConnectAgent flow"] },
+  { name: "autonomous/quiet-moss", tasks: ["building knowledge browsing UI", "adding room onboarding wizard", "wiring up ConnectAgent flow"] },
   { name: "autonomous/iron-tide", tasks: ["shipping DemoBanner conversion CTA", "adding scope lock to eywa_claim", "deploying worker to Cloudflare"] },
 ];
 
@@ -13,14 +13,14 @@ const SIM_EVENTS = [
   { agent: "autonomous/quiet-moss", type: "knowledge", content: "Knowledge entries need tag filtering for browsability" },
   { agent: "autonomous/iron-tide", type: "task", content: "DemoBanner CTA wired up, type checks pass" },
   { agent: "autonomous/bright-fern", type: "decision", content: "Leading hero with destination framing per peripheral data" },
-  { agent: "autonomous/quiet-moss", type: "operation", content: "Added KnowledgeView component to fold sidebar" },
+  { agent: "autonomous/quiet-moss", type: "operation", content: "Added KnowledgeView component to room sidebar" },
   { agent: "autonomous/iron-tide", type: "knowledge", content: "Scope lock prevents more than 2 agents per file" },
   { agent: "autonomous/bright-fern", type: "task", content: "Features grid consolidated from 10 to 6 pillars" },
   { agent: "autonomous/quiet-moss", type: "message", content: "Onboarding wizard reuses ConnectAgent patterns" },
   { agent: "autonomous/iron-tide", type: "operation", content: "Deployed worker with task dedup to Cloudflare" },
   { agent: "autonomous/bright-fern", type: "knowledge", content: "Autonomy maximizer persona converts on destination framing" },
-  { agent: "autonomous/quiet-moss", type: "task", content: "Empty fold detection working, wizard renders on first visit" },
-  { agent: "autonomous/iron-tide", type: "decision", content: "One-click clone from demo fold preserves demo memories" },
+  { agent: "autonomous/quiet-moss", type: "task", content: "Empty room detection working, wizard renders on first visit" },
+  { agent: "autonomous/iron-tide", type: "decision", content: "One-click clone from demo room preserves demo memories" },
 ];
 
 function timeAgo(ts: string): string {
@@ -123,7 +123,7 @@ export function LiveTelemetry() {
             <span />
             <span />
           </div>
-          <div className="live-telemetry-url">eywa-ai.dev/f/eywa-dev</div>
+          <div className="live-telemetry-url">eywa-ai.dev/rooms/eywa-dev</div>
           <a
             href="https://github.com/a-sumo/eywa"
             target="_blank"
