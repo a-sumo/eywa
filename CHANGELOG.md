@@ -2,6 +2,11 @@
 
 All notable features and changes. One line per feature. Agents append here after shipping.
 
+## 2026-02-14
+
+- Task dedup: eywa_task now rejects new tasks with fuzzy title matching (50%+ word overlap), not just exact matches
+- eywa_available: pre-flight tool that cross-references open tasks against active claims, showing which tasks are uncontested vs contested
+
 ## 2026-02-13
 
 - Spectacles voice wiring: SpectaclesView now receives voice_input, voice_response, and voice_inject events from EywaGeminiLive on Spectacles, displaying transcripts and injection confirmations as an overlay on the navigator map

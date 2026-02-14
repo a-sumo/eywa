@@ -2,10 +2,36 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SupabaseClient } from "../lib/supabase.js";
 import type { EywaContext, MemoryRow } from "../lib/types.js";
+import { getActiveClaims } from "./claim.js";
 
 function estimateTokens(text: string): number {
   return text ? Math.floor(text.length / 4) : 0;
 }
+
+/** Extract meaningful words from text for similarity comparison. */
+function extractWords(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 3),
+  );
+}
+
+/** Jaccard similarity between two word sets. Returns 0-1. */
+function wordSimilarity(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let intersection = 0;
+  for (const w of a) {
+    if (b.has(w)) intersection++;
+  }
+  const union = new Set([...a, ...b]).size;
+  return union > 0 ? intersection / union : 0;
+}
+
+/** Similarity threshold for fuzzy task dedup. */
+const DEDUP_SIMILARITY_THRESHOLD = 0.5;
 
 const PRIORITY_ORDER: Record<string, number> = {
   urgent: 0,
@@ -37,7 +63,7 @@ export function registerTaskTools(
       idempotentHint: false,
     },
     async ({ title, description, priority, assigned_to, milestone, parent_task }) => {
-      // Check for duplicate titles in active tasks
+      // Check for duplicate/similar titles in active tasks
       const existing = await db.select<MemoryRow>("memories", {
         select: "id,metadata",
         fold_id: `eq.${ctx.foldId}`,
@@ -46,16 +72,31 @@ export function registerTaskTools(
         limit: "100",
       });
 
+      const newWords = extractWords(title);
       for (const row of existing) {
         const meta = (row.metadata ?? {}) as Record<string, unknown>;
-        if (
-          ACTIVE_STATUSES.includes(meta.status as string) &&
-          (meta.title as string)?.toLowerCase() === title.toLowerCase()
-        ) {
+        if (!ACTIVE_STATUSES.includes(meta.status as string)) continue;
+
+        const existingTitle = (meta.title as string) || "";
+
+        // Exact match
+        if (existingTitle.toLowerCase() === title.toLowerCase()) {
           return {
             content: [{
               type: "text" as const,
-              text: `Duplicate: active task already exists with title "${title}" (ID: ${row.id}, status: ${meta.status}).`,
+              text: `Duplicate: active task already exists with title "${existingTitle}" (ID: ${row.id}, status: ${meta.status}).`,
+            }],
+          };
+        }
+
+        // Fuzzy match
+        const existingWords = extractWords(existingTitle);
+        const similarity = wordSimilarity(newWords, existingWords);
+        if (similarity >= DEDUP_SIMILARITY_THRESHOLD) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: `Similar task exists (${Math.round(similarity * 100)}% match): "${existingTitle}" (ID: ${row.id}, status: ${meta.status}). Use that task or make your title more distinct.`,
             }],
           };
         }
@@ -410,6 +451,132 @@ export function registerTaskTools(
           type: "text" as const,
           text: `Created ${created.length} subtask(s) under "${parentTitle}":\n${created.join("\n")}`,
         }],
+      };
+    },
+  );
+
+  server.tool(
+    "eywa_available",
+    "[COORDINATION] Pre-flight check: which tasks are actually available to pick up? Cross-references open tasks against active claims to find uncontested work. Call this before eywa_pick_task to avoid wasting context on conflicts.",
+    {
+      priority: z.enum(["low", "normal", "high", "urgent"]).optional().describe("Only show tasks at this priority or higher"),
+      milestone: z.string().optional().describe("Filter by milestone"),
+    },
+    {
+      readOnlyHint: true,
+      destructiveHint: false,
+    },
+    async ({ priority, milestone }) => {
+      // Fetch all active tasks
+      const rows = await db.select<MemoryRow>("memories", {
+        select: "id,agent,metadata,ts",
+        fold_id: `eq.${ctx.foldId}`,
+        message_type: "eq.task",
+        order: "ts.desc",
+        limit: "100",
+      });
+
+      let tasks = rows
+        .map((row) => {
+          const meta = (row.metadata ?? {}) as Record<string, unknown>;
+          return {
+            id: row.id,
+            title: (meta.title as string) || "",
+            description: (meta.description as string) || null,
+            status: (meta.status as string) || "open",
+            priority: (meta.priority as string) || "normal",
+            assigned_to: (meta.assigned_to as string) || null,
+            milestone: (meta.milestone as string) || null,
+          };
+        })
+        .filter((t) => t.status === "open");
+
+      // Apply priority filter
+      if (priority) {
+        const minLevel = PRIORITY_ORDER[priority] ?? 2;
+        tasks = tasks.filter((t) => (PRIORITY_ORDER[t.priority] ?? 2) <= minLevel);
+      }
+
+      // Apply milestone filter
+      if (milestone) {
+        tasks = tasks.filter((t) =>
+          t.milestone?.toLowerCase().includes(milestone.toLowerCase()),
+        );
+      }
+
+      if (tasks.length === 0) {
+        return {
+          content: [{ type: "text" as const, text: "No open tasks match filters." }],
+        };
+      }
+
+      // Fetch active claims to cross-reference
+      const activeClaims = await getActiveClaims(db, ctx.foldId, ctx.agent);
+
+      // Score each task for availability
+      const available: Array<{
+        id: string;
+        title: string;
+        priority: string;
+        milestone: string | null;
+        conflict: string | null;
+      }> = [];
+
+      for (const task of tasks) {
+        const taskWords = extractWords(task.title + " " + (task.description || ""));
+        let conflict: string | null = null;
+
+        for (const claim of activeClaims) {
+          const claimWords = extractWords(claim.scope);
+          const similarity = wordSimilarity(taskWords, claimWords);
+          if (similarity > 0.25) {
+            const short = claim.agent.includes("/") ? claim.agent.split("/").pop()! : claim.agent;
+            conflict = `${short} working on similar scope (${Math.round(similarity * 100)}% overlap)`;
+            break;
+          }
+        }
+
+        available.push({
+          id: task.id,
+          title: task.title,
+          priority: task.priority,
+          milestone: task.milestone,
+          conflict,
+        });
+      }
+
+      // Sort: uncontested first, then by priority
+      available.sort((a, b) => {
+        // Uncontested tasks first
+        if (!a.conflict && b.conflict) return -1;
+        if (a.conflict && !b.conflict) return 1;
+        // Then by priority
+        const pa = PRIORITY_ORDER[a.priority] ?? 2;
+        const pb = PRIORITY_ORDER[b.priority] ?? 2;
+        return pa - pb;
+      });
+
+      const lines: string[] = [`${available.length} open task(s):\n`];
+      let uncontestedCount = 0;
+
+      for (const t of available) {
+        const ms = t.milestone ? ` [${t.milestone}]` : "";
+        if (t.conflict) {
+          lines.push(`  [${t.priority.toUpperCase()}] ${t.title}${ms}`);
+          lines.push(`    CONTESTED: ${t.conflict}`);
+          lines.push(`    ID: ${t.id}`);
+        } else {
+          uncontestedCount++;
+          lines.push(`  [${t.priority.toUpperCase()}] ${t.title}${ms}`);
+          lines.push(`    ID: ${t.id}`);
+        }
+        lines.push("");
+      }
+
+      lines.unshift(`${uncontestedCount} uncontested, ${available.length - uncontestedCount} contested:\n`);
+
+      return {
+        content: [{ type: "text" as const, text: lines.join("\n") }],
       };
     },
   );
