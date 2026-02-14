@@ -33,6 +33,7 @@ export default {
         version: "1.0.0",
         status: "ok",
         docs: "Connect via MCP at /mcp?fold=<slug>&agent=<name>",
+        webhook: "POST /webhook with { fold, source, title, description?, priority?, metadata? }",
       });
     }
 
@@ -50,6 +51,30 @@ export default {
       if (request.method === "POST") {
         try {
           return await handleCloneDemo(request, env);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          return Response.json({ error: message }, {
+            status: 500,
+            headers: { "Access-Control-Allow-Origin": "*" },
+          });
+        }
+      }
+    }
+
+    // Webhook bridge: inbound events → Eywa tasks
+    if (url.pathname === "/webhook") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          },
+        });
+      }
+      if (request.method === "POST") {
+        try {
+          return await handleWebhook(request, env);
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           return Response.json({ error: message }, {
@@ -468,6 +493,121 @@ async function handleCloneDemo(request: Request, env: Env): Promise<Response> {
     slug: newSlug,
     seeded: seeds.length,
   }, { headers: corsHeaders });
+}
+
+interface WebhookPayload {
+  fold: string;
+  source: string;
+  title: string;
+  description?: string;
+  priority?: "low" | "normal" | "high" | "urgent";
+  metadata?: Record<string, unknown>;
+}
+
+async function handleWebhook(request: Request, env: Env): Promise<Response> {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+
+  // Rate limit: 30 webhooks per minute per IP
+  const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
+  const rl = rateLimit(`webhook:${ip}`, 30, 60 * 1000);
+  if (!rl.allowed) {
+    return Response.json(
+      { error: "Rate limit exceeded. Try again later." },
+      { status: 429, headers: { ...corsHeaders, "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } },
+    );
+  }
+
+  // Parse body
+  let body: WebhookPayload;
+  try {
+    body = await request.json() as WebhookPayload;
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: corsHeaders });
+  }
+
+  // Validate required fields
+  if (!body.fold || typeof body.fold !== "string") {
+    return Response.json({ error: "Missing required field: fold (fold slug)" }, { status: 400, headers: corsHeaders });
+  }
+  if (!body.source || typeof body.source !== "string") {
+    return Response.json({ error: "Missing required field: source (e.g. 'github', 'slack', 'openclaw')" }, { status: 400, headers: corsHeaders });
+  }
+  if (!body.title || typeof body.title !== "string") {
+    return Response.json({ error: "Missing required field: title" }, { status: 400, headers: corsHeaders });
+  }
+
+  const priority = body.priority || "normal";
+  if (!["low", "normal", "high", "urgent"].includes(priority)) {
+    return Response.json({ error: "Invalid priority. Must be low, normal, high, or urgent." }, { status: 400, headers: corsHeaders });
+  }
+
+  const db = new SupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+
+  // Resolve fold
+  const folds = await db.select<FoldRow>("folds", {
+    select: "id,slug,secret",
+    slug: `eq.${body.fold}`,
+    limit: "1",
+  });
+
+  if (!folds.length) {
+    return Response.json({ error: `Fold not found: ${body.fold}` }, { status: 404, headers: corsHeaders });
+  }
+
+  const fold = folds[0];
+
+  // Auth: non-public folds require Bearer token matching the fold secret
+  if (fold.secret !== "public") {
+    const authHeader = request.headers.get("Authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    if (!token || token !== fold.secret) {
+      return Response.json({ error: "Unauthorized. Provide Authorization: Bearer <fold-secret>" }, { status: 401, headers: corsHeaders });
+    }
+  }
+
+  // Create task in the fold
+  const agent = `webhook/${body.source}`;
+  const content = `TASK: ${body.title}${body.description ? ` - ${body.description}` : ""}`;
+  const taskRows = await db.insert<MemoryRow>("memories", {
+    fold_id: fold.id,
+    agent,
+    session_id: null,
+    message_type: "task",
+    content,
+    token_count: Math.floor(content.length / 4),
+    metadata: {
+      event: "task",
+      title: body.title,
+      description: body.description || null,
+      status: "open",
+      priority,
+      assigned_to: null,
+      milestone: null,
+      parent_task: null,
+      depends_on: [],
+      created_by: agent,
+      claimed_at: null,
+      completed_at: null,
+      blocked_reason: null,
+      webhook_source: body.source,
+      webhook_metadata: body.metadata || {},
+    },
+  });
+
+  const task = taskRows[0];
+
+  return Response.json({
+    ok: true,
+    task_id: task.id,
+    fold: body.fold,
+    title: body.title,
+    priority,
+    source: body.source,
+  }, { status: 201, headers: corsHeaders });
 }
 
 const ADJECTIVES = [
