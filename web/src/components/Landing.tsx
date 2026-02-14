@@ -8,6 +8,7 @@ import { TerminalDemo } from "./TerminalDemo";
 import { LanguageSelector } from "./LanguageSelector";
 import { LiveTelemetry } from "./LiveTelemetry";
 import { DashboardMockup } from "./DashboardMockup";
+import { ValueProps } from "./ValueProps";
 
 function useGitHubStars() {
   const [stars, setStars] = useState<number | null>(null);
@@ -238,6 +239,9 @@ export function Landing() {
 
       {/* Visual Proof - Animated Dashboard Mockup */}
       <DashboardMockup />
+
+      {/* Value Propositions */}
+      <ValueProps />
 
       {/* Features */}
       <section className="landing-section" id="features">

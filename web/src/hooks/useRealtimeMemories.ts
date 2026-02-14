@@ -45,7 +45,11 @@ export function useRealtimeMemories(foldId: string | null, limit = 50, sinceMs?:
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "memories", filter: `fold_id=eq.${foldId}` },
         (payload) => {
-          setMemories((prev) => [payload.new as Memory, ...prev].slice(0, limit));
+          setMemories((prev) => {
+            const next = [payload.new as Memory, ...prev];
+            next.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
+            return next.slice(0, limit);
+          });
         }
       )
       .on(

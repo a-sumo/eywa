@@ -142,7 +142,7 @@ export function OnboardingOverlay({ slug, foldId, secret, onDismiss }: Onboardin
               )}
             </div>
             <span className="onboarding-step-label">
-              {s === 1 ? "Connect agent" : s === 2 ? "Set destination" : "Start working"}
+              {s === 1 ? "Connect" : s === 2 ? "Set target" : "Go"}
             </span>
           </div>
         ))}
@@ -255,10 +255,10 @@ export function OnboardingOverlay({ slug, foldId, secret, onDismiss }: Onboardin
                     <circle cx="16" cy="16" r="2" fill="var(--aurora-cyan)" className="onboarding-waiting-dot" />
                   </svg>
                 </div>
-                <h3>Waiting for your first agent session</h3>
+                <h3>Listening for your agent</h3>
                 <p>
-                  Once your agent calls <code>eywa_start</code>, its session will appear here in real time.
-                  You'll see every operation, decision, and file change as it happens.
+                  Start a coding session with your agent. When it connects to Eywa,
+                  you'll see its work appear here in real time.
                 </p>
               </>
             )}
