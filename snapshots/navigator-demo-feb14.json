@@ -1,0 +1,2114 @@
+{
+  "snapshot_date": "2026-02-14",
+  "source": "https://impartial-vitality-production.up.railway.app/api/rooms/demo/map",
+  "description": "Guild Navigator demo room spatial map - agent trajectories and alignments",
+  "data": {
+    "meta": {
+      "itemCount": 39,
+      "goalCount": 1,
+      "goalIds": [
+        "goal-0"
+      ],
+      "agents": [
+        "autonomous/bold-hawk",
+        "marcus/claude-code",
+        "james/windsurf",
+        "priya/cursor"
+      ],
+      "regions": [
+        {
+          "id": "region-0",
+          "label": "REGION 0",
+          "items": 18,
+          "col": -1,
+          "row": 0
+        },
+        {
+          "id": "region-1",
+          "label": "LAUNCH-READY PRODUCT",
+          "items": 21,
+          "col": 1,
+          "row": 0
+        }
+      ],
+      "layers": [
+        "domain",
+        "structural",
+        "domain",
+        "abstraction"
+      ]
+    },
+    "nodes": [
+      {
+        "id": "autonomous/bold-hawk",
+        "type": "source",
+        "label": "autonomous/bold-hawk",
+        "x": 0.128,
+        "y": 0.132,
+        "polar": {
+          "goal-0": {
+            "r": 0.126,
+            "theta": -1.945
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.165,
+            "y": -0.059,
+            "polar": {
+              "goal-0": {
+                "r": 0.36,
+                "theta": -0.893
+              }
+            }
+          },
+          "domain": {
+            "x": 0.128,
+            "y": 0.132,
+            "polar": {
+              "goal-0": {
+                "r": 0.126,
+                "theta": -1.945
+              }
+            }
+          },
+          "abstraction": {
+            "x": 0,
+            "y": 0.105,
+            "polar": {
+              "goal-0": {
+                "r": 0.602,
+                "theta": 0.455
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code",
+        "type": "source",
+        "label": "marcus/claude-code",
+        "x": 0.208,
+        "y": 0.136,
+        "polar": {
+          "goal-0": {
+            "r": 0.157,
+            "theta": -0.762
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.194,
+            "y": 0,
+            "polar": {
+              "goal-0": {
+                "r": 0.199,
+                "theta": -0.717
+              }
+            }
+          },
+          "domain": {
+            "x": 0.208,
+            "y": 0.136,
+            "polar": {
+              "goal-0": {
+                "r": 0.157,
+                "theta": -0.762
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.106,
+            "y": 0.116,
+            "polar": {
+              "goal-0": {
+                "r": 0.381,
+                "theta": 0.89
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "james/windsurf",
+        "type": "source",
+        "label": "james/windsurf",
+        "x": 0.252,
+        "y": 0.163,
+        "polar": {
+          "goal-0": {
+            "r": 0.207,
+            "theta": -0.267
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.097,
+            "y": 0.101,
+            "polar": {
+              "goal-0": {
+                "r": 0.417,
+                "theta": 0.312
+              }
+            }
+          },
+          "domain": {
+            "x": 0.252,
+            "y": 0.163,
+            "polar": {
+              "goal-0": {
+                "r": 0.207,
+                "theta": -0.267
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.119,
+            "y": 0.092,
+            "polar": {
+              "goal-0": {
+                "r": 0.305,
+                "theta": 0.839
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor",
+        "type": "source",
+        "label": "priya/cursor",
+        "x": 0.286,
+        "y": 0.021,
+        "polar": {
+          "goal-0": {
+            "r": 0.43,
+            "theta": -0.898
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.093,
+            "y": 0.14,
+            "polar": {
+              "goal-0": {
+                "r": 0.468,
+                "theta": 0.51
+              }
+            }
+          },
+          "domain": {
+            "x": 0.286,
+            "y": 0.021,
+            "polar": {
+              "goal-0": {
+                "r": 0.43,
+                "theta": -0.898
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.209,
+            "y": 0.147,
+            "polar": {
+              "goal-0": {
+                "r": 0.388,
+                "theta": 1.7
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "autonomous/bold-hawk:action-0",
+        "type": "action",
+        "label": "SESSION START: Self-directed session: identifying highest-leverage work for Eywa",
+        "x": 0.006,
+        "y": 0.175,
+        "polar": {
+          "goal-0": {
+            "r": 0.289,
+            "theta": -3.034
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": 0.067,
+            "y": 0.171,
+            "polar": {
+              "goal-0": {
+                "r": 0.874,
+                "theta": 0.359
+              }
+            }
+          },
+          "domain": {
+            "x": 0.006,
+            "y": 0.175,
+            "polar": {
+              "goal-0": {
+                "r": 0.289,
+                "theta": -3.034
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.056,
+            "y": 0.273,
+            "polar": {
+              "goal-0": {
+                "r": 0.833,
+                "theta": 1.093
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "autonomous/bold-hawk:state-0",
+        "type": "state",
+        "label": "SESSION START: Self-directed session: identifying highest-leverage work for Eywa",
+        "x": -0.031,
+        "y": 0.124,
+        "polar": {
+          "goal-0": {
+            "r": 0.385,
+            "theta": -2.791
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": 0.095,
+            "y": 0.136,
+            "polar": {
+              "goal-0": {
+                "r": 0.915,
+                "theta": 0.241
+              }
+            }
+          },
+          "domain": {
+            "x": -0.031,
+            "y": 0.124,
+            "polar": {
+              "goal-0": {
+                "r": 0.385,
+                "theta": -2.791
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.058,
+            "y": 0.258,
+            "polar": {
+              "goal-0": {
+                "r": 0.793,
+                "theta": 1.075
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:action-0",
+        "type": "action",
+        "label": "write",
+        "x": 0.261,
+        "y": -0.063,
+        "polar": {
+          "goal-0": {
+            "r": 0.55,
+            "theta": -1.162
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.319,
+            "y": -0.024,
+            "polar": {
+              "goal-0": {
+                "r": 0.256,
+                "theta": -2.296
+              }
+            }
+          },
+          "domain": {
+            "x": 0.261,
+            "y": -0.063,
+            "polar": {
+              "goal-0": {
+                "r": 0.55,
+                "theta": -1.162
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.17,
+            "y": 0.015,
+            "polar": {
+              "goal-0": {
+                "r": 0.062,
+                "theta": 0.164
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:state-0",
+        "type": "state",
+        "label": "Writing token refresh logic with rotation to prevent replay attacks. Refresh token rotation ensures each token can only be used once.",
+        "x": -0.026,
+        "y": -0.205,
+        "polar": {
+          "goal-0": {
+            "r": 0.861,
+            "theta": -1.991
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.176,
+            "y": -0.253,
+            "polar": {
+              "goal-0": {
+                "r": 0.802,
+                "theta": -1.323
+              }
+            }
+          },
+          "domain": {
+            "x": -0.026,
+            "y": -0.205,
+            "polar": {
+              "goal-0": {
+                "r": 0.861,
+                "theta": -1.991
+              }
+            }
+          },
+          "abstraction": {
+            "x": 0.039,
+            "y": -0.258,
+            "polar": {
+              "goal-0": {
+                "r": 1,
+                "theta": -0.865
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:action-1",
+        "type": "action",
+        "label": "learn",
+        "x": 0.187,
+        "y": 0.077,
+        "polar": {
+          "goal-0": {
+            "r": 0.236,
+            "theta": -1.263
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.258,
+            "y": -0.023,
+            "polar": {
+              "goal-0": {
+                "r": 0.189,
+                "theta": -1.645
+              }
+            }
+          },
+          "domain": {
+            "x": 0.187,
+            "y": 0.077,
+            "polar": {
+              "goal-0": {
+                "r": 0.236,
+                "theta": -1.263
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.113,
+            "y": -0.04,
+            "polar": {
+              "goal-0": {
+                "r": 0.264,
+                "theta": -0.58
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:state-1",
+        "type": "state",
+        "label": "Knowledge captured: auth context must be exported as a hook, not a raw context value, so downstream pages get reactive updates.",
+        "x": -0.061,
+        "y": -0.246,
+        "polar": {
+          "goal-0": {
+            "r": 0.964,
+            "theta": -2.022
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.18,
+            "y": -0.185,
+            "polar": {
+              "goal-0": {
+                "r": 0.631,
+                "theta": -1.271
+              }
+            }
+          },
+          "domain": {
+            "x": -0.061,
+            "y": -0.246,
+            "polar": {
+              "goal-0": {
+                "r": 0.964,
+                "theta": -2.022
+              }
+            }
+          },
+          "abstraction": {
+            "x": 0.034,
+            "y": -0.106,
+            "polar": {
+              "goal-0": {
+                "r": 0.717,
+                "theta": -0.481
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:action-2",
+        "type": "action",
+        "label": "write",
+        "x": 0.261,
+        "y": -0.063,
+        "polar": {
+          "goal-0": {
+            "r": 0.55,
+            "theta": -1.162
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.319,
+            "y": -0.024,
+            "polar": {
+              "goal-0": {
+                "r": 0.256,
+                "theta": -2.296
+              }
+            }
+          },
+          "domain": {
+            "x": 0.261,
+            "y": -0.063,
+            "polar": {
+              "goal-0": {
+                "r": 0.55,
+                "theta": -1.162
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.17,
+            "y": 0.015,
+            "polar": {
+              "goal-0": {
+                "r": 0.062,
+                "theta": 0.164
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:state-2",
+        "type": "state",
+        "label": "Exported useSession hook from src/auth/hooks.ts so Priya's settings page can consume it. Using httpOnly cookies over localStorage for tokens.",
+        "x": 0.05,
+        "y": -0.19,
+        "polar": {
+          "goal-0": {
+            "r": 0.782,
+            "theta": -1.829
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.184,
+            "y": -0.124,
+            "polar": {
+              "goal-0": {
+                "r": 0.48,
+                "theta": -1.196
+              }
+            }
+          },
+          "domain": {
+            "x": 0.05,
+            "y": -0.19,
+            "polar": {
+              "goal-0": {
+                "r": 0.782,
+                "theta": -1.829
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.102,
+            "y": -0.121,
+            "polar": {
+              "goal-0": {
+                "r": 0.449,
+                "theta": -0.976
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:action-3",
+        "type": "action",
+        "label": "write",
+        "x": 0.261,
+        "y": -0.063,
+        "polar": {
+          "goal-0": {
+            "r": 0.55,
+            "theta": -1.162
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.319,
+            "y": -0.024,
+            "polar": {
+              "goal-0": {
+                "r": 0.256,
+                "theta": -2.296
+              }
+            }
+          },
+          "domain": {
+            "x": 0.261,
+            "y": -0.063,
+            "polar": {
+              "goal-0": {
+                "r": 0.55,
+                "theta": -1.162
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.17,
+            "y": 0.015,
+            "polar": {
+              "goal-0": {
+                "r": 0.062,
+                "theta": 0.164
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:state-3",
+        "type": "state",
+        "label": "// src/auth/oauth-callback.ts\nimport { NextRequest, NextResponse } from 'next/server';\nimport { exchangeCode, createSession } from '@/auth/tokens';\n\nexport async function GET(req: NextRequest) {\n  con",
+        "x": 0.037,
+        "y": -0.063,
+        "polar": {
+          "goal-0": {
+            "r": 0.552,
+            "theta": -1.993
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": 0.044,
+            "y": 0.002,
+            "polar": {
+              "goal-0": {
+                "r": 0.77,
+                "theta": -0.161
+              }
+            }
+          },
+          "domain": {
+            "x": 0.037,
+            "y": -0.063,
+            "polar": {
+              "goal-0": {
+                "r": 0.552,
+                "theta": -1.993
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.078,
+            "y": 0.119,
+            "polar": {
+              "goal-0": {
+                "r": 0.441,
+                "theta": 0.76
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:action-4",
+        "type": "action",
+        "label": "claim",
+        "x": 0.134,
+        "y": 0.054,
+        "polar": {
+          "goal-0": {
+            "r": 0.273,
+            "theta": -1.694
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.253,
+            "y": -0.014,
+            "polar": {
+              "goal-0": {
+                "r": 0.165,
+                "theta": -1.582
+              }
+            }
+          },
+          "domain": {
+            "x": 0.134,
+            "y": 0.054,
+            "polar": {
+              "goal-0": {
+                "r": 0.273,
+                "theta": -1.694
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.119,
+            "y": -0.04,
+            "polar": {
+              "goal-0": {
+                "r": 0.25,
+                "theta": -0.619
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:state-4",
+        "type": "state",
+        "label": "Claiming src/auth/ and src/middleware/session.ts. Priya will need the auth context for settings, I'll export it.",
+        "x": 0.008,
+        "y": -0.174,
+        "polar": {
+          "goal-0": {
+            "r": 0.778,
+            "theta": -1.944
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.063,
+            "y": 0.027,
+            "polar": {
+              "goal-0": {
+                "r": 0.49,
+                "theta": -0.124
+              }
+            }
+          },
+          "domain": {
+            "x": 0.008,
+            "y": -0.174,
+            "polar": {
+              "goal-0": {
+                "r": 0.778,
+                "theta": -1.944
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.078,
+            "y": -0.019,
+            "polar": {
+              "goal-0": {
+                "r": 0.33,
+                "theta": -0.261
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:action-5",
+        "type": "action",
+        "label": "plan",
+        "x": 0.214,
+        "y": 0.077,
+        "polar": {
+          "goal-0": {
+            "r": 0.257,
+            "theta": -1.066
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.324,
+            "y": -0.048,
+            "polar": {
+              "goal-0": {
+                "r": 0.311,
+                "theta": -2.201
+              }
+            }
+          },
+          "domain": {
+            "x": 0.214,
+            "y": 0.077,
+            "polar": {
+              "goal-0": {
+                "r": 0.257,
+                "theta": -1.066
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.184,
+            "y": -0.111,
+            "polar": {
+              "goal-0": {
+                "r": 0.345,
+                "theta": -1.512
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "marcus/claude-code:state-5",
+        "type": "state",
+        "label": "SESSION START: Adding OAuth callback handler and session middleware.",
+        "x": -0.012,
+        "y": -0.286,
+        "polar": {
+          "goal-0": {
+            "r": 1,
+            "theta": -1.9
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.108,
+            "y": -0.064,
+            "polar": {
+              "goal-0": {
+                "r": 0.471,
+                "theta": -0.669
+              }
+            }
+          },
+          "domain": {
+            "x": -0.012,
+            "y": -0.286,
+            "polar": {
+              "goal-0": {
+                "r": 1,
+                "theta": -1.9
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.066,
+            "y": -0.129,
+            "polar": {
+              "goal-0": {
+                "r": 0.53,
+                "theta": -0.842
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "james/windsurf:action-0",
+        "type": "action",
+        "label": "complete",
+        "x": 0.176,
+        "y": -0.118,
+        "polar": {
+          "goal-0": {
+            "r": 0.615,
+            "theta": -1.491
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.182,
+            "y": 0.059,
+            "polar": {
+              "goal-0": {
+                "r": 0.182,
+                "theta": 0.119
+              }
+            }
+          },
+          "domain": {
+            "x": 0.176,
+            "y": -0.118,
+            "polar": {
+              "goal-0": {
+                "r": 0.615,
+                "theta": -1.491
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.152,
+            "y": -0.067,
+            "polar": {
+              "goal-0": {
+                "r": 0.247,
+                "theta": -1.102
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "james/windsurf:state-0",
+        "type": "state",
+        "label": "SESSION DONE: Stripe v3 migration complete. Webhooks, checkout, and invoice export all passing.",
+        "x": 0.153,
+        "y": 0.091,
+        "polar": {
+          "goal-0": {
+            "r": 0.199,
+            "theta": -1.553
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.146,
+            "y": 0.04,
+            "polar": {
+              "goal-0": {
+                "r": 0.274,
+                "theta": -0.095
+              }
+            }
+          },
+          "domain": {
+            "x": 0.153,
+            "y": 0.091,
+            "polar": {
+              "goal-0": {
+                "r": 0.199,
+                "theta": -1.553
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.157,
+            "y": -0.094,
+            "polar": {
+              "goal-0": {
+                "r": 0.313,
+                "theta": -1.253
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "james/windsurf:action-1",
+        "type": "action",
+        "label": "write",
+        "x": 0.261,
+        "y": -0.063,
+        "polar": {
+          "goal-0": {
+            "r": 0.55,
+            "theta": -1.162
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.319,
+            "y": -0.024,
+            "polar": {
+              "goal-0": {
+                "r": 0.256,
+                "theta": -2.296
+              }
+            }
+          },
+          "domain": {
+            "x": 0.261,
+            "y": -0.063,
+            "polar": {
+              "goal-0": {
+                "r": 0.55,
+                "theta": -1.162
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.17,
+            "y": 0.015,
+            "polar": {
+              "goal-0": {
+                "r": 0.062,
+                "theta": 0.164
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "james/windsurf:state-1",
+        "type": "state",
+        "label": "Stripe webhook handler passing all test cases. Idempotency keys added for retries. Invoice PDF generation optimized from 2.3s to 400ms.",
+        "x": 0.079,
+        "y": 0.123,
+        "polar": {
+          "goal-0": {
+            "r": 0.197,
+            "theta": -2.382
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": 0.124,
+            "y": -0.055,
+            "polar": {
+              "goal-0": {
+                "r": 1,
+                "theta": -0.273
+              }
+            }
+          },
+          "domain": {
+            "x": 0.079,
+            "y": 0.123,
+            "polar": {
+              "goal-0": {
+                "r": 0.197,
+                "theta": -2.382
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.082,
+            "y": -0.061,
+            "polar": {
+              "goal-0": {
+                "r": 0.37,
+                "theta": -0.583
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "james/windsurf:action-2",
+        "type": "action",
+        "label": "write",
+        "x": 0.261,
+        "y": -0.063,
+        "polar": {
+          "goal-0": {
+            "r": 0.55,
+            "theta": -1.162
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.319,
+            "y": -0.024,
+            "polar": {
+              "goal-0": {
+                "r": 0.256,
+                "theta": -2.296
+              }
+            }
+          },
+          "domain": {
+            "x": 0.261,
+            "y": -0.063,
+            "polar": {
+              "goal-0": {
+                "r": 0.55,
+                "theta": -1.162
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.17,
+            "y": 0.015,
+            "polar": {
+              "goal-0": {
+                "r": 0.062,
+                "theta": 0.164
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "james/windsurf:state-2",
+        "type": "state",
+        "label": "// src/payments/stripe.ts\nimport Stripe from 'stripe';\nconst stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);\n\nexport async function createCheckout(priceId: string, customerId: string) {\n  return ",
+        "x": 0.077,
+        "y": 0.046,
+        "polar": {
+          "goal-0": {
+            "r": 0.323,
+            "theta": -2.041
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": 0.019,
+            "y": 0.068,
+            "polar": {
+              "goal-0": {
+                "r": 0.697,
+                "theta": 0.063
+              }
+            }
+          },
+          "domain": {
+            "x": 0.077,
+            "y": 0.046,
+            "polar": {
+              "goal-0": {
+                "r": 0.323,
+                "theta": -2.041
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.112,
+            "y": 0.152,
+            "polar": {
+              "goal-0": {
+                "r": 0.456,
+                "theta": 1.061
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "james/windsurf:action-3",
+        "type": "action",
+        "label": "plan",
+        "x": 0.214,
+        "y": 0.077,
+        "polar": {
+          "goal-0": {
+            "r": 0.257,
+            "theta": -1.066
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.324,
+            "y": -0.048,
+            "polar": {
+              "goal-0": {
+                "r": 0.311,
+                "theta": -2.201
+              }
+            }
+          },
+          "domain": {
+            "x": 0.214,
+            "y": 0.077,
+            "polar": {
+              "goal-0": {
+                "r": 0.257,
+                "theta": -1.066
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.184,
+            "y": -0.111,
+            "polar": {
+              "goal-0": {
+                "r": 0.345,
+                "theta": -1.512
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "james/windsurf:state-3",
+        "type": "state",
+        "label": "SESSION START: Migrating payments to Stripe v3 and updating webhook signatures.",
+        "x": 0.105,
+        "y": -0.003,
+        "polar": {
+          "goal-0": {
+            "r": 0.396,
+            "theta": -1.805
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.165,
+            "y": 0.032,
+            "polar": {
+              "goal-0": {
+                "r": 0.229,
+                "theta": -0.205
+              }
+            }
+          },
+          "domain": {
+            "x": 0.105,
+            "y": -0.003,
+            "polar": {
+              "goal-0": {
+                "r": 0.396,
+                "theta": -1.805
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.209,
+            "y": -0.066,
+            "polar": {
+              "goal-0": {
+                "r": 0.224,
+                "theta": -1.79
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:action-0",
+        "type": "action",
+        "label": "complete",
+        "x": 0.176,
+        "y": -0.118,
+        "polar": {
+          "goal-0": {
+            "r": 0.615,
+            "theta": -1.491
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.182,
+            "y": 0.059,
+            "polar": {
+              "goal-0": {
+                "r": 0.182,
+                "theta": 0.119
+              }
+            }
+          },
+          "domain": {
+            "x": 0.176,
+            "y": -0.118,
+            "polar": {
+              "goal-0": {
+                "r": 0.615,
+                "theta": -1.491
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.152,
+            "y": -0.067,
+            "polar": {
+              "goal-0": {
+                "r": 0.247,
+                "theta": -1.102
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:state-0",
+        "type": "state",
+        "label": "SESSION DONE: Settings page complete with avatar upload, profile form, and auth guard integration.",
+        "x": 0.117,
+        "y": -0.148,
+        "polar": {
+          "goal-0": {
+            "r": 0.677,
+            "theta": -1.671
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.261,
+            "y": -0.028,
+            "polar": {
+              "goal-0": {
+                "r": 0.203,
+                "theta": -1.673
+              }
+            }
+          },
+          "domain": {
+            "x": 0.117,
+            "y": -0.148,
+            "polar": {
+              "goal-0": {
+                "r": 0.677,
+                "theta": -1.671
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.19,
+            "y": -0.152,
+            "polar": {
+              "goal-0": {
+                "r": 0.46,
+                "theta": -1.562
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:action-1",
+        "type": "action",
+        "label": "write",
+        "x": 0.261,
+        "y": -0.063,
+        "polar": {
+          "goal-0": {
+            "r": 0.55,
+            "theta": -1.162
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.319,
+            "y": -0.024,
+            "polar": {
+              "goal-0": {
+                "r": 0.256,
+                "theta": -2.296
+              }
+            }
+          },
+          "domain": {
+            "x": 0.261,
+            "y": -0.063,
+            "polar": {
+              "goal-0": {
+                "r": 0.55,
+                "theta": -1.162
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.17,
+            "y": 0.015,
+            "polar": {
+              "goal-0": {
+                "r": 0.062,
+                "theta": 0.164
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:state-1",
+        "type": "state",
+        "label": "Added avatar crop component to settings. Profile API hooked up and working end-to-end.",
+        "x": 0.233,
+        "y": -0.174,
+        "polar": {
+          "goal-0": {
+            "r": 0.742,
+            "theta": -1.351
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.166,
+            "y": 0.105,
+            "polar": {
+              "goal-0": {
+                "r": 0.261,
+                "theta": 0.563
+              }
+            }
+          },
+          "domain": {
+            "x": 0.233,
+            "y": -0.174,
+            "polar": {
+              "goal-0": {
+                "r": 0.742,
+                "theta": -1.351
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.22,
+            "y": -0.081,
+            "polar": {
+              "goal-0": {
+                "r": 0.272,
+                "theta": -1.869
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:action-2",
+        "type": "action",
+        "label": "resolve",
+        "x": 0.141,
+        "y": -0.054,
+        "polar": {
+          "goal-0": {
+            "r": 0.487,
+            "theta": -1.612
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.244,
+            "y": -0.013,
+            "polar": {
+              "goal-0": {
+                "r": 0.164,
+                "theta": -1.428
+              }
+            }
+          },
+          "domain": {
+            "x": 0.141,
+            "y": -0.054,
+            "polar": {
+              "goal-0": {
+                "r": 0.487,
+                "theta": -1.612
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.151,
+            "y": -0.142,
+            "polar": {
+              "goal-0": {
+                "r": 0.447,
+                "theta": -1.311
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:state-2",
+        "type": "state",
+        "label": "Conflict detected: settings page imports useSession from @/auth/hooks but Marcus hasn't pushed that export yet. Flagging so we don't block.",
+        "x": 0.065,
+        "y": -0.201,
+        "polar": {
+          "goal-0": {
+            "r": 0.798,
+            "theta": -1.787
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.027,
+            "y": -0.002,
+            "polar": {
+              "goal-0": {
+                "r": 0.593,
+                "theta": -0.228
+              }
+            }
+          },
+          "domain": {
+            "x": 0.065,
+            "y": -0.201,
+            "polar": {
+              "goal-0": {
+                "r": 0.798,
+                "theta": -1.787
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.099,
+            "y": -0.029,
+            "polar": {
+              "goal-0": {
+                "r": 0.284,
+                "theta": -0.413
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:action-3",
+        "type": "action",
+        "label": "write",
+        "x": 0.261,
+        "y": -0.063,
+        "polar": {
+          "goal-0": {
+            "r": 0.55,
+            "theta": -1.162
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.319,
+            "y": -0.024,
+            "polar": {
+              "goal-0": {
+                "r": 0.256,
+                "theta": -2.296
+              }
+            }
+          },
+          "domain": {
+            "x": 0.261,
+            "y": -0.063,
+            "polar": {
+              "goal-0": {
+                "r": 0.55,
+                "theta": -1.162
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.17,
+            "y": 0.015,
+            "polar": {
+              "goal-0": {
+                "r": 0.062,
+                "theta": 0.164
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:state-3",
+        "type": "state",
+        "label": "// src/pages/settings.tsx\nimport { useSession } from '@/auth/hooks';\nimport { AvatarUpload } from '@/components/settings/AvatarUpload';\nimport { ProfileForm } from '@/components/settings/ProfileForm';",
+        "x": 0.241,
+        "y": -0.103,
+        "polar": {
+          "goal-0": {
+            "r": 0.61,
+            "theta": -1.272
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.275,
+            "y": 0.109,
+            "polar": {
+              "goal-0": {
+                "r": 0.161,
+                "theta": 1.931
+              }
+            }
+          },
+          "domain": {
+            "x": 0.241,
+            "y": -0.103,
+            "polar": {
+              "goal-0": {
+                "r": 0.61,
+                "theta": -1.272
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.237,
+            "y": 0.022,
+            "polar": {
+              "goal-0": {
+                "r": 0.131,
+                "theta": 2.905
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:action-4",
+        "type": "action",
+        "label": "route",
+        "x": 0.32,
+        "y": -0.013,
+        "polar": {
+          "goal-0": {
+            "r": 0.525,
+            "theta": -0.879
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.022,
+            "y": 0.168,
+            "polar": {
+              "goal-0": {
+                "r": 0.664,
+                "theta": 0.47
+              }
+            }
+          },
+          "domain": {
+            "x": 0.32,
+            "y": -0.013,
+            "polar": {
+              "goal-0": {
+                "r": 0.525,
+                "theta": -0.879
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.162,
+            "y": -0.073,
+            "polar": {
+              "goal-0": {
+                "r": 0.251,
+                "theta": -1.229
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:state-4",
+        "type": "state",
+        "label": "Settings page needs the auth guard Marcus is building. I'll consume the session context export and stay on src/pages/ and src/components/settings/.",
+        "x": 0.084,
+        "y": -0.201,
+        "polar": {
+          "goal-0": {
+            "r": 0.789,
+            "theta": -1.741
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.1,
+            "y": -0.056,
+            "polar": {
+              "goal-0": {
+                "r": 0.477,
+                "theta": -0.608
+              }
+            }
+          },
+          "domain": {
+            "x": 0.084,
+            "y": -0.201,
+            "polar": {
+              "goal-0": {
+                "r": 0.789,
+                "theta": -1.741
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.089,
+            "y": -0.032,
+            "polar": {
+              "goal-0": {
+                "r": 0.314,
+                "theta": -0.397
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:action-5",
+        "type": "action",
+        "label": "plan",
+        "x": 0.214,
+        "y": 0.077,
+        "polar": {
+          "goal-0": {
+            "r": 0.257,
+            "theta": -1.066
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.324,
+            "y": -0.048,
+            "polar": {
+              "goal-0": {
+                "r": 0.311,
+                "theta": -2.201
+              }
+            }
+          },
+          "domain": {
+            "x": 0.214,
+            "y": 0.077,
+            "polar": {
+              "goal-0": {
+                "r": 0.257,
+                "theta": -1.066
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.184,
+            "y": -0.111,
+            "polar": {
+              "goal-0": {
+                "r": 0.345,
+                "theta": -1.512
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "priya/cursor:state-5",
+        "type": "state",
+        "label": "SESSION START: Building user settings page and profile API.",
+        "x": 0.059,
+        "y": -0.282,
+        "polar": {
+          "goal-0": {
+            "r": 0.956,
+            "theta": -1.763
+          }
+        },
+        "region": "region-0",
+        "axes": {
+          "structural": {
+            "x": -0.174,
+            "y": 0.068,
+            "polar": {
+              "goal-0": {
+                "r": 0.206,
+                "theta": 0.217
+              }
+            }
+          },
+          "domain": {
+            "x": 0.059,
+            "y": -0.282,
+            "polar": {
+              "goal-0": {
+                "r": 0.956,
+                "theta": -1.763
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.153,
+            "y": -0.108,
+            "polar": {
+              "goal-0": {
+                "r": 0.353,
+                "theta": -1.26
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "goal-0",
+        "type": "goal",
+        "label": "Launch-ready product",
+        "x": 0.151,
+        "y": 0.191,
+        "polar": {
+          "goal-0": {
+            "r": 0,
+            "theta": 0
+          }
+        },
+        "region": "region-1",
+        "axes": {
+          "structural": {
+            "x": -0.253,
+            "y": 0.051,
+            "polar": {
+              "goal-0": {
+                "r": 0,
+                "theta": 0
+              }
+            }
+          },
+          "domain": {
+            "x": 0.151,
+            "y": 0.191,
+            "polar": {
+              "goal-0": {
+                "r": 0,
+                "theta": 0
+              }
+            }
+          },
+          "abstraction": {
+            "x": -0.191,
+            "y": 0.011,
+            "polar": {
+              "goal-0": {
+                "r": 0,
+                "theta": 0
+              }
+            }
+          }
+        }
+      }
+    ],
+    "trajectory": [
+      {
+        "from": "autonomous/bold-hawk",
+        "to": "autonomous/bold-hawk:action-0",
+        "agent": "autonomous/bold-hawk"
+      },
+      {
+        "from": "autonomous/bold-hawk:action-0",
+        "to": "autonomous/bold-hawk:state-0",
+        "agent": "autonomous/bold-hawk"
+      },
+      {
+        "from": "marcus/claude-code",
+        "to": "marcus/claude-code:action-0",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:action-0",
+        "to": "marcus/claude-code:state-0",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:state-0",
+        "to": "marcus/claude-code:action-1",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:action-1",
+        "to": "marcus/claude-code:state-1",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:state-1",
+        "to": "marcus/claude-code:action-2",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:action-2",
+        "to": "marcus/claude-code:state-2",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:state-2",
+        "to": "marcus/claude-code:action-3",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:action-3",
+        "to": "marcus/claude-code:state-3",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:state-3",
+        "to": "marcus/claude-code:action-4",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:action-4",
+        "to": "marcus/claude-code:state-4",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:state-4",
+        "to": "marcus/claude-code:action-5",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "marcus/claude-code:action-5",
+        "to": "marcus/claude-code:state-5",
+        "agent": "marcus/claude-code"
+      },
+      {
+        "from": "james/windsurf",
+        "to": "james/windsurf:action-0",
+        "agent": "james/windsurf"
+      },
+      {
+        "from": "james/windsurf:action-0",
+        "to": "james/windsurf:state-0",
+        "agent": "james/windsurf"
+      },
+      {
+        "from": "james/windsurf:state-0",
+        "to": "james/windsurf:action-1",
+        "agent": "james/windsurf"
+      },
+      {
+        "from": "james/windsurf:action-1",
+        "to": "james/windsurf:state-1",
+        "agent": "james/windsurf"
+      },
+      {
+        "from": "james/windsurf:state-1",
+        "to": "james/windsurf:action-2",
+        "agent": "james/windsurf"
+      },
+      {
+        "from": "james/windsurf:action-2",
+        "to": "james/windsurf:state-2",
+        "agent": "james/windsurf"
+      },
+      {
+        "from": "james/windsurf:state-2",
+        "to": "james/windsurf:action-3",
+        "agent": "james/windsurf"
+      },
+      {
+        "from": "james/windsurf:action-3",
+        "to": "james/windsurf:state-3",
+        "agent": "james/windsurf"
+      },
+      {
+        "from": "priya/cursor",
+        "to": "priya/cursor:action-0",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:action-0",
+        "to": "priya/cursor:state-0",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:state-0",
+        "to": "priya/cursor:action-1",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:action-1",
+        "to": "priya/cursor:state-1",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:state-1",
+        "to": "priya/cursor:action-2",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:action-2",
+        "to": "priya/cursor:state-2",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:state-2",
+        "to": "priya/cursor:action-3",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:action-3",
+        "to": "priya/cursor:state-3",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:state-3",
+        "to": "priya/cursor:action-4",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:action-4",
+        "to": "priya/cursor:state-4",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:state-4",
+        "to": "priya/cursor:action-5",
+        "agent": "priya/cursor"
+      },
+      {
+        "from": "priya/cursor:action-5",
+        "to": "priya/cursor:state-5",
+        "agent": "priya/cursor"
+      }
+    ],
+    "alignments": [
+      {
+        "actionId": "autonomous/bold-hawk:action-0",
+        "goalId": "goal-0",
+        "agent": "autonomous/bold-hawk",
+        "alignment": 0.586
+      },
+      {
+        "actionId": "marcus/claude-code:action-0",
+        "goalId": "goal-0",
+        "agent": "marcus/claude-code",
+        "alignment": 0.425
+      },
+      {
+        "actionId": "marcus/claude-code:action-1",
+        "goalId": "goal-0",
+        "agent": "marcus/claude-code",
+        "alignment": 0.646
+      },
+      {
+        "actionId": "marcus/claude-code:action-2",
+        "goalId": "goal-0",
+        "agent": "marcus/claude-code",
+        "alignment": 0.972
+      },
+      {
+        "actionId": "marcus/claude-code:action-3",
+        "goalId": "goal-0",
+        "agent": "marcus/claude-code",
+        "alignment": 0.948
+      },
+      {
+        "actionId": "marcus/claude-code:action-4",
+        "goalId": "goal-0",
+        "agent": "marcus/claude-code",
+        "alignment": 0.632
+      },
+      {
+        "actionId": "marcus/claude-code:action-5",
+        "goalId": "goal-0",
+        "agent": "marcus/claude-code",
+        "alignment": 0.685
+      },
+      {
+        "actionId": "james/windsurf:action-0",
+        "goalId": "goal-0",
+        "agent": "james/windsurf",
+        "alignment": 0.826
+      },
+      {
+        "actionId": "james/windsurf:action-1",
+        "goalId": "goal-0",
+        "agent": "james/windsurf",
+        "alignment": 0.818
+      },
+      {
+        "actionId": "james/windsurf:action-2",
+        "goalId": "goal-0",
+        "agent": "james/windsurf",
+        "alignment": 0.803
+      },
+      {
+        "actionId": "james/windsurf:action-3",
+        "goalId": "goal-0",
+        "agent": "james/windsurf",
+        "alignment": 0.79
+      },
+      {
+        "actionId": "priya/cursor:action-0",
+        "goalId": "goal-0",
+        "agent": "priya/cursor",
+        "alignment": 0.75
+      },
+      {
+        "actionId": "priya/cursor:action-1",
+        "goalId": "goal-0",
+        "agent": "priya/cursor",
+        "alignment": 0.785
+      },
+      {
+        "actionId": "priya/cursor:action-2",
+        "goalId": "goal-0",
+        "agent": "priya/cursor",
+        "alignment": 0.528
+      },
+      {
+        "actionId": "priya/cursor:action-3",
+        "goalId": "goal-0",
+        "agent": "priya/cursor",
+        "alignment": 0.892
+      },
+      {
+        "actionId": "priya/cursor:action-4",
+        "goalId": "goal-0",
+        "agent": "priya/cursor",
+        "alignment": 0.664
+      },
+      {
+        "actionId": "priya/cursor:action-5",
+        "goalId": "goal-0",
+        "agent": "priya/cursor",
+        "alignment": 0.714
+      }
+    ]
+  }
+}
