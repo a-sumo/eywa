@@ -208,9 +208,6 @@ export function Landing() {
       {/* Fade to solid background */}
       <div className="landing-fade-overlay" />
 
-      {/* Visual Proof - Animated Dashboard Mockup */}
-      <DashboardMockup />
-
       {/* How it works */}
       <section className="landing-section landing-section-alt">
         <h2 className="landing-section-title">{t("solution.title")}</h2>

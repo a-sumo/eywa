@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import EywaLogo from "./EywaLogo";
@@ -14,12 +15,18 @@ export function AppHeader() {
   const { t } = useTranslation();
   const location = useLocation();
   const { createDemoFold, creating, error } = useFold();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isDocs = location.pathname.startsWith("/docs");
   const isRoom = location.pathname.startsWith("/f/");
 
   // Extract slug from /r/:slug/...
   const slug = isRoom ? location.pathname.split("/")[2] : null;
+
+  // Close mobile menu on navigation
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   // Don't show on standalone device views (eink, phone, spectacles)
   const standaloneViews = ["/eink", "/phone", "/spectacles"];
@@ -35,7 +42,7 @@ export function AppHeader() {
           <span>Eywa</span>
         </Link>
 
-        <nav className="global-header-nav">
+        <nav className="global-header-nav global-header-desktop">
           <Link to="/folds" className={location.pathname === "/folds" ? "active" : ""}>{t("nav.folds")}</Link>
           <Link to="/docs" className={isDocs ? "active" : ""}>{t("nav.docs")}</Link>
           {isRoom && slug && (
@@ -43,7 +50,7 @@ export function AppHeader() {
           )}
         </nav>
 
-        <div className="global-header-actions">
+        <div className="global-header-actions global-header-desktop">
           {!isRoom && (
             <>
               <button
@@ -70,7 +77,68 @@ export function AppHeader() {
             <GitHubIcon />
           </a>
         </div>
+
+        <button
+          className="global-header-hamburger"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            {mobileOpen ? (
+              <>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </>
+            ) : (
+              <>
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </>
+            )}
+          </svg>
+        </button>
       </div>
+
+      {mobileOpen && (
+        <div className="global-header-mobile-menu">
+          <nav className="global-header-mobile-nav">
+            <Link to="/folds" className={location.pathname === "/folds" ? "active" : ""}>{t("nav.folds")}</Link>
+            <Link to="/docs" className={isDocs ? "active" : ""}>{t("nav.docs")}</Link>
+            {isRoom && slug && (
+              <Link to={`/f/${slug}`}>/{slug}</Link>
+            )}
+          </nav>
+          {!isRoom && (
+            <div className="global-header-mobile-actions">
+              <button
+                className="btn-landing-primary btn-large btn-live"
+                onClick={() => { createDemoFold(); setMobileOpen(false); }}
+                disabled={creating}
+              >
+                <span className="live-dot" />
+                {creating ? t("creating") : t("nav.tryDemo")}
+              </button>
+              <Link to="/docs" className="global-header-cta" onClick={() => setMobileOpen(false)}>
+                {t("nav.getStarted")}
+              </Link>
+              {error && <span style={{ color: "var(--error)", fontSize: "0.75rem" }}>{error}</span>}
+            </div>
+          )}
+          <div className="global-header-mobile-bottom">
+            <LanguageSelector />
+            <a
+              href="https://github.com/a-sumo/eywa"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="global-header-github"
+              title="GitHub"
+            >
+              <GitHubIcon />
+            </a>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

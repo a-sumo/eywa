@@ -372,7 +372,7 @@ function statusColor(status: string): string {
 // --- Avatar data URI (kurzgesagt-style SVGs with hue rotation) ---
 
 const creatureCache = new Map<string, string>();
-function creatureDataUri(name: string, _color: string): string {
+function creatureDataUri(name: string): string {
   let uri = creatureCache.get(name);
   if (!uri) {
     uri = getAvatarDataUri(name);
@@ -622,7 +622,7 @@ function renderGraph(
 
   const iconSize = NODE_R * 2.6;
   bigNodes.append("image")
-    .attr("href", d => creatureDataUri(d.user, graph.tracks[d.trackIdx].color))
+    .attr("href", d => creatureDataUri(d.user))
     .attr("x", d => Math.round(graph.tracks[d.trackIdx].x - iconSize / 2))
     .attr("y", d => Math.round(rowY(d.row) - iconSize / 2))
     .attr("width", Math.round(iconSize))

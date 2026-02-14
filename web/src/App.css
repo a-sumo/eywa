@@ -183,19 +183,93 @@ body {
   border-color: rgba(139, 92, 246, 0.6);
 }
 
-@media (max-width: 600px) {
+/* Mobile hamburger button: hidden on desktop */
+.global-header-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: rgba(240, 240, 245, 0.7);
+  cursor: pointer;
+  padding: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.global-header-hamburger:hover {
+  color: rgba(240, 240, 245, 0.95);
+}
+
+@media (max-width: 768px) {
   .global-header-inner {
     padding: 0.65rem 1rem;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
-  .global-header-link {
+  .global-header-desktop {
     display: none;
   }
 
-  .global-header-cta {
-    font-size: 0.9rem;
-    padding: 0.5rem 1rem;
+  .global-header-hamburger {
+    display: flex;
+    align-items: center;
+  }
+
+  .global-header-mobile-menu {
+    padding: 0.75rem 1rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .global-header-mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .global-header-mobile-nav a {
+    display: block;
+    padding: 0.6rem 0.5rem;
+    color: rgba(240, 240, 245, 0.6);
+    text-decoration: none;
+    font-size: 1.05rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .global-header-mobile-nav a:hover,
+  .global-header-mobile-nav a.active {
+    color: rgba(240, 240, 245, 0.95);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .global-header-mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+  }
+  .global-header-mobile-actions .btn-landing-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+  .global-header-mobile-actions .global-header-cta {
+    width: 100%;
+    text-align: center;
+    display: block;
+    padding: 0.7rem 1rem;
+    font-size: 1rem;
+    text-decoration: none;
+  }
+
+  .global-header-mobile-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
 }
 
@@ -10567,6 +10641,12 @@ body {
 
 .version-info-close:hover {
   background: rgba(21, 209, 255, 0.18);
+}
+
+@media (max-width: 768px) {
+  .version-switcher {
+    display: none;
+  }
 }
 
 /* ============================================

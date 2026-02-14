@@ -31,12 +31,12 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
       if (localStorage.getItem(onboardingKey(foldId))) {
         onDismiss();
       }
-    } catch {}
+    } catch { /* ignore */ }
   }, [foldId, onDismiss]);
 
   // Wrap onDismiss to persist
   const handleDismiss = useCallback(() => {
-    try { localStorage.setItem(onboardingKey(foldId), "1"); } catch {}
+    try { localStorage.setItem(onboardingKey(foldId), "1"); } catch { /* ignore */ }
     onDismiss();
   }, [foldId, onDismiss]);
 

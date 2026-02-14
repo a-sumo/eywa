@@ -10,7 +10,6 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { useFoldContext } from "../context/FoldContext";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { NavigatorMap as NavigatorMapRenderer } from "../lib/navigator-map.js";

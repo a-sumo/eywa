@@ -67,7 +67,7 @@ export function TerminalDemo() {
     if (!isVisible) return;
 
     let cancelled = false;
-    let timeoutIds: ReturnType<typeof setTimeout>[] = [];
+    const timeoutIds: ReturnType<typeof setTimeout>[] = [];
 
     async function play() {
       let cumulativeDelay = 600; // initial pause
