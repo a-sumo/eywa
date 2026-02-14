@@ -1565,6 +1565,193 @@ async function cmdApproveResolve(idPrefix, decision, message) {
   console.log(dim("  The agent will see this on their next tool call.\n"));
 }
 
+// ── Tasks ──────────────────────────────────────────────
+
+const PRIORITY_ORDER = { urgent: 0, high: 1, normal: 2, low: 3 };
+const PRIORITY_COLORS = { urgent: red, high: yellow, normal: dim, low: dim };
+const STATUS_ICONS = {
+  open: dim("○"),
+  claimed: yellow("◐"),
+  in_progress: cyan("●"),
+  done: green("✓"),
+  blocked: red("✕"),
+};
+
+async function cmdTasks(subCmd, restArgs) {
+  const fold = await resolveFold(null);
+
+  if (subCmd === "create") {
+    const title = restArgs[0];
+    if (!title) {
+      console.error(`Usage: ${bold("eywa tasks create")} ${dim('"title" ["description"] [--high|--urgent]')}`);
+      process.exit(1);
+    }
+    const description = restArgs[1] && !restArgs[1].startsWith("--") ? restArgs[1] : null;
+    const priority = restArgs.includes("--urgent") ? "urgent" : restArgs.includes("--high") ? "high" : restArgs.includes("--low") ? "low" : "normal";
+    const agent = cliAgent();
+
+    const { data, error: insertErr } = await supabase.from("memories").insert({
+      fold_id: fold.id,
+      agent,
+      session_id: `cli_${Date.now()}`,
+      message_type: "task",
+      content: `TASK: ${title}${description ? ` - ${description}` : ""}`,
+      token_count: estimateTokens(title + (description || "")),
+      metadata: {
+        event: "task",
+        status: "open",
+        title,
+        description,
+        priority,
+        assigned_to: null,
+        parent_task: null,
+        milestone: null,
+        created_by: agent,
+        claimed_at: null,
+        completed_at: null,
+        blocked_reason: null,
+        notes: null,
+      },
+    }).select("id");
+
+    if (insertErr) {
+      console.error(red("Failed:"), insertErr.message);
+      process.exit(1);
+    }
+    const taskId = data?.[0]?.id?.slice(0, 8) || "?";
+    console.log(`\n  ${green("✓")} Task created: ${bold(title)}`);
+    console.log(`  ${dim(`ID: ${taskId}  Priority: ${priority}`)}\n`);
+    return;
+  }
+
+  if (subCmd === "done" || subCmd === "close") {
+    const taskId = restArgs[0];
+    if (!taskId) {
+      console.error(`Usage: ${bold("eywa tasks done <id>")} ${dim('["notes"]')}`);
+      process.exit(1);
+    }
+    const notes = restArgs.slice(1).join(" ") || null;
+    const { data: rows } = await supabase
+      .from("memories")
+      .select("id,metadata")
+      .eq("fold_id", fold.id)
+      .eq("message_type", "task")
+      .ilike("id", `${taskId}%`)
+      .limit(1);
+
+    if (!rows?.length) {
+      console.error(red(`No task matching ID: ${taskId}`));
+      process.exit(1);
+    }
+    const row = rows[0];
+    const meta = { ...(row.metadata ?? {}), status: "done", completed_at: new Date().toISOString() };
+    if (notes) meta.notes = notes;
+
+    const { error: upErr } = await supabase
+      .from("memories")
+      .update({ metadata: meta })
+      .eq("id", row.id);
+
+    if (upErr) {
+      console.error(red("Failed:"), upErr.message);
+      process.exit(1);
+    }
+    console.log(`\n  ${green("✓")} Task marked done: ${bold(meta.title || taskId)}\n`);
+    return;
+  }
+
+  // Default: list tasks
+  const { data: rows, error: fetchErr } = await supabase
+    .from("memories")
+    .select("id,agent,content,metadata,ts")
+    .eq("fold_id", fold.id)
+    .eq("message_type", "task")
+    .order("ts", { ascending: false })
+    .limit(100);
+
+  if (fetchErr) {
+    console.error(red("Query failed:"), fetchErr.message);
+    process.exit(1);
+  }
+
+  if (!rows?.length) {
+    console.log(dim("\n  No tasks in this fold.\n"));
+    return;
+  }
+
+  // Filter and group
+  const showDone = subCmd === "--all" || restArgs.includes("--all");
+  const tasks = rows
+    .map(r => ({ id: r.id, ...r.metadata, ts: r.ts }))
+    .filter(t => showDone || (t.status !== "done"));
+
+  tasks.sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 2) - (PRIORITY_ORDER[b.priority] ?? 2));
+
+  if (!tasks.length) {
+    console.log(dim("\n  No open tasks. Use --all to include completed.\n"));
+    return;
+  }
+
+  console.log(`\n  ${bold("Tasks")} ${dim("/" + fold.slug)} (${tasks.length})\n`);
+
+  for (const t of tasks) {
+    const icon = STATUS_ICONS[t.status] || dim("?");
+    const colorFn = PRIORITY_COLORS[t.priority] || dim;
+    const priTag = t.priority !== "normal" ? ` ${colorFn(`[${(t.priority || "").toUpperCase()}]`)}` : "";
+    const assignee = t.assigned_to ? dim(` -> ${t.assigned_to}`) : "";
+    console.log(`  ${icon} ${bold(t.title || "Untitled")}${priTag}${assignee}  ${dim(t.id?.slice(0, 8))}`);
+    if (t.description) console.log(`    ${dim(t.description.slice(0, 100))}`);
+    if (t.blocked_reason) console.log(`    ${red("blocked:")} ${t.blocked_reason}`);
+    if (t.status === "done" && t.notes) console.log(`    ${dim("notes:")} ${t.notes.slice(0, 100)}`);
+  }
+  console.log();
+}
+
+// ── Inbox ──────────────────────────────────────────────
+
+async function cmdInbox(slugArg) {
+  const fold = await resolveFold(slugArg);
+  const agent = cliAgent();
+  const user = userName();
+
+  // Fetch injections targeting this user, the CLI agent, or "all"
+  const targets = [agent, user, "all"];
+  const { data: rows, error: fetchErr } = await supabase
+    .from("memories")
+    .select("id,agent,content,metadata,ts")
+    .eq("fold_id", fold.id)
+    .eq("message_type", "injection")
+    .in("metadata->>target_agent", targets)
+    .order("ts", { ascending: false })
+    .limit(30);
+
+  if (fetchErr) {
+    console.error(red("Query failed:"), fetchErr.message);
+    process.exit(1);
+  }
+
+  if (!rows?.length) {
+    console.log(dim("\n  No pending injections.\n"));
+    return;
+  }
+
+  console.log(`\n  ${bold("Inbox")} ${dim("/" + fold.slug)} (${rows.length} messages)\n`);
+
+  for (const r of rows) {
+    const meta = r.metadata ?? {};
+    const from = meta.from_agent || r.agent || "unknown";
+    const label = meta.label ? ` ${cyan(`(${meta.label})`)}` : "";
+    const priority = meta.priority === "high" || meta.priority === "urgent"
+      ? ` ${red("!")}`
+      : "";
+    const target = meta.target_agent === "all" ? dim(" @all") : "";
+
+    console.log(`  ${yellow("▸")} ${bold(from)}${label}${priority}${target}  ${dim(timeAgo(r.ts))}`);
+    console.log(`    ${r.content?.slice(0, 200) || dim("(empty)")}`);
+    console.log();
+  }
+}
+
 // ── CLI Router ─────────────────────────────────────────
 
 const args = process.argv.slice(2);
@@ -1588,7 +1775,11 @@ ${bold("  Observe:")}
     course [fold]                         Destination progress, agents, distress
     claims [fold]                         Active work claims (who's working on what)
     metrics [fold]                        Team curvature, throughput, success rate
+    tasks [--all]                         List open tasks (--all includes done)
+    tasks create "title" ["desc"]         Create a task
+    tasks done <id> ["notes"]             Mark a task complete
     seeds [fold]                          Seed health: active, stalled, success rate
+    inbox [fold]                          View pending context injections
     approve [fold]                        List pending approval requests
     approve yes <id> ["msg"]              Approve a request
     approve no <id> ["reason"]            Deny a request
@@ -1619,6 +1810,9 @@ ${bold("  Examples:")}
     ${dim("$")} npx eywa-ai inject all "deploy freeze until 3pm"       ${dim("# push context")}
     ${dim("$")} npx eywa-ai learn "API uses JWT" "Auth" "api,auth"     ${dim("# store knowledge")}
     ${dim("$")} npx eywa-ai knowledge auth                             ${dim("# search knowledge")}
+    ${dim("$")} npx eywa-ai tasks                                       ${dim("# list open tasks")}
+    ${dim("$")} npx eywa-ai tasks create "Fix auth bug" "JWT expired"   ${dim("# create a task")}
+    ${dim("$")} npx eywa-ai inbox                                       ${dim("# check pending injections")}
 
   ${dim("Docs: https://eywa-ai.dev/docs")}
 `);
@@ -1698,6 +1892,15 @@ ${bold("  Examples:")}
         }
         break;
       }
+
+      case "tasks":
+      case "task":
+        await cmdTasks(args[1], args.slice(2));
+        break;
+
+      case "inbox":
+        await cmdInbox(args[1]);
+        break;
 
       case "knowledge":
       case "kb":

@@ -4,6 +4,7 @@ All notable features and changes. One line per feature. Agents append here after
 
 ## 2026-02-14
 
+- VS Code task tree: wired TaskTreeProvider into sidebar as "Tasks" view with status groups, priority sorting, refresh command, and realtime updates
 - Task dedup: eywa_task now rejects new tasks with fuzzy title matching (50%+ word overlap), not just exact matches
 - eywa_available: pre-flight tool that cross-references open tasks against active claims, showing which tasks are uncontested vs contested
 - Spectacles drag interaction: pinch-and-drag panning on navigator map tile, cursor rendering on broadcast canvas, double-decode fix for base64 textures
