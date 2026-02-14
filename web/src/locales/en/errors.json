@@ -8,6 +8,6 @@
   "notFound.hint": "The page might have moved, or the URL could be wrong.",
   "network": "Network error. Please check your connection.",
   "generic": "An error occurred. Please try again.",
-  "foldNotFound": "Fold not found",
+  "foldNotFound": "Room not found",
   "loadFailed": "Failed to load data"
 }

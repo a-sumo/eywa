@@ -8,6 +8,6 @@
   "notFound.hint": "该页面可能已移动，或者网址有误。",
   "network": "网络错误，请检查您的网络连接。",
   "generic": "发生错误，请重试。",
-  "foldNotFound": "未找到该折叠空间",
+  "foldNotFound": "未找到该房间",
   "loadFailed": "数据加载失败"
 }

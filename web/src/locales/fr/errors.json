@@ -8,6 +8,6 @@
   "notFound.hint": "La page a peut-être été déplacée, ou l'URL est incorrecte.",
   "network": "Erreur réseau. Veuillez vérifier votre connexion.",
   "generic": "Une erreur est survenue. Veuillez réessayer.",
-  "foldNotFound": "Fold introuvable",
+  "foldNotFound": "Salle introuvable",
   "loadFailed": "Échec du chargement des données"
 }
