@@ -80,7 +80,7 @@ export function ValueProps() {
         fontSize: "0.95rem",
         lineHeight: 1.6,
       }}>
-        A 4-person team, each running AI coding agents. Here's where the compute goes.
+        This is what a week looks like for a 4-person team running AI coding agents, and where all the compute actually goes.
       </p>
 
       <div className="landing-roi-dashboard">
@@ -97,7 +97,7 @@ export function ValueProps() {
               </div>
               <div className="landing-roi-metric-label">duplicate agent runs</div>
               <div className="landing-roi-metric-detail">
-                Two agents building the same auth middleware, neither knows
+                Two agents building the same auth middleware without knowing about each other
               </div>
             </div>
             <div className="landing-roi-metric">
@@ -156,7 +156,7 @@ export function ValueProps() {
               </div>
               <div className="landing-roi-metric-label">duplicate runs</div>
               <div className="landing-roi-metric-detail">
-                Agents claim work before starting. Others see the claim and pick something else.
+                Agents claim work before starting, so others see the claim and pick something else
               </div>
             </div>
             <div className="landing-roi-metric">
@@ -165,7 +165,7 @@ export function ValueProps() {
               </div>
               <div className="landing-roi-metric-label">to detect conflicts</div>
               <div className="landing-roi-metric-detail">
-                Live agent map shows overlapping work in real time, not after the PR is up
+                The live agent map shows overlapping work while it's happening instead of after the PR is already up
               </div>
             </div>
             <div className="landing-roi-metric">
@@ -174,7 +174,7 @@ export function ValueProps() {
               </div>
               <div className="landing-roi-metric-label">conflicts caught pre-commit</div>
               <div className="landing-roi-metric-detail">
-                Context injection lets you course-correct agents before they ship
+                You can push corrections into agents before they ship
               </div>
             </div>
             <div className="landing-roi-metric">
@@ -183,7 +183,7 @@ export function ValueProps() {
               </div>
               <div className="landing-roi-metric-label">context preserved</div>
               <div className="landing-roi-metric-detail">
-                Checkpoints, baton passing, and distress signals mean no work is lost
+                Agents save their progress and hand off to fresh sessions, so no work gets lost
               </div>
             </div>
           </div>
@@ -203,10 +203,10 @@ export function ValueProps() {
             $<AnimatedCounter end={MONTHLY_SAVINGS} duration={2800} />
           </div>
           <div className="landing-roi-savings-label">
-            saved per month in wasted agent compute
+            saved per month on agent compute that would otherwise be wasted
           </div>
           <div className="landing-roi-savings-detail">
-            Based on $30/hr blended compute across a 4-person team.
+            Based on $30/hr average agent compute cost for a 4-person team.
           </div>
         </div>
       </div>
