@@ -70,6 +70,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+// ── Error handling ──────────────────────────────────────────────
+
+client.on(Events.Error, (error) => {
+  console.error("[discord.js]", error);
+});
+
+client.on(Events.Warn, (message) => {
+  console.warn("[discord.js]", message);
+});
+
+process.on("unhandledRejection", (error) => {
+  console.error("[unhandledRejection]", error);
+});
+
 // ── Start ───────────────────────────────────────────────────────
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(process.env.DISCORD_TOKEN).catch((error) => {
+  console.error("Failed to login:", error.message);
+  process.exit(1);
+});
