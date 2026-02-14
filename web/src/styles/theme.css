@@ -164,6 +164,39 @@
   --glow-blue: 0 0 20px var(--aurora-blue-glow), 0 0 40px var(--aurora-blue-glow);
 
   /* ==========================================
+     M3 DARK TONAL PALETTE
+     Material 3 inspired surface/text/accent
+     tokens for the fold product UI
+     ========================================== */
+  --m3-surface: #111318;
+  --m3-surface-dim: #111318;
+  --m3-surface-container-lowest: #0C0E13;
+  --m3-surface-container-low: #191C23;
+  --m3-surface-container: #1D2028;
+  --m3-surface-container-high: #272A32;
+  --m3-surface-container-highest: #32353D;
+  --m3-surface-bright: #37393E;
+
+  --m3-on-surface: #E2E2E9;
+  --m3-on-surface-variant: #C4C6D0;
+
+  --m3-outline: #8E9099;
+  --m3-outline-variant: #44474E;
+
+  --m3-primary: #AAC7FF;
+  --m3-primary-container: #2B4678;
+  --m3-on-primary-container: #D6E3FF;
+
+  --m3-error: #FFB4AB;
+  --m3-error-container: #93000A;
+
+  --m3-tertiary: #DDBCE0;
+  --m3-tertiary-container: #5D3D60;
+
+  --m3-status-green: #81C995;
+  --m3-status-gold: #E8C56A;
+
+  /* ==========================================
      SPACING SCALE
      Consistent spacing rhythm
      ========================================== */

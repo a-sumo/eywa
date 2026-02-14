@@ -308,6 +308,78 @@ body {
   display: flex;
   flex: 1;
   overflow: hidden;
+
+  /* M3 tonal overrides: remap aurora vars to clean palette */
+  --bg-base: var(--m3-surface);
+  --bg-elevated: var(--m3-surface-container-low);
+  --bg-surface: var(--m3-surface-container);
+  --bg-surface-hover: var(--m3-surface-container-high);
+  --bg-surface-active: var(--m3-surface-container-highest);
+  --bg-card: var(--m3-surface-container);
+  --bg-card-solid: var(--m3-surface-container);
+
+  --text-primary: var(--m3-on-surface);
+  --text-secondary: var(--m3-on-surface-variant);
+  --text-tertiary: rgba(194, 198, 208, 0.6);
+  --text-muted: rgba(194, 198, 208, 0.4);
+
+  --border-subtle: var(--m3-outline-variant);
+  --border-default: var(--m3-outline-variant);
+  --border-strong: var(--m3-outline);
+  --border-focus: var(--m3-primary);
+
+  --color-fill: var(--m3-surface);
+  --color-card: var(--m3-surface-container);
+  --color-card-muted: var(--m3-surface-container-high);
+  --color-border: var(--m3-outline-variant);
+  --color-text: var(--m3-on-surface);
+  --color-text-secondary: var(--m3-on-surface-variant);
+  --color-text-muted: rgba(194, 198, 208, 0.4);
+  --color-accent: var(--m3-primary);
+  --color-accent-secondary: var(--m3-tertiary);
+
+  --success: var(--m3-status-green);
+  --warning: var(--m3-status-gold);
+  --error: var(--m3-error);
+  --info: var(--m3-primary);
+
+  --status-active: var(--m3-status-green);
+  --status-working: var(--m3-primary);
+  --status-idle: var(--m3-on-surface-variant);
+  --status-offline: rgba(194, 198, 208, 0.3);
+
+  /* Kill glows inside product views */
+  --glow-cyan: none;
+  --glow-purple: none;
+  --glow-pink: none;
+  --glow-blue: none;
+  --aurora-cyan-glow: rgba(170, 199, 255, 0.08);
+  --aurora-purple-glow: rgba(221, 188, 224, 0.08);
+  --aurora-pink-glow: rgba(221, 188, 224, 0.08);
+  --aurora-blue-glow: rgba(170, 199, 255, 0.08);
+  --aurora-green-glow: rgba(129, 201, 149, 0.08);
+
+  /* Mute aurora accents to M3 tones */
+  --aurora-cyan: var(--m3-primary);
+  --aurora-blue: var(--m3-primary);
+  --aurora-purple: var(--m3-tertiary);
+  --aurora-pink: var(--m3-tertiary);
+  --aurora-green: var(--m3-status-green);
+  --aurora-cyan-dim: var(--m3-primary-container);
+  --aurora-blue-dim: var(--m3-primary-container);
+  --aurora-purple-dim: var(--m3-tertiary-container);
+  --aurora-pink-dim: var(--m3-tertiary-container);
+
+  /* Flatten shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  /* Flatten gradients */
+  --gradient-aurora: none;
+  --gradient-aurora-reverse: none;
+  --gradient-aurora-vertical: none;
+  --gradient-surface: none;
 }
 
 .sidebar {
@@ -4190,9 +4262,8 @@ body {
 }
 
 .agent-card:hover {
-  border-color: var(--aurora-purple);
+  border-color: var(--border-strong);
   background: var(--bg-surface-hover);
-  box-shadow: 0 0 20px var(--aurora-purple-glow);
 }
 
 .agent-card-header {
@@ -4300,13 +4371,12 @@ body {
 }
 
 .memory-card:hover {
-  border-color: var(--aurora-cyan-dim);
+  border-color: var(--border-strong);
   background: var(--bg-surface-hover);
-  box-shadow: 0 0 20px var(--aurora-cyan-glow);
 }
 
 .memory-card-expanded {
-  border-color: var(--aurora-cyan);
+  border-color: var(--border-strong);
   background: var(--bg-surface-active);
 }
 
