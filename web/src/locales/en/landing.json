@@ -1,7 +1,7 @@
 {
-  "hero.title": "See what every agent on your team is building.",
-  "hero.titleGradient": "Steer from one place.",
-  "hero.subtitle": "Eywa connects your team's AI coding agents into one live view so you can watch their work, inject context when they drift, and keep everyone converging on the same goal.",
+  "hero.title": "Coordinate your AI agents.",
+  "hero.titleGradient": "Shared memory across the team.",
+  "hero.subtitle": "Eywa connects your team's AI coding agents through one MCP server so they see each other's work, avoid conflicts, and build toward the same goal.",
   "hero.tryDemo": "Try the Demo",
   "hero.createFold": "Create Your Fold",
   "stats.openSource": "Open Source",
