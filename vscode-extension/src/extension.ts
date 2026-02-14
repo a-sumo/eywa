@@ -153,11 +153,13 @@ export function activate(context: vscode.ExtensionContext) {
   // Commands
   context.subscriptions.push(
     vscode.commands.registerCommand("eywa.refreshAgents", () => {
-      decorationManager.seed();
-      sessionTree.seed();
-      panelView.seed();
-      liveProvider.loadInitial();
-      approvalTree.seed();
+      const onErr = (name: string) => (err: unknown) =>
+        console.error(`[eywa] ${name} refresh failed:`, err);
+      decorationManager.seed().catch(onErr("decorationManager"));
+      sessionTree.seed().catch(onErr("sessionTree"));
+      panelView.seed().catch(onErr("panelView"));
+      liveProvider.loadInitial().catch(onErr("liveProvider"));
+      approvalTree.seed().catch(onErr("approvalTree"));
     }),
 
     vscode.commands.registerCommand("eywa.openDashboard", () => {
@@ -398,10 +400,12 @@ function initClient(
   if (url && key && fold) {
     client = new EywaClient(url, key, fold);
     updateStatusBar();
-    decorationManager.seed();
-    sessionTree.seed();
-    panelView.seed();
-    approvalTree.seed();
+    const logSeedError = (name: string) => (err: unknown) =>
+      console.error(`[eywa] ${name}.seed() failed:`, err);
+    decorationManager.seed().catch(logSeedError("decorationManager"));
+    sessionTree.seed().catch(logSeedError("sessionTree"));
+    panelView.seed().catch(logSeedError("panelView"));
+    approvalTree.seed().catch(logSeedError("approvalTree"));
 
     realtime = new RealtimeManager();
     const unsub = realtime.on(onEvent);
@@ -411,7 +415,7 @@ function initClient(
       if (foldId && realtime && client) {
         realtime.subscribe(client.getSupabase(), foldId);
       }
-    });
+    }).catch((err) => console.error("[eywa] resolveFoldId failed:", err));
   } else {
     client = undefined;
     realtime = undefined;

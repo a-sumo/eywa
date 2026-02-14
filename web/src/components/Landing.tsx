@@ -277,7 +277,6 @@ export function Landing() {
             </div>
           </div>
         </div>
-        <TerminalDemo />
       </section>
 
       {/* Visual Proof - Animated Dashboard Mockup */}
