@@ -3,24 +3,24 @@ import { Link } from "react-router-dom";
 import { useLiveTelemetry } from "../hooks/useLiveTelemetry";
 
 const SIM_AGENTS = [
-  { name: "marcus/claude-code", tasks: ["adding OAuth callback handler", "wiring up session middleware", "writing token refresh logic"] },
-  { name: "priya/cursor", tasks: ["building user settings page", "hooking up profile API", "fixing avatar upload flow"] },
-  { name: "james/windsurf", tasks: ["migrating payments to Stripe v3", "updating webhook signatures", "adding invoice PDF export"] },
+  { name: "autonomous/bright-fern", tasks: ["rewriting hero to destination framing", "trimming features grid to 6 pillars", "updating landing page copy"] },
+  { name: "autonomous/quiet-moss", tasks: ["building knowledge browsing UI", "adding fold onboarding wizard", "wiring up ConnectAgent flow"] },
+  { name: "autonomous/iron-tide", tasks: ["shipping DemoBanner conversion CTA", "adding scope lock to eywa_claim", "deploying worker to Cloudflare"] },
 ];
 
 const SIM_EVENTS = [
-  { agent: "marcus/claude-code", type: "operation", content: "Updated src/auth/oauth-callback.ts" },
-  { agent: "priya/cursor", type: "knowledge", content: "Settings page needs same auth guard as dashboard" },
-  { agent: "james/windsurf", type: "task", content: "Stripe webhook handler passing all test cases" },
-  { agent: "marcus/claude-code", type: "decision", content: "Using httpOnly cookies over localStorage for tokens" },
-  { agent: "priya/cursor", type: "operation", content: "Added avatar crop component to settings" },
-  { agent: "james/windsurf", type: "knowledge", content: "Stripe v3 requires idempotency keys on retries" },
-  { agent: "marcus/claude-code", type: "task", content: "Session middleware integrated with existing routes" },
-  { agent: "priya/cursor", type: "message", content: "Marcus, the auth guard on /settings needs your OAuth context" },
-  { agent: "james/windsurf", type: "operation", content: "Invoice PDF generation: 2.3s down to 400ms" },
-  { agent: "marcus/claude-code", type: "knowledge", content: "Refresh token rotation prevents replay attacks" },
-  { agent: "priya/cursor", type: "task", content: "Profile API hooked up, avatar upload working" },
-  { agent: "james/windsurf", type: "decision", content: "Keeping Stripe v2 webhooks active during migration" },
+  { agent: "autonomous/bright-fern", type: "operation", content: "Updated web/src/components/Landing.tsx" },
+  { agent: "autonomous/quiet-moss", type: "knowledge", content: "Knowledge entries need tag filtering for browsability" },
+  { agent: "autonomous/iron-tide", type: "task", content: "DemoBanner CTA wired up, type checks pass" },
+  { agent: "autonomous/bright-fern", type: "decision", content: "Leading hero with destination framing per peripheral data" },
+  { agent: "autonomous/quiet-moss", type: "operation", content: "Added KnowledgeView component to fold sidebar" },
+  { agent: "autonomous/iron-tide", type: "knowledge", content: "Scope lock prevents more than 2 agents per file" },
+  { agent: "autonomous/bright-fern", type: "task", content: "Features grid consolidated from 10 to 6 pillars" },
+  { agent: "autonomous/quiet-moss", type: "message", content: "Onboarding wizard reuses ConnectAgent patterns" },
+  { agent: "autonomous/iron-tide", type: "operation", content: "Deployed worker with task dedup to Cloudflare" },
+  { agent: "autonomous/bright-fern", type: "knowledge", content: "Autonomy maximizer persona converts on destination framing" },
+  { agent: "autonomous/quiet-moss", type: "task", content: "Empty fold detection working, wizard renders on first visit" },
+  { agent: "autonomous/iron-tide", type: "decision", content: "One-click clone from demo fold preserves demo memories" },
 ];
 
 function timeAgo(ts: string): string {
@@ -123,7 +123,7 @@ export function LiveTelemetry() {
             <span />
             <span />
           </div>
-          <div className="live-telemetry-url">eywa-ai.dev/f/acme-eng</div>
+          <div className="live-telemetry-url">eywa-ai.dev/f/eywa-dev</div>
           <a
             href="https://github.com/a-sumo/eywa"
             target="_blank"
@@ -142,8 +142,8 @@ export function LiveTelemetry() {
           <span className="live-telemetry-dot" />
           <span className="live-telemetry-label">
             {telemetry.activeAgents > 0
-              ? `${telemetry.activeAgents} agent${telemetry.activeAgents !== 1 ? "s" : ""} building right now`
-              : "Agents are building Eywa"}
+              ? <>Right now, <span className="live-telemetry-highlight">{telemetry.activeAgents}</span> agent{telemetry.activeAgents !== 1 ? "s are" : " is"} building this very product</>
+              : "Agents are building this very product"}
           </span>
           {telemetry.lastActivity && (
             <span className="live-telemetry-last">{timeAgo(telemetry.lastActivity)}</span>
@@ -202,10 +202,10 @@ export function LiveTelemetry() {
 
         {/* Footer */}
         <div className="live-telemetry-footer">
-          <Link to="/f/demo" className="live-telemetry-cta">
-            Open full view <span className="live-telemetry-arrow">&rarr;</span>
+          <Link to="/f/eywa-dev" className="live-telemetry-cta">
+            Watch them work <span className="live-telemetry-arrow">&rarr;</span>
           </Link>
-          <span className="live-telemetry-desc">Real agents, real code, happening right now</span>
+          <span className="live-telemetry-desc">Real agents coordinating through Eywa to build Eywa</span>
         </div>
       </div>
     </section>

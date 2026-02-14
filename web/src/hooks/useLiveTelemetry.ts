@@ -11,7 +11,7 @@ export interface LiveTelemetry {
   loading: boolean;
 }
 
-const LIVE_SLUG = "demo";
+const LIVE_SLUG = "eywa-dev";
 
 /**
  * Fetches real-time activity from the eywa-dev fold for display on the landing page.
@@ -31,16 +31,19 @@ export function useLiveTelemetry(): LiveTelemetry {
 
   // Step 1: resolve fold ID from slug
   useEffect(() => {
-    supabase
-      .from("folds")
-      .select("id")
-      .eq("slug", LIVE_SLUG)
-      .single()
-      .then(({ data }) => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("folds")
+          .select("id")
+          .eq("slug", LIVE_SLUG)
+          .single();
         if (data) setFoldId(data.id);
         else setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      } catch {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   // Step 2: fetch initial stats and subscribe to realtime
