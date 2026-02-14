@@ -1545,6 +1545,7 @@ export function ThreadTree() {
         <OnboardingOverlay
           slug={slug || ""}
           foldId={fold?.id || ""}
+          secret={fold?.secret}
           onDismiss={() => setDismissedOnboarding(true)}
         />
       </div>

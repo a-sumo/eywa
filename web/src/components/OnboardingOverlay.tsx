@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ConnectAgent } from "./ConnectAgent";
 import { supabase } from "../lib/supabase";
@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 interface OnboardingOverlayProps {
   slug: string;
   foldId: string;
+  secret?: string;
   onDismiss: () => void;
 }
 
@@ -17,13 +18,15 @@ function onboardingKey(foldId: string) {
  * Three-step onboarding wizard for empty rooms.
  * Step 1: Connect an AI agent
  * Step 2: Set a destination (what are you working toward?)
- * Step 3: Waiting for first session to appear
+ * Step 3: Waiting for first session to appear (with realtime detection)
  *
  * Persists dismissal to localStorage so users don't see it again on refresh.
  */
-export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlayProps) {
+export function OnboardingOverlay({ slug, foldId, secret, onDismiss }: OnboardingOverlayProps) {
   const { t } = useTranslation("fold");
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [agentConnected, setAgentConnected] = useState<string | null>(null);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Auto-dismiss if already dismissed for this fold
   useEffect(() => {
@@ -39,6 +42,35 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
     try { localStorage.setItem(onboardingKey(foldId), "1"); } catch { /* ignore */ }
     onDismiss();
   }, [foldId, onDismiss]);
+
+  // Realtime: detect when first agent connects (step 3)
+  useEffect(() => {
+    if (step !== 3 || !foldId || agentConnected) return;
+
+    const channel = supabase
+      .channel(`onboarding-detect-${foldId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "memories", filter: `fold_id=eq.${foldId}` },
+        (payload) => {
+          const row = payload.new as { agent?: string; message_type?: string };
+          // Ignore memories created by the web UI itself
+          if (row.agent && row.agent !== "web-user") {
+            setAgentConnected(row.agent);
+            // Auto-dismiss after 3 seconds so user sees the success state
+            dismissTimerRef.current = setTimeout(() => {
+              handleDismiss();
+            }, 3000);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    };
+  }, [step, foldId, agentConnected, handleDismiss]);
 
   // Destination state
   const [dest, setDest] = useState("");
@@ -97,11 +129,11 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
           <div
             key={s}
             className={`onboarding-step-indicator ${
-              s === step ? "onboarding-step-current" : s < step ? "onboarding-step-done" : ""
+              s === step ? (agentConnected ? "onboarding-step-done" : "onboarding-step-current") : s < step ? "onboarding-step-done" : ""
             }`}
           >
             <div className="onboarding-step-dot">
-              {s < step ? (
+              {(s < step || (s === 3 && agentConnected)) ? (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
@@ -126,7 +158,7 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
                 {t("onboarding.step1.description")}
               </p>
             </div>
-            <ConnectAgent slug={slug} />
+            <ConnectAgent slug={slug} secret={secret} />
             <div className="onboarding-actions">
               <button
                 className="onboarding-btn-primary"
@@ -200,18 +232,36 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
 
         {step === 3 && (
           <div className="onboarding-step-content onboarding-step-waiting">
-            <div className="onboarding-waiting-icon">
-              <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
-                <circle cx="16" cy="16" r="12" stroke="var(--aurora-cyan)" strokeWidth="1.5" strokeDasharray="6 4" className="onboarding-waiting-ring" />
-                <circle cx="16" cy="16" r="4" fill="var(--aurora-cyan)" opacity="0.3" className="onboarding-waiting-core" />
-                <circle cx="16" cy="16" r="2" fill="var(--aurora-cyan)" className="onboarding-waiting-dot" />
-              </svg>
-            </div>
-            <h3>Waiting for your first agent session</h3>
-            <p>
-              Once your agent calls <code>eywa_start</code>, its session will appear here in real time.
-              You'll see every operation, decision, and file change as it happens.
-            </p>
+            {agentConnected ? (
+              <>
+                <div className="onboarding-waiting-icon onboarding-connected-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--aurora-green, #4ade80)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                </div>
+                <h3>Agent connected</h3>
+                <p>
+                  <strong>{agentConnected}</strong> just started a session.
+                  Heading to the Hub now.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="onboarding-waiting-icon">
+                  <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="12" stroke="var(--aurora-cyan)" strokeWidth="1.5" strokeDasharray="6 4" className="onboarding-waiting-ring" />
+                    <circle cx="16" cy="16" r="4" fill="var(--aurora-cyan)" opacity="0.3" className="onboarding-waiting-core" />
+                    <circle cx="16" cy="16" r="2" fill="var(--aurora-cyan)" className="onboarding-waiting-dot" />
+                  </svg>
+                </div>
+                <h3>Waiting for your first agent session</h3>
+                <p>
+                  Once your agent calls <code>eywa_start</code>, its session will appear here in real time.
+                  You'll see every operation, decision, and file change as it happens.
+                </p>
+              </>
+            )}
             <div className="onboarding-checklist">
               <div className="onboarding-check-item onboarding-check-done">
                 <span className="onboarding-check-icon">
@@ -221,7 +271,7 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
                 </span>
                 Fold created
               </div>
-              <div className={`onboarding-check-item ${step >= 2 ? "onboarding-check-done" : ""}`}>
+              <div className="onboarding-check-item onboarding-check-done">
                 <span className="onboarding-check-icon">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
@@ -229,9 +279,15 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
                 </span>
                 MCP server configured
               </div>
-              <div className="onboarding-check-item onboarding-check-waiting">
-                <span className="onboarding-check-icon onboarding-check-pending" />
-                First agent session
+              <div className={`onboarding-check-item ${agentConnected ? "onboarding-check-done" : "onboarding-check-waiting"}`}>
+                <span className={agentConnected ? "onboarding-check-icon" : "onboarding-check-icon onboarding-check-pending"}>
+                  {agentConnected && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </span>
+                First agent session {agentConnected && <span style={{ opacity: 0.6 }}>({agentConnected})</span>}
               </div>
             </div>
             <div className="onboarding-actions">
@@ -241,12 +297,14 @@ export function OnboardingOverlay({ slug, foldId, onDismiss }: OnboardingOverlay
               >
                 Go to Hub
               </button>
-              <button
-                className="onboarding-btn-back"
-                onClick={() => setStep(2)}
-              >
-                Back
-              </button>
+              {!agentConnected && (
+                <button
+                  className="onboarding-btn-back"
+                  onClick={() => setStep(2)}
+                >
+                  Back
+                </button>
+              )}
             </div>
           </div>
         )}

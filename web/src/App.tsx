@@ -5,7 +5,6 @@ import { FoldProvider } from "./context/FoldContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppHeader } from "./components/AppHeader";
 import { Landing } from "./components/Landing";
-import { VersionSwitcher } from "./components/VersionSwitcher";
 import { NotFound } from "./components/NotFound";
 import "./App.css";
 
@@ -56,7 +55,6 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <ScrollToTop />
-        <VersionSwitcher />
         <AppHeader />
         <Suspense fallback={<RouteLoader />}>
           <Routes>

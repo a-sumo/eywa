@@ -48,7 +48,7 @@ export function FoldHeader() {
       </div>
       {showConnect && (
         <div className="connect-agent-dropdown">
-          <ConnectAgent slug={fold.slug} inline />
+          <ConnectAgent slug={fold.slug} secret={fold.secret} inline />
         </div>
       )}
       {showShare && (

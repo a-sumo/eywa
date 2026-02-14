@@ -15,6 +15,7 @@ import { PanelViewProvider } from "./panelView";
 import { startLoginFlow } from "./authServer";
 import { LiveViewProvider } from "./liveView";
 import { ApprovalTreeProvider } from "./approvalTree";
+import { TaskTreeProvider } from "./taskTree";
 import type { AttentionItem } from "./client";
 
 const TAB_TITLE_FLAG = path.join(os.homedir(), ".config", "eywa", "tab-title");
@@ -41,6 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
   const panelView = new PanelViewProvider(() => client);
   const liveProvider = new LiveViewProvider(() => client, getConfig("fold"));
   const approvalTree = new ApprovalTreeProvider(() => client);
+  const taskTree = new TaskTreeProvider(() => client);
 
   // Track attention items for badge and notifications
   let knownAttentionAgents = new Set<string>();
@@ -115,6 +117,7 @@ export function activate(context: vscode.ExtensionContext) {
     panelView.handleEvent(mem);
     liveProvider.handleEvent(mem);
     approvalTree.handleEvent(mem);
+    taskTree.handleEvent(mem);
     updateStatusBar();
   }
 

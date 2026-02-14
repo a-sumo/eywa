@@ -5,12 +5,16 @@ const WORKER_URL = "https://mcp.eywa-ai.dev/mcp";
 
 type Client = "claude" | "cursor" | "gemini" | "cline" | "windsurf" | "codex";
 
-function mcpUrl(slug: string, agent: string): string {
-  return `${WORKER_URL}?room=${encodeURIComponent(slug)}&agent=${encodeURIComponent(agent)}`;
+function mcpUrl(slug: string, agent: string, secret?: string): string {
+  let url = `${WORKER_URL}?room=${encodeURIComponent(slug)}&agent=${encodeURIComponent(agent)}`;
+  if (secret && secret !== "public") {
+    url += `&secret=${encodeURIComponent(secret)}`;
+  }
+  return url;
 }
 
-function getConfig(client: Client, slug: string, agent: string): string {
-  const url = mcpUrl(slug, agent);
+function getConfig(client: Client, slug: string, agent: string, secret?: string): string {
+  const url = mcpUrl(slug, agent, secret);
 
   switch (client) {
     case "claude":
@@ -162,10 +166,11 @@ const QUICK_START_PROMPT = `Start logging to Eywa. Call eywa_start with a descri
 
 interface ConnectAgentProps {
   slug: string;
+  secret?: string;
   inline?: boolean;
 }
 
-export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
+export function ConnectAgent({ slug, secret, inline }: ConnectAgentProps) {
   const { t } = useTranslation("fold");
   const [agent, setAgent] = useState("alpha");
   const [client, setClient] = useState<Client>("claude");
@@ -174,7 +179,7 @@ export function ConnectAgent({ slug, inline }: ConnectAgentProps) {
   const [copiedScript, setCopiedScript] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
 
-  const config = getConfig(client, slug, agent);
+  const config = getConfig(client, slug, agent, secret);
   const configPath = getConfigPath(client);
   const steps = getSetupSteps(client);
 
