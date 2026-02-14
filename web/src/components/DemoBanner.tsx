@@ -1,19 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useFoldContext } from "../context/FoldContext";
-import { supabase } from "../lib/supabase";
+import { useFold } from "../hooks/useFold";
 
 export function DemoBanner() {
   const { t } = useTranslation("fold");
   const { t: tc } = useTranslation("common");
   const { fold, isDemo } = useFoldContext();
-  const navigate = useNavigate();
+  const { createFold, creating } = useFold();
   const [dismissed, setDismissed] = useState(() => {
     if (!fold) return false;
     return localStorage.getItem(`demo-banner-dismissed-${fold.id}`) === "1";
   });
-  const [creating, setCreating] = useState(false);
 
   if (!isDemo || dismissed || !fold) return null;
 
@@ -22,29 +20,6 @@ export function DemoBanner() {
       localStorage.setItem(`demo-banner-dismissed-${fold.id}`, "1");
     }
     setDismissed(true);
-  }
-
-  async function handleCreateFold() {
-    setCreating(true);
-    const adjectives = ["cosmic", "lunar", "solar", "stellar", "quantum", "neural", "cyber", "astral"];
-    const nouns = ["fox", "owl", "wolf", "hawk", "bear", "lynx", "raven", "phoenix"];
-    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const noun = nouns[Math.floor(Math.random() * nouns.length)];
-    const code = Math.random().toString(36).substring(2, 6);
-    const slug = `${adj}-${noun}-${code}`;
-    const name = `${adj.charAt(0).toUpperCase() + adj.slice(1)} ${noun.charAt(0).toUpperCase() + noun.slice(1)}`;
-
-    const { data, error } = await supabase
-      .from("folds")
-      .insert({ slug, name, is_demo: false })
-      .select()
-      .single();
-
-    setCreating(false);
-
-    if (data && !error) {
-      navigate(`/f/${slug}`);
-    }
   }
 
   return (
@@ -84,7 +59,7 @@ export function DemoBanner() {
         <div style={styles.actions}>
           <button
             style={creating ? { ...styles.createBtn, opacity: 0.6 } : styles.createBtn}
-            onClick={handleCreateFold}
+            onClick={() => createFold()}
             disabled={creating}
           >
             {creating ? tc("creating") : t("demo.createCta")}

@@ -4,8 +4,9 @@ import { useTranslation } from "react-i18next";
 import { FoldProvider } from "./context/FoldContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppHeader } from "./components/AppHeader";
-import { Landing } from "./components/Landing";
 import { NotFound } from "./components/NotFound";
+
+const Landing = lazy(() => import("./components/Landing").then(m => ({ default: m.Landing })));
 import "./App.css";
 
 // Lazy-loaded route components (split into separate chunks)
