@@ -241,7 +241,7 @@ function MiniFoldPicker({ currentSlug, onClose }: { currentSlug: string; onClose
         </div>
       ))}
       {!loading && rooms.length === 0 && (
-        <div className="mini-room-picker-item">no folds</div>
+        <div className="mini-room-picker-item">no rooms</div>
       )}
     </div>
   );
@@ -665,7 +665,7 @@ export function MiniEywa() {
         <button
           className="mini-titlebar-name mini-titlebar-name-btn"
           onClick={() => setShowFoldPicker((p) => !p)}
-          title="Switch fold"
+          title="Switch room"
         >
           {fold?.name ?? fold?.slug ?? "\u2014"}
           <span className="mini-room-arrow">{showFoldPicker ? "\u25B4" : "\u25BE"}</span>

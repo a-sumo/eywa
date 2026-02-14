@@ -1032,7 +1032,7 @@ export function SpectaclesView() {
             alignItems: "center", justifyContent: "center",
             color: isDark ? "#484f58" : "#999", fontSize: 15, pointerEvents: "none",
           }}>
-            {syncing ? "Syncing fold data..." : "Connecting..."}
+            {syncing ? "Syncing room data..." : "Connecting..."}
           </div>
         )}
 
@@ -1057,7 +1057,7 @@ export function SpectaclesView() {
               }}
             >
               <h3 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 600, color: accent, textTransform: "uppercase", letterSpacing: 1 }}>
-                Fold: {roomSlug}
+                Room: {roomSlug}
               </h3>
               <p style={{ margin: "0 0 8px", fontSize: 12, lineHeight: 1.6, opacity: 0.7 }}>
                 {mapDataRef.current.meta.itemCount} items across {mapDataRef.current.meta.agents.length} agent{mapDataRef.current.meta.agents.length !== 1 ? "s" : ""}
@@ -1264,7 +1264,7 @@ export function SpectaclesView() {
             color: showInfo ? accent : fg,
             border: `1px solid ${showInfo ? accent : btnBorder}`,
           }}
-          title="Fold info"
+          title="Room info"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
             <circle cx="10" cy="10" r="7" /><line x1="10" y1="9" x2="10" y2="14" /><circle cx="10" cy="6.5" r="0.8" fill="currentColor" stroke="none" />

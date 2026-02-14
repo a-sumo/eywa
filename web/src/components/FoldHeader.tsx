@@ -69,7 +69,7 @@ export function FoldHeader() {
                 level="M"
               />
             </div>
-            <span className="share-hint">Scan to open this fold on another device</span>
+            <span className="share-hint">Scan to open this room on another device</span>
           </div>
         </div>
       )}
