@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import EywaLogo from "./EywaLogo";
 import { useFold } from "../hooks/useFold";
-import { LanguageSelector } from "./LanguageSelector";
 
 const GitHubIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -20,7 +19,7 @@ export function AppHeader() {
   const isDocs = location.pathname.startsWith("/docs");
   const isRoom = location.pathname.startsWith("/f/");
 
-  // Extract slug from /r/:slug/...
+  // Extract slug from /f/:slug/...
   const slug = isRoom ? location.pathname.split("/")[2] : null;
 
   // Close mobile menu on navigation
@@ -43,7 +42,7 @@ export function AppHeader() {
         </Link>
 
         <nav className="global-header-nav global-header-desktop">
-          <Link to="/folds" className={location.pathname === "/folds" ? "active" : ""}>{t("nav.folds")}</Link>
+          <Link to="/rooms" className={location.pathname === "/rooms" ? "active" : ""}>{t("nav.folds")}</Link>
           <Link to="/docs" className={isDocs ? "active" : ""}>{t("nav.docs")}</Link>
           {isRoom && slug && (
             <Link to={`/f/${slug}`} className="global-header-room">/{slug}</Link>
@@ -66,7 +65,6 @@ export function AppHeader() {
               </Link>
             </>
           )}
-          <LanguageSelector />
           <a
             href="https://github.com/a-sumo/eywa"
             target="_blank"
@@ -103,7 +101,7 @@ export function AppHeader() {
       {mobileOpen && (
         <div className="global-header-mobile-menu">
           <nav className="global-header-mobile-nav">
-            <Link to="/folds" className={location.pathname === "/folds" ? "active" : ""}>{t("nav.folds")}</Link>
+            <Link to="/rooms" className={location.pathname === "/rooms" ? "active" : ""}>{t("nav.folds")}</Link>
             <Link to="/docs" className={isDocs ? "active" : ""}>{t("nav.docs")}</Link>
             {isRoom && slug && (
               <Link to={`/f/${slug}`}>/{slug}</Link>
@@ -126,7 +124,6 @@ export function AppHeader() {
             </div>
           )}
           <div className="global-header-mobile-bottom">
-            <LanguageSelector />
             <a
               href="https://github.com/a-sumo/eywa"
               target="_blank"

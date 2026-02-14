@@ -142,22 +142,22 @@ export function MemoryCard({
                 </span>
               ) : null}
               {"system" in memory.metadata && memory.metadata.system ? (
-                <span className="event-tag" style={{ background: "rgba(121, 70, 255, 0.15)", color: "#a78bfa" }}>
+                <span className="event-tag" style={{ background: "rgba(176, 160, 220, 0.1)", color: "#B0A0DC" }}>
                   {String(memory.metadata.system)}
                   {memory.metadata.action ? `:${String(memory.metadata.action)}` : ""}
                 </span>
               ) : null}
               {"scope" in memory.metadata && memory.metadata.scope ? (
-                <span className="event-tag" style={{ background: "rgba(21, 209, 255, 0.12)", color: "#67e8f9" }}>
+                <span className="event-tag" style={{ background: "rgba(140, 169, 255, 0.1)", color: "#8CA9FF" }}>
                   {String(memory.metadata.scope)}
                 </span>
               ) : null}
               {"outcome" in memory.metadata && memory.metadata.outcome ? (
                 <span className="event-tag" style={{
-                  background: memory.metadata.outcome === "success" ? "rgba(52, 211, 153, 0.12)" :
-                    memory.metadata.outcome === "failure" ? "rgba(248, 113, 113, 0.12)" : "rgba(251, 191, 36, 0.12)",
-                  color: memory.metadata.outcome === "success" ? "#6ee7b7" :
-                    memory.metadata.outcome === "failure" ? "#fca5a5" : "#fcd34d",
+                  background: memory.metadata.outcome === "success" ? "rgba(129, 201, 149, 0.08)" :
+                    memory.metadata.outcome === "failure" ? "rgba(255, 180, 171, 0.08)" : "rgba(232, 197, 106, 0.08)",
+                  color: memory.metadata.outcome === "success" ? "#81C995" :
+                    memory.metadata.outcome === "failure" ? "#FFB4AB" : "#E8C56A",
                 }}>
                   {String(memory.metadata.outcome)}
                 </span>

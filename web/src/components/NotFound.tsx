@@ -50,7 +50,7 @@ export function NotFound() {
           {tc("home")}
         </Link>
         <Link
-          to="/folds"
+          to="/rooms"
           style={{
             padding: "10px 20px",
             borderRadius: 8,

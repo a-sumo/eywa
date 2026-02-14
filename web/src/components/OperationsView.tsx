@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useRealtimeMemories } from "../hooks/useRealtimeMemories";
 import { useFoldContext } from "../context/FoldContext";
 import { agentColor } from "../lib/agentColor";
+import { SYSTEM_COLORS, OUTCOME_COLORS } from "../lib/colors";
 import { getAvatar } from "./avatars";
 import type { Memory } from "../lib/supabase";
 
@@ -242,23 +243,7 @@ function AgentAvatar({ name, size = 24 }: { name: string; size?: number }) {
   );
 }
 
-const OUTCOME_COLORS: Record<string, string> = {
-  success: "#6ee7b7",
-  failure: "#fca5a5",
-  blocked: "#fcd34d",
-};
-
-const SYSTEM_COLORS: Record<string, string> = {
-  git: "#f97316",
-  database: "#06b6d4",
-  api: "#8b5cf6",
-  deploy: "#22c55e",
-  infra: "#ec4899",
-  browser: "#3b82f6",
-  test: "#eab308",
-  build: "#a855f7",
-  file: "#64748b",
-};
+// SYSTEM_COLORS, OUTCOME_COLORS imported from ../lib/colors
 
 // --- Components ---
 
@@ -292,7 +277,7 @@ function OpLine({ op }: { op: AgentOp }) {
         gap: "6px",
         padding: "3px 8px",
         fontSize: "11px",
-        borderLeft: `2px solid ${op.outcome ? OUTCOME_COLORS[op.outcome] || "#666" : "#333"}`,
+        borderLeft: `2px solid ${op.outcome ? OUTCOME_COLORS[op.outcome] || "#3A4155" : "#3A4155"}`,
         animation: op.isNew ? "op-slide-in 0.3s ease-out" : undefined,
       }}
     >
@@ -300,13 +285,13 @@ function OpLine({ op }: { op: AgentOp }) {
         {time}
       </span>
       {op.system && (
-        <OpBadge label={op.system} color={SYSTEM_COLORS[op.system] || "#a78bfa"} />
+        <OpBadge label={op.system} color={SYSTEM_COLORS[op.system] || "#B0A0DC"} />
       )}
       {op.action && (
-        <OpBadge label={op.action} color="#67e8f9" />
+        <OpBadge label={op.action} color="#8CA9FF" />
       )}
       {op.outcome && (
-        <OpBadge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#888"} />
+        <OpBadge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#8E9099"} />
       )}
       {op.scope && (
         <span style={{ opacity: 0.4, fontSize: "10px" }}>({op.scope})</span>
@@ -354,7 +339,7 @@ function AgentCard({ state, expanded, onToggle }: {
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: state.status === "active" ? "#34d399" : state.status === "finished" ? "#64748b" : "#eab308",
+            background: state.status === "active" ? "#81C995" : state.status === "finished" ? "#8E9099" : "#E8C56A",
             flexShrink: 0,
           }}
         />
@@ -390,21 +375,21 @@ function AgentCard({ state, expanded, onToggle }: {
               width: `${state.progress.percent}%`,
               height: "100%",
               background: state.progress.status === "blocked"
-                ? "#fcd34d"
+                ? "#E8C56A"
                 : state.progress.percent === 100
-                  ? "#34d399"
-                  : "#8b5cf6",
+                  ? "#81C995"
+                  : "#8CA9FF",
               borderRadius: "2px",
               transition: "width 0.5s ease-in-out",
             }} />
           </div>
-          <span style={{ fontSize: "10px", fontWeight: 600, color: "#a78bfa", flexShrink: 0 }}>
+          <span style={{ fontSize: "10px", fontWeight: 600, color: "#B0A0DC", flexShrink: 0 }}>
             {state.progress.percent}%
           </span>
           {state.progress.status !== "working" && (
             <OpBadge
               label={state.progress.status}
-              color={state.progress.status === "blocked" ? "#fcd34d" : state.progress.status === "testing" ? "#22c55e" : "#67e8f9"}
+              color={state.progress.status === "blocked" ? "#E8C56A" : state.progress.status === "testing" ? "#81C995" : "#8CA9FF"}
             />
           )}
           {state.progress.detail && (
@@ -418,13 +403,13 @@ function AgentCard({ state, expanded, onToggle }: {
       {/* Systems + outcomes bar */}
       <div style={{ display: "flex", gap: "4px", padding: "0 10px 6px", flexWrap: "wrap", alignItems: "center" }}>
         {systemsList.map((s) => (
-          <OpBadge key={s} label={s} color={SYSTEM_COLORS[s] || "#a78bfa"} />
+          <OpBadge key={s} label={s} color={SYSTEM_COLORS[s] || "#B0A0DC"} />
         ))}
         {successRate !== null && (
           <span style={{
             fontSize: "10px",
             marginLeft: "auto",
-            color: successRate > 80 ? "#6ee7b7" : successRate > 50 ? "#fcd34d" : "#fca5a5",
+            color: successRate > 80 ? "#81C995" : successRate > 50 ? "#E8C56A" : "#FFB4AB",
           }}>
             {t("ops.success", { rate: successRate })}
             {state.outcomes.failure > 0 && ` ${t("ops.successFail", { count: state.outcomes.failure })}`}
@@ -568,13 +553,13 @@ export function OperationsView() {
           <span className="ops-stat"><b>{finishedAgents.length}</b> {t("ops.done")}</span>
           <span className="ops-stat">{t("ops.ops", { count: totalOps })}</span>
           {unresolvedDistress.length > 0 && (
-            <span className="ops-stat" style={{ color: "#ef4444" }}>{t("ops.distress", { count: unresolvedDistress.length })}</span>
+            <span className="ops-stat" style={{ color: "#FFB4AB" }}>{t("ops.distress", { count: unresolvedDistress.length })}</span>
           )}
           {globalOutcomes.failure > 0 && (
             <span className="ops-stat" style={{ color: "#fca5a5" }}>{t("ops.failures", { count: globalOutcomes.failure })}</span>
           )}
           {globalOutcomes.blocked > 0 && (
-            <span className="ops-stat" style={{ color: "#fcd34d" }}>{t("ops.blocked", { count: globalOutcomes.blocked })}</span>
+            <span className="ops-stat" style={{ color: "#E8C56A" }}>{t("ops.blocked", { count: globalOutcomes.blocked })}</span>
           )}
           {checkpointCount > 0 && (
             <span className="ops-stat">{t("ops.checkpoints", { count: checkpointCount })}</span>
@@ -583,7 +568,7 @@ export function OperationsView() {
         {allSystems.size > 0 && (
           <div style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}>
             {Array.from(allSystems).map((s) => (
-              <OpBadge key={s} label={s} color={SYSTEM_COLORS[s] || "#a78bfa"} />
+              <OpBadge key={s} label={s} color={SYSTEM_COLORS[s] || "#B0A0DC"} />
             ))}
           </div>
         )}
@@ -602,7 +587,7 @@ export function OperationsView() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
             <span style={{
-              color: "#a78bfa",
+              color: "#B0A0DC",
               fontWeight: 700,
               fontSize: "10px",
               textTransform: "uppercase",
@@ -646,7 +631,7 @@ export function OperationsView() {
                       transition: "width 0.5s ease-in-out",
                     }} />
                   </div>
-                  <span style={{ fontSize: "11px", color: "#a78bfa", fontWeight: 600, flexShrink: 0 }}>
+                  <span style={{ fontSize: "11px", color: "#B0A0DC", fontWeight: 600, flexShrink: 0 }}>
                     {done}/{total} ({pct}%)
                   </span>
                 </div>
@@ -693,7 +678,7 @@ export function OperationsView() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-            <span style={{ color: "#ef4444", fontWeight: 700, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <span style={{ color: "#FFB4AB", fontWeight: 700, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
               {t("ops.distressLabel")}
             </span>
             <span style={{ color: agentColor(d.agent), fontWeight: 600, fontSize: "12px" }}>{d.agent}</span>
@@ -791,9 +776,9 @@ export function OperationsView() {
               >
                 {m.agent.split("/")[1] || m.agent}
               </span>
-              {op.system && <OpBadge label={op.system} color={SYSTEM_COLORS[op.system] || "#a78bfa"} />}
-              {op.action && <OpBadge label={op.action} color="#67e8f9" />}
-              {op.outcome && <OpBadge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#888"} />}
+              {op.system && <OpBadge label={op.system} color={SYSTEM_COLORS[op.system] || "#B0A0DC"} />}
+              {op.action && <OpBadge label={op.action} color="#8CA9FF" />}
+              {op.outcome && <OpBadge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#8E9099"} />}
               <span className="ops-feed-content">{op.content}</span>
             </div>
           );

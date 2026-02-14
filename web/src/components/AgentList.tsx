@@ -101,7 +101,7 @@ export function AgentList() {
                   className="agent-dot"
                   style={{
                     background: agentColor(a.name),
-                    boxShadow: a.isActive ? `0 0 6px ${agentColor(a.name)}` : "none",
+                    boxShadow: "none",
                   }}
                 />
                 {a.name}

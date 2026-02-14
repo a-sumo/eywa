@@ -82,17 +82,17 @@ const EVENT_TYPE_GROUPS: { label: string; types: EventType[]; color: string; def
   { label: "Distress", types: ["distress"], color: "#ef4444", defaultOn: true },
   { label: "Checkpoints", types: ["checkpoint"], color: "#eab308", defaultOn: true },
   { label: "Destination", types: ["destination"], color: "#8b5cf6", defaultOn: true },
-  { label: "Claims", types: ["claim"], color: "#06b6d4", defaultOn: true },
-  { label: "Progress", types: ["progress"], color: "#34d399", defaultOn: false },
-  { label: "Operations", types: ["operation"], color: "#64748b", defaultOn: false },
-  { label: "Work", types: ["work"], color: "#475569", defaultOn: false },
+  { label: "Claims", types: ["claim"], color: "#7ABAD0", defaultOn: true },
+  { label: "Progress", types: ["progress"], color: "#81C995", defaultOn: false },
+  { label: "Operations", types: ["operation"], color: "#8E9099", defaultOn: false },
+  { label: "Work", types: ["work"], color: "#3A4155", defaultOn: false },
 ];
 
 const OP_SYSTEM_COLORS: Record<string, string> = {
-  git: "#f97316", database: "#06b6d4", api: "#8b5cf6", deploy: "#22c55e",
-  infra: "#ec4899", browser: "#3b82f6", filesystem: "#64748b",
-  communication: "#f472b6", terminal: "#a3e635", editor: "#38bdf8",
-  ci: "#fb923c", cloud: "#818cf8",
+  git: "#D4976A", database: "#7ABAD0", api: "#B0A0DC", deploy: "#81C995",
+  infra: "#D4A0C0", browser: "#7ABAD0", filesystem: "#8E9099",
+  communication: "#8CA9FF", terminal: "#8E9099", editor: "#B0A0DC",
+  ci: "#E8C56A", cloud: "#9DA5C0",
 };
 
 interface LayoutEvent extends GraphEvent {

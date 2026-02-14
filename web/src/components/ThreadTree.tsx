@@ -206,7 +206,7 @@ function extractTasks(memories: Memory[]): TaskItem[] {
 function TaskCard({ task }: { task: TaskItem }) {
   const { t } = useTranslation("fold");
   const priorityColor = TASK_PRIORITY_COLORS[task.priority] || "#B0A0DC";
-  const statusColor = TASK_STATUS_COLORS[task.status] || "#64748b";
+  const statusColor = TASK_STATUS_COLORS[task.status] || "#8E9099";
 
   return (
     <div className="hub-task-card" style={{ borderLeftColor: priorityColor }}>
@@ -597,7 +597,7 @@ function AgentTopologyMap({
       const color =
         a.status === "active" ? "#B0A0DC"
         : a.status === "finished" ? "#81C995"
-        : "#475569";
+        : "#8E9099";
 
       return {
         agent: a,
@@ -633,7 +633,7 @@ function AgentTopologyMap({
         const barX = RIGHT + 2;
         ctx.fillStyle = "rgba(139, 92, 246, 0.15)";
         ctx.fillRect(barX, TOP, 4, barH);
-        ctx.fillStyle = pct === 1 ? "#34d399" : "#B0A0DC";
+        ctx.fillStyle = pct === 1 ? "#81C995" : "#B0A0DC";
         ctx.fillRect(barX, BOTTOM - barH * pct, 4, barH * pct);
       }
 
@@ -726,7 +726,7 @@ function AgentTopologyMap({
       <div className="hub-topology-legend">
         <span className="hub-topology-dot" style={{ background: "#B0A0DC" }} /> {t("hub.topologyActive")}
         <span className="hub-topology-dot" style={{ background: "#81C995" }} /> {t("hub.topologyDone")}
-        <span className="hub-topology-dot" style={{ background: "#64748b" }} /> {t("hub.topologyIdle")}
+        <span className="hub-topology-dot" style={{ background: "#8E9099" }} /> {t("hub.topologyIdle")}
         <span style={{ color: "rgba(255,255,255,0.3)", marginLeft: 8, fontSize: 10 }}>{t("hub.topologyDestination")}</span>
       </div>
     </div>
@@ -753,7 +753,7 @@ function AgentAvatar({ name, size = 20 }: { name: string; size?: number }) {
 }
 
 function SystemPill({ system }: { system: string }) {
-  const color = SYSTEM_COLORS[system] || "#a78bfa";
+  const color = SYSTEM_COLORS[system] || "#9DA5C0";
   return (
     <span className="hub-pill" style={{ background: `${color}18`, color }}>
       {system}
@@ -762,7 +762,7 @@ function SystemPill({ system }: { system: string }) {
 }
 
 function OutcomeBadge({ outcome }: { outcome: string }) {
-  const color = OUTCOME_COLORS[outcome] || "#888";
+  const color = OUTCOME_COLORS[outcome] || "#8E9099";
   return (
     <span className="hub-pill" style={{ background: `${color}18`, color }}>
       {outcome}
@@ -844,7 +844,7 @@ function AgentCard({
                 background: state.progress.status === "blocked"
                   ? "#E8C56A"
                   : state.progress.percent === 100
-                    ? "#34d399"
+                    ? "#81C995"
                     : "#B0A0DC",
               }}
             />
@@ -852,7 +852,7 @@ function AgentCard({
           <span className="hub-progress-pct">{state.progress.percent}%</span>
           {state.progress.status !== "working" && (
             <span className="hub-pill" style={{
-              background: state.progress.status === "blocked" ? "#fcd34d18" : "#67e8f918",
+              background: state.progress.status === "blocked" ? "rgba(232, 197, 106, 0.09)" : "rgba(140, 169, 255, 0.09)",
               color: state.progress.status === "blocked" ? "#E8C56A" : "#AAC7FF",
             }}>
               {state.progress.status}
@@ -867,7 +867,7 @@ function AgentCard({
       {state.heartbeat && (
         <div className="hub-agent-heartbeat" style={{
           display: "flex", gap: 8, alignItems: "center",
-          padding: "2px 0", fontSize: 11, color: "#94a3b8",
+          padding: "2px 0", fontSize: 11, color: "#8E9099",
         }}>
           <span className="hub-pill" style={{
             background: state.heartbeat.phase === "compacting" ? "#ef444418" :
@@ -884,7 +884,7 @@ function AgentCard({
           {state.heartbeat.tokenPercent !== null && (
             <span style={{
               color: state.heartbeat.tokenPercent > 80 ? "#FFB4AB" :
-                state.heartbeat.tokenPercent > 60 ? "#E8C56A" : "#94a3b8",
+                state.heartbeat.tokenPercent > 60 ? "#E8C56A" : "#8E9099",
             }}>
               {state.heartbeat.tokenPercent}% ctx
             </span>
@@ -932,7 +932,7 @@ function AgentCard({
 function ActivityRow({ op, showAgent = true }: { op: AgentOp; showAgent?: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const meta = (op.event && EVENT_STYLES[op.event]) || null;
-  const borderColor = meta?.borderColor || (op.outcome ? OUTCOME_COLORS[op.outcome] || "#333" : "#333");
+  const borderColor = meta?.borderColor || (op.outcome ? OUTCOME_COLORS[op.outcome] || "#3A4155" : "#333");
   const bgTint = meta?.bgTint || "transparent";
   const isLong = op.content.length > 200;
 
@@ -1196,7 +1196,7 @@ function DeployHealth({ deploys }: { deploys: DeployEntry[] }) {
       {expanded && (
         <div className="hub-deploy-list">
           {deploys.slice(0, 20).map((d) => {
-            const outcomeColor = OUTCOME_COLORS[d.outcome] || "#888";
+            const outcomeColor = OUTCOME_COLORS[d.outcome] || "#8E9099";
             const shortAgent = d.agent.split("/")[1] || d.agent;
             return (
               <div key={d.id} className="hub-deploy-row">
@@ -1606,8 +1606,8 @@ export function ThreadTree() {
                       style={{
                         width: `${pct}%`,
                         background: pct === 100
-                          ? "#34d399"
-                          : "linear-gradient(90deg, #8b5cf6, #06b6d4)",
+                          ? "#81C995"
+                          : "#AAC7FF",
                       }}
                     />
                   </div>
@@ -1936,7 +1936,7 @@ export function ThreadTree() {
             {activityStream.map((item) => {
               const borderColor =
                 (item.event && EVENT_STYLES[item.event]?.borderColor) ||
-                (item.outcome ? OUTCOME_COLORS[item.outcome] || "#333" : "#333");
+                (item.outcome ? OUTCOME_COLORS[item.outcome] || "#3A4155" : "#333");
               const bgTint =
                 (item.event && EVENT_STYLES[item.event]?.bgTint) || "transparent";
               const isDistress = item.event === "distress";

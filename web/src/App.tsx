@@ -60,7 +60,8 @@ function App() {
         <Suspense fallback={<RouteLoader />}>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/folds" element={<FoldsIndex />} />
+            <Route path="/rooms" element={<FoldsIndex />} />
+            <Route path="/folds" element={<Navigate to="/rooms" replace />} />
             <Route path="/cli-auth" element={<CLIAuth />} />
             <Route path="/docs" element={<DocsLayout />}>
               <Route index element={<DocsOverview />} />
@@ -82,7 +83,7 @@ function App() {
             <Route path="/f/:slug/*" element={<FoldRoutes />} />
             {/* Backward compat: /r/:slug/* → /f/:slug/* */}
             <Route path="/r/:slug/*" element={<RoomRedirect />} />
-            <Route path="/rooms" element={<Navigate to="/folds" replace />} />
+            {/* Backward compat: /rooms was old redirect, now /folds redirects here */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
