@@ -206,7 +206,7 @@ export function ValueProps() {
             saved per month in wasted agent compute
           </div>
           <div className="landing-roi-savings-detail">
-            At $30/hr blended compute cost for a 4-person team. Your numbers will vary, but the pattern doesn't.
+            Based on $30/hr blended compute across a 4-person team.
           </div>
         </div>
       </div>
