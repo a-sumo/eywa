@@ -57,12 +57,13 @@ export function registerTaskTools(
       assigned_to: z.string().optional().describe("Agent or user name to assign to (e.g. 'armand')"),
       milestone: z.string().optional().describe("Links to a destination milestone"),
       parent_task: z.string().optional().describe("Parent task ID for subtasks"),
+      depends_on: z.array(z.string()).optional().describe("Task IDs that must be done before this task can start"),
     },
     {
       readOnlyHint: false,
       idempotentHint: false,
     },
-    async ({ title, description, priority, assigned_to, milestone, parent_task }) => {
+    async ({ title, description, priority, assigned_to, milestone, parent_task, depends_on }) => {
       // Check for duplicate/similar titles in active tasks
       const existing = await db.select<MemoryRow>("memories", {
         select: "id,metadata",
@@ -118,6 +119,7 @@ export function registerTaskTools(
           assigned_to: assigned_to ?? null,
           parent_task: parent_task ?? null,
           milestone: milestone ?? null,
+          depends_on: depends_on ?? [],
           created_by: ctx.agent,
           claimed_at: assigned_to ? new Date().toISOString() : null,
           completed_at: null,
@@ -177,6 +179,7 @@ export function registerTaskTools(
           priority: (meta.priority as string) || "normal",
           assigned_to: (meta.assigned_to as string) || null,
           milestone: (meta.milestone as string) || null,
+          depends_on: (meta.depends_on as string[]) || [],
           parent_task: (meta.parent_task as string) || null,
           created_by: (meta.created_by as string) || row.agent,
           notes: (meta.notes as string) || null,
@@ -225,7 +228,8 @@ export function registerTaskTools(
         const ms = t.milestone ? ` [${t.milestone}]` : "";
         const parent = t.parent_task ? ` (subtask of ${t.parent_task.slice(0, 8)})` : "";
         const blocked = t.blocked_reason ? ` BLOCKED: ${t.blocked_reason}` : "";
-        lines.push(`[${t.priority.toUpperCase()}] ${t.status} | ${t.title}${assignee}${ms}${parent}${blocked}`);
+        const deps = t.depends_on.length > 0 ? ` (depends on ${t.depends_on.map(d => d.slice(0, 8)).join(", ")})` : "";
+        lines.push(`[${t.priority.toUpperCase()}] ${t.status} | ${t.title}${assignee}${ms}${parent}${deps}${blocked}`);
         lines.push(`  ID: ${t.id}`);
         if (t.description) lines.push(`  ${t.description.slice(0, 200)}`);
         if (t.notes) lines.push(`  Notes: ${t.notes.slice(0, 150)}`);
@@ -274,6 +278,35 @@ export function registerTaskTools(
             text: `Task is already ${status}${status === "claimed" || status === "in_progress" ? ` by ${assignee}` : ""}. Pick an open task instead.`,
           }],
         };
+      }
+
+      // Check dependencies: all depends_on tasks must be done
+      const dependsOn = (meta.depends_on as string[]) || [];
+      if (dependsOn.length > 0) {
+        const depRows = await db.select<MemoryRow>("memories", {
+          select: "id,metadata",
+          fold_id: `eq.${ctx.foldId}`,
+          message_type: "eq.task",
+          id: `in.(${dependsOn.join(",")})`,
+          limit: String(dependsOn.length),
+        });
+
+        const blocking: string[] = [];
+        for (const dep of depRows) {
+          const depMeta = (dep.metadata ?? {}) as Record<string, unknown>;
+          if (depMeta.status !== "done") {
+            blocking.push(`${(depMeta.title as string) || dep.id} [${depMeta.status}]`);
+          }
+        }
+
+        if (blocking.length > 0) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: `Task blocked by ${blocking.length} unfinished dependenc${blocking.length === 1 ? "y" : "ies"}:\n${blocking.map(b => `  - ${b}`).join("\n")}\n\nPick a task with no pending dependencies.`,
+            }],
+          };
+        }
       }
 
       // Update task status
@@ -510,6 +543,28 @@ export function registerTaskTools(
         };
       }
 
+      // Check dependencies: fetch all referenced tasks to see which are done
+      const allDepIds = new Set<string>();
+      for (const t of tasks) {
+        const depIds = (rows.find(r => r.id === t.id)?.metadata as Record<string, unknown>)?.depends_on as string[] | undefined;
+        if (depIds) depIds.forEach(id => allDepIds.add(id));
+      }
+
+      const depStatusMap = new Map<string, string>();
+      if (allDepIds.size > 0) {
+        const depRows = await db.select<MemoryRow>("memories", {
+          select: "id,metadata",
+          fold_id: `eq.${ctx.foldId}`,
+          message_type: "eq.task",
+          id: `in.(${[...allDepIds].join(",")})`,
+          limit: String(allDepIds.size),
+        });
+        for (const dep of depRows) {
+          const depMeta = (dep.metadata ?? {}) as Record<string, unknown>;
+          depStatusMap.set(dep.id, (depMeta.status as string) || "open");
+        }
+      }
+
       // Fetch active claims to cross-reference
       const activeClaims = await getActiveClaims(db, ctx.foldId, ctx.agent);
 
@@ -520,11 +575,21 @@ export function registerTaskTools(
         priority: string;
         milestone: string | null;
         conflict: string | null;
+        blocked: string | null;
       }> = [];
 
       for (const task of tasks) {
         const taskWords = extractWords(task.title + " " + (task.description || ""));
         let conflict: string | null = null;
+        let blocked: string | null = null;
+
+        // Check dependencies
+        const origRow = rows.find(r => r.id === task.id);
+        const depIds = origRow ? ((origRow.metadata as Record<string, unknown>)?.depends_on as string[] | undefined) ?? [] : [];
+        const unmetDeps = depIds.filter(id => depStatusMap.get(id) !== "done");
+        if (unmetDeps.length > 0) {
+          blocked = `${unmetDeps.length} unmet dependenc${unmetDeps.length === 1 ? "y" : "ies"}`;
+        }
 
         for (const claim of activeClaims) {
           const claimWords = extractWords(claim.scope);
@@ -542,11 +607,15 @@ export function registerTaskTools(
           priority: task.priority,
           milestone: task.milestone,
           conflict,
+          blocked,
         });
       }
 
-      // Sort: uncontested first, then by priority
+      // Sort: ready (no blocks, no conflicts) first, then by priority
       available.sort((a, b) => {
+        // Blocked tasks last
+        if (!a.blocked && b.blocked) return -1;
+        if (a.blocked && !b.blocked) return 1;
         // Uncontested tasks first
         if (!a.conflict && b.conflict) return -1;
         if (a.conflict && !b.conflict) return 1;
@@ -556,24 +625,20 @@ export function registerTaskTools(
         return pa - pb;
       });
 
-      const lines: string[] = [`${available.length} open task(s):\n`];
-      let uncontestedCount = 0;
+      const readyCount = available.filter(t => !t.blocked && !t.conflict).length;
+      const blockedCount = available.filter(t => t.blocked).length;
+      const contestedCount = available.filter(t => t.conflict && !t.blocked).length;
+
+      const lines: string[] = [`${available.length} open task(s): ${readyCount} ready, ${contestedCount} contested, ${blockedCount} blocked\n`];
 
       for (const t of available) {
         const ms = t.milestone ? ` [${t.milestone}]` : "";
-        if (t.conflict) {
-          lines.push(`  [${t.priority.toUpperCase()}] ${t.title}${ms}`);
-          lines.push(`    CONTESTED: ${t.conflict}`);
-          lines.push(`    ID: ${t.id}`);
-        } else {
-          uncontestedCount++;
-          lines.push(`  [${t.priority.toUpperCase()}] ${t.title}${ms}`);
-          lines.push(`    ID: ${t.id}`);
-        }
+        lines.push(`  [${t.priority.toUpperCase()}] ${t.title}${ms}`);
+        if (t.blocked) lines.push(`    BLOCKED: ${t.blocked}`);
+        if (t.conflict) lines.push(`    CONTESTED: ${t.conflict}`);
+        lines.push(`    ID: ${t.id}`);
         lines.push("");
       }
-
-      lines.unshift(`${uncontestedCount} uncontested, ${available.length - uncontestedCount} contested:\n`);
 
       return {
         content: [{ type: "text" as const, text: lines.join("\n") }],

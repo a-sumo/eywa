@@ -73,12 +73,14 @@ export function registerSessionTools(
       });
 
       // Auto-context: fetch fold snapshot so agent lands aware
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const [agentRows, recentRows, injectionRows, knowledgeRows, destRows, insightRows] = await Promise.all([
-        // Active agents (skip connection noise)
+        // Active agents: only last 1h to avoid dumping 184 stale agents
         db.select<MemoryRow>("memories", {
           select: "agent,content,metadata,ts",
           fold_id: `eq.${ctx.foldId}`,
           "metadata->>event": "neq.agent_connected",
+          ts: `gte.${oneHourAgo}`,
           order: "ts.desc",
           limit: "200",
         }),
@@ -218,6 +220,7 @@ export function registerSessionTools(
           limit: "50",
         });
 
+        const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
         const myTasks = taskRows.filter((row) => {
           const meta = (row.metadata ?? {}) as Record<string, unknown>;
           const status = meta.status as string;
@@ -226,9 +229,19 @@ export function registerSessionTools(
           return !assignee || assignee === ctx.agent || assignee === ctx.user || assignee.includes(ctx.user);
         });
 
-        if (myTasks.length > 0) {
-          lines.push(`\n=== Tasks (${myTasks.length}) ===`);
-          for (const row of myTasks) {
+        // Sort by priority, show top 5 to avoid flooding context
+        myTasks.sort((a, b) => {
+          const ma = (a.metadata ?? {}) as Record<string, unknown>;
+          const mb = (b.metadata ?? {}) as Record<string, unknown>;
+          const pa = PRIORITY_ORDER[(ma.priority as string) ?? "normal"] ?? 2;
+          const pb = PRIORITY_ORDER[(mb.priority as string) ?? "normal"] ?? 2;
+          return pa - pb;
+        });
+        const topTasks = myTasks.slice(0, 5);
+
+        if (topTasks.length > 0) {
+          lines.push(`\n=== Tasks (${topTasks.length} of ${myTasks.length}) ===`);
+          for (const row of topTasks) {
             const meta = (row.metadata ?? {}) as Record<string, unknown>;
             const title = (meta.title as string) || "";
             const status = (meta.status as string) || "open";
@@ -237,6 +250,7 @@ export function registerSessionTools(
             const tag = assignee ? ` -> ${assignee}` : " (unassigned)";
             lines.push(`  [${priority.toUpperCase()}] ${status} | ${title}${tag} (${row.id.slice(0, 8)})`);
           }
+          if (myTasks.length > 5) lines.push(`  ... and ${myTasks.length - 5} more. Use eywa_tasks to see all.`);
           lines.push("Use eywa_pick_task to claim, eywa_update_task to update status.");
         }
       } catch (err) {
@@ -345,7 +359,7 @@ export function registerSessionTools(
         }
       }
 
-      // Conflict detection: check active claims against this task
+      // Conflict detection: only show claims that overlap with this task
       try {
         const activeClaims = await getActiveClaims(db, ctx.foldId, ctx.agent);
         if (activeClaims.length > 0) {
@@ -354,14 +368,9 @@ export function registerSessionTools(
             lines.push("\n=== CONFLICT WARNING ===");
             lines.push(...conflicts);
             lines.push("Call eywa_claim to declare your scope, or pick different work.");
-          } else {
-            // Show active claims for awareness even if no conflict
-            lines.push("\nActive claims (do not duplicate):");
-            for (const c of activeClaims) {
-              const short = c.agent.includes("/") ? c.agent.split("/").pop()! : c.agent;
-              lines.push(`  ${short}: ${c.scope}${c.files.length > 0 ? ` [${c.files.join(", ")}]` : ""}`);
-            }
           }
+          // Only show claim count, not the full list (saves context)
+          lines.push(`\n${activeClaims.length} active claim(s). Use eywa_claim to see details.`);
         }
       } catch (err) {
         // Log but don't break session start

@@ -397,6 +397,7 @@ export function registerCollaborationTools(
         agent: `eq.${agent}`,
         session_id: `eq.${targetSession}`,
         order: "ts.asc",
+        limit: "100",
       });
 
       if (!rows.length) {

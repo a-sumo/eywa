@@ -57,10 +57,14 @@ export function registerContextTools(
       destructiveHint: false,
     },
     async () => {
+      // Only look at last 24h, cap rows to avoid unbounded scan
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const rows = await db.select<MemoryRow>("memories", {
         select: "agent,ts",
         fold_id: `eq.${ctx.foldId}`,
+        ts: `gte.${since}`,
         order: "ts.desc",
+        limit: "500",
       });
 
       const agents = new Map<string, string>();
@@ -72,13 +76,31 @@ export function registerContextTools(
 
       if (!agents.size) {
         return {
-          content: [{ type: "text" as const, text: "No agents found." }],
+          content: [{ type: "text" as const, text: "No agents active in the last 24h." }],
         };
       }
 
-      const lines = ["Agents in Eywa:"];
+      // Separate active (last 1h) from recent
+      const oneHourAgo = Date.now() - 60 * 60 * 1000;
+      const active: [string, string][] = [];
+      const recent: [string, string][] = [];
       for (const [name, ts] of agents) {
-        lines.push(`  ${name} (last: ${ts})`);
+        if (new Date(ts).getTime() > oneHourAgo) {
+          active.push([name, ts]);
+        } else {
+          recent.push([name, ts]);
+        }
+      }
+
+      const lines = [`Agents (${agents.size} in last 24h, ${active.length} active):`];
+      if (active.length > 0) {
+        lines.push("\nActive (last 1h):");
+        for (const [name, ts] of active) {
+          lines.push(`  ${name} (last: ${ts})`);
+        }
+      }
+      if (recent.length > 0) {
+        lines.push(`\nRecent (${recent.length} agents, 1-24h ago)`);
       }
 
       return {
