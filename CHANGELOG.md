@@ -12,6 +12,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Privacy overhaul: honest trust model in docs and landing copy, CLI consent flow, tool classification with readOnlyHint/destructiveHint annotations
 - Bug fixes: auto-reload on stale chunk load after deploy, gitignore .mcp.json to prevent leaking fold secrets, hide GitHub stars when count is zero, hide Map/Spectacles behind dev flag, realistic agent names in demo
 - Fix: removed duplicate setAutoContextError call in useGeminiChat, added missing error handler in useLiveTelemetry fold lookup
+- Landing features grid: consolidated from 10 cards to 6 focused pillars (removed Timeline, Network, Telemetry, and surface-specific cards; added Agent Resilience and Works Everywhere)
 
 ## 2026-02-13
 
