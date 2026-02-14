@@ -164,28 +164,30 @@
   --glow-blue: 0 0 20px var(--aurora-blue-glow), 0 0 40px var(--aurora-blue-glow);
 
   /* ==========================================
-     M3 DARK TONAL PALETTE
-     Material 3 inspired surface/text/accent
-     tokens for the fold product UI
+     FOLD PRODUCT PALETTE
+     Warm dark tones aligned with armandsumo dark
+     + curvilinear flat/restrained design language.
+     Surfaces: armandsumo navy family (#212737).
+     Accents: armandsumo blue (#8CA9FF).
      ========================================== */
-  --m3-surface: #111318;
-  --m3-surface-dim: #111318;
-  --m3-surface-container-lowest: #0C0E13;
-  --m3-surface-container-low: #191C23;
-  --m3-surface-container: #1D2028;
-  --m3-surface-container-high: #272A32;
-  --m3-surface-container-highest: #32353D;
-  --m3-surface-bright: #37393E;
+  --m3-surface: #1a1f2e;
+  --m3-surface-dim: #151a27;
+  --m3-surface-container-lowest: #121621;
+  --m3-surface-container-low: #1e2435;
+  --m3-surface-container: #242b3d;
+  --m3-surface-container-high: #2e3650;
+  --m3-surface-container-highest: #3a4362;
+  --m3-surface-bright: #465278;
 
-  --m3-on-surface: #E2E2E9;
-  --m3-on-surface-variant: #C4C6D0;
+  --m3-on-surface: #EAEDF3;
+  --m3-on-surface-variant: #B8BCC8;
 
-  --m3-outline: #8E9099;
-  --m3-outline-variant: #44474E;
+  --m3-outline: #7E8594;
+  --m3-outline-variant: #3A4155;
 
-  --m3-primary: #AAC7FF;
-  --m3-primary-container: #2B4678;
-  --m3-on-primary-container: #D6E3FF;
+  --m3-primary: #8CA9FF;
+  --m3-primary-container: #3D5490;
+  --m3-on-primary-container: #D0DEFF;
 
   --m3-error: #FFB4AB;
   --m3-error-container: #93000A;

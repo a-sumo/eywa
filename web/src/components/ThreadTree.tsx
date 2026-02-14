@@ -5,6 +5,7 @@ import { useFoldContext } from "../context/FoldContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase, type Memory, type GlobalInsight } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
+import { TASK_PRIORITY_COLORS, TASK_STATUS_COLORS, SYSTEM_COLORS, OUTCOME_COLORS, EVENT_STYLES } from "../lib/colors";
 import { getAvatar } from "./avatars";
 import { OnboardingOverlay } from "./OnboardingOverlay";
 import { ConnectAgent } from "./ConnectAgent";
@@ -200,24 +201,11 @@ function extractTasks(memories: Memory[]): TaskItem[] {
   return tasks;
 }
 
-const TASK_PRIORITY_COLORS: Record<string, string> = {
-  urgent: "#ef4444",
-  high: "#f97316",
-  normal: "#8b5cf6",
-  low: "#64748b",
-};
-
-const TASK_STATUS_COLORS: Record<string, string> = {
-  open: "#3b82f6",
-  claimed: "#eab308",
-  in_progress: "#8b5cf6",
-  done: "#22c55e",
-  blocked: "#ef4444",
-};
+// Color constants imported from ../lib/colors
 
 function TaskCard({ task }: { task: TaskItem }) {
   const { t } = useTranslation("fold");
-  const priorityColor = TASK_PRIORITY_COLORS[task.priority] || "#8b5cf6";
+  const priorityColor = TASK_PRIORITY_COLORS[task.priority] || "#B0A0DC";
   const statusColor = TASK_STATUS_COLORS[task.status] || "#64748b";
 
   return (
@@ -328,9 +316,9 @@ function getPressureLevel(toolCalls: number): "ok" | "warn" | "high" | "critical
 
 const PRESSURE_COLORS: Record<string, string> = {
   ok: "transparent",
-  warn: "#eab308",
-  high: "#f97316",
-  critical: "#ef4444",
+  warn: "#E8C56A",
+  high: "#D4976A",
+  critical: "#FFB4AB",
 };
 
 // Silence thresholds (minutes)
@@ -348,9 +336,9 @@ function getSilenceLevel(mins: number, status: string): "ok" | "warn" | "high" |
 
 const SILENCE_COLORS: Record<string, string> = {
   ok: "transparent",
-  warn: "#eab308",
-  high: "#f97316",
-  critical: "#ef4444",
+  warn: "#E8C56A",
+  high: "#D4976A",
+  critical: "#FFB4AB",
 };
 
 function formatSilence(mins: number): string {
@@ -386,39 +374,7 @@ const TIME_RANGES = [
 
 const NOISE_EVENTS = new Set(["agent_connected"]);
 
-const SYSTEM_COLORS: Record<string, string> = {
-  git: "#f97316",
-  database: "#06b6d4",
-  api: "#8b5cf6",
-  deploy: "#22c55e",
-  infra: "#ec4899",
-  browser: "#3b82f6",
-  test: "#eab308",
-  build: "#a855f7",
-  filesystem: "#64748b",
-  communication: "#f472b6",
-  terminal: "#a3e635",
-  editor: "#38bdf8",
-  ci: "#fb923c",
-  cloud: "#818cf8",
-  monitor: "#2dd4bf",
-};
-
-const OUTCOME_COLORS: Record<string, string> = {
-  success: "#6ee7b7",
-  failure: "#fca5a5",
-  blocked: "#fcd34d",
-  in_progress: "#93c5fd",
-};
-
-const EVENT_STYLES: Record<string, { borderColor: string; bgTint: string }> = {
-  distress: { borderColor: "#ef4444", bgTint: "rgba(239, 68, 68, 0.06)" },
-  session_start: { borderColor: "#22c55e", bgTint: "transparent" },
-  session_done: { borderColor: "#64748b", bgTint: "transparent" },
-  session_end: { borderColor: "#64748b", bgTint: "transparent" },
-  context_injection: { borderColor: "#a855f7", bgTint: "rgba(168, 85, 247, 0.04)" },
-  checkpoint: { borderColor: "#eab308", bgTint: "rgba(234, 179, 8, 0.04)" },
-};
+// SYSTEM_COLORS, OUTCOME_COLORS, EVENT_STYLES imported from ../lib/colors
 
 // --- Helpers ---
 
@@ -639,8 +595,8 @@ function AgentTopologyMap({
       progress = Math.min(progress, 0.98);
 
       const color =
-        a.status === "active" ? "#8b5cf6"
-        : a.status === "finished" ? "#6ee7b7"
+        a.status === "active" ? "#B0A0DC"
+        : a.status === "finished" ? "#81C995"
         : "#475569";
 
       return {
@@ -677,7 +633,7 @@ function AgentTopologyMap({
         const barX = RIGHT + 2;
         ctx.fillStyle = "rgba(139, 92, 246, 0.15)";
         ctx.fillRect(barX, TOP, 4, barH);
-        ctx.fillStyle = pct === 1 ? "#34d399" : "#8b5cf6";
+        ctx.fillStyle = pct === 1 ? "#34d399" : "#B0A0DC";
         ctx.fillRect(barX, BOTTOM - barH * pct, 4, barH * pct);
       }
 
@@ -768,8 +724,8 @@ function AgentTopologyMap({
         style={{ width: "100%", height: 180 }}
       />
       <div className="hub-topology-legend">
-        <span className="hub-topology-dot" style={{ background: "#8b5cf6" }} /> {t("hub.topologyActive")}
-        <span className="hub-topology-dot" style={{ background: "#6ee7b7" }} /> {t("hub.topologyDone")}
+        <span className="hub-topology-dot" style={{ background: "#B0A0DC" }} /> {t("hub.topologyActive")}
+        <span className="hub-topology-dot" style={{ background: "#81C995" }} /> {t("hub.topologyDone")}
         <span className="hub-topology-dot" style={{ background: "#64748b" }} /> {t("hub.topologyIdle")}
         <span style={{ color: "rgba(255,255,255,0.3)", marginLeft: 8, fontSize: 10 }}>{t("hub.topologyDestination")}</span>
       </div>
@@ -886,10 +842,10 @@ function AgentCard({
               style={{
                 width: `${state.progress.percent}%`,
                 background: state.progress.status === "blocked"
-                  ? "#fcd34d"
+                  ? "#E8C56A"
                   : state.progress.percent === 100
                     ? "#34d399"
-                    : "#8b5cf6",
+                    : "#B0A0DC",
               }}
             />
           </div>
@@ -897,7 +853,7 @@ function AgentCard({
           {state.progress.status !== "working" && (
             <span className="hub-pill" style={{
               background: state.progress.status === "blocked" ? "#fcd34d18" : "#67e8f918",
-              color: state.progress.status === "blocked" ? "#fcd34d" : "#67e8f9",
+              color: state.progress.status === "blocked" ? "#E8C56A" : "#AAC7FF",
             }}>
               {state.progress.status}
             </span>
@@ -918,17 +874,17 @@ function AgentCard({
               state.heartbeat.phase === "waiting_approval" ? "#eab30818" :
               state.heartbeat.phase === "error" ? "#ef444418" :
               state.heartbeat.phase === "thinking" ? "#8b5cf618" : "#22c55e18",
-            color: state.heartbeat.phase === "compacting" ? "#ef4444" :
-              state.heartbeat.phase === "waiting_approval" ? "#eab308" :
-              state.heartbeat.phase === "error" ? "#ef4444" :
-              state.heartbeat.phase === "thinking" ? "#8b5cf6" : "#22c55e",
+            color: state.heartbeat.phase === "compacting" ? "#FFB4AB" :
+              state.heartbeat.phase === "waiting_approval" ? "#E8C56A" :
+              state.heartbeat.phase === "error" ? "#FFB4AB" :
+              state.heartbeat.phase === "thinking" ? "#B0A0DC" : "#81C995",
           }}>
             {state.heartbeat.phase}
           </span>
           {state.heartbeat.tokenPercent !== null && (
             <span style={{
-              color: state.heartbeat.tokenPercent > 80 ? "#ef4444" :
-                state.heartbeat.tokenPercent > 60 ? "#eab308" : "#94a3b8",
+              color: state.heartbeat.tokenPercent > 80 ? "#FFB4AB" :
+                state.heartbeat.tokenPercent > 60 ? "#E8C56A" : "#94a3b8",
             }}>
               {state.heartbeat.tokenPercent}% ctx
             </span>
@@ -950,7 +906,7 @@ function AgentCard({
           ))}
           {successRate !== null && (
             <span className="hub-success-rate" style={{
-              color: successRate > 80 ? "#6ee7b7" : successRate > 50 ? "#fcd34d" : "#fca5a5",
+              color: successRate > 80 ? "#81C995" : successRate > 50 ? "#E8C56A" : "#FFB4AB",
             }}>
               {state.outcomes.failure > 0
                 ? t("hub.successFail", { rate: successRate, count: state.outcomes.failure })
@@ -1030,11 +986,11 @@ function DistressAlert({ signal }: { signal: DistressSignal }) {
       </div>
       <div className="hub-distress-task">{signal.task}</div>
       <div className="hub-distress-detail">
-        <span style={{ color: "#6ee7b7" }}>{t("hub.distressDone")}</span>
+        <span style={{ color: "#81C995" }}>{t("hub.distressDone")}</span>
         {signal.done.slice(0, 150)}
       </div>
       <div className="hub-distress-detail hub-distress-remaining">
-        <span style={{ color: "#fca5a5" }}>{t("hub.distressRemaining")}</span>
+        <span style={{ color: "#FFB4AB" }}>{t("hub.distressRemaining")}</span>
         {signal.remaining.slice(0, 200)}
       </div>
       {signal.filesChanged.length > 0 && (
@@ -1059,10 +1015,10 @@ interface PendingApproval {
 }
 
 const RISK_COLORS: Record<string, string> = {
-  low: "#22c55e",
-  medium: "#eab308",
-  high: "#f97316",
-  critical: "#ef4444",
+  low: "#81C995",
+  medium: "#E8C56A",
+  high: "#D4976A",
+  critical: "#FFB4AB",
 };
 
 function ApprovalCard({ approval, foldId }: { approval: PendingApproval; foldId: string }) {
@@ -1121,10 +1077,10 @@ function ApprovalCard({ approval, foldId }: { approval: PendingApproval; foldId:
   if (resolved) {
     return (
       <div className="hub-approval-card" style={{
-        borderLeftColor: resolved === "approved" ? "#22c55e" : "#ef4444",
+        borderLeftColor: resolved === "approved" ? "#81C995" : "#FFB4AB",
         opacity: 0.6,
       }}>
-        <span style={{ color: resolved === "approved" ? "#22c55e" : "#ef4444" }}>
+        <span style={{ color: resolved === "approved" ? "#81C995" : "#FFB4AB" }}>
           {resolved === "approved" ? t("hub.approved") : t("hub.denied")}
         </span>
         <span className="hub-activity-time">{approval.agent}</span>
@@ -1222,7 +1178,7 @@ function DeployHealth({ deploys }: { deploys: DeployEntry[] }) {
       >
         <span
           className="hub-deploy-dot"
-          style={{ background: isSuccess ? "#22c55e" : "#ef4444" }}
+          style={{ background: isSuccess ? "#81C995" : "#FFB4AB" }}
         />
         <span className="hub-deploy-label">{t("hub.deploys")}</span>
         <span className="hub-deploy-latest">
@@ -1230,7 +1186,7 @@ function DeployHealth({ deploys }: { deploys: DeployEntry[] }) {
         </span>
         <span className="hub-activity-time">{timeAgo(latest.ts)}</span>
         {failCount > 0 && (
-          <span className="hub-pill" style={{ background: "#ef444418", color: "#ef4444" }}>
+          <span className="hub-pill" style={{ background: "#ef444418", color: "#FFB4AB" }}>
             {t("hub.failedCount", { count: failCount })}
           </span>
         )}
@@ -1246,7 +1202,7 @@ function DeployHealth({ deploys }: { deploys: DeployEntry[] }) {
               <div key={d.id} className="hub-deploy-row">
                 <span
                   className="hub-deploy-dot-sm"
-                  style={{ background: d.outcome === "success" ? "#22c55e" : "#ef4444" }}
+                  style={{ background: d.outcome === "success" ? "#81C995" : "#FFB4AB" }}
                 />
                 <span className="hub-pill" style={{ background: `${outcomeColor}18`, color: outcomeColor }}>
                   {d.outcome}

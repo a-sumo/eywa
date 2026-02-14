@@ -38,31 +38,7 @@ interface SeedOp {
   ts: string;
 }
 
-interface SeedState {
-  agent: string;
-  status: "active" | "idle" | "finished";
-  task: string;
-  opCount: number;
-  outcomes: { success: number; failure: number; blocked: number };
-  lastSeen: string;
-  firstSeen: string;
-  sessions: number;
-  recentOps: SeedOp[];
-}
-
 // --- Helpers ---
-
-const ACTIVE_THRESHOLD = 30 * 60 * 1000;
-
-function timeAgo(ts: string): string {
-  const diff = Date.now() - new Date(ts).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
 
 function isSeedAgent(agent: string): boolean {
   return agent.startsWith("autonomous/");
@@ -114,56 +90,6 @@ function extractSeedOp(m: Memory): SeedOp {
   };
 }
 
-function buildSeedStates(memories: Memory[]): Map<string, SeedState> {
-  const seeds = new Map<string, SeedState>();
-  for (const m of memories) {
-    if (!isSeedAgent(m.agent) || isNoise(m)) continue;
-    const meta = (m.metadata ?? {}) as Record<string, unknown>;
-    let state = seeds.get(m.agent);
-    if (!state) {
-      let status: "active" | "idle" | "finished" = "idle";
-      let task = "";
-      if (meta.event === "session_start") {
-        status = Date.now() - new Date(m.ts).getTime() < ACTIVE_THRESHOLD ? "active" : "idle";
-        task = (meta.task as string) || "";
-      } else if (meta.event === "session_done" || meta.event === "session_end") {
-        status = "finished";
-        task = (meta.summary as string) || "";
-      } else if (Date.now() - new Date(m.ts).getTime() < ACTIVE_THRESHOLD) {
-        status = "active";
-      }
-      state = {
-        agent: m.agent,
-        status,
-        task: task || (m.content ?? "").slice(0, 100),
-        opCount: 0,
-        outcomes: { success: 0, failure: 0, blocked: 0 },
-        lastSeen: m.ts,
-        firstSeen: m.ts,
-        sessions: 0,
-        recentOps: [],
-      };
-      seeds.set(m.agent, state);
-    }
-    if (meta.outcome === "success") state.outcomes.success++;
-    else if (meta.outcome === "failure") state.outcomes.failure++;
-    else if (meta.outcome === "blocked") state.outcomes.blocked++;
-    if (meta.event === "session_start") state.sessions++;
-    state.opCount++;
-    // Track time span
-    if (m.ts < state.firstSeen) state.firstSeen = m.ts;
-    if (m.ts > state.lastSeen) state.lastSeen = m.ts;
-    if (state.recentOps.length < 20) {
-      state.recentOps.push(extractSeedOp(m));
-    }
-  }
-  return seeds;
-}
-
-// --- Styling constants ---
-
-// Color constants imported from ../lib/colors
-
 // --- Components ---
 
 function Badge({ label, color }: { label: string; color: string }) {
@@ -201,8 +127,8 @@ function TaskCard({ task }: { task: Task }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-        <Badge label={task.priority} color={PRIORITY_COLORS[task.priority] || "#6b8cff"} />
-        <Badge label={task.status} color={STATUS_COLORS[task.status] || "#64748b"} />
+        <Badge label={task.priority} color={PRIORITY_COLORS[task.priority] || "#8CA9FF"} />
+        <Badge label={task.status} color={STATUS_COLORS[task.status] || "#8E9099"} />
         <span style={{ fontSize: "12px", fontWeight: 500, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {task.title}
         </span>
@@ -215,102 +141,9 @@ function TaskCard({ task }: { task: Task }) {
       {expanded && (
         <div style={{ marginTop: "6px", fontSize: "11px", opacity: 0.6, lineHeight: 1.4 }}>
           {task.description && <div>{task.description}</div>}
-          {task.blockedReason && <div style={{ color: "#fcd34d", marginTop: "4px" }}>{t("seeds.blocked")}{task.blockedReason}</div>}
+          {task.blockedReason && <div style={{ color: "#E8C56A", marginTop: "4px" }}>{t("seeds.blocked")}{task.blockedReason}</div>}
           {task.notes && <div style={{ marginTop: "4px", opacity: 0.5 }}>{task.notes}</div>}
           <div style={{ marginTop: "4px", opacity: 0.3, fontSize: "10px" }}>ID: {task.id}</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SeedCard({ state, expanded, onToggle }: {
-  state: SeedState;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const { t } = useTranslation("fold");
-  const shortName = state.agent.split("/")[1] || state.agent;
-  return (
-    <div
-      style={{
-        border: `1px solid ${state.status === "active" ? "rgba(129, 201, 149, 0.25)" : "var(--border-subtle, rgba(68,71,78,1))"}`,
-        borderRadius: "6px",
-        marginBottom: "4px",
-        background: state.status === "active" ? "rgba(129, 201, 149, 0.04)" : "var(--bg-surface, rgba(29,32,40,1))",
-      }}
-    >
-      <div
-        onClick={onToggle}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "8px 10px",
-          cursor: "pointer",
-        }}
-      >
-        <span
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: state.status === "active" ? "#81C995" : state.status === "finished" ? "#8E9099" : "#E8C56A",
-            flexShrink: 0,
-          }}
-        />
-        <span style={{ color: agentColor(state.agent), fontWeight: 600, fontSize: "12px" }}>
-          {shortName}
-        </span>
-        <span style={{ opacity: 0.4, fontSize: "11px", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {state.task}
-        </span>
-        <span style={{ opacity: 0.3, fontSize: "10px", flexShrink: 0 }}>
-          {t("ops.ops", { count: state.opCount })}
-        </span>
-        {(() => {
-          const total = state.outcomes.success + state.outcomes.failure + state.outcomes.blocked;
-          const rate = total > 0 ? state.outcomes.success / total : 0;
-          return total > 0 ? (
-            <span style={{ opacity: 0.3, fontSize: "10px", flexShrink: 0 }}>
-              {Math.round(rate * 100)}%
-            </span>
-          ) : null;
-        })()}
-        <span style={{ opacity: 0.3, fontSize: "10px", flexShrink: 0 }}>
-          {timeAgo(state.lastSeen)}
-        </span>
-      </div>
-      {expanded && (
-        <div style={{ borderTop: "1px solid var(--border-subtle, rgba(68,71,78,1))", maxHeight: "400px", overflow: "auto" }}>
-          {state.recentOps.map((op) => (
-            <div
-              key={op.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "3px 8px",
-                fontSize: "11px",
-                borderLeft: `2px solid ${op.outcome ? OUTCOME_COLORS[op.outcome] || "#666" : "#333"}`,
-              }}
-            >
-              <span style={{ opacity: 0.3, fontFamily: "monospace", fontSize: "10px", flexShrink: 0 }}>
-                {op.ts.slice(11, 19)}
-              </span>
-              {op.system && <Badge label={op.system} color={SYSTEM_COLORS[op.system] || "#a78bfa"} />}
-              {op.action && <Badge label={op.action} color="#AAC7FF" />}
-              {op.outcome && <Badge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#888"} />}
-              <span style={{ opacity: 0.6, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {op.content}
-              </span>
-            </div>
-          ))}
-          {state.recentOps.length === 0 && (
-            <div style={{ padding: "12px", opacity: 0.3, fontSize: "11px", textAlign: "center" }}>
-              {t("seeds.noOps")}
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -425,8 +258,8 @@ export function SeedMonitor() {
                 {shortAgent}
               </span>
               <div style={{ flex: 1, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "3px" }}>
-                {op.system && <Badge label={op.system} color={SYSTEM_COLORS[op.system] || "#a78bfa"} />}
-                {op.action && <Badge label={op.action} color="#AAC7FF" />}
+                {op.system && <Badge label={op.system} color={SYSTEM_COLORS[op.system] || "#9DA5C0"} />}
+                {op.action && <Badge label={op.action} color="#8CA9FF" />}
                 {op.outcome && <Badge label={op.outcome} color={OUTCOME_COLORS[op.outcome] || "#888"} />}
                 <span style={{ opacity: 0.6, lineHeight: 1.4 }}>
                   {op.content}
