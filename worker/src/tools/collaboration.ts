@@ -54,14 +54,14 @@ export function registerCollaborationTools(
       destructiveHint: false,
     },
     async () => {
-      // Only look at the last 24h, cap at 500 rows to avoid unbounded queries
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      // 4h window, 200 rows max. Enough for curvature without zombie bloat.
+      const since = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
       const rows = await db.select<MemoryRow>("memories", {
         select: "agent,content,ts,metadata",
         fold_id: `eq.${ctx.foldId}`,
         ts: `gte.${since}`,
         order: "ts.desc",
-        limit: "500",
+        limit: "200",
       });
 
       if (!rows.length) {
@@ -129,12 +129,14 @@ export function registerCollaborationTools(
           info.tokenPercent = Number(meta.token_percent) || null;
         }
 
-        // Accumulate operation metadata
+        // Accumulate operation metadata (cap ops at 30 for curvature calc)
         if (meta.system) info.systems.add(meta.system);
         if (meta.action) info.actions.add(meta.action);
         if (meta.system || meta.action) {
           info.opCount++;
-          info.ops.push({ action: meta.action, outcome: meta.outcome });
+          if (info.ops.length < 30) {
+            info.ops.push({ action: meta.action, outcome: meta.outcome });
+          }
         }
         if (meta.outcome === "success") info.outcomes.success++;
         if (meta.outcome === "failure") info.outcomes.failure++;
@@ -223,20 +225,20 @@ export function registerCollaborationTools(
           fold_id: `eq.${ctx.foldId}`,
           ts: `gte.${since}`,
           order: "ts.desc",
-          limit: "500",
+          limit: "200",
         }),
         db.select<MemoryRow>("memories", {
           select: "id",
           fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.knowledge",
-          limit: "100",
+          limit: "50",
         }),
         db.select<MemoryRow>("memories", {
           select: "id,metadata",
           fold_id: `eq.${ctx.foldId}`,
           message_type: "eq.injection",
           ts: `gte.${since}`,
-          limit: "100",
+          limit: "50",
         }),
       ]);
 

@@ -829,13 +829,14 @@ async function buildInstructions(
   const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
   const queries: Promise<MemoryRow[]>[] = [
-    // Active agents (skip connection spam, only real activity)
+    // Active agents (2h window, skip connection spam)
     db.select<MemoryRow>("memories", {
       select: "agent,content,metadata,ts",
       fold_id: `eq.${ctx.foldId}`,
+      ts: `gte.${twoHoursAgo}`,
       "metadata->>event": "neq.agent_connected",
       order: "ts.desc",
-      limit: "200",
+      limit: "100",
     }),
     // Recent activity (skip connection spam)
     db.select<MemoryRow>("memories", {
@@ -853,13 +854,13 @@ async function buildInstructions(
       "metadata->>target_agent": `in.(${ctx.agent},${ctx.user},all)`,
       limit: "50",
     }),
-    // Knowledge entries with full content (for proactive surfacing)
+    // Knowledge entries (for proactive surfacing)
     db.select<MemoryRow>("memories", {
       select: "id,agent,content,metadata,ts",
       fold_id: `eq.${ctx.foldId}`,
       message_type: "eq.knowledge",
       order: "ts.desc",
-      limit: "50",
+      limit: "20",
     }),
     // Distress signals (unresolved, same user)
     db.select<MemoryRow>("memories", {
@@ -899,7 +900,7 @@ async function buildInstructions(
   const insightsPromise = db.select<GlobalInsightRow>("global_insights", {
     select: "id,insight,domain_tags,source_hash,upvotes,ts",
     order: "ts.desc",
-    limit: "50",
+    limit: "20",
   });
 
   // Baton: load target agent's recent session
@@ -910,7 +911,7 @@ async function buildInstructions(
         fold_id: `eq.${ctx.foldId}`,
         agent: `eq.${baton}`,
         order: "ts.desc",
-        limit: "20",
+        limit: "10",
       }),
     );
   }
@@ -972,6 +973,15 @@ async function buildInstructions(
     const heartbeatPhase = event === "heartbeat" ? (meta.phase || null) : null;
     const tokenPercent = event === "heartbeat" ? (Number(meta.token_percent) || null) : null;
     agents.set(row.agent, { status, task, systems, ops, firstTs: row.ts, lastTs: row.ts, heartbeatPhase, tokenPercent });
+  }
+
+  // Filter out stale agents (idle/finished >1h ago)
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  for (const [name, info] of agents) {
+    if ((info.status === "idle" || info.status === "finished") &&
+        new Date(info.lastTs).getTime() < oneHourAgo) {
+      agents.delete(name);
+    }
   }
 
   // Compose instructions
@@ -1087,16 +1097,20 @@ async function buildInstructions(
     }
   }
 
-  // Active claims (work dedup, already filtered for staleness and session end)
+  // Active claims (work dedup, capped to top 5)
   if (activeClaims.length > 0) {
     const claimLines: string[] = [];
-    for (const claim of activeClaims) {
+    const claimsToShow = activeClaims.slice(0, 5);
+    for (const claim of claimsToShow) {
       const short = claim.agent.includes("/") ? claim.agent.split("/").pop()! : claim.agent;
       claimLines.push(`  ${short}: ${claim.scope}${claim.files.length > 0 ? ` [${claim.files.join(", ")}]` : ""}`);
     }
     if (claimLines.length > 0) {
       lines.push(`\nActive claims (do not duplicate):`);
       lines.push(...claimLines);
+      if (activeClaims.length > 5) {
+        lines.push(`  ...and ${activeClaims.length - 5} more`);
+      }
     }
   }
 
