@@ -32,7 +32,7 @@ Your Eywa connection is configured via environment variables:
 
 - `EYWA_ROOM` — the room slug (e.g. `demo`, `my-project`)
 - `EYWA_AGENT` — your agent identity prefix (e.g. `openclaw`). The server appends a unique suffix like `/jade-dusk`.
-- `EYWA_URL` — MCP endpoint (default: `https://eywa-mcp.armandsumo.workers.dev`)
+- `EYWA_URL` — MCP endpoint (default: `https://mcp.eywa-ai.dev`)
 
 The helper script at `{baseDir}/eywa-call.sh` handles all MCP communication.
 

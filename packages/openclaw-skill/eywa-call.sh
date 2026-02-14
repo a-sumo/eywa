@@ -3,7 +3,7 @@
 # Usage: bash eywa-call.sh <tool_name> '<json_arguments>'
 #
 # Environment:
-#   EYWA_URL   — MCP endpoint (default: https://eywa-mcp.armandsumo.workers.dev)
+#   EYWA_URL   — MCP endpoint (default: https://mcp.eywa-ai.dev)
 #   EYWA_ROOM  — Room slug (default: demo)
 #   EYWA_AGENT — Agent identity prefix (default: openclaw). Server appends a unique suffix.
 
@@ -12,7 +12,7 @@ set -euo pipefail
 TOOL="${1:?Usage: eywa-call.sh <tool_name> '<json_args>'}"
 ARGS="${2:-\{\}}"
 
-URL="${EYWA_URL:-https://eywa-mcp.armandsumo.workers.dev}"
+URL="${EYWA_URL:-https://mcp.eywa-ai.dev}"
 ROOM="${EYWA_ROOM:-demo}"
 AGENT="${EYWA_AGENT:-openclaw}"
 
