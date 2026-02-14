@@ -54,10 +54,14 @@ export function registerCollaborationTools(
       destructiveHint: false,
     },
     async () => {
+      // Only look at the last 24h, cap at 500 rows to avoid unbounded queries
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const rows = await db.select<MemoryRow>("memories", {
         select: "agent,content,ts,metadata",
         fold_id: `eq.${ctx.foldId}`,
+        ts: `gte.${since}`,
         order: "ts.desc",
+        limit: "500",
       });
 
       if (!rows.length) {
@@ -137,6 +141,21 @@ export function registerCollaborationTools(
         if (meta.outcome === "blocked") info.outcomes.blocked++;
       }
 
+      // Filter out agents that are idle/finished and last seen >1h ago
+      const oneHourAgo = Date.now() - 60 * 60 * 1000;
+      const staleStatuses = new Set(["idle", "finished"]);
+      for (const [name, info] of agents) {
+        if (staleStatuses.has(info.status) && new Date(info.lastSeen).getTime() < oneHourAgo) {
+          agents.delete(name);
+        }
+      }
+
+      if (!agents.size) {
+        return {
+          content: [{ type: "text" as const, text: "No agents active in the last hour." }],
+        };
+      }
+
       const lines = ["=== Eywa Agent Status ===\n"];
       for (const [name, info] of agents) {
         const sysStr = info.systems.size > 0 ? `\n    Systems: ${Array.from(info.systems).join(", ")}` : "";
@@ -173,8 +192,9 @@ export function registerCollaborationTools(
           ? `\n    Heartbeat: ${info.heartbeatPhase}${info.tokenPercent ? ` (${info.tokenPercent}% context)` : ""}`
           : "";
 
+        const desc = info.description.length > 120 ? info.description.slice(0, 120) + "..." : info.description;
         lines.push(
-          `  ${name} [${info.status}]${durationStr} - ${info.description}${sysStr}${actStr}${opsStr}${outStr}${kappaStr}${silenceStr}${hbStr}\n    Last seen: ${info.lastSeen}`,
+          `  ${name} [${info.status}]${durationStr} - ${desc}${sysStr}${actStr}${opsStr}${outStr}${kappaStr}${silenceStr}${hbStr}\n    Last seen: ${info.lastSeen}`,
         );
       }
 

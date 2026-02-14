@@ -41,6 +41,57 @@ export function registerKnowledgeTools(
       idempotentHint: false,
     },
     async ({ content, tags, title }) => {
+      // Dedup: check if similar knowledge already exists in this fold
+      const fullContent = `${title ? `[${title}] ` : ""}${content}`;
+      const normalizedContent = fullContent.toLowerCase().replace(/\s+/g, " ").trim();
+
+      // Search for existing entries with same title or very similar content
+      const existing = await db.select<MemoryRow>("memories", {
+        select: "id,content,metadata",
+        fold_id: `eq.${ctx.foldId}`,
+        message_type: "eq.knowledge",
+        order: "ts.desc",
+        limit: "50",
+      });
+
+      // Check for duplicates: exact title match or content similarity (first 100 chars match)
+      const contentPrefix = normalizedContent.slice(0, 100);
+      const duplicate = existing.find((row) => {
+        const rowContent = (row.content ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+        // Exact content match
+        if (rowContent === normalizedContent) return true;
+        // Same title match
+        const rowMeta = (row.metadata ?? {}) as Record<string, unknown>;
+        if (title && rowMeta.title === title) return true;
+        // Prefix match (catches near-duplicates with minor edits)
+        if (contentPrefix.length > 40 && rowContent.slice(0, 100) === contentPrefix) return true;
+        return false;
+      });
+
+      if (duplicate) {
+        // Update the existing entry instead of creating a new one
+        await db.update("memories", {
+          id: `eq.${duplicate.id}`,
+          fold_id: `eq.${ctx.foldId}`,
+        }, {
+          content: fullContent,
+          token_count: estimateTokens(content),
+          metadata: {
+            event: "knowledge_stored",
+            tags: tags ?? [],
+            title: title ?? null,
+            stored_by: ctx.agent,
+            updated_at: new Date().toISOString(),
+          },
+        });
+        return {
+          content: [{
+            type: "text" as const,
+            text: `Knowledge updated (existing ${duplicate.id})${title ? `: "${title}"` : ""}`,
+          }],
+        };
+      }
+
       const parentId = await getLatestMemoryId(db, ctx.foldId, ctx.sessionId);
       await db.insert("memories", {
         fold_id: ctx.foldId,
@@ -48,7 +99,7 @@ export function registerKnowledgeTools(
         session_id: ctx.sessionId,
         parent_id: parentId,
         message_type: "knowledge",
-        content: `${title ? `[${title}] ` : ""}${content}`,
+        content: fullContent,
         token_count: estimateTokens(content),
         metadata: {
           event: "knowledge_stored",
