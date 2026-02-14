@@ -7,6 +7,7 @@ import EywaLogo from "./EywaLogo";
 import { TerminalDemo } from "./TerminalDemo";
 import { LanguageSelector } from "./LanguageSelector";
 import { LiveTelemetry } from "./LiveTelemetry";
+import { DashboardMockup } from "./DashboardMockup";
 
 function useGitHubStars() {
   const [stars, setStars] = useState<number | null>(null);
@@ -135,14 +136,15 @@ export function Landing() {
             {t("hero.subtitle")}
           </p>
           <div className="landing-hero-actions">
-            <Link
-              to="/f/demo"
+            <button
               className="btn-landing-primary btn-large btn-live"
+              onClick={() => createDemoFold()}
+              disabled={creating}
             >
               <span className="live-dot" />
-              {t("hero.tryDemo")}
+              {creating ? tc("creating") : t("hero.tryDemo")}
               <IconArrowRight />
-            </Link>
+            </button>
             <button
               className="btn-landing-secondary"
               onClick={() => createFold()}
@@ -279,125 +281,7 @@ export function Landing() {
       </section>
 
       {/* Visual Proof - Animated Dashboard Mockup */}
-      <section className="landing-section landing-proof-section">
-        <h2 className="landing-section-title">{t("proof.title")}</h2>
-        <p className="landing-proof-subtitle">
-          {t("proof.subtitle")}
-        </p>
-        <div className="landing-proof-mockup">
-          {/* Window chrome */}
-          <div className="landing-proof-chrome">
-            <div className="landing-proof-dots">
-              <span /><span /><span />
-            </div>
-            <div className="landing-proof-url">eywa.ai/fold/acme-eng</div>
-          </div>
-
-          {/* Destination banner */}
-          <div className="landing-proof-destination">
-            <div className="landing-proof-dest-label">
-              <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
-                <circle cx="16" cy="14" r="11" stroke="currentColor" strokeWidth="2.5"/>
-                <circle cx="16" cy="14" r="6" stroke="currentColor" strokeWidth="2"/>
-                <circle cx="16" cy="14" r="2" fill="var(--aurora-cyan)"/>
-              </svg>
-              {t("proof.destination")}
-            </div>
-            <div className="landing-proof-dest-text">{t("proof.destText")}</div>
-            <div className="landing-proof-dest-progress">
-              <div className="landing-proof-dest-bar">
-                <div className="landing-proof-dest-fill" />
-              </div>
-              <span>{t("proof.milestones", { done: 3, total: 5 })}</span>
-            </div>
-          </div>
-
-          {/* Agent cards grid */}
-          <div className="landing-proof-agents">
-            <div className="landing-proof-agent">
-              <div className="landing-proof-agent-header">
-                <span className="landing-proof-status landing-proof-status-active" />
-                <span className="landing-proof-agent-name">sarah/bright-fern</span>
-                <span className="landing-proof-agent-phase">{t("proof.working")}</span>
-              </div>
-              <div className="landing-proof-agent-task">Implementing SAML provider integration</div>
-              <div className="landing-proof-agent-progress-bar">
-                <div className="landing-proof-agent-fill" style={{ width: '68%' }} />
-              </div>
-              <div className="landing-proof-agent-meta">
-                <span className="landing-proof-tag landing-proof-tag-fs">filesystem</span>
-                <span className="landing-proof-tag landing-proof-tag-git">git</span>
-                <span className="landing-proof-agent-time">12m active</span>
-              </div>
-            </div>
-
-            <div className="landing-proof-agent">
-              <div className="landing-proof-agent-header">
-                <span className="landing-proof-status landing-proof-status-testing" />
-                <span className="landing-proof-agent-name">alex/quiet-moss</span>
-                <span className="landing-proof-agent-phase landing-proof-phase-test">{t("proof.testing")}</span>
-              </div>
-              <div className="landing-proof-agent-task">Auth middleware unit tests</div>
-              <div className="landing-proof-agent-progress-bar">
-                <div className="landing-proof-agent-fill landing-proof-fill-green" style={{ width: '91%' }} />
-              </div>
-              <div className="landing-proof-agent-meta">
-                <span className="landing-proof-tag landing-proof-tag-ci">ci</span>
-                <span className="landing-proof-tag landing-proof-tag-fs">filesystem</span>
-                <span className="landing-proof-agent-time">8m active</span>
-              </div>
-            </div>
-
-            <div className="landing-proof-agent">
-              <div className="landing-proof-agent-header">
-                <span className="landing-proof-status landing-proof-status-deploy" />
-                <span className="landing-proof-agent-name">mike/iron-tide</span>
-                <span className="landing-proof-agent-phase landing-proof-phase-deploy">{t("proof.deploying")}</span>
-              </div>
-              <div className="landing-proof-agent-task">Session token refresh endpoint</div>
-              <div className="landing-proof-agent-progress-bar">
-                <div className="landing-proof-agent-fill landing-proof-fill-purple" style={{ width: '100%' }} />
-              </div>
-              <div className="landing-proof-agent-meta">
-                <span className="landing-proof-tag landing-proof-tag-deploy">deploy</span>
-                <span className="landing-proof-tag landing-proof-tag-api">api</span>
-                <span className="landing-proof-agent-time">3m active</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Activity stream */}
-          <div className="landing-proof-stream">
-            <div className="landing-proof-stream-header">{t("proof.activity")}</div>
-            <div className="landing-proof-stream-items">
-              <div className="landing-proof-stream-item landing-proof-stream-anim-1">
-                <span className="landing-proof-stream-dot" style={{ background: 'var(--aurora-green)' }} />
-                <span className="landing-proof-stream-agent">sarah/bright-fern</span>
-                <span className="landing-proof-stream-text">wrote src/auth/saml-provider.ts</span>
-                <span className="landing-proof-stream-time">now</span>
-              </div>
-              <div className="landing-proof-stream-item landing-proof-stream-anim-2">
-                <span className="landing-proof-stream-dot" style={{ background: 'var(--aurora-cyan)' }} />
-                <span className="landing-proof-stream-agent">alex/quiet-moss</span>
-                <span className="landing-proof-stream-text">tests passed (14/14)</span>
-                <span className="landing-proof-stream-time">12s ago</span>
-              </div>
-              <div className="landing-proof-stream-item landing-proof-stream-anim-3">
-                <span className="landing-proof-stream-dot" style={{ background: 'var(--aurora-purple)' }} />
-                <span className="landing-proof-stream-agent">mike/iron-tide</span>
-                <span className="landing-proof-stream-text">deployed to staging</span>
-                <span className="landing-proof-stream-time">45s ago</span>
-              </div>
-              <div className="landing-proof-stream-item landing-proof-stream-anim-4">
-                <span className="landing-proof-stream-dot" style={{ background: 'var(--aurora-pink)' }} />
-                <span className="landing-proof-stream-agent">sarah/bright-fern</span>
-                <span className="landing-proof-stream-text">injected SSO config to alex/quiet-moss</span>
-                <span className="landing-proof-stream-time">1m ago</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <DashboardMockup />
 
       {/* Features */}
       <section className="landing-section" id="features">

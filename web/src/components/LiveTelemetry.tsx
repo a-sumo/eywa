@@ -142,8 +142,8 @@ export function LiveTelemetry() {
           <span className="live-telemetry-dot" />
           <span className="live-telemetry-label">
             {telemetry.activeAgents > 0
-              ? <>Right now, <span className="live-telemetry-highlight">{telemetry.activeAgents}</span> agent{telemetry.activeAgents !== 1 ? "s are" : " is"} building this very product</>
-              : "Agents are building this very product"}
+              ? <><span className="live-telemetry-highlight" key={telemetry.activeAgents}>{telemetry.activeAgents}</span> agent{telemetry.activeAgents !== 1 ? "s" : ""} building now</>
+              : "Agents building Eywa"}
           </span>
           {telemetry.lastActivity && (
             <span className="live-telemetry-last">{timeAgo(telemetry.lastActivity)}</span>

@@ -1150,21 +1150,13 @@ body {
 }
 
 .live-telemetry-highlight {
-  display: inline-block;
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, #4ade80, #4eeaff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  padding: 0 0.15em;
-  animation: live-highlight-pulse 2s ease-in-out infinite;
+  color: var(--aurora-cyan, #4eeaff);
+  padding: 0 0.1em;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes live-highlight-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+.live-telemetry-highlight[data-updated] {
+  transform: scale(1.15);
 }
 
 .live-telemetry-last {
@@ -1758,6 +1750,62 @@ body {
 @keyframes proof-progress {
   0%, 100% { width: 58%; }
   50% { width: 64%; }
+}
+
+/* Animated fill: smooth width transitions driven by React state */
+.landing-proof-dest-fill-animated {
+  height: 100%;
+  background: linear-gradient(90deg, var(--aurora-cyan), var(--aurora-purple));
+  border-radius: 2px;
+  transition: width 1.2s ease-in-out;
+}
+
+/* Milestone pills in destination banner */
+.landing-proof-dest-milestones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.landing-proof-milestone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.62rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(240, 240, 245, 0.5);
+  transition: all 0.6s ease-in-out;
+}
+
+.landing-proof-milestone-done {
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.2);
+  color: var(--aurora-green);
+}
+
+/* Task text fade transition when cycling */
+.landing-proof-task-cycle {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Activity stream slide-in animation */
+.landing-proof-stream-enter {
+  animation: proof-stream-slide-in 0.4s ease-out;
+}
+
+@keyframes proof-stream-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .landing-proof-agents {
