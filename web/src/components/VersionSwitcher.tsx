@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 const GITHUB_SNAPSHOT = "https://github.com/a-sumo/eywa/tree/060a6dc";
-const SUBMITTED_DEPLOY = GITHUB_SNAPSHOT;
+const SUBMITTED_DEPLOY = "https://eywa-hackathon.vercel.app/r/demo-71wb";
 
 export function VersionSwitcher() {
   const [showInfo, setShowInfo] = useState(false);
