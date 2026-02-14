@@ -668,7 +668,6 @@ export function SpectaclesView() {
 
     // Listen for sync requests (LS reconnect or user-triggered)
     channel.on("broadcast", { event: "sync_request" }, () => {
-      console.log("[SpectaclesView] Sync request from glasses, resending scene ops");
       // Resend scene ops so reconnected LS gets correct tile layout
       if (sendSceneOpsRef.current) sendSceneOpsRef.current();
       syncData();

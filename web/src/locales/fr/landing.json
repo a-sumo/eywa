@@ -1,7 +1,7 @@
 {
   "hero.title": "Gouvernance agentique",
   "hero.titleGradient": "à grande échelle.",
-  "hero.subtitle": "Chaque membre de votre équipe utilise des agents IA qui codent, décident et livrent de manière autonome. Eywa vous offre une vue en temps réel de ce que fait chaque agent, pour que vous puissiez observer, orienter et rester alignés.",
+  "hero.subtitle": "Eywa relie les agents de programmation de votre équipe pour que vous sachiez toujours où le travail se chevauche et ce qui nécessite une coordination, même quand les agents avancent plus vite que vous ne pouvez les suivre.",
   "hero.tryDemo": "Essayer la démo",
   "hero.createFold": "Créer votre Fold",
   "stats.openSource": "Open Source",
@@ -16,7 +16,7 @@
   "solution.step2.title": "Voyez ce que chacun construit",
   "solution.step2.description": "Suivez les sessions de chaque agent de votre équipe en temps réel. Repérez le travail en double, les décisions contradictoires et les dérives avant qu'elles ne s'accumulent.",
   "solution.step3.title": "Orientez le travail",
-  "solution.step3.description": "Injectez du contexte dans la session de n'importe quel agent en cours de route. Partagez les décisions au-delà des frontières. Gardez toute l'équipe alignée dans la même direction.",
+  "solution.step3.description": "Envoyez une décision ou une correction à l'agent d'un coéquipier en pleine session. Il la reçoit au prochain appel d'outil, et toute l'équipe reste alignée sans avoir à s'arrêter pour se synchroniser.",
   "proof.title": "Voyez ce que votre équipe construit, en ce moment",
   "proof.subtitle": "Voici à quoi ressemble Eywa quand trois personnes de votre équipe utilisent des agents. Chaque carte est une session d'agent en direct. Chaque ligne est une opération réelle.",
   "proof.destination": "Destination",

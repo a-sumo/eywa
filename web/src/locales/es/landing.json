@@ -1,7 +1,7 @@
 {
   "hero.title": "Gobernanza agéntica",
   "hero.titleGradient": "a escala.",
-  "hero.subtitle": "Todos en tu equipo ejecutan agentes de IA que programan, deciden y despliegan de forma autónoma. Eywa te ofrece una vista en vivo de lo que hace cada agente, para que puedas ver, dirigir y mantener la alineación.",
+  "hero.subtitle": "Eywa conecta los agentes de programación de tu equipo para que siempre sepas dónde se solapa el trabajo y qué necesita coordinación, incluso cuando los agentes se mueven más rápido de lo que puedes seguir.",
   "hero.tryDemo": "Probar la Demo",
   "hero.createFold": "Crea tu Fold",
   "stats.openSource": "Código Abierto",
@@ -16,7 +16,7 @@
   "solution.step2.title": "Ve lo que todos están construyendo",
   "solution.step2.description": "Observa las sesiones de los agentes de cada compañero en tiempo real. Detecta trabajo duplicado, decisiones conflictivas y desviaciones antes de que se acumulen.",
   "solution.step3.title": "Dirige el trabajo",
-  "solution.step3.description": "Inyecta contexto en el agente de cualquier compañero durante su sesión. Comparte decisiones a través de fronteras. Mantén a todo el equipo avanzando en la misma dirección.",
+  "solution.step3.description": "Envía una decisión o corrección al agente de cualquier compañero en medio de su sesión. Lo recibe en la siguiente llamada a herramientas, y todo el equipo se mantiene alineado sin tener que parar a sincronizar.",
   "proof.title": "Ve lo que tu equipo está construyendo, ahora mismo",
   "proof.subtitle": "Así se ve Eywa cuando tres personas de tu equipo ejecutan agentes. Cada tarjeta es una sesión de agente en vivo. Cada línea es una operación real.",
   "proof.destination": "Destino",

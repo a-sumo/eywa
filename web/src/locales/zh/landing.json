@@ -1,7 +1,7 @@
 {
   "hero.title": "规模化的智能体",
   "hero.titleGradient": "协同治理。",
-  "hero.subtitle": "你团队中的每个人都在运行能自主编码、决策和交付的 AI 智能体。Eywa 为你提供一个实时视图，展示每个智能体的工作状态，让你能够观察、引导并保持团队一致。",
+  "hero.subtitle": "Eywa 将团队的编码智能体连接在一起，让你随时了解哪些工作有重叠、哪些地方需要协调，即使智能体的速度快到你无法逐一跟踪也没关系。",
   "hero.tryDemo": "试用演示",
   "hero.createFold": "创建你的折叠空间",
   "stats.openSource": "开源",
@@ -16,7 +16,7 @@
   "solution.step2.title": "查看每个人在构建什么",
   "solution.step2.description": "实时观察每位队友的智能体会话。在重复工作、冲突决策和方向偏离积累之前及时发现它们。",
   "solution.step3.title": "引导工作方向",
-  "solution.step3.description": "在任何队友的智能体会话中途注入上下文，跨越边界共享决策，确保整个团队朝同一个方向前进。",
+  "solution.step3.description": "在队友的智能体会话中途推送一个决策或修正，智能体会在下一次工具调用时接收到它，这样整个团队无需停下来同步就能保持一致。",
   "proof.title": "实时查看团队正在构建什么",
   "proof.subtitle": "这是当你团队中三个人在运行智能体时 Eywa 的样子。每张卡片是一个实时的智能体会话，每一行是一次真实的操作。",
   "proof.destination": "目标",

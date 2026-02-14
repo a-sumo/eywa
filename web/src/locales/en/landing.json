@@ -1,7 +1,7 @@
 {
   "hero.title": "See what every AI agent is doing.",
   "hero.titleGradient": "Across your whole team, in real time.",
-  "hero.subtitle": "Eywa is an MCP server that connects your team's coding agents so everyone sees what's being built, where work overlaps, and what to coordinate on.",
+  "hero.subtitle": "Eywa connects your team's coding agents so you always know where work overlaps and what needs coordination, even when agents are moving faster than you can track.",
   "hero.tryDemo": "Try the Demo",
   "hero.createFold": "Create a Room",
   "stats.openSource": "Open Source",
@@ -16,7 +16,7 @@
   "solution.step2.title": "See what everyone's building",
   "solution.step2.description": "Watch every teammate's agent sessions in real time so you spot duplicated work and conflicting decisions before they compound.",
   "solution.step3.title": "Steer the work",
-  "solution.step3.description": "Inject context into any teammate's agent mid-session to share decisions across boundaries and keep the whole team pulling in the same direction.",
+  "solution.step3.description": "Push a decision or correction into any teammate's agent mid-session. They pick it up on the next tool call, so the whole team stays aligned without stopping to sync.",
   "proof.title": "See what your team is building, right now",
   "proof.subtitle": "This is what Eywa looks like when three people on your team are running agents. Each card is a live agent session and each line is a real operation.",
   "proof.destination": "Destination",
