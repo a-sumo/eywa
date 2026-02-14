@@ -52,6 +52,11 @@
           "type": "tree",
           "id": "eywaApprovals",
           "name": "Approvals"
+        },
+        {
+          "type": "tree",
+          "id": "eywaTasks",
+          "name": "Tasks"
         }
       ],
       "eywaPanel": [
@@ -125,6 +130,11 @@
         "command": "eywa.refreshApprovals",
         "title": "Eywa: Refresh Approvals",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "eywa.refreshTasks",
+        "title": "Eywa: Refresh Tasks",
+        "icon": "$(refresh)"
       }
     ],
     "walkthroughs": [
@@ -176,6 +186,11 @@
         {
           "command": "eywa.refreshApprovals",
           "when": "view == eywaApprovals",
+          "group": "navigation"
+        },
+        {
+          "command": "eywa.refreshTasks",
+          "when": "view == eywaTasks",
           "group": "navigation"
         }
       ],

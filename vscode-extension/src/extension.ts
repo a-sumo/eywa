@@ -122,7 +122,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   // Initialize client
-  initClient(decorationManager, sessionTree, panelView, approvalTree, handleRealtimeEvent, context);
+  initClient(decorationManager, sessionTree, panelView, approvalTree, taskTree, handleRealtimeEvent, context);
 
   if (!getConfig("fold")) {
     showWelcome();
@@ -137,6 +137,7 @@ export function activate(context: vscode.ExtensionContext) {
     }),
     vscode.window.registerTreeDataProvider("eywaSessions", sessionTree),
     vscode.window.registerTreeDataProvider("eywaApprovals", approvalTree),
+    vscode.window.registerTreeDataProvider("eywaTasks", taskTree),
     // Agent decoration lifecycle
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (editor) decorationManager.updateDecorations(editor);
@@ -151,6 +152,7 @@ export function activate(context: vscode.ExtensionContext) {
     { dispose: () => sessionTree.dispose() },
     { dispose: () => panelView.dispose() },
     { dispose: () => approvalTree.dispose() },
+    { dispose: () => taskTree.dispose() },
   );
 
   // Commands
@@ -163,6 +165,7 @@ export function activate(context: vscode.ExtensionContext) {
       panelView.seed().catch(onErr("panelView"));
       liveProvider.loadInitial().catch(onErr("liveProvider"));
       approvalTree.seed().catch(onErr("approvalTree"));
+      taskTree.seed().catch(onErr("taskTree"));
     }),
 
     vscode.commands.registerCommand("eywa.openDashboard", () => {
@@ -300,6 +303,10 @@ export function activate(context: vscode.ExtensionContext) {
       approvalTree.seed();
     }),
 
+    vscode.commands.registerCommand("eywa.refreshTasks", () => {
+      taskTree.seed();
+    }),
+
     vscode.commands.registerCommand("eywa.tagTerminal", async () => {
       const terminal = vscode.window.activeTerminal;
       if (!terminal) {
@@ -353,7 +360,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("eywa.supabaseUrl") || e.affectsConfiguration("eywa.supabaseKey") || e.affectsConfiguration("eywa.fold")) {
-        initClient(decorationManager, sessionTree, panelView, approvalTree, handleRealtimeEvent, context);
+        initClient(decorationManager, sessionTree, panelView, approvalTree, taskTree, handleRealtimeEvent, context);
         liveProvider.setFold(getConfig("fold"));
         updateStatusBar();
       }
@@ -389,6 +396,7 @@ function initClient(
   sessionTree: SessionTreeProvider,
   panelView: PanelViewProvider,
   approvalTree: ApprovalTreeProvider,
+  taskTree: TaskTreeProvider,
   onEvent: (mem: MemoryPayload) => void,
   context: vscode.ExtensionContext,
 ) {
@@ -409,6 +417,7 @@ function initClient(
     sessionTree.seed().catch(logSeedError("sessionTree"));
     panelView.seed().catch(logSeedError("panelView"));
     approvalTree.seed().catch(logSeedError("approvalTree"));
+    taskTree.seed().catch(logSeedError("taskTree"));
 
     realtime = new RealtimeManager();
     const unsub = realtime.on(onEvent);
