@@ -26,7 +26,7 @@ export function OnboardingOverlay({ slug, foldId, secret, onDismiss }: Onboardin
   const { t } = useTranslation("fold");
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [agentConnected, setAgentConnected] = useState<string | null>(null);
-  const dismissTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Auto-dismiss if already dismissed for this fold
   useEffect(() => {
