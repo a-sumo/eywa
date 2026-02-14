@@ -75,7 +75,6 @@ function filterToStep(d: NavigatorMapData, step: number): NavigatorMapData {
 }
 
 export function NavigatorMap() {
-  const { t } = useTranslation("fold");
   const { fold } = useFoldContext();
   const { memories } = useRealtimeMemories(fold?.id ?? null, 200);
   const [syncing, setSyncing] = useState(false);

@@ -19,10 +19,10 @@ function useDevMode() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   if (params.get("dev") === "1") {
-    try { localStorage.setItem("eywa-dev", "1"); } catch {}
+    try { localStorage.setItem("eywa-dev", "1"); } catch { /* ignore */ }
     return true;
   }
-  try { return localStorage.getItem("eywa-dev") === "1"; } catch { return false; }
+  try { return localStorage.getItem("eywa-dev") === "1"; } catch { return false; /* ignore */ }
 }
 
 export function AgentList() {

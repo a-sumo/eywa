@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
 import { useFoldContext } from "../context/FoldContext";
 import { supabase, type Memory } from "../lib/supabase";
 import { GlobalKnowledgeHub } from "./GlobalKnowledgeHub";
@@ -58,7 +57,6 @@ export function KnowledgePage() {
 
 function RoomKnowledge() {
   const { t } = useTranslation("fold");
-  const { slug } = useParams<{ slug: string }>();
   const { fold } = useFoldContext();
   const [entries, setEntries] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);

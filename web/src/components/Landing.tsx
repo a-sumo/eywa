@@ -208,50 +208,10 @@ export function Landing() {
       {/* Fade to solid background */}
       <div className="landing-fade-overlay" />
 
-      {/* Problem */}
-      <section className="landing-section" id="problem">
-        <h2 className="landing-section-title">{t("problem.title")}</h2>
-        <div className="landing-cards-grid">
-          <div className="landing-card">
-            <div className="landing-card-icon">
-              <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <path className="anim-dup-line dup-a" d="M5 26L12 16l5 6 10-14" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path className="anim-dup-line dup-b" d="M5 26L12 16l5 6 10-14" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle className="anim-dup-dot" cx="27" cy="8" r="2.5"/>
-              </svg>
-            </div>
-            <h3>{t("problem.duplicated.title")}</h3>
-            <p>{t("problem.duplicated.description")}</p>
-          </div>
-          <div className="landing-card">
-            <div className="landing-card-icon">
-              <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <path className="anim-div-trunk" d="M16 28V16" strokeWidth="2.5" strokeLinecap="round"/>
-                <path className="anim-div-left" d="M16 16C14 12 8 8 4 4" strokeWidth="2.5" strokeLinecap="round"/>
-                <path className="anim-div-right" d="M16 16C18 12 24 8 28 4" strokeWidth="2.5" strokeLinecap="round"/>
-                <circle className="anim-div-dot-l" cx="4" cy="4" r="2.5"/>
-                <circle className="anim-div-dot-r" cx="28" cy="4" r="2.5"/>
-              </svg>
-            </div>
-            <h3>{t("problem.divergence.title")}</h3>
-            <p>{t("problem.divergence.description")}</p>
-          </div>
-          <div className="landing-card">
-            <div className="landing-card-icon">
-              <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <circle className="anim-clock-ring" cx="16" cy="16" r="13" strokeWidth="2.5"/>
-                <path className="anim-clock-hand-m" d="M16 16V6" strokeWidth="2.5" strokeLinecap="round"/>
-                <path className="anim-clock-hand-h" d="M16 16l5 4" strokeWidth="2.5" strokeLinecap="round"/>
-                <circle className="anim-clock-center" cx="16" cy="16" r="2" fill="var(--aurora-pink)"/>
-              </svg>
-            </div>
-            <h3>{t("problem.context.title")}</h3>
-            <p>{t("problem.context.description")}</p>
-          </div>
-        </div>
-      </section>
+      {/* Visual Proof - Animated Dashboard Mockup */}
+      <DashboardMockup />
 
-      {/* Solution */}
+      {/* How it works */}
       <section className="landing-section landing-section-alt">
         <h2 className="landing-section-title">{t("solution.title")}</h2>
         <div className="landing-steps">
