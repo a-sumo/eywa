@@ -17,6 +17,8 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Webhook bridge**: `POST /webhook` accepts inbound events from external systems (GitHub, Slack) and creates tasks in the target fold.
 
 ### Changed
+- **Bundle splitting**: Lazy-load Landing page and split vendor deps (react, supabase, i18n, d3) into separate chunks. Main bundle reduced from 1172KB to 832KB (29%). Landing page only loads when visiting `/`.
+- **Removed unused three.js dependencies**: Dropped `three`, `@react-three/fiber`, `@react-three/drei`, `@react-three/xr`, and `@types/three` (95 packages, never imported).
 - **Bounded all unbounded queries**: `eywa_status` (24h window, 500 rows, filters stale idle agents), `eywa_agents` (24h window, 500 rows, active/recent split), `eywa_sync` (100 row cap). Previously these scanned all memories with no limit.
 - **Compressed eywa_start snapshot**: Agent list filtered to last 1h (was all-time, 184 stale agents). Tasks capped at top 5 by priority with overflow count. Claims only shown on conflict, not listed in full.
 - **Knowledge deduplication**: `eywa_learn` checks existing entries for exact content match, same title, or prefix similarity before inserting. Duplicates update the existing entry instead of creating new rows.
@@ -26,6 +28,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 - VS Code: useRef type error in OnboardingOverlay.
 - Worker: `buildInstructions` now uses `Promise.allSettled` so one failing query degrades gracefully instead of voiding all agent context.
+- DemoBanner: "Create your fold" button now uses the shared `useFold` hook, which stores the fold secret in localStorage. Previously the secret was lost, breaking share URLs and agent auth.
 
 ## [0.3.0] - 2026-02-12
 
