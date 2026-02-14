@@ -14,6 +14,8 @@ All notable features and changes. One line per feature. Agents append here after
 - Fix: removed duplicate setAutoContextError call in useGeminiChat, added missing error handler in useLiveTelemetry fold lookup
 - Landing features grid: consolidated from 10 cards to 6 focused pillars (removed Timeline, Network, Telemetry, and surface-specific cards; added Agent Resilience and Works Everywhere)
 - CLI init: connection test verifies MCP server reachability after setup, Codex config failures now reported instead of silently swallowed, corrupted config.json warns instead of silently resetting
+- README: updated CLI section from 7 commands to all 18, organized by category (setup, observe, navigate, interact)
+- Discord bot: error/warn event handlers, process unhandledRejection handler, login error reporting for crash resilience
 
 ## 2026-02-13
 

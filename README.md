@@ -188,7 +188,7 @@ Eywa meets your team where they already work.
 | Integration | Description | Path |
 |------------|-------------|------|
 | <img src="https://cdn.simpleicons.org/react/61DAFB" width="16" /> **Web Dashboard** | HubView with agent map, destination banner, Gemini chat, operations view, real-time activity | [`web/`](web/) |
-| <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" /> **CLI** | `npx eywa-ai init`, status, inject, log, dashboard, join - zero-auth setup | [`cli/`](cli/) |
+| <img src="https://cdn.simpleicons.org/npm/CB3837" width="16" /> **CLI** | Zero-auth setup, status, course, claims, metrics, seeds, approve, dest, inject, learn, knowledge | [`cli/`](cli/) |
 | <img src="https://cdn.simpleicons.org/discord/5865F2" width="16" /> **Discord Bot** | 15 slash commands for team observability from chat | [`discord-bot/`](discord-bot/) |
 | <img src="https://cdn.simpleicons.org/visualstudiocode/007ACC" width="16" /> **VS Code Extension** | Agent tree sidebar, activity feed, context injection, knowledge lens | [`vscode-extension/`](vscode-extension/) |
 | <img src="https://cdn.simpleicons.org/snapchat/FFFC00" width="16" /> **Snap Spectacles** | AR panels with activity, destination, and voice interface via Gemini Live | [`eywa-specs/`](eywa-specs/) |
@@ -249,14 +249,38 @@ No Pi? Any device with a browser works as a display. Navigate to `/f/{fold-slug}
 
 ## CLI
 
+**Setup:**
 ```bash
-npx eywa-ai init [name]            # Create a fold, auto-configure all detected agents
-npx eywa-ai join <fold-slug>       # Join a fold, auto-configure all detected agents
-npx eywa-ai status [fold]          # Show agent status with systems and operations
-npx eywa-ai log [fold] [limit]     # Activity feed with operation metadata
-npx eywa-ai inject <target> <msg>  # Push context to an agent
-npx eywa-ai dashboard [room]       # Open the web dashboard
-npx eywa-ai help                   # Show all commands
+npx eywa-ai init [name]                        # Create a fold, auto-configure all detected agents
+npx eywa-ai join <fold-slug> [secret]          # Join a fold, auto-configure all detected agents
+npx eywa-ai dashboard [fold]                   # Open the web dashboard
+```
+
+**Observe:**
+```bash
+npx eywa-ai status [fold]                      # Agent status with systems and operations
+npx eywa-ai log [fold] [limit]                 # Activity feed with operation metadata
+npx eywa-ai course [fold]                      # Destination progress, agents, distress signals
+npx eywa-ai claims [fold]                      # Active work claims (who's working on what)
+npx eywa-ai metrics [fold]                     # Team curvature, throughput, success rate
+npx eywa-ai seeds [fold]                       # Seed health: active, stalled, throughput
+npx eywa-ai approve [fold]                     # List pending approval requests
+npx eywa-ai approve yes <id> ["msg"]           # Approve a request
+npx eywa-ai approve no <id> ["reason"]         # Deny a request
+```
+
+**Navigate:**
+```bash
+npx eywa-ai dest [fold]                        # View current destination
+npx eywa-ai dest set "target" ["m1,m2,m3"]    # Set destination with milestones
+npx eywa-ai dest check "milestone"             # Mark a milestone done
+```
+
+**Interact:**
+```bash
+npx eywa-ai inject <target> <msg>              # Send context to an agent mid-session
+npx eywa-ai learn "content" ["title"] ["tags"] # Store team knowledge
+npx eywa-ai knowledge [search]                 # Browse the knowledge base
 ```
 
 ---
