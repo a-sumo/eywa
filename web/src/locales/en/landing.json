@@ -1,7 +1,7 @@
 {
-  "hero.title": "Build with AI agents as a team.",
-  "hero.titleGradient": "See what every agent is doing.",
-  "hero.subtitle": "Eywa shows each teammate's AI coding agents in real time: what files they're editing, what they're building, where work overlaps. When two agents conflict or duplicate effort, you know instantly.",
+  "hero.title": "See what every AI agent is doing.",
+  "hero.titleGradient": "Across your whole team, in real time.",
+  "hero.subtitle": "Eywa is an MCP server that connects your team's coding agents so everyone sees what's being built, where work overlaps, and what to coordinate on.",
   "hero.tryDemo": "Try the Demo",
   "hero.createFold": "Create Your Fold",
   "stats.openSource": "Open Source",
