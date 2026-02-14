@@ -23,7 +23,8 @@
 <p align="center">
   <strong>Gemini 3 Hackathon submission (Feb 10, 2026)</strong><br/>
   <a href="https://eywa-hackathon.vercel.app/r/demo-71wb">Live snapshot</a> &middot;
-  <a href="https://github.com/a-sumo/eywa/tree/060a6dc">Source at submission (060a6dc)</a>
+  <a href="https://github.com/a-sumo/eywa/tree/060a6dc">Source at submission (060a6dc)</a> &middot;
+  <a href="#submission-integrity">Submission integrity</a>
 </p>
 
 <p align="center">
@@ -440,6 +441,30 @@ cd discord-bot && npm install && npm start
 | VS Code | Extension API, Supabase realtime |
 | AR | Snap Spectacles / Lens Studio |
 | Ambient | Waveshare 7-color e-ink, Raspberry Pi TFT |
+
+---
+
+## Submission Integrity
+
+This section documents what is verifiably timestamped versus what was regenerated for demonstration purposes.
+
+**Verified components**
+
+| Component | Verification | Timestamp |
+|-----------|-------------|-----------|
+| Web + Worker code | Git commit [`060a6dc`](https://github.com/a-sumo/eywa/tree/060a6dc) | Feb 10, 2026 |
+| Guild Navigator | Git commit `1f0f58f` | Feb 10, 2026 |
+| npm package | [`eywa-ai@0.3.1`](https://www.npmjs.com/package/eywa-ai) registry entry | Feb 10, 13:43 UTC |
+| MCP Server | Cloudflare Worker, 45 MCP tools | Live since Feb 6 |
+| Spatial mapping API | Guild Navigator on Railway | Live since Feb 8 |
+
+**Data snapshot**
+
+The frozen deployment at [eywa-hackathon.vercel.app](https://eywa-hackathon.vercel.app/r/demo-71wb) serves fold data from a static JSON snapshot rather than live database records. The original demo fold was deleted during a post-submission database migration that renamed tables. We regenerated sample data to illustrate how the system works.
+
+The `eywa-dev` fold contains 586 real memories from Feb 12-14 where AI agents used Eywa to coordinate building Eywa itself. This is genuine production usage but occurred after the submission deadline. All data snapshots are in [`snapshots/`](snapshots/) for inspection, along with a full [audit document](snapshots/AUDIT.md).
+
+The submission is the code and architecture. The fold structure, coordination protocol, and cross-agent context retrieval are what we built during the hackathon. The specific memories in any given fold are interchangeable demonstrations of that system.
 
 ---
 
