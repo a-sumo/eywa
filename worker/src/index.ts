@@ -16,7 +16,7 @@ import { registerTimelineTools } from "./tools/timeline.js";
 import { registerNetworkTools } from "./tools/network.js";
 import { registerRecoveryTools } from "./tools/recovery.js";
 import { registerDestinationTools } from "./tools/destination.js";
-import { registerClaimTools, getActiveClaims } from "./tools/claim.js";
+import { registerClaimTools, getActiveClaims, type ActiveClaim } from "./tools/claim.js";
 import { registerTelemetryTools, storeHostTelemetry } from "./tools/telemetry.js";
 import { registerApprovalTools } from "./tools/approval.js";
 import { registerTaskTools } from "./tools/task.js";
@@ -915,9 +915,27 @@ async function buildInstructions(
     );
   }
 
-  const [results, insightRows, activeClaims] = await Promise.all([Promise.all(queries), insightsPromise, activeClaimsPromise]);
-  const [agentRows, recentRows, injectionRows, knowledgeRows, distressRows, checkpointRows, destRows] = results;
-  const batonRows = baton ? results[7] : [];
+  // Use allSettled so one failing query doesn't void all context.
+  // Each query degrades gracefully to an empty array on failure.
+  const settled = await Promise.allSettled([...queries, insightsPromise, activeClaimsPromise]);
+  const queryLabels = ["agents", "recent", "injections", "knowledge", "distress", "checkpoints", "destination", ...(baton ? ["baton"] : []), "insights", "claims"];
+  for (let i = 0; i < settled.length; i++) {
+    if (settled[i].status === "rejected") {
+      const reason = (settled[i] as PromiseRejectedResult).reason;
+      console.error(`buildInstructions query [${queryLabels[i] ?? i}] failed:`, reason instanceof Error ? reason.message : String(reason));
+    }
+  }
+  const unwrap = <T>(r: PromiseSettledResult<T[]>): T[] => r.status === "fulfilled" ? r.value : [];
+  const agentRows = unwrap(settled[0] as PromiseSettledResult<MemoryRow[]>);
+  const recentRows = unwrap(settled[1] as PromiseSettledResult<MemoryRow[]>);
+  const injectionRows = unwrap(settled[2] as PromiseSettledResult<MemoryRow[]>);
+  const knowledgeRows = unwrap(settled[3] as PromiseSettledResult<MemoryRow[]>);
+  const distressRows = unwrap(settled[4] as PromiseSettledResult<MemoryRow[]>);
+  const checkpointRows = unwrap(settled[5] as PromiseSettledResult<MemoryRow[]>);
+  const destRows = unwrap(settled[6] as PromiseSettledResult<MemoryRow[]>);
+  const insightRows = unwrap(settled[queries.length] as PromiseSettledResult<GlobalInsightRow[]>);
+  const activeClaims = unwrap(settled[queries.length + 1] as PromiseSettledResult<ActiveClaim[]>);
+  const batonRows = baton ? unwrap(settled[7] as PromiseSettledResult<MemoryRow[]>) : [];
 
   // Build agent status map with curvature
   const agents = new Map<string, {

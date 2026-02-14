@@ -21,9 +21,11 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Compressed eywa_start snapshot**: Agent list filtered to last 1h (was all-time, 184 stale agents). Tasks capped at top 5 by priority with overflow count. Claims only shown on conflict, not listed in full.
 - **Knowledge deduplication**: `eywa_learn` checks existing entries for exact content match, same title, or prefix similarity before inserting. Duplicates update the existing entry instead of creating new rows.
 - **Description truncation**: `eywa_status` truncates agent descriptions to 120 chars.
+- **Similarity dedup**: Extracted duplicated `extractWords`/`wordSimilarity` from task.ts and claim.ts into shared `lib/similarity.ts`.
 
 ### Fixed
 - VS Code: useRef type error in OnboardingOverlay.
+- Worker: `buildInstructions` now uses `Promise.allSettled` so one failing query degrades gracefully instead of voiding all agent context.
 
 ## [0.3.0] - 2026-02-12
 
