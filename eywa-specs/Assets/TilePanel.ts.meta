@@ -29,6 +29,7 @@
     cameraObject: false
     channelName: false
     deviceId: false
+    httpBridgeUrl: false
     material: false
     pixelsPerCm: false
     positionOffset: false
@@ -55,6 +56,7 @@
       showStatus: true
       showTestQuads: false
       useMarkerTracking: false
+      httpBridgeUrl: ""
   ScriptTypes:
     -
       {}
@@ -69,3 +71,4 @@
     - '// @input bool showStatus = true {"hint":"Show debug status text"}'
     - '// @input bool showTestQuads {"hint":"Spawn colored test quads to verify mesh/material pipeline"}'
     - '// @input bool useMarkerTracking {"hint":"If true, panel anchors to image marker. If false (default), panel floats 65cm in front of camera."}'
+    - '// @input string httpBridgeUrl {"hint":"HTTP bridge URL for editor preview (e.g. http://localhost:8765). When set, polls bridge instead of WebSocket."}'

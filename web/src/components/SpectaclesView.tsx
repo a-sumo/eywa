@@ -41,7 +41,10 @@ interface SikEvent {
     | "toggle_agent"
     | "toggle_grid"
     | "toggle_theme"
-    | "toggle_info";
+    | "toggle_info"
+    | "focus_agent"
+    | "focus_node"
+    | "pan_to_region";
   // zoom
   factor?: number;
   // pan (normalized -1 to 1, relative to canvas)
@@ -50,8 +53,15 @@ interface SikEvent {
   // select (normalized 0-1 coords on the broadcast canvas)
   x?: number;
   y?: number;
-  // toggle_agent
+  // toggle_agent / focus_agent
   agent?: string;
+  // focus_node
+  nodeId?: string;
+  // focus zoom level (optional, defaults to 2.5 for focus commands)
+  focusZoom?: number;
+  // pan_to_region: normalized world coords
+  wx?: number;
+  wy?: number;
 }
 
 // --- Button style for Spectacles-sized controls ---
@@ -72,6 +82,96 @@ const CTRL_BTN: React.CSSProperties = {
   touchAction: "manipulation",
   userSelect: "none",
 };
+
+// --- Debug button grid definition ---
+const DEBUG_BUTTONS: Array<{ label: string; cmd: SikEvent | null }> = [
+  { label: "Z+",    cmd: { type: "zoom_in", factor: 1.4 } },
+  { label: "Z-",    cmd: { type: "zoom_out", factor: 0.6 } },
+  { label: "Reset",  cmd: { type: "reset_view" } },
+  { label: "Grid",   cmd: { type: "toggle_grid" } },
+  { label: "PanL",   cmd: { type: "pan", dx: -0.3, dy: 0 } },
+  { label: "PanR",   cmd: { type: "pan", dx: 0.3, dy: 0 } },
+  { label: "PanU",   cmd: { type: "pan", dx: 0, dy: -0.3 } },
+  { label: "PanD",   cmd: { type: "pan", dx: 0, dy: 0.3 } },
+  { label: "Focus",  cmd: null },  // cycles through agents
+  { label: "Theme",  cmd: { type: "toggle_theme" } },
+  { label: "Info",   cmd: { type: "toggle_info" } },
+  { label: "SIM",    cmd: null },  // toggles sim mode
+];
+const DBG_COLS = 4;
+const DBG_ROWS = 3;
+
+function renderDebugButtons(ctx: CanvasRenderingContext2D, w: number, h: number, hoverIdx: number, simActive: boolean) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#0a0c0a";
+  ctx.fillRect(0, 0, w, h);
+  const cellW = w / DBG_COLS;
+  const cellH = h / DBG_ROWS;
+  const pad = 6;
+  for (let i = 0; i < DEBUG_BUTTONS.length; i++) {
+    const btn = DEBUG_BUTTONS[i];
+    const col = i % DBG_COLS;
+    const row = Math.floor(i / DBG_COLS);
+    const x = col * cellW + pad;
+    const y = row * cellH + pad;
+    const bw = cellW - pad * 2;
+    const bh = cellH - pad * 2;
+    const isHover = i === hoverIdx;
+    const isSimBtn = btn.label === "SIM";
+    const active = isSimBtn && simActive;
+    ctx.beginPath();
+    ctx.roundRect(x, y, bw, bh, 8);
+    ctx.fillStyle = active ? "rgba(0,232,120,0.35)" : isHover ? "rgba(0,232,120,0.22)" : "rgba(0,232,120,0.06)";
+    ctx.fill();
+    ctx.strokeStyle = active ? "#4ade80" : "rgba(0,232,120,0.25)";
+    ctx.lineWidth = active ? 2 : 1;
+    ctx.stroke();
+    ctx.fillStyle = isHover || active ? "#fff" : "#4ade80";
+    ctx.font = `bold ${Math.round(bh * 0.28)}px system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(btn.label, x + bw / 2, y + bh / 2);
+  }
+}
+
+function renderEventLog(ctx: CanvasRenderingContext2D, w: number, h: number, events: Array<{ event: string; detail: string; ts: number }>) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#0a0c0a";
+  ctx.fillRect(0, 0, w, h);
+  // Header
+  ctx.fillStyle = "#4ade80";
+  ctx.font = "bold 14px system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText("EVENT LOG", 12, 10);
+  ctx.strokeStyle = "rgba(0,232,120,0.15)";
+  ctx.beginPath();
+  ctx.moveTo(12, 30);
+  ctx.lineTo(w - 12, 30);
+  ctx.stroke();
+  // Events
+  const lineH = 24;
+  const startY = 38;
+  const maxVisible = Math.floor((h - startY) / lineH);
+  const visible = events.slice(-maxVisible);
+  for (let i = 0; i < visible.length; i++) {
+    const e = visible[i];
+    const y = startY + i * lineH;
+    const age = Date.now() - e.ts;
+    const alpha = Math.max(0.3, 1 - age / 12000);
+    ctx.fillStyle = `rgba(74,222,128,${alpha})`;
+    ctx.font = "bold 12px monospace";
+    ctx.fillText(e.event, 12, y);
+    ctx.fillStyle = `rgba(255,255,255,${alpha * 0.55})`;
+    ctx.font = "12px monospace";
+    ctx.fillText(e.detail.slice(0, 35), 120, y);
+  }
+  if (visible.length === 0) {
+    ctx.fillStyle = "rgba(255,255,255,0.2)";
+    ctx.font = "13px system-ui, sans-serif";
+    ctx.fillText("Waiting for events...", 12, startY);
+  }
+}
 
 export function SpectaclesView() {
   const { fold } = useFoldContext();
@@ -99,6 +199,17 @@ export function SpectaclesView() {
     return params.get("device") || "editor";
   }, []);
 
+  // Event log (only shown when device=sim*)
+  const isSimDevice = deviceId.startsWith("sim");
+  const [eventLog, setEventLog] = useState<Array<{ event: string; detail: string; ts: number }>>([]);
+  const pushEvent = useCallback((event: string, detail: string) => {
+    const entry = { event, detail, ts: Date.now() };
+    eventLogRef.current = [...eventLogRef.current.slice(-14), entry];
+    if (isSimDevice) {
+      setEventLog((prev) => [...prev.slice(-7), entry]);
+    }
+  }, [isSimDevice]);
+
   // Refs
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const mapDataRef = useRef<NavigatorMapData | null>(null);
@@ -120,6 +231,13 @@ export function SpectaclesView() {
   // Broadcast canvas + renderer (hidden, fixed size for Spectacles)
   const broadcastCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const broadcastMapRef = useRef<NavigatorMapRenderer | null>(null);
+
+  // Debug tile state (accessible from setInterval via refs)
+  const eventLogRef = useRef<Array<{ event: string; detail: string; ts: number }>>([]);
+  const debugHoverRef = useRef(-1);
+  const focusIdxRef = useRef(0);
+  const simModeRef = useRef(false);
+  const simTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --- Initialize visible renderer ---
   useEffect(() => {
@@ -266,12 +384,14 @@ export function SpectaclesView() {
       case "zoom_in": {
         const factor = evt.factor || 1.3;
         targetZoomRef.current = Math.min(20, targetZoomRef.current * factor);
+        pushEvent("zoom_in", `${Math.round(targetZoomRef.current * 100)}%`);
         startViewAnim();
         break;
       }
       case "zoom_out": {
         const factor = evt.factor || 0.7;
         targetZoomRef.current = Math.max(0.1, targetZoomRef.current * factor);
+        pushEvent("zoom_out", `${Math.round(targetZoomRef.current * 100)}%`);
         startViewAnim();
         break;
       }
@@ -283,12 +403,14 @@ export function SpectaclesView() {
           x: targetPanRef.current.x + px,
           y: targetPanRef.current.y + py,
         };
+        pushEvent("pan", `dx=${(evt.dx||0).toFixed(2)} dy=${(evt.dy||0).toFixed(2)}`);
         startViewAnim();
         break;
       }
       case "reset_view": {
         targetZoomRef.current = 1;
         targetPanRef.current = { x: 0, y: 0 };
+        pushEvent("reset_view", "");
         startViewAnim();
         break;
       }
@@ -300,9 +422,11 @@ export function SpectaclesView() {
           const agent = map.hitTestLegend(sx, sy);
           if (agent) {
             map.toggleAgent(agent);
+            pushEvent("select", `legend: ${agent}`);
           } else {
             const node = map.hitTest(sx, sy);
             hoveredRef.current = node;
+            pushEvent("select", node ? `node: ${(node as any).label || (node as any).id || "?"}` : `miss (${evt.x.toFixed(2)},${evt.y.toFixed(2)})`);
           }
           redraw();
         }
@@ -311,6 +435,7 @@ export function SpectaclesView() {
       case "toggle_agent": {
         if (evt.agent) {
           map.toggleAgent(evt.agent);
+          pushEvent("toggle_agent", evt.agent);
           redraw();
         }
         break;
@@ -319,22 +444,81 @@ export function SpectaclesView() {
         const next = !map.gridMode;
         map.setGridMode(next);
         setGridMode(next);
+        pushEvent("toggle_grid", next ? "on" : "off");
         redraw();
         break;
       }
       case "toggle_theme": {
-        setTheme((t) => (t === "dark" ? "light" : "dark"));
+        setTheme((t) => {
+          const next = t === "dark" ? "light" : "dark";
+          pushEvent("toggle_theme", next);
+          return next;
+        });
         break;
       }
       case "toggle_info": {
-        setShowInfo((v) => !v);
+        setShowInfo((v) => {
+          pushEvent("toggle_info", !v ? "open" : "close");
+          return !v;
+        });
+        break;
+      }
+      case "focus_agent": {
+        // Pan + zoom the map to center on an agent's latest node
+        if (!evt.agent || !map.data?.nodes) break;
+        const agentNodes = map.data.nodes.filter(
+          (n: any) => n.agent === evt.agent
+        );
+        if (agentNodes.length === 0) {
+          pushEvent("focus_agent", `not found: ${evt.agent}`);
+          break;
+        }
+        // Use the last node (most recent) for this agent
+        const target = agentNodes[agentNodes.length - 1];
+        const fz = evt.focusZoom || 2.5;
+        targetZoomRef.current = fz;
+        targetPanRef.current = {
+          x: -target.x * map.scale * 0.85 * fz,
+          y: target.y * map.scale * 0.85 * fz,
+        };
+        pushEvent("focus_agent", evt.agent);
+        startViewAnim();
+        break;
+      }
+      case "focus_node": {
+        if (!evt.nodeId || !map.data?.nodes) break;
+        const node = map.data.nodes.find((n: any) => n.id === evt.nodeId);
+        if (!node) {
+          pushEvent("focus_node", `not found: ${evt.nodeId}`);
+          break;
+        }
+        const fz = evt.focusZoom || 3;
+        targetZoomRef.current = fz;
+        targetPanRef.current = {
+          x: -node.x * map.scale * 0.85 * fz,
+          y: node.y * map.scale * 0.85 * fz,
+        };
+        pushEvent("focus_node", `${(node as any).label || evt.nodeId}`);
+        startViewAnim();
+        break;
+      }
+      case "pan_to_region": {
+        // Pan to a world-space coordinate without changing zoom
+        if (evt.wx == null || evt.wy == null) break;
+        targetPanRef.current = {
+          x: -evt.wx * map.scale * 0.85 * targetZoomRef.current,
+          y: evt.wy * map.scale * 0.85 * targetZoomRef.current,
+        };
+        if (evt.focusZoom) targetZoomRef.current = evt.focusZoom;
+        pushEvent("pan_to_region", `(${evt.wx.toFixed(2)},${evt.wy.toFixed(2)})`);
+        startViewAnim();
         break;
       }
     }
 
     // After any interaction, sync broadcast canvas
     syncBroadcastView();
-  }, []);
+  }, [pushEvent]);
 
   // --- Supabase Realtime channel ---
   useEffect(() => {
@@ -356,6 +540,71 @@ export function SpectaclesView() {
     channel.on("broadcast", { event: "interact" }, (msg) => {
       const p = msg.payload;
       if (!p?.type) return;
+
+      // Route by tile ID
+      if (p.id === "debug-buttons") {
+        if (p.u != null && p.v != null) {
+          const col = Math.floor(p.u * DBG_COLS);
+          const row = Math.floor(p.v * DBG_ROWS);
+          const idx = row * DBG_COLS + col;
+          if (idx < 0 || idx >= DEBUG_BUTTONS.length) return;
+          const btn = DEBUG_BUTTONS[idx];
+
+          if (p.type === "tap") {
+            pushEvent("btn_tap", btn.label);
+            // Handle special buttons
+            if (btn.label === "Focus") {
+              const agents = mapDataRef.current?.meta?.agents;
+              if (agents && agents.length > 0) {
+                const agent = agents[focusIdxRef.current % agents.length];
+                focusIdxRef.current++;
+                handleSikEvent({ type: "focus_agent", agent });
+                pushEvent("focus", agent);
+              }
+            } else if (btn.label === "SIM") {
+              simModeRef.current = !simModeRef.current;
+              pushEvent("sim", simModeRef.current ? "started" : "stopped");
+              if (simModeRef.current && !simTimerRef.current) {
+                let step = 0;
+                const agents = mapDataRef.current?.meta?.agents || [];
+                simTimerRef.current = setInterval(() => {
+                  if (!simModeRef.current) {
+                    if (simTimerRef.current) { clearInterval(simTimerRef.current); simTimerRef.current = null; }
+                    return;
+                  }
+                  const phase = step % (agents.length + 3);
+                  if (phase < agents.length) {
+                    handleSikEvent({ type: "focus_agent", agent: agents[phase], focusZoom: 2.5 });
+                    pushEvent("sim", `focus ${agents[phase]}`);
+                  } else if (phase === agents.length) {
+                    handleSikEvent({ type: "reset_view" });
+                    pushEvent("sim", "reset");
+                  } else if (phase === agents.length + 1) {
+                    handleSikEvent({ type: "zoom_in", factor: 1.5 });
+                    pushEvent("sim", "zoom");
+                  } else {
+                    handleSikEvent({ type: "toggle_grid" });
+                    pushEvent("sim", "grid");
+                  }
+                  step++;
+                }, 2500);
+              } else if (!simModeRef.current && simTimerRef.current) {
+                clearInterval(simTimerRef.current);
+                simTimerRef.current = null;
+              }
+            } else if (btn.cmd) {
+              handleSikEvent(btn.cmd);
+            }
+          } else if (p.type === "hover" || p.type === "hover_move") {
+            debugHoverRef.current = idx;
+          } else if (p.type === "hover_exit") {
+            debugHoverRef.current = -1;
+          }
+        }
+        return;
+      }
+
+      // Navigator map interactions (default)
       const map = mapRef.current;
       if (!map) return;
 
@@ -365,8 +614,11 @@ export function SpectaclesView() {
         const agent = map.hitTestLegend(sx, sy);
         if (agent) {
           map.toggleAgent(agent);
+          pushEvent("tap", `legend: ${agent}`);
         } else {
-          hoveredRef.current = map.hitTest(sx, sy);
+          const node = map.hitTest(sx, sy);
+          hoveredRef.current = node;
+          pushEvent("tap", node ? `node: ${(node as any).label || (node as any).id || "?"}` : `(${p.u.toFixed(2)},${p.v.toFixed(2)})`);
         }
         redraw();
         syncBroadcastView();
@@ -377,6 +629,7 @@ export function SpectaclesView() {
           const node = map.hitTest(sx, sy);
           if (node !== hoveredRef.current) {
             hoveredRef.current = node;
+            pushEvent(p.type, node ? `node: ${(node as any).label || (node as any).id || "?"}` : `(${p.u.toFixed(2)},${p.v.toFixed(2)})`);
             redraw();
             syncBroadcastView();
           }
@@ -384,6 +637,7 @@ export function SpectaclesView() {
       } else if (p.type === "hover_exit") {
         if (hoveredRef.current) {
           hoveredRef.current = null;
+          pushEvent("hover_exit", "");
           redraw();
           syncBroadcastView();
         }
@@ -401,7 +655,7 @@ export function SpectaclesView() {
       const p = msg.payload;
       if (p?.text) {
         setVoiceInput(p.text);
-        // Auto-dismiss after 4s
+        pushEvent("voice_input", p.text.slice(0, 60));
         if (voiceInputTimer.current) clearTimeout(voiceInputTimer.current);
         voiceInputTimer.current = setTimeout(() => setVoiceInput(null), 4000);
       }
@@ -411,7 +665,7 @@ export function SpectaclesView() {
       const p = msg.payload;
       if (p?.text) {
         setVoiceResponse(p.text);
-        // Auto-dismiss after 6s
+        pushEvent("voice_response", p.text.slice(0, 60));
         if (voiceResponseTimer.current) clearTimeout(voiceResponseTimer.current);
         voiceResponseTimer.current = setTimeout(() => setVoiceResponse(null), 6000);
       }
@@ -421,6 +675,7 @@ export function SpectaclesView() {
       const p = msg.payload;
       if (p?.message) {
         setVoiceInjects((prev) => [...prev.slice(-4), { message: p.message, ts: Date.now() }]);
+        pushEvent("voice_inject", p.message.slice(0, 60));
       }
     });
 
@@ -436,28 +691,43 @@ export function SpectaclesView() {
       if (voiceInputTimer.current) clearTimeout(voiceInputTimer.current);
       if (voiceResponseTimer.current) clearTimeout(voiceResponseTimer.current);
     };
-  }, [fold?.slug, deviceId, handleSikEvent, syncData]);
+  }, [fold?.slug, deviceId, handleSikEvent, syncData, pushEvent]);
 
-  // --- Broadcast loop ---
+  // --- Broadcast loop (3 tiles: navigator-map, debug-buttons, event-log) ---
   useEffect(() => {
     if (!channelReady) return;
 
-    const TILE_ID = "navigator-map";
-    const W = 1024;
-    const H = 768;
+    const MAP_ID = "navigator-map";
+    const BTN_ID = "debug-buttons";
+    const LOG_ID = "event-log";
+    const MAP_W = 1024, MAP_H = 768;
+    const BTN_W = 512, BTN_H = 384;
+    const LOG_W = 512, LOG_H = 384;
 
-    const bCanvas = document.createElement("canvas");
-    bCanvas.style.cssText = "position:absolute;left:-9999px;width:1024px;height:768px";
-    document.body.appendChild(bCanvas);
+    // Helper: create offscreen canvas
+    const mkCanvas = (w: number, h: number) => {
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      c.style.cssText = "position:absolute;left:-9999px";
+      document.body.appendChild(c);
+      return c;
+    };
+
+    const bCanvas = mkCanvas(MAP_W, MAP_H);
+    const btnCanvas = mkCanvas(BTN_W, BTN_H);
+    const logCanvas = mkCanvas(LOG_W, LOG_H);
     broadcastCanvasRef.current = bCanvas;
 
     const bMap = new NavigatorMapRenderer(bCanvas, { theme: themeRef.current });
     broadcastMapRef.current = bMap;
-
     if (mapDataRef.current) bMap.setData(mapDataRef.current);
 
+    const btnCtx = btnCanvas.getContext("2d")!;
+    const logCtx = logCanvas.getContext("2d")!;
+
     setBroadcasting(true);
-    let tileCreated = false;
+    let tilesCreated = false;
 
     // Announce presence
     channelRef.current?.send({
@@ -466,46 +736,124 @@ export function SpectaclesView() {
       payload: { deviceId, ts: Date.now() },
     });
 
+    // Helper: canvas to base64 JPEG
+    const canvasToBase64 = (canvas: HTMLCanvasElement, quality: number): Promise<string | null> =>
+      new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (!blob) { resolve(null); return; }
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(",")[1]);
+          reader.readAsDataURL(blob);
+        }, "image/jpeg", quality);
+      });
+
+    // Bridge URL for HTTP event polling (bypasses unreliable Supabase REST relay)
+    const BRIDGE_URL = "http://localhost:8765";
+
     // Broadcast at ~5fps
     const loop = setInterval(async () => {
       const channel = channelRef.current;
       if (!channel) return;
 
-      if (!tileCreated) {
+      // Poll bridge for pending events (interactions from LS or /send)
+      try {
+        const evtRes = await fetch(`${BRIDGE_URL}/events`);
+        if (evtRes.ok) {
+          const { events } = await evtRes.json();
+          for (const evt of events) {
+            if (evt.event === "interaction" && evt.payload?.type) {
+              handleSikEvent(evt.payload as SikEvent);
+            } else if (evt.event === "interact" && evt.payload?.type) {
+              // Dispatch interact as if it came from Supabase
+              const p = evt.payload;
+              if (p.id === "debug-buttons" && p.u != null && p.v != null) {
+                const col = Math.floor(p.u * DBG_COLS);
+                const row = Math.floor(p.v * DBG_ROWS);
+                const idx = row * DBG_COLS + col;
+                if (idx >= 0 && idx < DEBUG_BUTTONS.length) {
+                  const btn = DEBUG_BUTTONS[idx];
+                  if (p.type === "tap") {
+                    pushEvent("btn_tap", btn.label);
+                    if (btn.label === "Focus") {
+                      const agents = mapDataRef.current?.meta?.agents;
+                      if (agents && agents.length > 0) {
+                        handleSikEvent({ type: "focus_agent", agent: agents[focusIdxRef.current++ % agents.length] });
+                      }
+                    } else if (btn.label === "SIM") {
+                      simModeRef.current = !simModeRef.current;
+                      pushEvent("sim", simModeRef.current ? "on" : "off");
+                    } else if (btn.cmd) {
+                      handleSikEvent(btn.cmd);
+                    }
+                  } else if (p.type === "hover" || p.type === "hover_move") {
+                    debugHoverRef.current = idx;
+                  } else if (p.type === "hover_exit") {
+                    debugHoverRef.current = -1;
+                  }
+                }
+              } else {
+                // Navigator map tap
+                const map = mapRef.current;
+                if (map && p.type === "tap" && p.u != null && p.v != null) {
+                  const sx = p.u * map.W;
+                  const sy = p.v * map.H;
+                  const agent = map.hitTestLegend(sx, sy);
+                  if (agent) { map.toggleAgent(agent); pushEvent("tap", `legend: ${agent}`); }
+                  else {
+                    const node = map.hitTest(sx, sy);
+                    hoveredRef.current = node;
+                    pushEvent("tap", node ? `node: ${(node as any).label || (node as any).id}` : `(${p.u.toFixed(2)},${p.v.toFixed(2)})`);
+                  }
+                  redraw();
+                  syncBroadcastView();
+                }
+              }
+            }
+          }
+        }
+      } catch { /* bridge not running, ignore */ }
+
+      if (!tilesCreated) {
         channel.send({
           type: "broadcast",
           event: "scene",
           payload: {
-            ops: [{
-              op: "create",
-              id: TILE_ID,
-              x: 0, y: 0, z: 0.5,
-              w: W, h: H, s: 0.58,
-              layer: 0, visible: true, interactive: true, draggable: false,
-            }],
+            ops: [
+              { op: "create", id: MAP_ID, x: -0.18, y: 0, z: 0.5, w: MAP_W, h: MAP_H, s: 0.5, layer: 0, visible: true, interactive: true, draggable: false },
+              { op: "create", id: BTN_ID, x: 0.42, y: 0.12, z: 0.5, w: BTN_W, h: BTN_H, s: 0.22, layer: 0, visible: true, interactive: true, draggable: false },
+              { op: "create", id: LOG_ID, x: 0.42, y: -0.18, z: 0.5, w: LOG_W, h: LOG_H, s: 0.22, layer: 0, visible: true, interactive: false, draggable: false },
+            ],
           },
         });
-        tileCreated = true;
+        tilesCreated = true;
       }
 
-      // Sync theme + view state
+      // Render map
       if (bMap.themeName !== themeRef.current) bMap.setTheme(themeRef.current);
       syncBroadcastView();
       bMap.draw(hoveredRef.current);
 
+      // Render debug buttons + event log
+      renderDebugButtons(btnCtx, BTN_W, BTN_H, debugHoverRef.current, simModeRef.current);
+      renderEventLog(logCtx, LOG_W, LOG_H, eventLogRef.current);
+
       try {
-        const blob = await new Promise<Blob | null>((resolve) => bCanvas.toBlob(resolve, "image/jpeg", 0.8));
-        if (!blob) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(",")[1];
+        const [mapB64, btnB64, logB64] = await Promise.all([
+          canvasToBase64(bCanvas, 0.8),
+          canvasToBase64(btnCanvas, 0.85),
+          canvasToBase64(logCanvas, 0.85),
+        ]);
+        const textures: Array<{ id: string; image: string }> = [];
+        if (mapB64) textures.push({ id: MAP_ID, image: mapB64 });
+        if (btnB64) textures.push({ id: BTN_ID, image: btnB64 });
+        if (logB64) textures.push({ id: LOG_ID, image: logB64 });
+        if (textures.length > 0) {
           channel.send({
             type: "broadcast",
             event: "tex_batch",
-            payload: { textures: [{ id: TILE_ID, image: base64 }] },
+            payload: { textures },
           });
-        };
-        reader.readAsDataURL(blob);
+        }
       } catch {
         // encoding can fail if tab is backgrounded
       }
@@ -517,7 +865,7 @@ export function SpectaclesView() {
       intervalRef.current = null;
       bMap.destroy();
       broadcastMapRef.current = null;
-      document.body.removeChild(bCanvas);
+      [bCanvas, btnCanvas, logCanvas].forEach((c) => document.body.removeChild(c));
       broadcastCanvasRef.current = null;
       setBroadcasting(false);
     };
@@ -738,6 +1086,46 @@ export function SpectaclesView() {
             borderRadius: 8, backdropFilter: "blur(4px)",
           }}>
             CHANNEL READY
+          </div>
+        )}
+
+        {/* Event log overlay (sim mode only) */}
+        {isSimDevice && eventLog.length > 0 && (
+          <div style={{
+            position: "absolute", top: 12, right: 12,
+            width: 280, maxHeight: 320,
+            background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
+            borderRadius: 10, padding: "8px 0",
+            border: "1px solid rgba(0,232,120,0.15)",
+            pointerEvents: "none", zIndex: 25,
+            fontFamily: "JetBrains Mono, monospace",
+          }}>
+            <div style={{
+              fontSize: 9, fontWeight: 700, color: "#4ade80",
+              padding: "0 10px 6px", letterSpacing: 1,
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              textTransform: "uppercase",
+            }}>
+              Event Log
+            </div>
+            {eventLog.map((e, i) => {
+              const age = Date.now() - e.ts;
+              const opacity = Math.max(0.3, 1 - age / 8000);
+              return (
+                <div key={e.ts + i} style={{
+                  fontSize: 10, padding: "3px 10px",
+                  opacity, display: "flex", gap: 6, alignItems: "baseline",
+                  transition: "opacity 0.3s",
+                }}>
+                  <span style={{ color: "#4ade80", fontWeight: 600, flexShrink: 0, minWidth: 72 }}>
+                    {e.event}
+                  </span>
+                  <span style={{ color: "rgba(255,255,255,0.6)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {e.detail}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
 

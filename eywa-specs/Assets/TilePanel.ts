@@ -34,6 +34,8 @@ interface QuadEntry {
   groupId: string | null;
   interactive: boolean;
   unsubscribes: (() => void)[];
+  currentTexture: Texture | null; // track for cleanup to prevent GPU memory leak
+  texDecoding: boolean; // guard against concurrent decodes
 }
 
 // Z offset per layer (cm). Higher layers are closer to the user.
@@ -91,6 +93,11 @@ export class TilePanel extends BaseScriptComponent {
   @hint("If true, panel anchors to image marker. If false (default), panel floats 65cm in front of camera.")
   public useMarkerTracking: boolean = false;
 
+  @input
+  @hint("HTTP bridge URL for editor preview (e.g. http://localhost:8765). When set, polls bridge instead of WebSocket.")
+  @allowUndefined
+  public httpBridgeUrl: string = "";
+
   // Live quads
   private quads: Map<string, QuadEntry> = new Map();
   private groups: Map<string, SceneObject> = new Map();
@@ -116,6 +123,16 @@ export class TilePanel extends BaseScriptComponent {
 
   // Shared mesh (all quads use the same unit-square mesh)
   private sharedMesh: RenderMesh;
+
+  // HTTP bridge polling state
+  private internetModule: InternetModule;
+  private httpPolling: boolean = false;
+  private httpLastSceneVersion: number = 0;
+  private httpLastTexVersion: number = 0;
+  private httpPollCount: number = 0;
+  private httpPollBusy: boolean = false;
+  private httpFailCount: number = 0;
+  private httpBackoffUntil: number = 0;
 
   onAwake() {
     this.createEvent("OnStartEvent").bind(() => this.init());
@@ -195,6 +212,11 @@ export class TilePanel extends BaseScriptComponent {
 
     this.receiver = this.attachReceiver();
 
+    // HTTP bridge fallback: when httpBridgeUrl is set, poll instead of relying on WebSocket
+    if (this.httpBridgeUrl && this.httpBridgeUrl.trim() !== "") {
+      this.startHttpBridge();
+    }
+
     print("[TilePanel] Ready! Channel: spectacles:" + this.channelName + ":" + this.resolvedDeviceId);
   }
 
@@ -224,6 +246,8 @@ export class TilePanel extends BaseScriptComponent {
       rmv.mesh = this.sharedMesh;
 
       const mat = this.material.clone();
+      mat.mainPass.blendMode = BlendMode.PremultipliedAlphaAuto;
+      mat.mainPass.depthWrite = false;
       rmv.mainMaterial = mat;
 
       // Position: side by side, 12cm apart, centered at origin
@@ -298,6 +322,8 @@ export class TilePanel extends BaseScriptComponent {
 
     if (this.material) {
       const mat = this.material.clone();
+      mat.mainPass.blendMode = BlendMode.PremultipliedAlphaAuto;
+      mat.mainPass.depthWrite = false;
       mat.mainPass["baseColor"] = new vec4(0.08, 0.82, 1.0, 0.8);
       rmv.mainMaterial = mat;
       Base64.decodeTextureAsync(
@@ -350,6 +376,7 @@ export class TilePanel extends BaseScriptComponent {
 
     this.panelUnsubscribes.push(
       this.panelInteractable.onHoverExit(() => {
+        this.hideCursor();
         this.sendInteraction("", "hover_exit", null);
         this.lastHitId = null;
       })
@@ -406,14 +433,31 @@ export class TilePanel extends BaseScriptComponent {
     return null;
   }
 
+  private lastInteractionSendTime: number = 0;
+
   private handlePanelHover(e: InteractorEvent, type: string) {
     const worldPos = e.interactor?.targetHitInfo?.hit?.position;
     if (!worldPos) return;
     const localPanel = this.quadParent.getTransform().getInvertedWorldTransform().multiplyPoint(worldPos);
+
+    // Immediate local cursor feedback (zero latency)
+    if (this.cursorObj) {
+      this.cursorObj.enabled = true;
+      this.cursorVisible = true;
+      // Position cursor at hit point, slightly in front of tiles
+      this.cursorObj.getTransform().setLocalPosition(new vec3(localPanel.x, localPanel.y, 3.0));
+    }
+
     const hit = this.hitTestTiles(localPanel);
     if (!hit) return;
     this.lastHitId = hit.id;
-    this.sendInteraction(hit.id, type, { x: localPanel.x, y: localPanel.y, u: hit.u, v: hit.v });
+
+    // Throttle network sends: taps always send, hover/move at max ~10fps
+    const now = Date.now();
+    if (type === "tap" || now - this.lastInteractionSendTime > 100) {
+      this.lastInteractionSendTime = now;
+      this.sendInteraction(hit.id, type, { x: localPanel.x, y: localPanel.y, u: hit.u, v: hit.v });
+    }
   }
 
   private hitTestTiles(localPos: vec3): { id: string; u: number; v: number } | null {
@@ -606,6 +650,10 @@ export class TilePanel extends BaseScriptComponent {
 
     // Clone material for independent texture per quad
     const mat = this.material.clone();
+    // Premultiplied alpha blending for correct texture rendering
+    mat.mainPass.blendMode = BlendMode.PremultipliedAlphaAuto;
+    mat.mainPass.depthTest = true;
+    mat.mainPass.depthWrite = false; // transparent quads shouldn't write depth
     rmv.mainMaterial = mat;
 
     // No per-tile collider. All interaction goes through the single panel
@@ -625,6 +673,8 @@ export class TilePanel extends BaseScriptComponent {
       groupId: null,
       interactive: false,
       unsubscribes: [],
+      currentTexture: null,
+      texDecoding: false,
     };
   }
 
@@ -689,6 +739,14 @@ export class TilePanel extends BaseScriptComponent {
       unsub();
     }
     entry.unsubscribes = [];
+
+    // Free GPU texture memory
+    if (entry.currentTexture) {
+      try {
+        if (typeof (entry.currentTexture as any).destroy === "function") (entry.currentTexture as any).destroy();
+      } catch (_) {}
+      entry.currentTexture = null;
+    }
 
     if (this.quadPool.length < this.poolMaxSize) {
       entry.obj.enabled = false;
@@ -813,14 +871,31 @@ export class TilePanel extends BaseScriptComponent {
 
   /**
    * Decode a base64 JPEG and apply to a quad's material.
+   * Destroys the previous texture to prevent GPU memory leaks.
    */
   private applyTexture(entry: QuadEntry, base64Image: string) {
+    // Guard: skip if previous decode hasn't finished (prevents queue buildup)
+    if (entry.texDecoding) return;
+    entry.texDecoding = true;
+
     Base64.decodeTextureAsync(
       base64Image,
       (texture: Texture) => {
+        entry.texDecoding = false;
+        // Destroy previous texture to free GPU memory
+        const prev = entry.currentTexture;
         entry.material.mainPass["baseTex"] = texture;
+        entry.currentTexture = texture;
+        if (prev) {
+          try {
+            if (typeof (prev as any).destroy === "function") (prev as any).destroy();
+          } catch (_) {
+            // Some textures may not be destroyable
+          }
+        }
       },
       () => {
+        entry.texDecoding = false;
         print("[TilePanel] Failed to decode texture for " + entry.id);
       }
     );
@@ -829,6 +904,12 @@ export class TilePanel extends BaseScriptComponent {
   // ---- Interaction ----
 
   private sendInteraction(id: string, type: string, hit: { x: number; y: number; u: number; v: number } | null) {
+    // Use HTTP bridge when polling (WebSocket unavailable in preview)
+    if (this.httpPolling) {
+      this.sendInteractionHttp(id, type, hit);
+      return;
+    }
+
     if (!this.receiver) return;
     this.receiver.sendEvent("interact", {
       id: id,
@@ -929,6 +1010,128 @@ export class TilePanel extends BaseScriptComponent {
 
     print("[TilePanel] Receiver attached");
     return receiver;
+  }
+
+  // ---- HTTP Bridge (editor preview fallback) ----
+
+  /**
+   * Start HTTP polling against the spectacles-bridge server.
+   * Uses InternetModule.fetch() which works in LS preview (unlike WebSocket).
+   */
+  private startHttpBridge() {
+    try {
+      this.internetModule = require('LensStudio:InternetModule') as InternetModule;
+    } catch (e) {
+      print("[TilePanel] ERROR: Could not load InternetModule: " + e);
+      return;
+    }
+
+    this.httpPolling = true;
+    const bridgeUrl = this.httpBridgeUrl.replace(/\/$/, ""); // strip trailing slash
+    print("[TilePanel] HTTP bridge polling: " + bridgeUrl);
+
+    const pollEvent = this.createEvent("UpdateEvent");
+    let lastPoll = 0;
+
+    pollEvent.bind(() => {
+      const now = Date.now();
+      if (now - lastPoll < 300) return; // ~3fps polling
+      if (this.httpPollBusy) return; // skip if previous poll still in-flight
+      if (now < this.httpBackoffUntil) return; // backoff after failures
+      lastPoll = now;
+      this.httpPollBusy = true;
+      this.httpPollCount++;
+
+      this.httpPollOnce(bridgeUrl);
+    });
+  }
+
+  /**
+   * Single poll cycle: fetch scene ops and textures from bridge.
+   */
+  private async httpPollOnce(bridgeUrl: string) {
+    try {
+      // Poll scene ops
+      const sceneRes = await this.internetModule.fetch(
+        bridgeUrl + "/scene",
+        { method: "GET" }
+      );
+      const sceneText = await sceneRes.text();
+      const sceneData = JSON.parse(sceneText);
+
+      // Reset backoff on successful connection
+      if (this.httpFailCount > 0) {
+        print("[TilePanel] HTTP bridge reconnected after " + this.httpFailCount + " failures");
+        this.httpFailCount = 0;
+        this.httpBackoffUntil = 0;
+      }
+
+      if (sceneData.version > this.httpLastSceneVersion) {
+        this.httpLastSceneVersion = sceneData.version;
+        print("[TilePanel] HTTP scene v" + sceneData.version + " (" + (sceneData.ops?.length || 0) + " ops)");
+        this.handleSceneEvent(sceneData);
+      }
+
+      // Poll tile textures (incremental)
+      const texRes = await this.internetModule.fetch(
+        bridgeUrl + "/textures?since=" + this.httpLastTexVersion,
+        { method: "GET" }
+      );
+      const texText = await texRes.text();
+      const texData = JSON.parse(texText);
+
+      if (texData.tiles && texData.tiles.length > 0) {
+        for (const tile of texData.tiles) {
+          this.handleTexEvent(tile);
+        }
+        this.httpLastTexVersion = texData.version;
+
+        if (this.httpPollCount % 10 === 0) {
+          print("[TilePanel] HTTP tex v" + texData.version + " (" + texData.tiles.length + " tiles updated)");
+        }
+      }
+    } catch (e) {
+      this.httpFailCount++;
+      // Exponential backoff: 1s, 2s, 4s, 8s, max 15s
+      const backoff = Math.min(15000, 1000 * Math.pow(2, Math.min(this.httpFailCount - 1, 4)));
+      this.httpBackoffUntil = Date.now() + backoff;
+      if (this.httpFailCount <= 3 || this.httpFailCount % 10 === 0) {
+        print("[TilePanel] HTTP poll error (fail #" + this.httpFailCount + ", backoff " + (backoff / 1000) + "s): " + e);
+      }
+    }
+
+    this.httpPollBusy = false;
+  }
+
+  /**
+   * Send an interaction event via HTTP POST to the bridge.
+   */
+  private sendInteractionHttp(id: string, type: string, hit: { x: number; y: number; u: number; v: number } | null) {
+    if (!this.httpPolling || !this.internetModule) return;
+    // Don't send if bridge is in backoff (known to be down)
+    if (this.httpFailCount > 2) return;
+
+    const bridgeUrl = this.httpBridgeUrl.replace(/\/$/, "");
+    const payload = {
+      event: "interact",
+      payload: {
+        id: id,
+        type: type,
+        x: hit ? hit.x : undefined,
+        y: hit ? hit.y : undefined,
+        u: hit ? hit.u : undefined,
+        v: hit ? hit.v : undefined,
+        timestamp: Date.now(),
+      },
+    };
+
+    this.internetModule.fetch(bridgeUrl + "/interact", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+    }).catch(() => {
+      // Interaction send failures are non-critical
+    });
   }
 
   // ---- Cleanup ----
