@@ -2236,6 +2236,49 @@ body {
   }
 }
 
+.landing-roi-savings {
+  max-width: 980px;
+  margin: 2rem auto 0;
+}
+
+.landing-roi-savings-inner {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  border-radius: var(--radius-xl, 14px);
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.06), rgba(21, 209, 255, 0.06));
+  border: 1px solid rgba(74, 222, 128, 0.15);
+}
+
+.landing-roi-savings-amount {
+  font-size: 3rem;
+  font-weight: 800;
+  font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif);
+  line-height: 1;
+  color: var(--aurora-green, #4ade80);
+  margin-bottom: 0.5rem;
+}
+
+.landing-roi-savings-label {
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.landing-roi-savings-detail {
+  font-size: 0.8rem;
+  opacity: 0.4;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .landing-roi-savings-amount {
+    font-size: 2.25rem;
+  }
+}
+
 /* Features grid */
 .landing-features-grid {
   display: grid;

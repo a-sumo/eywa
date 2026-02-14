@@ -40,6 +40,9 @@ function AnimatedCounter({ end, suffix = "", prefix = "", duration = 2000 }: Cou
 }
 
 // Simulated weekly stats for a 4-person team running agents
+// Agent compute cost: ~$0.50/min for Claude/GPT-4 class models
+const COST_PER_HOUR = 30; // blended agent compute cost $/hr
+
 const WITHOUT_EYWA = {
   duplicateRuns: 14,
   wastedHours: 23,
@@ -53,6 +56,9 @@ const WITH_EYWA = {
   conflictsCaught: 8,
   contextRecovered: 31,
 };
+
+const WEEKLY_SAVINGS = Math.round((WITHOUT_EYWA.wastedHours - WITH_EYWA.wastedHours) * COST_PER_HOUR);
+const MONTHLY_SAVINGS = WEEKLY_SAVINGS * 4;
 
 export function ValueProps() {
   return (
@@ -123,8 +129,10 @@ export function ValueProps() {
             </div>
           </div>
           <div className="landing-roi-total landing-roi-total-bad">
-            <span className="landing-roi-total-label">Time spent untangling</span>
-            <span className="landing-roi-total-value">~<AnimatedCounter end={6} suffix="h" duration={2500} />/week</span>
+            <span className="landing-roi-total-label">Weekly cost</span>
+            <span className="landing-roi-total-value">
+              $<AnimatedCounter end={WITHOUT_EYWA.wastedHours * COST_PER_HOUR} duration={2500} /><span style={{ fontSize: "0.7em", opacity: 0.6 }}>/week</span>
+            </span>
           </div>
         </div>
 
@@ -180,8 +188,25 @@ export function ValueProps() {
             </div>
           </div>
           <div className="landing-roi-total landing-roi-total-good">
-            <span className="landing-roi-total-label">Time spent untangling</span>
-            <span className="landing-roi-total-value">~<AnimatedCounter end={20} suffix="m" duration={2500} />/week</span>
+            <span className="landing-roi-total-label">Weekly cost</span>
+            <span className="landing-roi-total-value">
+              $<AnimatedCounter end={Math.round(WITH_EYWA.wastedHours * COST_PER_HOUR)} duration={2500} /><span style={{ fontSize: "0.7em", opacity: 0.6 }}>/week</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom line savings banner */}
+      <div className="landing-roi-savings">
+        <div className="landing-roi-savings-inner">
+          <div className="landing-roi-savings-amount">
+            $<AnimatedCounter end={MONTHLY_SAVINGS} duration={2800} />
+          </div>
+          <div className="landing-roi-savings-label">
+            saved per month in wasted agent compute
+          </div>
+          <div className="landing-roi-savings-detail">
+            At $30/hr blended compute cost for a 4-person team. Your numbers will vary, but the pattern doesn't.
           </div>
         </div>
       </div>
