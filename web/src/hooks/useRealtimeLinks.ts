@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase, type Link } from "../lib/supabase";
+import { getSnapshot } from "../lib/snapshot";
 
 export function useRealtimeLinks(roomId: string | null) {
   const [links, setLinks] = useState<Link[]>([]);
@@ -8,6 +9,13 @@ export function useRealtimeLinks(roomId: string | null) {
   const fetchInitial = useCallback(async () => {
     if (!roomId) {
       setLinks([]);
+      setLoading(false);
+      return;
+    }
+
+    const snapshot = await getSnapshot();
+    if (snapshot) {
+      setLinks((snapshot.links ?? []) as unknown as Link[]);
       setLoading(false);
       return;
     }

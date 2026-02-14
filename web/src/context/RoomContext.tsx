@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase, type Room } from "../lib/supabase";
+import { getSnapshot } from "../lib/snapshot";
 
 interface RoomContextValue {
   room: Room | null;
@@ -28,6 +29,14 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     async function fetchRoom() {
       setLoading(true);
       setError(null);
+
+      // Try static snapshot first (for frozen deployments)
+      const snapshot = await getSnapshot();
+      if (snapshot?.fold) {
+        setRoom(snapshot.fold as unknown as Room);
+        setLoading(false);
+        return;
+      }
 
       const { data, error: fetchError } = await supabase
         .from("folds")

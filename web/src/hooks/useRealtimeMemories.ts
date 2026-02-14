@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { supabase, type Memory } from "../lib/supabase";
+import { getSnapshot } from "../lib/snapshot";
 
 export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?: number) {
   const [memories, setMemories] = useState<Memory[]>([]);
@@ -8,6 +9,15 @@ export function useRealtimeMemories(roomId: string | null, limit = 50, sinceMs?:
   const fetchInitial = useCallback(async () => {
     if (!roomId) {
       setMemories([]);
+      setLoading(false);
+      return;
+    }
+
+    // Try static snapshot first
+    const snapshot = await getSnapshot();
+    if (snapshot?.memories?.length) {
+      const sorted = [...snapshot.memories as unknown as Memory[]].reverse().slice(0, limit);
+      setMemories(sorted);
       setLoading(false);
       return;
     }
@@ -79,18 +89,27 @@ export function useRealtimeAgents(roomId: string | null, sinceMs?: number) {
       return;
     }
 
-    let query = supabase
-      .from("memories")
-      .select("agent, ts, session_id, metadata")
-      .eq("fold_id", roomId)
-      .order("ts", { ascending: false })
-      .limit(1000);
+    // Try static snapshot first
+    const snapshot = await getSnapshot();
+    let data: Array<{ agent: string; ts: string; session_id: string; metadata: Record<string, unknown> }> | null = null;
 
-    if (sinceMs != null && sinceMs > 0) {
-      query = query.gte("ts", new Date(Date.now() - sinceMs).toISOString());
+    if (snapshot?.memories?.length) {
+      data = snapshot.memories as unknown as typeof data;
+    } else {
+      let query = supabase
+        .from("memories")
+        .select("agent, ts, session_id, metadata")
+        .eq("fold_id", roomId)
+        .order("ts", { ascending: false })
+        .limit(1000);
+
+      if (sinceMs != null && sinceMs > 0) {
+        query = query.gte("ts", new Date(Date.now() - sinceMs).toISOString());
+      }
+
+      const result = await query;
+      data = result.data;
     }
-
-    const { data } = await query;
 
     if (!data) return;
 

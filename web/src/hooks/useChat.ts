@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase, type Message } from "../lib/supabase";
+import { getSnapshot } from "../lib/snapshot";
 
 export function useChat(roomId: string | null, channel = "general") {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -8,6 +9,17 @@ export function useChat(roomId: string | null, channel = "general") {
   const fetchInitial = useCallback(async () => {
     if (!roomId) {
       setMessages([]);
+      setLoading(false);
+      return;
+    }
+
+    // Try static snapshot first
+    const snapshot = await getSnapshot();
+    if (snapshot?.messages?.length) {
+      const filtered = (snapshot.messages as unknown as Message[]).filter(
+        (m) => m.channel === channel
+      );
+      setMessages(filtered);
       setLoading(false);
       return;
     }
