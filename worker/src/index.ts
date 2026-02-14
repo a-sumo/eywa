@@ -112,7 +112,19 @@ function buildDemoMemories(foldId: string): Array<Record<string, unknown>> {
     { name: "eve/rosy-dawn", session: `session_eve_${now}`, task: "Setting up CI/CD pipeline with GitHub Actions" },
   ];
   const memories: Array<Record<string, unknown>> = [];
-  const m = (data: Record<string, unknown>) => { memories.push({ fold_id: foldId, ...data }); };
+  const m = (data: Record<string, unknown>) => {
+    memories.push({
+      fold_id: foldId,
+      agent: null,
+      session_id: null,
+      message_type: null,
+      content: null,
+      token_count: 0,
+      metadata: {},
+      ts: new Date().toISOString(),
+      ...data,
+    });
+  };
 
   // Destination (set 2 hours ago)
   m({
