@@ -1578,7 +1578,11 @@ const STATUS_ICONS = {
 };
 
 async function cmdTasks(subCmd, restArgs) {
-  const fold = await resolveFold(null);
+  const SUBCMDS = ["create", "done", "close", "--all"];
+  const foldSlug = (!subCmd || SUBCMDS.includes(subCmd)) ? null : subCmd;
+  const fold = await resolveFold(foldSlug);
+  // If subCmd was a fold slug, shift: the real subcommand is in restArgs
+  if (foldSlug) { subCmd = restArgs?.[0]; restArgs = restArgs?.slice(1) || []; }
 
   if (subCmd === "create") {
     const title = restArgs[0];

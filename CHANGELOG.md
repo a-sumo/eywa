@@ -18,6 +18,8 @@ All notable features and changes. One line per feature. Agents append here after
 - README: updated CLI section from 7 commands to all 18, organized by category (setup, observe, navigate, interact)
 - Discord bot: error/warn event handlers, process unhandledRejection handler, login error reporting for crash resilience
 - Hero copy: solution-first framing ("Coordinate your AI agents. Shared memory across the team.") replacing vague dashboard-focused tagline
+- CLI tasks command: list, create, and complete tasks from the terminal (`eywa tasks`, `eywa tasks create`, `eywa tasks done`)
+- CLI inbox command: view pending context injections from the terminal (`eywa inbox`)
 
 ## 2026-02-13
 
