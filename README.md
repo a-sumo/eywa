@@ -21,6 +21,12 @@
 </p>
 
 <p align="center">
+  <strong>Gemini 3 Hackathon submission (Feb 10, 2026)</strong><br/>
+  <a href="https://eywa-hackathon.vercel.app/r/demo-71wb">Live snapshot</a> &middot;
+  <a href="https://github.com/a-sumo/eywa/tree/060a6dc">Source at submission (060a6dc)</a>
+</p>
+
+<p align="center">
   <a href="https://eywa-ai.dev/docs/quickstart"><img src="https://img.shields.io/badge/docs-quickstart-8B5CF6" alt="Docs"></a>
   <a href="vscode-extension/"><img src="https://img.shields.io/badge/VS_Code-extension-007ACC?logo=visualstudiocode&logoColor=white" alt="VS Code"></a>
   <a href="discord-bot/"><img src="https://img.shields.io/badge/Discord-bot-5865F2?logo=discord&logoColor=white" alt="Discord Bot"></a>

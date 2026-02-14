@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { FoldProvider } from "./context/FoldContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppHeader } from "./components/AppHeader";
+import { VersionSwitcher } from "./components/VersionSwitcher";
 import { NotFound } from "./components/NotFound";
 
 const Landing = lazy(() => import("./components/Landing").then(m => ({ default: m.Landing })));
@@ -56,6 +57,7 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <ScrollToTop />
+        <VersionSwitcher />
         <AppHeader />
         <Suspense fallback={<RouteLoader />}>
           <Routes>
