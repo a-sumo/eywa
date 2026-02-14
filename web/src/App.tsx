@@ -75,15 +75,15 @@ function App() {
               <Route path="self-hosting" element={<SelfHostingDocs />} />
               <Route path="integrations/:provider" element={<IntegrationGuide />} />
             </Route>
-            <Route path="/f/:slug/eink" element={<FoldProvider><MiniEywaEink /></FoldProvider>} />
-            <Route path="/f/:slug/phone" element={<FoldProvider><MiniEywa /></FoldProvider>} />
-            <Route path="/f/:slug/spectacles" element={<FoldProvider><SpectaclesView /></FoldProvider>} />
-            <Route path="/f/:slug/spectacles/rx" element={<FoldProvider><SpectaclesReceiver /></FoldProvider>} />
-            <Route path="/f/:slug/voices" element={<FoldProvider><VoicesView /></FoldProvider>} />
-            <Route path="/f/:slug/*" element={<FoldRoutes />} />
-            {/* Backward compat: /r/:slug/* → /f/:slug/* */}
+            <Route path="/rooms/:slug/eink" element={<FoldProvider><MiniEywaEink /></FoldProvider>} />
+            <Route path="/rooms/:slug/phone" element={<FoldProvider><MiniEywa /></FoldProvider>} />
+            <Route path="/rooms/:slug/spectacles" element={<FoldProvider><SpectaclesView /></FoldProvider>} />
+            <Route path="/rooms/:slug/spectacles/rx" element={<FoldProvider><SpectaclesReceiver /></FoldProvider>} />
+            <Route path="/rooms/:slug/voices" element={<FoldProvider><VoicesView /></FoldProvider>} />
+            <Route path="/rooms/:slug/*" element={<FoldRoutes />} />
+            {/* Backward compat: /f/:slug/* and /r/:slug/* → /rooms/:slug/* */}
+            <Route path="/f/:slug/*" element={<RoomRedirect />} />
             <Route path="/r/:slug/*" element={<RoomRedirect />} />
-            {/* Backward compat: /rooms was old redirect, now /folds redirects here */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -109,7 +109,7 @@ function ScrollToTop() {
 
 function RoomRedirect() {
   const { slug, "*": rest } = useParams();
-  return <Navigate to={`/f/${slug}${rest ? `/${rest}` : ""}`} replace />;
+  return <Navigate to={`/rooms/${slug}${rest ? `/${rest}` : ""}`} replace />;
 }
 
 function FoldRoutes() {

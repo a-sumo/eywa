@@ -186,7 +186,7 @@ export function FoldsIndex() {
           {folds.map((fs) => (
             <Link
               key={fs.fold.id}
-              to={`/f/${fs.fold.slug}`}
+              to={`/rooms/${fs.fold.slug}`}
               className={`rooms-index-card ${fs.activeAgentCount > 0 ? "rooms-index-card-active" : ""}`}
             >
               <div className="rooms-index-card-top">

@@ -17,9 +17,9 @@ export function AppHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isDocs = location.pathname.startsWith("/docs");
-  const isRoom = location.pathname.startsWith("/f/");
+  const isRoom = location.pathname.startsWith("/rooms/");
 
-  // Extract slug from /f/:slug/...
+  // Extract slug from /rooms/:slug/...
   const slug = isRoom ? location.pathname.split("/")[2] : null;
 
   // Close mobile menu on navigation
@@ -45,7 +45,7 @@ export function AppHeader() {
           <Link to="/rooms" className={location.pathname === "/rooms" ? "active" : ""}>{t("nav.folds")}</Link>
           <Link to="/docs" className={isDocs ? "active" : ""}>{t("nav.docs")}</Link>
           {isRoom && slug && (
-            <Link to={`/f/${slug}`} className="global-header-room">/{slug}</Link>
+            <Link to={`/rooms/${slug}`} className="global-header-room">/{slug}</Link>
           )}
         </nav>
 
@@ -104,7 +104,7 @@ export function AppHeader() {
             <Link to="/rooms" className={location.pathname === "/rooms" ? "active" : ""}>{t("nav.folds")}</Link>
             <Link to="/docs" className={isDocs ? "active" : ""}>{t("nav.docs")}</Link>
             {isRoom && slug && (
-              <Link to={`/f/${slug}`}>/{slug}</Link>
+              <Link to={`/rooms/${slug}`}>/{slug}</Link>
             )}
           </nav>
           {!isRoom && (

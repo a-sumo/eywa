@@ -33,7 +33,7 @@ export function AgentList() {
   const location = useLocation();
   const devMode = useDevMode();
 
-  const basePath = `/f/${slug}`;
+  const basePath = `/rooms/${slug}`;
   const isActive = (path: string) => location.pathname === path;
 
   return (

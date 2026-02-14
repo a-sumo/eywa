@@ -232,7 +232,7 @@ function MiniFoldPicker({ currentSlug, onClose }: { currentSlug: string; onClose
           key={r.id}
           className={`mini-room-picker-item${r.slug === currentSlug ? " active" : ""}`}
           onClick={() => {
-            if (r.slug !== currentSlug) navigate(`/f/${r.slug}/mini`);
+            if (r.slug !== currentSlug) navigate(`/rooms/${r.slug}/phone`);
             onClose();
           }}
         >
@@ -620,7 +620,7 @@ export function MiniEywa() {
   }, []);
 
   const foldUrl = fold
-    ? `${window.location.origin}/f/${fold.slug}`
+    ? `${window.location.origin}/rooms/${fold.slug}`
     : "";
 
   const callsLast10m = useMemo(() => {

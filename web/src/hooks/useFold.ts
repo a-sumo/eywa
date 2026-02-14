@@ -55,7 +55,7 @@ export function useFold() {
       } catch {}
     }
 
-    navigate(`/f/${slug}`);
+    navigate(`/rooms/${slug}`);
     return data;
   }, [navigate]);
 
@@ -96,7 +96,7 @@ export function useFold() {
         } catch {}
       }
 
-      navigate(`/f/${slug}`);
+      navigate(`/rooms/${slug}`);
       return data;
     } catch (err) {
       console.warn("Create demo failed:", err);
@@ -125,7 +125,7 @@ export function useFold() {
       return null;
     }
 
-    navigate(`/f/${slug}`);
+    navigate(`/rooms/${slug}`);
     return data;
   }, [navigate]);
 
@@ -138,7 +138,7 @@ export function useFold() {
         return null;
       }
     })();
-    return secret ? `${base}/f/${slug}?s=${secret}` : `${base}/f/${slug}`;
+    return secret ? `${base}/rooms/${slug}?s=${secret}` : `${base}/rooms/${slug}`;
   }, []);
 
   return {

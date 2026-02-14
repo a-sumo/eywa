@@ -202,7 +202,7 @@ export function LiveTelemetry() {
 
         {/* Footer */}
         <div className="live-telemetry-footer">
-          <Link to="/f/eywa-dev" className="live-telemetry-cta">
+          <Link to="/rooms/eywa-dev" className="live-telemetry-cta">
             Watch them work <span className="live-telemetry-arrow">&rarr;</span>
           </Link>
           <span className="live-telemetry-desc">Real agents coordinating through Eywa to build Eywa</span>
