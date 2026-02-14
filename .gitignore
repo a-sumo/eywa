@@ -50,6 +50,13 @@ docs/frames/
 *.mp4
 *.mp3
 
+# Test screenshots
+web/test/
+test/
+
+# Peripheral results
+scripts/peripheral-results/
+
 # Editors
 .vscode/
 *.sw?
