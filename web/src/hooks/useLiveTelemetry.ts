@@ -39,7 +39,8 @@ export function useLiveTelemetry(): LiveTelemetry {
       .then(({ data }) => {
         if (data) setFoldId(data.id);
         else setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   // Step 2: fetch initial stats and subscribe to realtime

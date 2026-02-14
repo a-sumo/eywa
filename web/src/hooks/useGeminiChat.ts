@@ -230,7 +230,6 @@ export function useGeminiChat(systemContext: string, foldId?: string | null) {
     autoContextFetched.current = false;
     setAutoContext("");
     setAutoContextError(false);
-    setAutoContextError(false);
     setMessages(loadMessages(foldId));
   }, [foldId]);
 

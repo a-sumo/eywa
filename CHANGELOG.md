@@ -6,6 +6,12 @@ All notable features and changes. One line per feature. Agents append here after
 
 - Task dedup: eywa_task now rejects new tasks with fuzzy title matching (50%+ word overlap), not just exact matches
 - eywa_available: pre-flight tool that cross-references open tasks against active claims, showing which tasks are uncontested vs contested
+- Spectacles drag interaction: pinch-and-drag panning on navigator map tile, cursor rendering on broadcast canvas, double-decode fix for base64 textures
+- Spectacles 3-tile streaming: scene ops create map/button/log quads on connect, async JPEG encoding pipeline for non-blocking broadcast at 15-25fps
+- Landing page: removed memory section, updated docs and llms.txt for honest privacy model
+- Privacy overhaul: honest trust model in docs and landing copy, CLI consent flow, tool classification with readOnlyHint/destructiveHint annotations
+- Bug fixes: auto-reload on stale chunk load after deploy, gitignore .mcp.json to prevent leaking fold secrets, hide GitHub stars when count is zero, hide Map/Spectacles behind dev flag, realistic agent names in demo
+- Fix: removed duplicate setAutoContextError call in useGeminiChat, added missing error handler in useLiveTelemetry fold lookup
 
 ## 2026-02-13
 

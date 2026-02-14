@@ -83,36 +83,6 @@ const IconDestination = () => (
   </svg>
 );
 
-const IconTimeline = () => (
-  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <line className="anim-timeline-trunk" x1="8" y1="4" x2="8" y2="28" strokeWidth="2.5" strokeLinecap="round"/>
-    <path className="anim-timeline-branch" d="M8 12 C12 12 16 8 20 8" strokeWidth="2.5" strokeLinecap="round"/>
-    <path className="anim-timeline-branch2" d="M8 22 C12 22 18 18 24 18" strokeWidth="2.5" strokeLinecap="round"/>
-    <circle className="anim-neuron n1" cx="8" cy="12" r="2.5" strokeWidth="2"/>
-    <circle className="anim-neuron n2" cx="20" cy="8" r="2.5" strokeWidth="2"/>
-    <circle className="anim-neuron n3" cx="8" cy="22" r="2.5" strokeWidth="2"/>
-    <circle className="anim-neuron n4" cx="24" cy="18" r="2.5" strokeWidth="2"/>
-  </svg>
-);
-
-const IconNetwork = () => (
-  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <circle className="anim-neuron n1" cx="16" cy="6" r="3" strokeWidth="2"/>
-    <circle className="anim-neuron n2" cx="6" cy="26" r="3" strokeWidth="2"/>
-    <circle className="anim-neuron n3" cx="26" cy="26" r="3" strokeWidth="2"/>
-    <line className="anim-synapse sy1" x1="16" y1="9" x2="6" y2="23" strokeWidth="2"/>
-    <line className="anim-synapse sy2" x1="16" y1="9" x2="26" y2="23" strokeWidth="2"/>
-    <line className="anim-synapse sy3" x1="9" y1="26" x2="23" y2="26" strokeWidth="2"/>
-    <circle className="anim-target-center" cx="16" cy="18" r="2" strokeWidth="0" fill="var(--aurora-pink, #f472b6)"/>
-  </svg>
-);
-
-const IconHeartbeat = () => (
-  <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <path className="anim-stream s1" d="M3 16h6l3-8 4 16 3-8h10" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle className="anim-node" cx="16" cy="16" r="2"/>
-  </svg>
-);
 
 const IconSurfaces = () => (
   <svg className="anim-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -454,34 +424,14 @@ export function Landing() {
             <p>{t("features.knowledge.description")}</p>
           </div>
           <div className="landing-feature">
-            <div className="landing-feature-icon"><IconTimeline /></div>
-            <h3>{t("features.timeline.title")}</h3>
-            <p>{t("features.timeline.description")}</p>
-          </div>
-          <div className="landing-feature">
-            <div className="landing-feature-icon"><IconNetwork /></div>
-            <h3>{t("features.network.title")}</h3>
-            <p>{t("features.network.description")}</p>
-          </div>
-          <div className="landing-feature">
             <div className="landing-feature-icon"><IconLink /></div>
-            <h3>{t("features.recovery.title")}</h3>
-            <p>{t("features.recovery.description")}</p>
+            <h3>{t("features.resilience.title")}</h3>
+            <p>{t("features.resilience.description")}</p>
           </div>
           <div className="landing-feature">
-            <div className="landing-feature-icon"><IconHeartbeat /></div>
-            <h3>{t("features.telemetry.title")}</h3>
-            <p>{t("features.telemetry.description")}</p>
-          </div>
-          <div className="landing-feature">
-            <div className="landing-feature-icon"><IconCode /></div>
-            <h3>{t("features.vscode.title")}</h3>
-            <p>{t("features.vscode.description")}</p>
-          </div>
-          <div className="landing-feature">
-            <div className="landing-feature-icon"><IconChat /></div>
-            <h3>{t("features.discord.title")}</h3>
-            <p>{t("features.discord.description")}</p>
+            <div className="landing-feature-icon"><IconSurfaces /></div>
+            <h3>{t("features.surfaces.title")}</h3>
+            <p>{t("features.surfaces.description")}</p>
           </div>
         </div>
       </section>
