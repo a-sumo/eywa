@@ -343,7 +343,7 @@ export function WorkspaceView() {
   return (
     <div className="eywa-view">
       <div className="eywa-header">
-        <button className="back-btn" onClick={() => navigate(`/rooms/${slug}`)}>
+        <button className="back-btn" onClick={() => navigate(`/s/${slug}`)}>
           &larr; Back
         </button>
         <h2>{t("workspace.title")}</h2>

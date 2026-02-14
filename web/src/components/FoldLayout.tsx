@@ -16,7 +16,7 @@ export function FoldLayout({ children }: FoldLayoutProps) {
   const location = useLocation();
   const { fold, loading, error } = useFoldContext();
 
-  const basePath = `/rooms/${slug}`;
+  const basePath = `/s/${slug}`;
   const isTabActive = (path: string) => {
     if (path === basePath) return location.pathname === basePath;
     return location.pathname.startsWith(path);

@@ -50,19 +50,6 @@ export function NotFound() {
           {tc("home")}
         </Link>
         <Link
-          to="/rooms"
-          style={{
-            padding: "10px 20px",
-            borderRadius: 8,
-            background: "var(--surface-secondary)",
-            color: "var(--text-primary)",
-            textDecoration: "none",
-            fontSize: "0.9rem",
-          }}
-        >
-          {tc("nav.folds")}
-        </Link>
-        <Link
           to="/docs"
           style={{
             padding: "10px 20px",

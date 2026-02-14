@@ -26,7 +26,7 @@ const KnowledgePage = lazy(() => import("./components/KnowledgePage").then(m => 
 const NavigatorMap = lazy(() => import("./components/NavigatorMap").then(m => ({ default: m.NavigatorMap })));
 const OperationsView = lazy(() => import("./components/OperationsView").then(m => ({ default: m.OperationsView })));
 const SeedMonitor = lazy(() => import("./components/SeedMonitor").then(m => ({ default: m.SeedMonitor })));
-const FoldsIndex = lazy(() => import("./components/FoldsIndex").then(m => ({ default: m.FoldsIndex })));
+// FoldsIndex removed: public directory is a privacy violation
 const VoicesView = lazy(() => import("./components/VoicesView").then(m => ({ default: m.VoicesView })));
 const DocsLayout = lazy(() => import("./components/DocsLayout").then(m => ({ default: m.DocsLayout })));
 const DocsOverview = lazy(() => import("./components/DocsLayout").then(m => ({ default: m.DocsOverview })));
@@ -60,8 +60,9 @@ function App() {
         <Suspense fallback={<RouteLoader />}>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/rooms" element={<FoldsIndex />} />
-            <Route path="/folds" element={<Navigate to="/rooms" replace />} />
+            {/* Public directory removed for privacy. /rooms and /folds redirect to home. */}
+            <Route path="/rooms" element={<Navigate to="/" replace />} />
+            <Route path="/folds" element={<Navigate to="/" replace />} />
             <Route path="/cli-auth" element={<CLIAuth />} />
             <Route path="/docs" element={<DocsLayout />}>
               <Route index element={<DocsOverview />} />
@@ -75,15 +76,16 @@ function App() {
               <Route path="self-hosting" element={<SelfHostingDocs />} />
               <Route path="integrations/:provider" element={<IntegrationGuide />} />
             </Route>
-            <Route path="/rooms/:slug/eink" element={<FoldProvider><MiniEywaEink /></FoldProvider>} />
-            <Route path="/rooms/:slug/phone" element={<FoldProvider><MiniEywa /></FoldProvider>} />
-            <Route path="/rooms/:slug/spectacles" element={<FoldProvider><SpectaclesView /></FoldProvider>} />
-            <Route path="/rooms/:slug/spectacles/rx" element={<FoldProvider><SpectaclesReceiver /></FoldProvider>} />
-            <Route path="/rooms/:slug/voices" element={<FoldProvider><VoicesView /></FoldProvider>} />
-            <Route path="/rooms/:slug/*" element={<FoldRoutes />} />
-            {/* Backward compat: /f/:slug/* and /r/:slug/* → /rooms/:slug/* */}
+            <Route path="/s/:slug/eink" element={<FoldProvider><MiniEywaEink /></FoldProvider>} />
+            <Route path="/s/:slug/phone" element={<FoldProvider><MiniEywa /></FoldProvider>} />
+            <Route path="/s/:slug/spectacles" element={<FoldProvider><SpectaclesView /></FoldProvider>} />
+            <Route path="/s/:slug/spectacles/rx" element={<FoldProvider><SpectaclesReceiver /></FoldProvider>} />
+            <Route path="/s/:slug/voices" element={<FoldProvider><VoicesView /></FoldProvider>} />
+            <Route path="/s/:slug/*" element={<FoldRoutes />} />
+            {/* Backward compat: /f/:slug/*, /r/:slug/*, /rooms/:slug/* → /s/:slug/* */}
             <Route path="/f/:slug/*" element={<RoomRedirect />} />
             <Route path="/r/:slug/*" element={<RoomRedirect />} />
+            <Route path="/rooms/:slug/*" element={<RoomRedirect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -109,7 +111,7 @@ function ScrollToTop() {
 
 function RoomRedirect() {
   const { slug, "*": rest } = useParams();
-  return <Navigate to={`/rooms/${slug}${rest ? `/${rest}` : ""}`} replace />;
+  return <Navigate to={`/s/${slug}${rest ? `/${rest}` : ""}`} replace />;
 }
 
 function FoldRoutes() {

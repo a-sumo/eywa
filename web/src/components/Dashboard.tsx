@@ -54,7 +54,7 @@ export function Dashboard() {
           <div
             key={a.name}
             className="agent-card"
-            onClick={() => navigate(`/rooms/${slug}/agent/${encodeURIComponent(a.name)}`)}
+            onClick={() => navigate(`/s/${slug}/agent/${encodeURIComponent(a.name)}`)}
           >
             <div className="agent-card-header">
               <span

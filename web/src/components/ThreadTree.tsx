@@ -1662,58 +1662,6 @@ export function ThreadTree() {
         </button>
       )}
 
-      {/* Deploy health */}
-      <DeployHealth deploys={deploys} />
-
-      {/* Network routes (cross-fold intelligence) */}
-      {networkRoutes.length > 0 && (
-        <div className="hub-network-routes">
-          <div className="hub-network-routes-header">
-            <span className="hub-network-routes-label">{t("hub.networkRoutes")}</span>
-            <span className="hub-network-routes-count">{t("hub.signals", { count: networkRoutes.reduce((a, r) => a + r.insights.length, 0) })}</span>
-          </div>
-          <div className="hub-network-routes-grid">
-            {networkRoutes.map((route) => (
-              <div key={route.domain} className="hub-route-card">
-                <div className="hub-route-header">
-                  <span className="hub-route-domain">{route.domain}</span>
-                  <span className="hub-route-match">{route.match}%</span>
-                </div>
-                {route.insights.map((ins) => (
-                  <div key={ins.id} className="hub-route-insight">
-                    {ins.insight.slice(0, 120)}{ins.insight.length > 120 ? "..." : ""}
-                    {ins.upvotes > 0 && <span className="hub-route-votes">+{ins.upvotes}</span>}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Agent topology map */}
-      {sortedAgents.length > 0 && (
-        <AgentTopologyMap agents={sortedAgents} destination={destination} />
-      )}
-
-      {/* Pending approvals */}
-      {pendingApprovals.length > 0 && (
-        <div className="hub-approvals">
-          <div className="hub-section-label">{t("hub.pendingApprovals", { count: pendingApprovals.length })}</div>
-          {pendingApprovals.map((a) => (
-            <ApprovalCard key={a.id} approval={a} foldId={fold?.id || ""} />
-          ))}
-        </div>
-      )}
-
-      {/* Task queue */}
-      <TaskQueue tasks={tasks} />
-
-      {/* Distress alerts */}
-      {unresolvedDistress.map((d) => (
-        <DistressAlert key={d.id} signal={d} />
-      ))}
-
       {/* Connect agent prompt when no agents are connected */}
       {activeAgents.length === 0 && finishedAgents.length === 0 && idleCount === 0 && (
         <div className="hub-connect-prompt">
@@ -1738,6 +1686,21 @@ export function ThreadTree() {
           )}
         </div>
       )}
+
+      {/* Pending approvals (urgent, needs human action) */}
+      {pendingApprovals.length > 0 && (
+        <div className="hub-approvals">
+          <div className="hub-section-label">{t("hub.pendingApprovals", { count: pendingApprovals.length })}</div>
+          {pendingApprovals.map((a) => (
+            <ApprovalCard key={a.id} approval={a} foldId={fold?.id || ""} />
+          ))}
+        </div>
+      )}
+
+      {/* Distress alerts (urgent) */}
+      {unresolvedDistress.map((d) => (
+        <DistressAlert key={d.id} signal={d} />
+      ))}
 
       {/* Active agents */}
       {activeAgents.length > 0 && (
@@ -1783,6 +1746,43 @@ export function ThreadTree() {
       {/* Idle count */}
       {idleCount > 0 && (
         <div className="hub-idle-count">{t("hub.idleAgents", { count: idleCount })}</div>
+      )}
+
+      {/* Task queue */}
+      <TaskQueue tasks={tasks} />
+
+      {/* Agent topology map */}
+      {sortedAgents.length > 0 && (
+        <AgentTopologyMap agents={sortedAgents} destination={destination} />
+      )}
+
+      {/* Deploy health */}
+      <DeployHealth deploys={deploys} />
+
+      {/* Network routes (cross-fold intelligence) */}
+      {networkRoutes.length > 0 && (
+        <div className="hub-network-routes">
+          <div className="hub-network-routes-header">
+            <span className="hub-network-routes-label">{t("hub.networkRoutes")}</span>
+            <span className="hub-network-routes-count">{t("hub.signals", { count: networkRoutes.reduce((a, r) => a + r.insights.length, 0) })}</span>
+          </div>
+          <div className="hub-network-routes-grid">
+            {networkRoutes.map((route) => (
+              <div key={route.domain} className="hub-route-card">
+                <div className="hub-route-header">
+                  <span className="hub-route-domain">{route.domain}</span>
+                  <span className="hub-route-match">{route.match}%</span>
+                </div>
+                {route.insights.map((ins) => (
+                  <div key={ins.id} className="hub-route-insight">
+                    {ins.insight.slice(0, 120)}{ins.insight.length > 120 ? "..." : ""}
+                    {ins.upvotes > 0 && <span className="hub-route-votes">+{ins.upvotes}</span>}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       </div>{/* end hub-dashboard */}

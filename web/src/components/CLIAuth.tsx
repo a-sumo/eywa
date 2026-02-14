@@ -92,7 +92,7 @@ export function CLIAuth() {
           <div className="cli-auth-check">&#10003;</div>
           <h1>Logged in!</h1>
           <p>You can close this tab and return to your editor, or</p>
-          <a className="cli-auth-btn" href={`/rooms/${authorizedRoom}`}>Open Dashboard</a>
+          <a className="cli-auth-btn" href={`/s/${authorizedRoom}`}>Open Dashboard</a>
         </div>
       </div>
     );

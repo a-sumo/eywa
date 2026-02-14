@@ -123,7 +123,7 @@ export function LiveTelemetry() {
             <span />
             <span />
           </div>
-          <div className="live-telemetry-url">eywa-ai.dev/rooms/eywa-dev</div>
+          <div className="live-telemetry-url">eywa-ai.dev/s/eywa-dev</div>
           <a
             href="https://github.com/a-sumo/eywa"
             target="_blank"
@@ -202,7 +202,7 @@ export function LiveTelemetry() {
 
         {/* Footer */}
         <div className="live-telemetry-footer">
-          <Link to="/rooms/eywa-dev" className="live-telemetry-cta">
+          <Link to="/s/eywa-dev" className="live-telemetry-cta">
             Watch them work <span className="live-telemetry-arrow">&rarr;</span>
           </Link>
           <span className="live-telemetry-desc">Real agents coordinating through Eywa to build Eywa</span>

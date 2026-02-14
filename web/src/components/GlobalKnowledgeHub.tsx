@@ -124,7 +124,7 @@ export function GlobalKnowledgeHub() {
   return (
     <div className="knowledge-hub">
       <div className="knowledge-hub-header">
-        <button className="back-btn" onClick={() => navigate(`/rooms/${slug}`)}>
+        <button className="back-btn" onClick={() => navigate(`/s/${slug}`)}>
           &larr; Back
         </button>
         <h2>Global Knowledge Hub</h2>

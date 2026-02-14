@@ -33,7 +33,7 @@ export function AgentList() {
   const location = useLocation();
   const devMode = useDevMode();
 
-  const basePath = `/rooms/${slug}`;
+  const basePath = `/s/${slug}`;
   const isActive = (path: string) => location.pathname === path;
 
   return (
@@ -43,13 +43,13 @@ export function AgentList() {
         className={`agent-chip eywa-primary ${isActive(basePath) ? "active" : ""}`}
         onClick={() => navigate(basePath)}
       >
-        Hub
+        Overview
       </button>
       <button
         className={`agent-chip ${isActive(`${basePath}/seeds`) ? "active" : ""}`}
         onClick={() => navigate(`${basePath}/seeds`)}
       >
-        Seeds
+        Agents
       </button>
       <button
         className={`agent-chip ${isActive(`${basePath}/knowledge`) ? "active" : ""}`}

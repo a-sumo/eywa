@@ -53,7 +53,7 @@ export function ThreadView() {
   return (
     <div className="thread-view">
       <div className="thread-view-header">
-        <button className="back-btn" onClick={() => navigate(`/rooms/${slug}`)}>
+        <button className="back-btn" onClick={() => navigate(`/s/${slug}`)}>
           &larr; Back
         </button>
         <div className="thread-view-info">
@@ -65,7 +65,7 @@ export function ThreadView() {
         <button
           className="btn-eywa-from-thread"
           onClick={() =>
-            navigate(`/rooms/${slug}/workspace/new`, {
+            navigate(`/s/${slug}/workspace/new`, {
               state: { seedThread: { agent, sessionId } },
             })
           }

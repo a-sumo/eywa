@@ -204,7 +204,7 @@ EywaPanel             <- TilePanel script
       <h3>{t("spectacles.voiceInterface.testingWithout.heading")}</h3>
       <p>{t("spectacles.voiceInterface.testingWithout.text")}</p>
       <pre className="docs-code"><code>{`cd web && npm run dev
-# Open http://localhost:5173/rooms/demo/spectacles
+# Open http://localhost:5173/s/demo/spectacles
 
 # In the browser console:
 const {supabase} = await import('/src/lib/supabase.ts')

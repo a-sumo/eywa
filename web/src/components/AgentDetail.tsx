@@ -378,8 +378,8 @@ export function AgentDetail() {
     <div className="atl-view">
       {/* Header */}
       <div className="atl-header">
-        <button className="atl-back" onClick={() => navigate(`/rooms/${slug}`)}>
-          &larr; Hub
+        <button className="atl-back" onClick={() => navigate(`/s/${slug}`)}>
+          &larr; Overview
         </button>
         <div className="atl-agent-info">
           <div

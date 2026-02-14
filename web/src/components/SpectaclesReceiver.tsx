@@ -129,7 +129,7 @@ export function SpectaclesReceiver() {
             <div style={{ fontSize: "0.75rem", marginTop: "0.5rem", color: "#484f58" }}>
               Open another tab at
               <br />
-              <code>/rooms/{fold?.slug}/spectacles</code>
+              <code>/s/{fold?.slug}/spectacles</code>
               <br />
               and click "Broadcast"
             </div>
