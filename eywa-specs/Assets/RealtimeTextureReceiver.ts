@@ -456,15 +456,16 @@ export class RealtimeTextureReceiver extends BaseScriptComponent {
       this.log("MicroTex " + id + " #" + this.frameCount);
     }
 
-    // Try tile material map first
-    const mat = this.tileMaterials.get(id);
-    if (mat) {
-      this.applyTextureToMaterial(payload.image, mat, -1, -1);
-    }
-
-    // Also forward to the tex callback if registered (TilePanel handles its own materials)
+    // If TilePanel is handling materials (onTexCallback set), forward to it exclusively.
+    // Otherwise fall back to the built-in tile material map.
+    // Never do both — that causes double texture decode and GPU memory exhaustion.
     if (this.onTexCallback) {
       this.onTexCallback(payload);
+    } else {
+      const mat = this.tileMaterials.get(id);
+      if (mat) {
+        this.applyTextureToMaterial(payload.image, mat, -1, -1);
+      }
     }
 
     this.updateStatus("micro (" + this.frameCount + ")");

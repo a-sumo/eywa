@@ -149,6 +149,7 @@
     showStatus: true
     showTestQuads: true
     useMarkerTracking: true
+    httpBridgeUrl: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
@@ -163,6 +164,7 @@
       showStatus: true
       showTestQuads: false
       useMarkerTracking: false
+      httpBridgeUrl: ""
   ScriptTypes:
     "":
       {}

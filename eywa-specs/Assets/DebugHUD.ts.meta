@@ -1,0 +1,50 @@
+- !<AssetImportMetadata/fa02c0bc-fa9b-4ca6-b1c9-ab09a72e67e3>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 8b2945f4-7347-454d-92ab-ee16f5cea77a
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 8b2945f4-7347-454d-92ab-ee16f5cea77a
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> f1c23e6d-1ee8-4a8c-8f12-e50c97131e98
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/f1c23e6d-1ee8-4a8c-8f12-e50c97131e98>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  ComponentUid: ba9854aa-d310-4a64-83d6-c3770b19be94
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    httpBridgeUrl: false
+    material: false
+    tilePanel: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - tilePanel: !<MappingBased.AssignableType> 00000000-0000-0000-0000-000000000000
+      httpBridgeUrl: ""
+      material: !<reference.Material> 00000000-0000-0000-0000-000000000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input AssignableType tilePanel {"hint":"Leave empty to auto-find TilePanel in scene"}'
+    - "// @input string httpBridgeUrl {\"hint\":\"Leave empty to use TilePanel's bridge URL\"}"
+    - "// @input Asset.Material material {\"hint\":\"Material for buttons. Leave empty to use TilePanel's material.\"}"

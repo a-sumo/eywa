@@ -239,6 +239,10 @@ export function SpectaclesView() {
   const simModeRef = useRef(false);
   const simTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Remote cursor from LS (u,v on navigator-map tile, null when not hovering)
+  const remoteCursorRef = useRef<{ u: number; v: number; ts: number } | null>(null);
+  const sendSceneOpsRef = useRef<(() => void) | null>(null);
+
   // --- Initialize visible renderer ---
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -608,6 +612,13 @@ export function SpectaclesView() {
       const map = mapRef.current;
       if (!map) return;
 
+      // Track remote cursor position for rendering on broadcast canvas
+      if ((p.type === "hover" || p.type === "hover_move" || p.type === "tap" || p.type === "drag_delta") && p.u != null && p.v != null) {
+        remoteCursorRef.current = { u: p.u, v: p.v, ts: Date.now() };
+      } else if (p.type === "hover_exit" || p.type === "drag_end") {
+        remoteCursorRef.current = null;
+      }
+
       if (p.type === "tap" && p.u != null && p.v != null) {
         const sx = p.u * map.W;
         const sy = p.v * map.H;
@@ -641,12 +652,25 @@ export function SpectaclesView() {
           redraw();
           syncBroadcastView();
         }
+      } else if (p.type === "drag_delta" && p.dx != null && p.dy != null) {
+        // Direct pan from pinch-and-drag on the tile (dx/dy in cm from TilePanel)
+        // Convert cm delta to canvas pixels: 1cm ≈ pixelsPerCm (16 default) * scale
+        const scale = map.zoom * 15; // cm-to-screen-pixel factor (aggressive for snappy pan)
+        targetPanRef.current = {
+          x: targetPanRef.current.x + p.dx * scale,
+          y: targetPanRef.current.y - p.dy * scale, // flip Y: LS +Y is up, screen +Y is down
+        };
+        pushEvent("drag", `dx=${p.dx.toFixed(2)} dy=${p.dy.toFixed(2)}`);
+        startViewAnim();
+        syncBroadcastView();
       }
     });
 
-    // Listen for sync requests
+    // Listen for sync requests (LS reconnect or user-triggered)
     channel.on("broadcast", { event: "sync_request" }, () => {
-      console.log("[SpectaclesView] Sync request from glasses");
+      console.log("[SpectaclesView] Sync request from glasses, resending scene ops");
+      // Resend scene ops so reconnected LS gets correct tile layout
+      if (sendSceneOpsRef.current) sendSceneOpsRef.current();
       syncData();
     });
 
@@ -727,7 +751,23 @@ export function SpectaclesView() {
     const logCtx = logCanvas.getContext("2d")!;
 
     setBroadcasting(true);
-    let tilesCreated = false;
+
+    // Send scene ops immediately so quads exist before textures arrive
+    const sendSceneOps = () => {
+      channelRef.current?.send({
+        type: "broadcast",
+        event: "scene",
+        payload: {
+          ops: [
+            { op: "create", id: MAP_ID, x: -5, y: 0, z: 0.5, w: MAP_W, h: MAP_H, s: 0.42, layer: 0, visible: true, interactive: true, draggable: false },
+            { op: "create", id: BTN_ID, x: 16, y: 4, z: 0.5, w: BTN_W, h: BTN_H, s: 0.3, layer: 0, visible: true, interactive: true, draggable: false },
+            { op: "create", id: LOG_ID, x: 16, y: -4, z: 0.5, w: LOG_W, h: LOG_H, s: 0.3, layer: 0, visible: true, interactive: false, draggable: false },
+          ],
+        },
+      });
+    };
+    sendSceneOpsRef.current = sendSceneOps;
+    sendSceneOps();
 
     // Announce presence
     channelRef.current?.send({
@@ -747,122 +787,92 @@ export function SpectaclesView() {
         }, "image/jpeg", quality);
       });
 
-    // Bridge URL for HTTP event polling (bypasses unreliable Supabase REST relay)
-    const BRIDGE_URL = "http://localhost:8765";
+    // Broadcast loop: always full-res 1024x768. Async toBlob encoding is
+    // non-blocking and pipelined: we render the next frame while the previous
+    // one encodes. Map sends as fast as the encoder can go (~15-25fps).
+    // Buttons/log only at 5fps (they rarely change).
+    let lastSideBroadcast = 0;
+    let lastMapBroadcast = 0;
+    let loopRunning = true;
+    let mapEncoding = false;
+    let sideEncoding = false;
 
-    // Broadcast at ~5fps
-    const loop = setInterval(async () => {
+    const drawCursor = (ctx: CanvasRenderingContext2D, u: number, v: number, w: number, h: number) => {
+      const cx = u * w;
+      const cy = v * h;
+      const r = Math.max(6, w * 0.012);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(0, 232, 120, 0.9)";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = "#00e878";
+      ctx.fill();
+    };
+
+    const broadcastTick = () => {
+      if (!loopRunning) return;
+      requestAnimationFrame(broadcastTick);
+
       const channel = channelRef.current;
       if (!channel) return;
 
-      // Poll bridge for pending events (interactions from LS or /send)
-      try {
-        const evtRes = await fetch(`${BRIDGE_URL}/events`);
-        if (evtRes.ok) {
-          const { events } = await evtRes.json();
-          for (const evt of events) {
-            if (evt.event === "interaction" && evt.payload?.type) {
-              handleSikEvent(evt.payload as SikEvent);
-            } else if (evt.event === "interact" && evt.payload?.type) {
-              // Dispatch interact as if it came from Supabase
-              const p = evt.payload;
-              if (p.id === "debug-buttons" && p.u != null && p.v != null) {
-                const col = Math.floor(p.u * DBG_COLS);
-                const row = Math.floor(p.v * DBG_ROWS);
-                const idx = row * DBG_COLS + col;
-                if (idx >= 0 && idx < DEBUG_BUTTONS.length) {
-                  const btn = DEBUG_BUTTONS[idx];
-                  if (p.type === "tap") {
-                    pushEvent("btn_tap", btn.label);
-                    if (btn.label === "Focus") {
-                      const agents = mapDataRef.current?.meta?.agents;
-                      if (agents && agents.length > 0) {
-                        handleSikEvent({ type: "focus_agent", agent: agents[focusIdxRef.current++ % agents.length] });
-                      }
-                    } else if (btn.label === "SIM") {
-                      simModeRef.current = !simModeRef.current;
-                      pushEvent("sim", simModeRef.current ? "on" : "off");
-                    } else if (btn.cmd) {
-                      handleSikEvent(btn.cmd);
-                    }
-                  } else if (p.type === "hover" || p.type === "hover_move") {
-                    debugHoverRef.current = idx;
-                  } else if (p.type === "hover_exit") {
-                    debugHoverRef.current = -1;
-                  }
-                }
-              } else {
-                // Navigator map tap
-                const map = mapRef.current;
-                if (map && p.type === "tap" && p.u != null && p.v != null) {
-                  const sx = p.u * map.W;
-                  const sy = p.v * map.H;
-                  const agent = map.hitTestLegend(sx, sy);
-                  if (agent) { map.toggleAgent(agent); pushEvent("tap", `legend: ${agent}`); }
-                  else {
-                    const node = map.hitTest(sx, sy);
-                    hoveredRef.current = node;
-                    pushEvent("tap", node ? `node: ${(node as any).label || (node as any).id}` : `(${p.u.toFixed(2)},${p.v.toFixed(2)})`);
-                  }
-                  redraw();
-                  syncBroadcastView();
-                }
-              }
-            }
-          }
-        }
-      } catch { /* bridge not running, ignore */ }
+      const now = Date.now();
+      const cursor = remoteCursorRef.current;
+      const cursorActive = cursor != null && (now - cursor.ts < 1500);
 
-      if (!tilesCreated) {
-        channel.send({
-          type: "broadcast",
-          event: "scene",
-          payload: {
-            ops: [
-              { op: "create", id: MAP_ID, x: -0.18, y: 0, z: 0.5, w: MAP_W, h: MAP_H, s: 0.5, layer: 0, visible: true, interactive: true, draggable: false },
-              { op: "create", id: BTN_ID, x: 0.42, y: 0.12, z: 0.5, w: BTN_W, h: BTN_H, s: 0.22, layer: 0, visible: true, interactive: true, draggable: false },
-              { op: "create", id: LOG_ID, x: 0.42, y: -0.18, z: 0.5, w: LOG_W, h: LOG_H, s: 0.22, layer: 0, visible: true, interactive: false, draggable: false },
-            ],
-          },
-        });
-        tilesCreated = true;
+      // Map: 30fps when cursor active, 5fps idle
+      const mapInterval = cursorActive ? 33 : 200;
+      const needMap = !mapEncoding && now - lastMapBroadcast >= mapInterval;
+      const needSide = !sideEncoding && now - lastSideBroadcast >= 200;
+
+      // Scene ops sent on init + sync_request (not in tick loop)
+
+      // Map tile: full-res, pipelined async encode
+      if (needMap) {
+        if (bMap.themeName !== themeRef.current) bMap.setTheme(themeRef.current);
+        syncBroadcastView();
+        bMap.draw(hoveredRef.current);
+        if (cursorActive) {
+          const ctx = bCanvas.getContext("2d");
+          if (ctx) drawCursor(ctx, cursor!.u, cursor!.v, MAP_W, MAP_H);
+        }
+        mapEncoding = true;
+        lastMapBroadcast = now;
+        canvasToBase64(bCanvas, 0.7).then((mapB64) => {
+          mapEncoding = false;
+          if (mapB64) {
+            channel.send({ type: "broadcast", event: "tex", payload: { id: MAP_ID, image: mapB64, w: MAP_W, h: MAP_H } });
+          }
+        }).catch(() => { mapEncoding = false; });
       }
 
-      // Render map
-      if (bMap.themeName !== themeRef.current) bMap.setTheme(themeRef.current);
-      syncBroadcastView();
-      bMap.draw(hoveredRef.current);
-
-      // Render debug buttons + event log
-      renderDebugButtons(btnCtx, BTN_W, BTN_H, debugHoverRef.current, simModeRef.current);
-      renderEventLog(logCtx, LOG_W, LOG_H, eventLogRef.current);
-
-      try {
-        const [mapB64, btnB64, logB64] = await Promise.all([
-          canvasToBase64(bCanvas, 0.8),
+      // Side tiles: 5fps, independent pipeline
+      if (needSide) {
+        renderDebugButtons(btnCtx, BTN_W, BTN_H, debugHoverRef.current, simModeRef.current);
+        renderEventLog(logCtx, LOG_W, LOG_H, eventLogRef.current);
+        sideEncoding = true;
+        lastSideBroadcast = now;
+        Promise.all([
           canvasToBase64(btnCanvas, 0.85),
           canvasToBase64(logCanvas, 0.85),
-        ]);
-        const textures: Array<{ id: string; image: string }> = [];
-        if (mapB64) textures.push({ id: MAP_ID, image: mapB64 });
-        if (btnB64) textures.push({ id: BTN_ID, image: btnB64 });
-        if (logB64) textures.push({ id: LOG_ID, image: logB64 });
-        if (textures.length > 0) {
-          channel.send({
-            type: "broadcast",
-            event: "tex_batch",
-            payload: { textures },
-          });
-        }
-      } catch {
-        // encoding can fail if tab is backgrounded
+        ]).then(([btnB64, logB64]) => {
+          sideEncoding = false;
+          const textures: Array<{ id: string; image: string }> = [];
+          if (btnB64) textures.push({ id: BTN_ID, image: btnB64 });
+          if (logB64) textures.push({ id: LOG_ID, image: logB64 });
+          if (textures.length > 0) {
+            channel.send({ type: "broadcast", event: "tex_batch", payload: { textures } });
+          }
+        }).catch(() => { sideEncoding = false; });
       }
-    }, 200);
+    };
 
-    intervalRef.current = loop;
+    requestAnimationFrame(broadcastTick);
     return () => {
-      clearInterval(loop);
-      intervalRef.current = null;
+      loopRunning = false;
       bMap.destroy();
       broadcastMapRef.current = null;
       [bCanvas, btnCanvas, logCanvas].forEach((c) => document.body.removeChild(c));

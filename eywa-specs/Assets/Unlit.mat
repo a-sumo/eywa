@@ -79,7 +79,7 @@
   InstanceCount: 1
   Defines:
     []
-  BlendMode: PremultipliedAlpha
+  BlendMode: Glass
   Properties:
     PreviewEnabled:
       typeIdx: 0

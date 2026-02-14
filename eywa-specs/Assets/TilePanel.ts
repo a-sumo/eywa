@@ -113,6 +113,11 @@ export class TilePanel extends BaseScriptComponent {
   private lastCameraSend = 0;
   private lastHitId: string | null = null;
 
+  // Drag state for trigger-hold gestures (pinch-and-drag on device, click-drag in editor)
+  private dragStartPos: { x: number; y: number } | null = null;
+  private dragLastPos: { x: number; y: number } | null = null;
+  private dragTileId: string | null = null;
+
   // Texture buffer: holds textures that arrived before their quad was created.
   // When a quad is created, we check this buffer and apply immediately.
   private bufferedTextures: Map<string, string> = new Map();
@@ -133,6 +138,7 @@ export class TilePanel extends BaseScriptComponent {
   private httpPollBusy: boolean = false;
   private httpFailCount: number = 0;
   private httpBackoffUntil: number = 0;
+  private realtimeTexReceived: boolean = false; // true once Realtime delivers a texture
 
   onAwake() {
     this.createEvent("OnStartEvent").bind(() => this.init());
@@ -246,8 +252,7 @@ export class TilePanel extends BaseScriptComponent {
       rmv.mesh = this.sharedMesh;
 
       const mat = this.material.clone();
-      mat.mainPass.blendMode = BlendMode.PremultipliedAlphaAuto;
-      mat.mainPass.depthWrite = false;
+      // No blend mode override — stable version didn't set these and worked on device
       rmv.mainMaterial = mat;
 
       // Position: side by side, 12cm apart, centered at origin
@@ -312,28 +317,25 @@ export class TilePanel extends BaseScriptComponent {
     this.cursorObj = global.scene.createSceneObject("Cursor");
     this.cursorObj.setParent(this.quadParent);
 
-    const cursorSize = 1.0; // 1cm diameter
+    const cursorSize = 0.6; // 0.6cm - small dot
     const transform = this.cursorObj.getTransform();
     transform.setLocalScale(new vec3(cursorSize, cursorSize, 1));
-    transform.setLocalPosition(new vec3(0, 0, 0.5));
+    transform.setLocalPosition(new vec3(0, 0, 3.5)); // in front of tiles
 
     const rmv = this.cursorObj.createComponent("Component.RenderMeshVisual") as RenderMeshVisual;
     rmv.mesh = this.sharedMesh;
 
     if (this.material) {
       const mat = this.material.clone();
-      mat.mainPass.blendMode = BlendMode.PremultipliedAlphaAuto;
-      mat.mainPass.depthWrite = false;
-      mat.mainPass["baseColor"] = new vec4(0.08, 0.82, 1.0, 0.8);
+      // No blend mode override — stable version didn't set these and worked on device
+      // Green dot matching the aurora theme (not white)
+      mat.mainPass["baseColor"] = new vec4(0.0, 0.91, 0.47, 0.85);
       rmv.mainMaterial = mat;
+      // Use a tiny white texture as base (tinted by baseColor)
       Base64.decodeTextureAsync(
         TilePanel.TEST_TEX_WHITE,
-        (texture: Texture) => {
-          mat.mainPass["baseTex"] = texture;
-        },
-        () => {
-          print("[TilePanel] Cursor texture FAILED to decode!");
-        }
+        (texture: Texture) => { mat.mainPass["baseTex"] = texture; },
+        () => {}
       );
     }
 
@@ -370,21 +372,79 @@ export class TilePanel extends BaseScriptComponent {
 
     this.panelUnsubscribes.push(
       this.panelInteractable.onHoverUpdate((e: InteractorEvent) => {
+        // If trigger is held, treat hover moves as drag
+        if (this.dragLastPos) {
+          const worldPos = e.interactor?.targetHitInfo?.hit?.position;
+          if (!worldPos) return;
+          const localPanel = this.quadParent.getTransform().getInvertedWorldTransform().multiplyPoint(worldPos);
+          const hit = this.hitTestTiles(localPanel);
+          const tileId = hit ? hit.id : (this.dragTileId || "");
+          const dx = localPanel.x - this.dragLastPos.x;
+          const dy = localPanel.y - this.dragLastPos.y;
+          this.dragLastPos = { x: localPanel.x, y: localPanel.y };
+
+          const now = Date.now();
+          if (now - this.lastInteractionSendTime > 33) {
+            this.lastInteractionSendTime = now;
+            if (this.receiver) {
+              this.receiver.sendEvent("interact", {
+                id: tileId,
+                type: "drag_delta",
+                dx: dx,
+                dy: dy,
+                x: localPanel.x,
+                y: localPanel.y,
+                u: hit ? hit.u : 0,
+                v: hit ? hit.v : 0,
+                timestamp: now,
+              });
+            }
+          }
+          return; // skip normal hover while dragging
+        }
         this.handlePanelHover(e, "hover_move");
       })
     );
 
     this.panelUnsubscribes.push(
       this.panelInteractable.onHoverExit(() => {
+        // End drag if active
+        if (this.dragStartPos) {
+          this.sendInteraction(this.dragTileId || "", "drag_end", null);
+          this.dragStartPos = null;
+          this.dragLastPos = null;
+          this.dragTileId = null;
+        }
         this.hideCursor();
         this.sendInteraction("", "hover_exit", null);
         this.lastHitId = null;
       })
     );
 
+    // Trigger start: send tap + start drag tracking
     this.panelUnsubscribes.push(
       this.panelInteractable.onTriggerStart((e: InteractorEvent) => {
         this.handlePanelHover(e, "tap");
+        const worldPos = e.interactor?.targetHitInfo?.hit?.position;
+        if (worldPos) {
+          const localPanel = this.quadParent.getTransform().getInvertedWorldTransform().multiplyPoint(worldPos);
+          this.dragStartPos = { x: localPanel.x, y: localPanel.y };
+          this.dragLastPos = { x: localPanel.x, y: localPanel.y };
+          const hit = this.hitTestTiles(localPanel);
+          this.dragTileId = hit ? hit.id : null;
+        }
+      })
+    );
+
+    // Trigger end: stop dragging (onTriggerCanceled handles release)
+    this.panelUnsubscribes.push(
+      this.panelInteractable.onTriggerCanceled((e: InteractorEvent) => {
+        if (this.dragStartPos) {
+          this.sendInteraction(this.dragTileId || "", "drag_end", null);
+        }
+        this.dragStartPos = null;
+        this.dragLastPos = null;
+        this.dragTileId = null;
       })
     );
   }
@@ -440,21 +500,17 @@ export class TilePanel extends BaseScriptComponent {
     if (!worldPos) return;
     const localPanel = this.quadParent.getTransform().getInvertedWorldTransform().multiplyPoint(worldPos);
 
-    // Immediate local cursor feedback (zero latency)
-    if (this.cursorObj) {
-      this.cursorObj.enabled = true;
-      this.cursorVisible = true;
-      // Position cursor at hit point, slightly in front of tiles
-      this.cursorObj.getTransform().setLocalPosition(new vec3(localPanel.x, localPanel.y, 3.0));
-    }
+    // Cursor rendering is done on the web broadcast canvas (web-rendered cursor
+    // shows up in the streamed texture, avoiding the white square from the LS quad).
+    // The LS-native cursor is disabled.
 
     const hit = this.hitTestTiles(localPanel);
     if (!hit) return;
     this.lastHitId = hit.id;
 
-    // Throttle network sends: taps always send, hover/move at max ~10fps
+    // Throttle hover sends to ~30fps (taps always instant)
     const now = Date.now();
-    if (type === "tap" || now - this.lastInteractionSendTime > 100) {
+    if (type === "tap" || now - this.lastInteractionSendTime > 33) {
       this.lastInteractionSendTime = now;
       this.sendInteraction(hit.id, type, { x: localPanel.x, y: localPanel.y, u: hit.u, v: hit.v });
     }
@@ -650,10 +706,6 @@ export class TilePanel extends BaseScriptComponent {
 
     // Clone material for independent texture per quad
     const mat = this.material.clone();
-    // Premultiplied alpha blending for correct texture rendering
-    mat.mainPass.blendMode = BlendMode.PremultipliedAlphaAuto;
-    mat.mainPass.depthTest = true;
-    mat.mainPass.depthWrite = false; // transparent quads shouldn't write depth
     rmv.mainMaterial = mat;
 
     // No per-tile collider. All interaction goes through the single panel
@@ -739,14 +791,6 @@ export class TilePanel extends BaseScriptComponent {
       unsub();
     }
     entry.unsubscribes = [];
-
-    // Free GPU texture memory
-    if (entry.currentTexture) {
-      try {
-        if (typeof (entry.currentTexture as any).destroy === "function") (entry.currentTexture as any).destroy();
-      } catch (_) {}
-      entry.currentTexture = null;
-    }
 
     if (this.quadPool.length < this.poolMaxSize) {
       entry.obj.enabled = false;
@@ -882,17 +926,11 @@ export class TilePanel extends BaseScriptComponent {
       base64Image,
       (texture: Texture) => {
         entry.texDecoding = false;
-        // Destroy previous texture to free GPU memory
-        const prev = entry.currentTexture;
+        // Just overwrite — don't call destroy(). The stable version (Feb 8-9)
+        // never destroyed textures and ran fine on device. Calling destroy()
+        // may crash the Spectacles runtime.
         entry.material.mainPass["baseTex"] = texture;
         entry.currentTexture = texture;
-        if (prev) {
-          try {
-            if (typeof (prev as any).destroy === "function") (prev as any).destroy();
-          } catch (_) {
-            // Some textures may not be destroyable
-          }
-        }
       },
       () => {
         entry.texDecoding = false;
@@ -904,12 +942,6 @@ export class TilePanel extends BaseScriptComponent {
   // ---- Interaction ----
 
   private sendInteraction(id: string, type: string, hit: { x: number; y: number; u: number; v: number } | null) {
-    // Use HTTP bridge when polling (WebSocket unavailable in preview)
-    if (this.httpPolling) {
-      this.sendInteractionHttp(id, type, hit);
-      return;
-    }
-
     if (!this.receiver) return;
     this.receiver.sendEvent("interact", {
       id: id,
@@ -957,6 +989,7 @@ export class TilePanel extends BaseScriptComponent {
     });
 
     receiver.onTex((payload: any) => {
+      this.realtimeTexReceived = true; // Realtime path works, skip HTTP tex
       const id = payload?.id ?? "?";
       const imgLen = payload?.image?.length ?? 0;
       print("[TilePanel] onTex: id=" + id + " imgLen=" + imgLen);
@@ -1072,22 +1105,24 @@ export class TilePanel extends BaseScriptComponent {
         this.handleSceneEvent(sceneData);
       }
 
-      // Poll tile textures (incremental)
-      const texRes = await this.internetModule.fetch(
-        bridgeUrl + "/textures?since=" + this.httpLastTexVersion,
-        { method: "GET" }
-      );
-      const texText = await texRes.text();
-      const texData = JSON.parse(texText);
+      // Poll tile textures (incremental) — skip if Realtime is already delivering
+      if (!this.realtimeTexReceived) {
+        const texRes = await this.internetModule.fetch(
+          bridgeUrl + "/textures?since=" + this.httpLastTexVersion,
+          { method: "GET" }
+        );
+        const texText = await texRes.text();
+        const texData = JSON.parse(texText);
 
-      if (texData.tiles && texData.tiles.length > 0) {
-        for (const tile of texData.tiles) {
-          this.handleTexEvent(tile);
-        }
-        this.httpLastTexVersion = texData.version;
+        if (texData.tiles && texData.tiles.length > 0) {
+          for (const tile of texData.tiles) {
+            this.handleTexEvent(tile);
+          }
+          this.httpLastTexVersion = texData.version;
 
-        if (this.httpPollCount % 10 === 0) {
-          print("[TilePanel] HTTP tex v" + texData.version + " (" + texData.tiles.length + " tiles updated)");
+          if (this.httpPollCount % 10 === 0) {
+            print("[TilePanel] HTTP tex v" + texData.version + " (" + texData.tiles.length + " tiles updated)");
+          }
         }
       }
     } catch (e) {
@@ -1103,36 +1138,6 @@ export class TilePanel extends BaseScriptComponent {
     this.httpPollBusy = false;
   }
 
-  /**
-   * Send an interaction event via HTTP POST to the bridge.
-   */
-  private sendInteractionHttp(id: string, type: string, hit: { x: number; y: number; u: number; v: number } | null) {
-    if (!this.httpPolling || !this.internetModule) return;
-    // Don't send if bridge is in backoff (known to be down)
-    if (this.httpFailCount > 2) return;
-
-    const bridgeUrl = this.httpBridgeUrl.replace(/\/$/, "");
-    const payload = {
-      event: "interact",
-      payload: {
-        id: id,
-        type: type,
-        x: hit ? hit.x : undefined,
-        y: hit ? hit.y : undefined,
-        u: hit ? hit.u : undefined,
-        v: hit ? hit.v : undefined,
-        timestamp: Date.now(),
-      },
-    };
-
-    this.internetModule.fetch(bridgeUrl + "/interact", {
-      method: "POST",
-      body: JSON.stringify(payload),
-      headers: { "Content-Type": "application/json" },
-    }).catch(() => {
-      // Interaction send failures are non-critical
-    });
-  }
 
   // ---- Cleanup ----
 

@@ -1134,7 +1134,7 @@ export function NavigatorMap() {
             </p>
 
             {[
-              { abbr: "kh", name: "khema", qty: "distance", bio: "Khema was declared by the Buddha as the foremost of his female disciples in wisdom. A former queen of King Bimbisara, she attained arahantship after seeing through the impermanence of physical beauty. Her deep insight into the nature of reality makes her the namesake for the fundamental unit of semantic distance." },
+              { abbr: "kh", name: "khema", qty: "distance", bio: "Khema was declared by the Buddha as the foremost of his female disciples in wisdom. A former queen of King Bimbisara, she attained arahantship after seeing through the impermanence of physical beauty. Her deep insight into the nature of reality makes her the namesake for the fundamental unit of semantic distance.", portrait: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsPc8s0ry5QhMzmWvjmJnUa2so2lxkpxqVSA&s" },
               { abbr: "hy", name: "hypatia", qty: "curvature", bio: "Hypatia of Alexandria (c. 350-415 CE) was a Neoplatonist philosopher, mathematician, and astronomer. She edited Apollonius's treatise on conic sections, the geometry of curves. Her mastery of curved geometry makes her the namesake for the unit of trajectory curvature." },
               { abbr: "rd", name: "ride", qty: "velocity", bio: "Sally Ride (1951-2012) was a physicist and astronaut who in 1983 became the first American woman in space aboard Space Shuttle Challenger. Her traversal of space at 17,500 mph makes her the namesake for the unit of semantic velocity." },
               { abbr: "bt", name: "butler", qty: "time", bio: "Octavia E. Butler (1947-2006) was a science fiction author whose works explored deep time, evolution, and the boundaries of human identity. The first SF writer to receive a MacArthur Fellowship, her narratives spanning millennia make her the namesake for the unit of computational time." },
@@ -1153,25 +1153,40 @@ export function NavigatorMap() {
                   alignItems: "flex-start",
                 }}
               >
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: "50%",
-                    flexShrink: 0,
-                    border: `2px solid ${c.border}`,
-                    background: c.accentBg,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 16,
-                    fontWeight: 600,
-                    color: c.accent,
-                    textTransform: "capitalize",
-                  }}
-                >
-                  {u.abbr[0].toUpperCase() + u.abbr.slice(1)}
-                </div>
+                {(u as any).portrait ? (
+                  <img
+                    src={(u as any).portrait}
+                    alt={u.name}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: "50%",
+                      flexShrink: 0,
+                      border: `2px solid ${c.border}`,
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: "50%",
+                      flexShrink: 0,
+                      border: `2px solid ${c.border}`,
+                      background: c.accentBg,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: c.accent,
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {u.abbr[0].toUpperCase() + u.abbr.slice(1)}
+                  </div>
+                )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2 }}>
                     <span style={{ fontSize: 15, fontWeight: 600, color: c.accent }}>{u.abbr}</span>
