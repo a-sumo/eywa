@@ -8,7 +8,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.4.0] - 2026-02-14
 
 ### Added
-- **Folds to Rooms rename**: User-facing terminology changed from "Folds" to "Rooms" across routes, navigation, all 7 locales (en, es, fr, ja, zh, ar, hi), component text, error pages, decorative chrome bars, terminal demo output, and simulated events. LanguageSelector dropped from footer.
+- **Folds to Rooms rename**: User-facing terminology changed from "Folds" to "Rooms" across routes, navigation, all 7 locales (en, es, fr, ja, zh, ar, hi), component text, error pages, decorative chrome bars, terminal demo output, and simulated events. URL routes renamed from `/f/:slug` to `/rooms/:slug` with backward-compat redirect. LanguageSelector dropped from footer.
 - **M3 color alignment**: Replaced all remaining Tailwind color literals with M3 tonal palette values across OperationsView, ThreadTree, SessionGraph, MemoryCard, and AgentList. Extracted shared color constants to lib/colors.
 - **ROI dollar costs**: Landing page value props section now shows weekly dollar costs ($690 without vs $45 with Eywa) and a monthly savings banner ($2,580/month) to make ROI concrete for budget-holders.
 - **Task dependencies**: `depends_on` field on `eywa_task` enables DAG-aware scheduling. `eywa_pick_task` rejects claims when dependencies are unmet. `eywa_available` shows blocked vs ready tasks.
