@@ -8,6 +8,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [0.4.0] - 2026-02-14
 
 ### Added
+- **ROI dollar costs**: Landing page value props section now shows weekly dollar costs ($690 without vs $45 with Eywa) and a monthly savings banner ($2,580/month) to make ROI concrete for budget-holders.
 - **Task dependencies**: `depends_on` field on `eywa_task` enables DAG-aware scheduling. `eywa_pick_task` rejects claims when dependencies are unmet. `eywa_available` shows blocked vs ready tasks.
 - **eywa_available tool**: Pre-flight check cross-references open tasks against active claims. Returns ready, contested, and blocked counts so agents pick uncontested work.
 - **Fuzzy task deduplication**: Jaccard word similarity (threshold: 0.5) rejects near-duplicate task titles at creation time.
