@@ -90,6 +90,8 @@
   "hub.approve": "Approve",
   "hub.deny": "Deny",
   "hub.clear": "Clear",
+  "hub.connectAgent": "Connect an agent",
+  "hub.connectAgentDesc": "Add your MCP server URL to start seeing activity here.",
   "hub.stopRecording": "Stop recording",
   "hub.voiceInput": "Voice input",
   "ops.title": "Course",

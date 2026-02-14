@@ -7,6 +7,7 @@ import { supabase, type Memory, type GlobalInsight } from "../lib/supabase";
 import { agentColor } from "../lib/agentColor";
 import { getAvatar } from "./avatars";
 import { OnboardingOverlay } from "./OnboardingOverlay";
+import { ConnectAgent } from "./ConnectAgent";
 import { useGeminiChat, type ChatMessage } from "../hooks/useGeminiChat";
 // useVoiceInput.ts provides global Window type declarations for SpeechRecognition
 import "../hooks/useVoiceInput";
@@ -1283,6 +1284,7 @@ export function ThreadTree() {
 
   // Collapsed groups
   const [showFinished, setShowFinished] = useState(false);
+  const [showConnect, setShowConnect] = useState(false);
 
   // Destination editor
   const [editingDest, setEditingDest] = useState(false);
@@ -1755,6 +1757,31 @@ export function ThreadTree() {
       {unresolvedDistress.map((d) => (
         <DistressAlert key={d.id} signal={d} />
       ))}
+
+      {/* Connect agent prompt when no agents are connected */}
+      {activeAgents.length === 0 && finishedAgents.length === 0 && idleCount === 0 && (
+        <div className="hub-connect-prompt">
+          <button
+            className="hub-connect-toggle"
+            onClick={() => setShowConnect(!showConnect)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <div className="hub-connect-toggle-text">
+              <span className="hub-connect-toggle-title">{t("hub.connectAgent")}</span>
+              <span className="hub-connect-toggle-desc">{t("hub.connectAgentDesc")}</span>
+            </div>
+            <span className="hub-connect-chevron">{showConnect ? "\u25BE" : "\u25B8"}</span>
+          </button>
+          {showConnect && (
+            <div className="hub-connect-body">
+              <ConnectAgent slug={slug || ""} secret={fold?.secret} inline />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Active agents */}
       {activeAgents.length > 0 && (

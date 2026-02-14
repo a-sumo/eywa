@@ -5114,6 +5114,71 @@ body {
   text-decoration: underline;
 }
 
+/* Connect agent prompt (empty hub state) */
+.hub-connect-prompt {
+  margin: 12px 0;
+}
+
+.hub-connect-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px dashed rgba(139, 92, 246, 0.25);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 0.82rem;
+  text-align: left;
+  transition: background 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+.hub-connect-toggle:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.hub-connect-toggle svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.hub-connect-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.hub-connect-toggle-title {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hub-connect-toggle-desc {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.hub-connect-chevron {
+  opacity: 0.4;
+  font-size: 0.9rem;
+}
+
+.hub-connect-body {
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.hub-connect-body .connect-agent-inline {
+  padding: 0;
+}
+
 /* Onboarding flow for empty rooms */
 .hub-onboarding {
   max-width: 600px;
