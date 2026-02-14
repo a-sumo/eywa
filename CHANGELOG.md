@@ -13,6 +13,7 @@ All notable features and changes. One line per feature. Agents append here after
 - Bug fixes: auto-reload on stale chunk load after deploy, gitignore .mcp.json to prevent leaking fold secrets, hide GitHub stars when count is zero, hide Map/Spectacles behind dev flag, realistic agent names in demo
 - Fix: removed duplicate setAutoContextError call in useGeminiChat, added missing error handler in useLiveTelemetry fold lookup
 - Landing features grid: consolidated from 10 cards to 6 focused pillars (removed Timeline, Network, Telemetry, and surface-specific cards; added Agent Resilience and Works Everywhere)
+- CLI init: connection test verifies MCP server reachability after setup, Codex config failures now reported instead of silently swallowed, corrupted config.json warns instead of silently resetting
 
 ## 2026-02-13
 

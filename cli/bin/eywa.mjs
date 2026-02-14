@@ -26,7 +26,9 @@ function loadConfig() {
   try {
     if (existsSync(CONFIG_FILE))
       return JSON.parse(readFileSync(CONFIG_FILE, "utf-8"));
-  } catch {}
+  } catch {
+    console.warn(yellow("Warning:"), "~/.eywa/config.json is corrupted. Using defaults.");
+  }
   return {};
 }
 
@@ -183,7 +185,8 @@ function autoConfigureAgents(slug, secret) {
         writeFileSync(configPath, `[mcp_servers.eywa]\nurl = "${url}"\n`);
       }
     } catch {
-      status = "configured";
+      status = "failed";
+      detail = "could not write " + configPath;
     }
     results.push({ agent: "Codex", status, detail });
   }
@@ -203,6 +206,8 @@ function printAgentResults(results) {
       console.log(`  ${green("✓")} ${bold(r.agent)} ${dim(r.detail)}`);
     } else if (r.status === "exists") {
       console.log(`  ${cyan("●")} ${bold(r.agent)} ${dim("already connected")}`);
+    } else if (r.status === "failed") {
+      console.log(`  ${red("✗")} ${bold(r.agent)} ${dim(r.detail)}`);
     }
   }
   console.log();
@@ -415,6 +420,28 @@ async function cmdInit(nameArg) {
       dim("  Each person uses their own name so Eywa can tell agents apart.\n"),
     );
   }
+
+  // Verify MCP server is reachable
+  try {
+    const testUrl = mcpUrl(slug, `cli/${userName()}`, secret);
+    const res = await fetch(testUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "initialize",
+        params: { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "eywa-cli", version: "0.3.1" } },
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      console.log(`  ${green("✓")} ${bold("MCP server reachable")}`);
+    } else {
+      console.log(`  ${yellow("△")} MCP server returned ${res.status}. Agents may need to retry on first connect.`);
+    }
+  } catch {
+    console.log(`  ${yellow("△")} Could not reach MCP server. Check your internet connection.`);
+  }
+  console.log();
 
   const dashUrl = `${DASHBOARD_BASE}/${slug}`;
   console.log(`  ${bold("Dashboard:")} ${cyan(dashUrl)}`);
