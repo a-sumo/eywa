@@ -521,7 +521,7 @@ export function Landing() {
               {t("pricing.free.cta")}
             </button>
           </div>
-          <div className="landing-pricing-card landing-pricing-featured">
+          <div className="landing-pricing-card landing-pricing-featured" style={{ opacity: 0.6 }}>
             <div className="landing-pricing-badge">{t("pricing.pro.badge")}</div>
             <h3>{t("pricing.pro.title")}</h3>
             <div className="landing-pricing-price">{t("pricing.pro.price")}</div>
@@ -532,11 +532,12 @@ export function Landing() {
               <li>{t("pricing.pro.knowledge")}</li>
               <li>{t("pricing.pro.timeline")}</li>
             </ul>
-            <button className="btn-landing-primary" style={{ width: "100%" }} onClick={() => createFold()}>
+            <button className="btn-landing-primary" style={{ width: "100%" }} disabled>
               {t("pricing.pro.cta")}
             </button>
           </div>
-          <div className="landing-pricing-card">
+          <div className="landing-pricing-card" style={{ opacity: 0.6 }}>
+            <div className="landing-pricing-badge">{t("pricing.team.badge")}</div>
             <h3>{t("pricing.team.title")}</h3>
             <div className="landing-pricing-price">{t("pricing.team.price")}</div>
             <ul className="landing-pricing-features">
@@ -546,9 +547,9 @@ export function Landing() {
               <li>{t("pricing.team.support")}</li>
               <li>{t("pricing.team.integrations")}</li>
             </ul>
-            <a href="mailto:eywa.ai.team@gmail.com" className="btn-landing-secondary" style={{ width: "100%" }}>
+            <button className="btn-landing-secondary" style={{ width: "100%" }} disabled>
               {t("pricing.team.cta")}
-            </a>
+            </button>
           </div>
         </div>
       </section>
