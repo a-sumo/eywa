@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "eywa": {
-      "type": "http",
-      "url": "https://mcp.eywa-ai.dev/mcp?fold=eywa-dev&agent=autonomous"
-    }
-  }
-}
