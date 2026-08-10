@@ -1,6 +1,6 @@
 {
-  "name": "eywa-mcp",
-  "version": "1.0.0",
+  "name": "swarmline-mcp",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",

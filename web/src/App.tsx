@@ -1,144 +1,216 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { FoldProvider } from "./context/FoldContext";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { AppHeader } from "./components/AppHeader";
-import { VersionSwitcher } from "./components/VersionSwitcher";
-import { NotFound } from "./components/NotFound";
+import { useEffect, useMemo, useState } from "react";
+import { Link, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { supabase, type AgentEvent, type Workspace } from "./lib/supabase";
 
-const Landing = lazy(() => import("./components/Landing").then(m => ({ default: m.Landing })));
-import "./App.css";
-
-// Lazy-loaded route components (split into separate chunks)
-const FoldLayout = lazy(() => import("./components/FoldLayout").then(m => ({ default: m.FoldLayout })));
-const ThreadTree = lazy(() => import("./components/ThreadTree").then(m => ({ default: m.ThreadTree })));
-const ThreadView = lazy(() => import("./components/ThreadView").then(m => ({ default: m.ThreadView })));
-const WorkspaceView = lazy(() => import("./components/WorkspaceView").then(m => ({ default: m.WorkspaceView })));
-const AgentDetail = lazy(() => import("./components/AgentDetail").then(m => ({ default: m.AgentDetail })));
-const Chat = lazy(() => import("./components/Chat").then(m => ({ default: m.Chat })));
-const MiniEywa = lazy(() => import("./components/MiniEywa").then(m => ({ default: m.MiniEywa })));
-const MiniEywaEink = lazy(() => import("./components/MiniEywaEink").then(m => ({ default: m.MiniEywaEink })));
-const CLIAuth = lazy(() => import("./components/CLIAuth").then(m => ({ default: m.CLIAuth })));
-const SessionGraph = lazy(() => import("./components/SessionGraph").then(m => ({ default: m.SessionGraph })));
-const SpectaclesView = lazy(() => import("./components/SpectaclesView").then(m => ({ default: m.SpectaclesView })));
-const SpectaclesReceiver = lazy(() => import("./components/SpectaclesReceiver").then(m => ({ default: m.SpectaclesReceiver })));
-const KnowledgePage = lazy(() => import("./components/KnowledgePage").then(m => ({ default: m.KnowledgePage })));
-const NavigatorMap = lazy(() => import("./components/NavigatorMap").then(m => ({ default: m.NavigatorMap })));
-const OperationsView = lazy(() => import("./components/OperationsView").then(m => ({ default: m.OperationsView })));
-const SeedMonitor = lazy(() => import("./components/SeedMonitor").then(m => ({ default: m.SeedMonitor })));
-// FoldsIndex removed: public directory is a privacy violation
-const VoicesView = lazy(() => import("./components/VoicesView").then(m => ({ default: m.VoicesView })));
-const DocsLayout = lazy(() => import("./components/DocsLayout").then(m => ({ default: m.DocsLayout })));
-const DocsOverview = lazy(() => import("./components/DocsLayout").then(m => ({ default: m.DocsOverview })));
-const IntegrationGuide = lazy(() => import("./components/IntegrationGuide").then(m => ({ default: m.IntegrationGuide })));
-const QuickstartDocs = lazy(() => import("./components/docs/QuickstartDocs").then(m => ({ default: m.QuickstartDocs })));
-const CLIDocs = lazy(() => import("./components/docs/CLIDocs").then(m => ({ default: m.CLIDocs })));
-const VSCodeDocs = lazy(() => import("./components/docs/VSCodeDocs").then(m => ({ default: m.VSCodeDocs })));
-const DiscordDocs = lazy(() => import("./components/docs/DiscordDocs").then(m => ({ default: m.DiscordDocs })));
-const SpectaclesDocs = lazy(() => import("./components/docs/SpectaclesDocs").then(m => ({ default: m.SpectaclesDocs })));
-const PiDisplayDocs = lazy(() => import("./components/docs/PiDisplayDocs").then(m => ({ default: m.PiDisplayDocs })));
-const ArchitectureDocs = lazy(() => import("./components/docs/ArchitectureDocs").then(m => ({ default: m.ArchitectureDocs })));
-const SelfHostingDocs = lazy(() => import("./components/docs/SelfHostingDocs").then(m => ({ default: m.SelfHostingDocs })));
-
-function RouteLoader() {
-  return <div className="route-loader"><div className="route-loader-spinner" /></div>;
-}
-
-function App() {
-  const { i18n } = useTranslation();
-
-  useEffect(() => {
-    document.documentElement.dir = i18n.dir();
-    document.documentElement.lang = i18n.language;
-  }, [i18n, i18n.language]);
+function Home() {
+  const [slug, setSlug] = useState("");
+  const navigate = useNavigate();
 
   return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <ScrollToTop />
-        <VersionSwitcher />
-        <AppHeader />
-        <Suspense fallback={<RouteLoader />}>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            {/* Public directory removed for privacy. /rooms and /folds redirect to home. */}
-            <Route path="/rooms" element={<Navigate to="/" replace />} />
-            <Route path="/folds" element={<Navigate to="/" replace />} />
-            <Route path="/cli-auth" element={<CLIAuth />} />
-            <Route path="/docs" element={<DocsLayout />}>
-              <Route index element={<DocsOverview />} />
-              <Route path="quickstart" element={<QuickstartDocs />} />
-              <Route path="cli" element={<CLIDocs />} />
-              <Route path="vscode" element={<VSCodeDocs />} />
-              <Route path="discord" element={<DiscordDocs />} />
-              <Route path="spectacles" element={<SpectaclesDocs />} />
-              <Route path="pi-displays" element={<PiDisplayDocs />} />
-              <Route path="architecture" element={<ArchitectureDocs />} />
-              <Route path="self-hosting" element={<SelfHostingDocs />} />
-              <Route path="integrations/:provider" element={<IntegrationGuide />} />
-            </Route>
-            <Route path="/s/:slug/eink" element={<FoldProvider><MiniEywaEink /></FoldProvider>} />
-            <Route path="/s/:slug/phone" element={<FoldProvider><MiniEywa /></FoldProvider>} />
-            <Route path="/s/:slug/spectacles" element={<FoldProvider><SpectaclesView /></FoldProvider>} />
-            <Route path="/s/:slug/spectacles/rx" element={<FoldProvider><SpectaclesReceiver /></FoldProvider>} />
-            <Route path="/s/:slug/voices" element={<FoldProvider><VoicesView /></FoldProvider>} />
-            <Route path="/s/:slug/*" element={<FoldRoutes />} />
-            {/* Backward compat: /f/:slug/*, /r/:slug/*, /rooms/:slug/* → /s/:slug/* */}
-            <Route path="/f/:slug/*" element={<RoomRedirect />} />
-            <Route path="/r/:slug/*" element={<RoomRedirect />} />
-            <Route path="/rooms/:slug/*" element={<RoomRedirect />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </ErrorBoundary>
+    <main className="home shell">
+      <p className="eyebrow">Swarmline</p>
+      <h1>See how your agents coordinate.</h1>
+      <p className="lede">
+        A shared event line for agent identity, work claims, messages, actions,
+        and containment-boundary observations.
+      </p>
+      <form
+        className="workspace-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (slug.trim()) navigate(`/w/${encodeURIComponent(slug.trim())}`);
+        }}
+      >
+        <label htmlFor="workspace">Open a workspace</label>
+        <div>
+          <input
+            id="workspace"
+            value={slug}
+            onChange={(event) => setSlug(event.target.value)}
+            placeholder="workspace-slug"
+          />
+          <button type="submit">Open</button>
+        </div>
+      </form>
+      <section className="principles">
+        <article><strong>Claim</strong><span>Prevent agents from modifying the same scope.</span></article>
+        <article><strong>Communicate</strong><span>Keep inter-agent messages visible to humans.</span></article>
+        <article><strong>Reconstruct</strong><span>Review one append-only operational timeline.</span></article>
+      </section>
+    </main>
   );
 }
 
-function ScrollToTop() {
-  const { pathname, hash } = useLocation();
-  const prevPath = useRef(pathname);
+interface Claim {
+  agent: string;
+  sessionId: string;
+  scope: string;
+  resources: string[];
+  ts: string;
+}
+
+function getActiveClaims(events: AgentEvent[], now: number): Claim[] {
+  const terminal = new Set<string>();
+  const claims: Claim[] = [];
+  const cutoff = now - 30 * 60 * 1000;
+
+  for (const event of events) {
+    if (new Date(event.ts).getTime() < cutoff) continue;
+    const kind = String(event.metadata.event ?? "");
+    if (!["claim", "release", "session_stop"].includes(kind)) continue;
+    if (terminal.has(event.session_id)) continue;
+    terminal.add(event.session_id);
+    if (kind !== "claim") continue;
+    claims.push({
+      agent: event.agent,
+      sessionId: event.session_id,
+      scope: String(event.metadata.scope ?? event.content),
+      resources: Array.isArray(event.metadata.resources)
+        ? event.metadata.resources.map(String)
+        : [],
+      ts: event.ts,
+    });
+  }
+  return claims;
+}
+
+function timeLabel(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date(value));
+}
+
+function WorkspaceView() {
+  const { slug = "" } = useParams();
+  const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [events, setEvents] = useState<AgentEvent[]>([]);
+  const [error, setError] = useState("");
+  const [clock, setClock] = useState(0);
 
   useEffect(() => {
-    if (hash) return; // let browser handle anchor links
-    if (prevPath.current !== pathname) {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const tick = () => setClock(Date.now());
+    tick();
+    const timer = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    async function load() {
+      const { data: workspaceData, error: workspaceError } = await supabase
+        .from("folds")
+        .select("id,slug,name")
+        .eq("slug", slug)
+        .single();
+
+      if (workspaceError || !workspaceData) {
+        setError("Workspace not found");
+        return;
+      }
+
+      const current = workspaceData as Workspace;
+      setWorkspace(current);
+      const { data, error: eventsError } = await supabase
+        .from("memories")
+        .select("id,fold_id,agent,session_id,content,metadata,ts")
+        .eq("fold_id", current.id)
+        .order("ts", { ascending: false })
+        .limit(300);
+
+      if (eventsError) {
+        setError(eventsError.message);
+        return;
+      }
+      setEvents((data ?? []) as AgentEvent[]);
+
+      channel = supabase
+        .channel(`swarmline-${current.id}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "memories", filter: `fold_id=eq.${current.id}` },
+          (payload) => setEvents((existing) => [payload.new as AgentEvent, ...existing].slice(0, 300)),
+        )
+        .subscribe();
     }
-    prevPath.current = pathname;
-  }, [pathname, hash]);
 
-  return null;
-}
+    load();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [slug]);
 
-function RoomRedirect() {
-  const { slug, "*": rest } = useParams();
-  return <Navigate to={`/s/${slug}${rest ? `/${rest}` : ""}`} replace />;
-}
+  const claims = useMemo(() => getActiveClaims(events, clock), [events, clock]);
+  const activeAgents = useMemo(() => {
+    const cutoff = clock - 10 * 60 * 1000;
+    const seen = new Set<string>();
+    const active = new Set<string>();
+    for (const event of events) {
+      if (seen.has(event.agent)) continue;
+      seen.add(event.agent);
+      const kind = String(event.metadata.event ?? "");
+      if (new Date(event.ts).getTime() >= cutoff && kind !== "session_stop") {
+        active.add(event.agent);
+      }
+    }
+    return active;
+  }, [events, clock]);
 
-function FoldRoutes() {
+  if (error) return <main className="shell state"><p>{error}</p><Link to="/">Go home</Link></main>;
+  if (!workspace) return <main className="shell state"><p>Loading workspace...</p></main>;
+
   return (
-    <FoldProvider>
-      <Suspense fallback={<RouteLoader />}>
-        <FoldLayout>
-          <Suspense fallback={<RouteLoader />}>
-            <Routes>
-              <Route index element={<ThreadTree />} />
-              <Route path="ops" element={<OperationsView />} />
-              <Route path="seeds" element={<SeedMonitor />} />
-              <Route path="thread/:agent/:sessionId" element={<ThreadView />} />
-              <Route path="workspace" element={<WorkspaceView />} />
-              <Route path="agent/:name" element={<AgentDetail />} />
-              <Route path="chat" element={<Chat />} />
-              <Route path="graph" element={<SessionGraph />} />
-              <Route path="knowledge" element={<KnowledgePage />} />
-              <Route path="map" element={<NavigatorMap />} />
-            </Routes>
-          </Suspense>
-        </FoldLayout>
-      </Suspense>
-    </FoldProvider>
+    <main className="shell workspace">
+      <header className="workspace-header">
+        <div><Link to="/" className="brand">Swarmline</Link><h1>{workspace.name}</h1></div>
+        <div className="live"><span />Live</div>
+      </header>
+
+      <section className="summary-grid">
+        <article><strong>{activeAgents.size}</strong><span>agents seen in 10 minutes</span></article>
+        <article><strong>{claims.length}</strong><span>active claims</span></article>
+        <article><strong>{events.length}</strong><span>recent events</span></article>
+      </section>
+
+      <div className="workspace-grid">
+        <aside>
+          <h2>Active claims</h2>
+          {claims.length === 0 ? <p className="muted">No active claims.</p> : claims.map((claim) => (
+            <article className="claim" key={claim.sessionId}>
+              <strong>{claim.scope}</strong>
+              <span>{claim.agent}</span>
+              {claim.resources.map((resource) => <code key={resource}>{resource}</code>)}
+            </article>
+          ))}
+        </aside>
+
+        <section className="timeline">
+          <h2>Event line</h2>
+          {events.length === 0 ? <p className="muted">No events yet.</p> : events.map((event) => {
+            const kind = String(event.metadata.event ?? "event");
+            const severity = String(event.metadata.severity ?? "");
+            return (
+              <article className={`event event-${kind} severity-${severity}`} key={event.id}>
+                <div className="event-meta">
+                  <span className="event-kind">{kind.replaceAll("_", " ")}</span>
+                  <span>{event.agent}</span>
+                  <time>{timeLabel(event.ts)}</time>
+                </div>
+                <p>{event.content}</p>
+                {typeof event.metadata.resource === "string" && event.metadata.resource && (
+                  <code>{event.metadata.resource}</code>
+                )}
+              </article>
+            );
+          })}
+        </section>
+      </div>
+    </main>
   );
 }
 
-export default App;
+export default function App() {
+  return <Routes><Route path="/" element={<Home />} /><Route path="/w/:slug" element={<WorkspaceView />} /></Routes>;
+}

@@ -1,7 +1,7 @@
 {
-  "name": "web",
+  "name": "swarmline-web",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,14 +12,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.93.3",
-    "@types/d3": "^7.4.3",
-    "d3": "^7.9.0",
-    "i18next": "^25.8.5",
-    "i18next-browser-languagedetector": "^8.2.0",
-    "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-i18next": "^16.5.4",
     "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
@@ -27,15 +21,11 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-react": "^5.1.1",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
-    "playwright": "^1.58.1",
-    "puppeteer": "^24.37.2",
-    "sharp": "^0.34.5",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4"

@@ -1,6 +1,6 @@
 /**
  * Thin fetch wrapper for Supabase PostgREST API.
- * No SDK dependency — just HTTP calls with the service key.
+ * No SDK dependency. This uses HTTP calls with the service key.
  */
 
 export class SupabaseClient {

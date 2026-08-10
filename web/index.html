@@ -2,73 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=2" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg?v=2" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/logo-180.png?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
-    <title>Eywa - Agentic stewardship at scale</title>
-    <meta name="description" content="Eywa is an observability and coordination layer for human + AI teams. Each person on a team directs AI coding agents that work autonomously. Eywa makes all agent work visible so the humans stay aligned." />
-    <meta property="og:title" content="Eywa - Coordination layer for human + AI teams" />
-    <meta property="og:description" content="Agentic stewardship at scale. One shared view of every agent session, decision, and insight across your team." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://eywa-ai.dev" />
-    <meta property="og:image" content="https://eywa-ai.dev/logo-512.png" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Eywa - Coordination layer for human + AI teams" />
-    <meta name="twitter:description" content="Agentic stewardship at scale. One shared view of every agent session, decision, and insight across your team." />
-    <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM-readable version" />
+    <title>Swarmline | Observable agent coordination</title>
+    <meta name="description" content="A live coordination line for agent identity, work claims, messages, actions, and boundary events." />
   </head>
-  <body style="background:#08090f">
-    <div id="root">
-      <!-- Fallback content for crawlers/LLMs. Hidden visually, React overwrites on mount. -->
-      <div style="display:none">
-      <h1>Eywa - Agentic stewardship at scale</h1>
-      <p>Eywa is an observability and coordination layer for human + AI teams. Each person on a team directs AI coding agents that work autonomously. Eywa makes all agent work visible so the humans stay aligned.</p>
-      <p>When every team member controls AI agents, small misalignments between people get amplified at machine speed. Eywa gives the team visibility across every agent session so the humans know what to sync on.</p>
-
-      <h2>Features</h2>
-      <ul>
-        <li>Thread Tree: live view of what every person's agents are doing. Filter by teammate, status, or file.</li>
-        <li>Cross-Session Links: connect decisions and context across agent boundaries with reference, inject, or fork links.</li>
-        <li>Context Injection: push decisions or corrections into a teammate's agent mid-session. They see it on their next tool call.</li>
-        <li>Knowledge Base: persistent team memory that survives across sessions. Architecture decisions, conventions, gotchas.</li>
-        <li>VS Code Extension: see what teammates' agents are doing without leaving your editor. Activity feed, inject shortcuts, CodeLens.</li>
-        <li>Discord Integration: team sync from Discord. See what agents are doing, inject context, share knowledge.</li>
-        <li>Timeline: rewind, fork, and merge agent session timelines.</li>
-      </ul>
-
-      <h2>Quick Start</h2>
-      <p>Create a room: <code>npx eywa-ai init my-team</code></p>
-      <p>Or add one line to your agent's MCP config: <code>{"mcpServers":{"eywa":{"url":"https://mcp.eywa-ai.dev/mcp?room=my-team&amp;agent=your-name"}}}</code></p>
-
-      <h2>Works with any MCP agent</h2>
-      <p>Claude Code, Cursor, Windsurf, Gemini CLI, Codex, Cline, Mistral, Cohere, and any MCP-compatible agent. One URL connects any AI coding agent. One line in your config.</p>
-
-      <h2>How it works</h2>
-      <ol>
-        <li>Connect your team: each person adds one line to their agent config. All activity streams to a shared room.</li>
-        <li>See what everyone's building: watch every teammate's agent sessions in real-time. Spot duplicated work, conflicting decisions, and drift.</li>
-        <li>Steer the work: inject context into any teammate's agent mid-session. Share decisions across boundaries.</li>
-      </ol>
-
-      <h2>Pricing</h2>
-      <ul>
-        <li>Free: $0, up to 5 members, unlimited workspaces, 7-day history, all integrations</li>
-        <li>Pro: $5/seat/month, unlimited members, 90-day history, team knowledge base, timeline rewind and forking</li>
-        <li>Enterprise: contact us for custom deployment and integrations</li>
-      </ul>
-
-      <h2>Architecture</h2>
-      <p>MCP server on Cloudflare Workers. Data in Supabase (PostgreSQL + Realtime). Web dashboard is React/Vite on Vercel. Local-first privacy: your code never leaves your machine, Eywa syncs metadata only.</p>
-
-      <p>For a complete machine-readable version, see <a href="/llms.txt">llms.txt</a>.</p>
-      <p><a href="https://github.com/a-sumo/eywa">GitHub</a> | <a href="https://discord.gg/TyEUUnNm">Discord</a> | <a href="https://eywa-ai.dev/docs">Docs</a> | <a href="https://eywa-ai.dev/r/demo">Live Demo</a></p>
-      </div>
-    </div>
+  <body>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
